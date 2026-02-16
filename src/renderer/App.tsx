@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { AssetItem, ProjectState, TransitionType } from '../shared/types';
 
-function toFileUrl(p: string): string {
-  const normalized = p.replace(/\\/g, '/');
-  if (/^[A-Za-z]:\//.test(normalized)) return `file:///${normalized}`;
-  if (normalized.startsWith('/')) return `file://${normalized}`;
-  return normalized;
+function toFileUrl(projectFolder: string, relativePath: string): string {
+  const normalized = `${projectFolder}/${relativePath}`.replaceAll('\\', '/').replace(/\/+/g, '/');
+  return encodeURI(`file://${normalized}`);
 }
 
 export function App() {
@@ -217,8 +215,7 @@ function MediaView({
   projectFolder: string;
   className?: string;
 }) {
-  const sourcePath = `${projectFolder}/${asset.relativePath}`;
-  const src = encodeURI(toFileUrl(sourcePath));
+  const src = toFileUrl(projectFolder, asset.relativePath);
   if (asset.mediaType === 'image') {
     return <img src={src} className={className} alt={asset.originalName} />;
   }
