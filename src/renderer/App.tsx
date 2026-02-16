@@ -1,12 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { AssetItem, ProjectState, TransitionType } from '../shared/types';
 
-function resolveAssetUrl(projectDir: string, relativePath: string): string {
-  const abs = `${projectDir}/${relativePath}`;
-  const normalized = abs.replace(/\\/g, '/').replace(/\/+/g, '/');
-  if (/^[A-Za-z]:\//.test(normalized)) return encodeURI(`file:///${normalized}`);
-  if (normalized.startsWith('/')) return encodeURI(`file://${normalized}`);
-  return encodeURI(normalized);
+function toFileUrl(projectFolder: string, relativePath: string): string {
+  const normalized = `${projectFolder}/${relativePath}`.replaceAll('\\', '/').replace(/\/+/g, '/');
+  return encodeURI(`file://${normalized}`);
 }
 
 export function App() {
@@ -26,8 +23,6 @@ export function App() {
   const currentAsset = currentSlide ? assetsById.get(currentSlide.assetId) ?? null : null;
   const previousSlide = previousIndex !== null ? project?.data.slides[previousIndex] : null;
   const previousAsset = previousSlide ? assetsById.get(previousSlide.assetId) ?? null : null;
-  const resolvedCurrentSrc =
-    project && currentAsset ? resolveAssetUrl(project.folderPath, currentAsset.relativePath) : null;
 
   const goToSlide = (index: number) => {
     if (!project) return;
@@ -196,9 +191,6 @@ export function App() {
               </div>
             )}
           </div>
-          {import.meta.env.DEV && resolvedCurrentSrc && (
-            <div>Resolved src: {resolvedCurrentSrc}</div>
-          )}
         </main>
       </div>
 
@@ -223,7 +215,7 @@ function MediaView({
   projectFolder: string;
   className?: string;
 }) {
-  const src = resolveAssetUrl(projectFolder, asset.relativePath);
+  const src = toFileUrl(projectFolder, asset.relativePath);
   if (asset.mediaType === 'image') {
     return <img src={src} className={className} alt={asset.originalName} />;
   }
