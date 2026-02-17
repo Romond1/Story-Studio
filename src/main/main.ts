@@ -1,9 +1,10 @@
+// src/main/main.ts
 import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
 import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
-import type { AssetItem, ImportResult, MediaType, ProjectData, ProjectState, Slide } from '../shared/types';
+import type { AssetItem, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide } from '../shared/types';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -59,8 +60,29 @@ async function writeProjectAtomic(folder: string, data: ProjectData): Promise<st
 
 async function loadProject(folder: string): Promise<ProjectState> {
   const raw = await fs.readFile(projectPath(folder), 'utf8');
-  const data = JSON.parse(raw) as ProjectData;
+  const parsed = JSON.parse(raw) as ProjectData;
+  const data = normalizeProjectData(parsed);
   return { folderPath: folder, data, lastSavedAt: data.updatedAt };
+}
+
+
+function normalizeProjectData(data: ProjectData): ProjectData {
+  const hasSections = Array.isArray((data as ProjectData & { sections?: Section[] }).sections)
+    && ((data as ProjectData & { sections?: Section[] }).sections?.length ?? 0) > 0;
+
+  if (hasSections) {
+    return data;
+  }
+
+  const defaultSection: Section = { id: randomUUID(), name: 'Section 1' };
+  return {
+    ...data,
+    sections: [defaultSection],
+    slides: data.slides.map((slide) => ({
+      ...slide,
+      sectionId: defaultSection.id
+    }))
+  };
 }
 
 function resolveMediaPathFromUrl(rawUrl: string): { resolvedPath: string } | { status: number; message: string } {
@@ -210,7 +232,8 @@ ipcMain.handle('project:create', async () => {
     createdAt: now,
     updatedAt: now,
     slides: [],
-    assets: []
+    assets: [],
+    sections: [{ id: randomUUID(), name: 'Section 1' }]
   };
 
   await writeProjectAtomic(folderPath, data);
@@ -253,6 +276,7 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
 
   const importedAssets: AssetItem[] = [];
   const createdSlides: Slide[] = [];
+  const defaultSectionId = (await loadProject(currentProjectFolder)).data.sections[0]?.id ?? randomUUID();
 
   for (const sourcePath of filePaths) {
     const ext = path.extname(sourcePath).toLowerCase();
@@ -278,6 +302,7 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
     createdSlides.push({
       id: randomUUID(),
       assetId: id,
+      sectionId: defaultSectionId,
       transition: 'fade'
     });
   }

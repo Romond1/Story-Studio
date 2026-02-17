@@ -1,5 +1,6 @@
+// src/renderer/App.tsx
 import { type CSSProperties, type MouseEvent, type WheelEvent, useMemo, useState } from 'react';
-import type { AssetItem, ProjectState, TransitionType } from '../shared/types';
+import type { AssetItem, ProjectState, Section, TransitionType } from '../shared/types';
 import { BUILD_VERSION } from '../shared/version';
 
 function toMediaUrl(relativePath: string): string {
@@ -11,9 +12,26 @@ function toMediaUrl(relativePath: string): string {
   return `media://${encodedRelative}`;
 }
 
+function ensureSections(project: ProjectState): ProjectState {
+  if (project.data.sections.length > 0) {
+    return project;
+  }
+
+  const fallback: Section = { id: crypto.randomUUID(), name: 'Section 1' };
+  return {
+    ...project,
+    data: {
+      ...project.data,
+      sections: [fallback],
+      slides: project.data.slides.map((slide) => ({ ...slide, sectionId: fallback.id }))
+    }
+  };
+}
 
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [renamingSectionId, setRenamingSectionId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [previousIndex, setPreviousIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -25,6 +43,25 @@ export function App() {
     return map;
   }, [project]);
 
+  const sections = project?.data.sections ?? [];
+
+  const sectionSlideIndices = useMemo(() => {
+    if (!project) return new Map<string, number[]>();
+    const map = new Map<string, number[]>();
+    project.data.slides.forEach((slide, index) => {
+      const list = map.get(slide.sectionId) ?? [];
+      list.push(index);
+      map.set(slide.sectionId, list);
+    });
+    return map;
+  }, [project]);
+
+  const visibleSlideIndices = useMemo(() => {
+    if (!project) return [];
+    if (!selectedSectionId) return project.data.slides.map((_, index) => index);
+    return sectionSlideIndices.get(selectedSectionId) ?? [];
+  }, [project, sectionSlideIndices, selectedSectionId]);
+
   const currentSlide = project?.data.slides[currentIndex] ?? null;
   const currentAsset = currentSlide ? assetsById.get(currentSlide.assetId) ?? null : null;
   const previousSlide = previousIndex !== null ? project?.data.slides[previousIndex] : null;
@@ -32,7 +69,7 @@ export function App() {
   const resolvedCurrentSrc =
     project && currentAsset ? toMediaUrl(currentAsset.relativePath) : null;
 
-  const goToSlide = (index: number) => {
+  const goToSlideByAbsoluteIndex = (index: number) => {
     if (!project) return;
     if (index < 0 || index >= project.data.slides.length || index === currentIndex) return;
     setPreviousIndex(currentIndex);
@@ -44,8 +81,27 @@ export function App() {
     }, 450);
   };
 
+  const goToVisibleOffset = (offset: number) => {
+    const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
+    if (currentVisiblePos < 0) return;
+    const target = visibleSlideIndices[currentVisiblePos + offset];
+    if (target === undefined) return;
+    goToSlideByAbsoluteIndex(target);
+  };
+
   const setProjectState = (next: ProjectState | null) => {
-    setProject(next);
+    if (!next) {
+      setProject(null);
+      setSelectedSectionId(null);
+      setCurrentIndex(0);
+      setPreviousIndex(null);
+      setError(null);
+      return;
+    }
+
+    const normalized = ensureSections(next);
+    setProject(normalized);
+    setSelectedSectionId(normalized.data.sections[0]?.id ?? null);
     setCurrentIndex(0);
     setPreviousIndex(null);
     setError(null);
@@ -74,7 +130,12 @@ export function App() {
     try {
       const result = await window.appApi.importMedia();
       if (!result) return;
-      const nextSlides = [...project.data.slides, ...result.createdSlides];
+      const targetSectionId = selectedSectionId ?? project.data.sections[0]?.id;
+      const createdSlides = targetSectionId
+        ? result.createdSlides.map((slide) => ({ ...slide, sectionId: targetSectionId }))
+        : result.createdSlides;
+
+      const nextSlides = [...project.data.slides, ...createdSlides];
       const nextAssets = [...project.data.assets, ...result.importedAssets];
       setProject({
         ...project,
@@ -123,6 +184,53 @@ export function App() {
     });
   };
 
+  const selectSection = (sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    const firstInSection = sectionSlideIndices.get(sectionId)?.[0];
+    if (firstInSection !== undefined) {
+      setCurrentIndex(firstInSection);
+    }
+  };
+
+  const renameSection = (sectionId: string, name: string) => {
+    if (!project) return;
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        sections: project.data.sections.map((section) =>
+          section.id === sectionId ? { ...section, name: name.trim() || section.name } : section
+        )
+      }
+    });
+  };
+
+  const onInsertSectionBreak = () => {
+    if (!project || !currentSlide) return;
+
+    const breakIndex = currentIndex;
+    const nextSection: Section = {
+      id: crypto.randomUUID(),
+      name: `Section ${project.data.sections.length + 1}`
+    };
+
+    const nextSlides = project.data.slides.map((slide, index) =>
+      index >= breakIndex ? { ...slide, sectionId: nextSection.id } : slide
+    );
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        sections: [...project.data.sections, nextSection],
+        slides: nextSlides
+      }
+    });
+    setSelectedSectionId(nextSection.id);
+  };
+
+  const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
+
   return (
     <div className="app">
       <header className="topbar">
@@ -135,34 +243,85 @@ export function App() {
 
       <div className="content">
         <aside className="sidebar">
-          <h3>Slides</h3>
-          {project?.data.slides.length ? (
+          <h3>Sections</h3>
+          {sections.length ? (
             <ul>
-              {project.data.slides.map((slide, index) => {
+              {sections.map((section) => {
+                const count = sectionSlideIndices.get(section.id)?.length ?? 0;
+                const isSelected = selectedSectionId === section.id;
+                return (
+                  <li key={section.id} className="section-item">
+                    <button
+                      className={isSelected ? 'slide-btn active' : 'slide-btn'}
+                      onClick={() => selectSection(section.id)}
+                    >
+                      {renamingSectionId === section.id ? (
+                        <input
+                          className="section-input"
+                          defaultValue={section.name}
+                          autoFocus
+                          onBlur={(event) => {
+                            renameSection(section.id, event.target.value);
+                            setRenamingSectionId(null);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              renameSection(section.id, (event.target as HTMLInputElement).value);
+                              setRenamingSectionId(null);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <>
+                          <span>{section.name}</span>
+                          <small>{count}</small>
+                        </>
+                      )}
+                    </button>
+                    {renamingSectionId !== section.id && (
+                      <button className="rename-btn" onClick={() => setRenamingSectionId(section.id)}>Rename</button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p>No sections yet.</p>
+          )}
+
+          <button className="section-break-btn" onClick={onInsertSectionBreak} disabled={!currentSlide}>
+            Insert Section Break
+          </button>
+
+          <h3>Slides</h3>
+          {visibleSlideIndices.length ? (
+            <ul>
+              {visibleSlideIndices.map((slideIndex) => {
+                const slide = project!.data.slides[slideIndex];
                 const asset = assetsById.get(slide.assetId);
                 return (
                   <li key={slide.id}>
                     <button
-                      className={index === currentIndex ? 'slide-btn active' : 'slide-btn'}
-                      onClick={() => goToSlide(index)}
+                      className={slideIndex === currentIndex ? 'slide-btn active' : 'slide-btn'}
+                      onClick={() => goToSlideByAbsoluteIndex(slideIndex)}
                     >
-                      <span>{index + 1}.</span> {asset?.originalName ?? 'Unknown asset'}
+                      <span>{slideIndex + 1}.</span> {asset?.originalName ?? 'Unknown asset'}
                     </button>
                   </li>
                 );
               })}
             </ul>
           ) : (
-            <p>No slides yet.</p>
+            <p>No slides in this section.</p>
           )}
         </aside>
 
         <main className="stage-wrap">
           <div className="stage-controls">
-            <button onClick={() => goToSlide(currentIndex - 1)} disabled={!project || currentIndex <= 0}>Prev</button>
+            <button onClick={() => goToVisibleOffset(-1)} disabled={!project || currentVisiblePos <= 0}>Prev</button>
             <button
-              onClick={() => goToSlide(currentIndex + 1)}
-              disabled={!project || !project.data.slides.length || currentIndex >= project.data.slides.length - 1}
+              onClick={() => goToVisibleOffset(1)}
+              disabled={!project || currentVisiblePos < 0 || currentVisiblePos >= visibleSlideIndices.length - 1}
             >
               Next
             </button>
@@ -208,6 +367,7 @@ export function App() {
         <div className="build-version">Build {BUILD_VERSION}</div>
         <strong>Project Status</strong>
         <div>Folder: {project?.folderPath ?? '-'}</div>
+        <div>Sections: {project?.data.sections.length ?? 0}</div>
         <div>Slides: {project?.data.slides.length ?? 0}</div>
         <div>Assets: {project?.data.assets.length ?? 0}</div>
         <div>Last saved: {project?.lastSavedAt ?? '-'}</div>
