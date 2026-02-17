@@ -1,10 +1,16 @@
-import { useMemo, useState } from 'react';
+import { type CSSProperties, type MouseEvent, type WheelEvent, useMemo, useState } from 'react';
 import type { AssetItem, ProjectState, TransitionType } from '../shared/types';
+import { BUILD_VERSION } from '../shared/version';
 
-function toFileUrl(projectFolder: string, relativePath: string): string {
-  const normalized = `${projectFolder}/${relativePath}`.replaceAll('\\', '/').replace(/\/+/g, '/');
-  return encodeURI(`file://${normalized}`);
+function toMediaUrl(relativePath: string): string {
+  const normalizedRelative = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  const encodedRelative = normalizedRelative
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `media://${encodedRelative}`;
 }
+
 
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
@@ -23,6 +29,8 @@ export function App() {
   const currentAsset = currentSlide ? assetsById.get(currentSlide.assetId) ?? null : null;
   const previousSlide = previousIndex !== null ? project?.data.slides[previousIndex] : null;
   const previousAsset = previousSlide ? assetsById.get(previousSlide.assetId) ?? null : null;
+  const resolvedCurrentSrc =
+    project && currentAsset ? toMediaUrl(currentAsset.relativePath) : null;
 
   const goToSlide = (index: number) => {
     if (!project) return;
@@ -122,6 +130,7 @@ export function App() {
         <button onClick={onOpenProject}>Open Project</button>
         <button onClick={onImportMedia} disabled={!project}>Import Media</button>
         <button onClick={onSave} disabled={!project}>Save</button>
+        <span className="build-chip" title="Build marker">Build {BUILD_VERSION}</span>
       </header>
 
       <div className="content">
@@ -178,23 +187,25 @@ export function App() {
                   <MediaView
                     key={`${previousSlide?.id}-prev`}
                     asset={previousAsset}
-                    projectFolder={project!.folderPath}
                     className="media crossfade-out"
                   />
                 )}
                 <MediaView
                   key={`${currentSlide?.id}-${isAnimating}`}
                   asset={currentAsset}
-                  projectFolder={project!.folderPath}
                   className={`media ${currentSlide?.transition === 'fade' ? 'fade-in' : 'crossfade-in'}`}
                 />
               </div>
             )}
           </div>
+          {import.meta.env.DEV && resolvedCurrentSrc && (
+            <div>Resolved src: {resolvedCurrentSrc}</div>
+          )}
         </main>
       </div>
 
       <footer className="status">
+        <div className="build-version">Build {BUILD_VERSION}</div>
         <strong>Project Status</strong>
         <div>Folder: {project?.folderPath ?? '-'}</div>
         <div>Slides: {project?.data.slides.length ?? 0}</div>
@@ -208,16 +219,51 @@ export function App() {
 
 function MediaView({
   asset,
-  projectFolder,
   className
 }: {
   asset: AssetItem;
-  projectFolder: string;
   className?: string;
 }) {
-  const src = toFileUrl(projectFolder, asset.relativePath);
+  const src = toMediaUrl(asset.relativePath);
+  const [zoom, setZoom] = useState(1);
+  const [origin, setOrigin] = useState('50% 50%');
+
+  const mediaStyle: CSSProperties = {
+    transform: `scale(${zoom})`,
+    transformOrigin: origin,
+    transition: 'transform 50ms linear'
+  };
+
+  const onWheelZoom = (event: WheelEvent<HTMLElement>) => {
+    event.preventDefault();
+    const next = Math.min(4, Math.max(1, zoom + (event.deltaY < 0 ? 0.2 : -0.2)));
+    setZoom(next);
+    if (next === 1) {
+      setOrigin('50% 50%');
+    }
+  };
+
+  const onPointerMove = (event: MouseEvent<HTMLElement>) => {
+    if (zoom <= 1) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setOrigin(`${Math.min(100, Math.max(0, x))}% ${Math.min(100, Math.max(0, y))}%`);
+  };
+
   if (asset.mediaType === 'image') {
-    return <img src={src} className={className} alt={asset.originalName} />;
+    return (
+      <img
+        src={src}
+        className={className}
+        alt={asset.originalName}
+        style={mediaStyle}
+        onWheel={onWheelZoom}
+        onMouseMove={onPointerMove}
+        title="Scroll to zoom"
+      />
+    );
   }
+
   return <video src={src} className={className} controls autoPlay muted />;
 }

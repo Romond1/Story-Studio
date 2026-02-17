@@ -1,12 +1,26 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
-import { promises as fs } from 'node:fs';
+import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
+import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 import type { AssetItem, ImportResult, MediaType, ProjectData, ProjectState, Slide } from '../shared/types';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
 const ASSETS_DIR = 'assets';
+
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'media',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true
+    }
+  }
+]);
 
 let mainWindow: BrowserWindow | null = null;
 let currentProjectFolder: string | null = null;
@@ -49,6 +63,105 @@ async function loadProject(folder: string): Promise<ProjectState> {
   return { folderPath: folder, data, lastSavedAt: data.updatedAt };
 }
 
+function resolveMediaPathFromUrl(rawUrl: string): { resolvedPath: string } | { status: number; message: string } {
+  if (!currentProjectFolder) {
+    return { status: 400, message: 'No project is open' };
+  }
+
+  try {
+    const requestUrl = new URL(rawUrl);
+    const relativePath = decodeURIComponent(`${requestUrl.host}${requestUrl.pathname}`).replace(/^\/+/, '');
+    const projectRoot = path.resolve(currentProjectFolder);
+    const resolvedPath = path.resolve(projectRoot, relativePath);
+    const rootWithSeparator = projectRoot.endsWith(path.sep) ? projectRoot : `${projectRoot}${path.sep}`;
+
+    if (resolvedPath !== projectRoot && !resolvedPath.startsWith(rootWithSeparator)) {
+      return { status: 403, message: 'Forbidden' };
+    }
+
+    return { resolvedPath };
+  } catch {
+    return { status: 400, message: 'Invalid media URL' };
+  }
+}
+
+function getMimeType(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.mp4') return 'video/mp4';
+  if (ext === '.webm') return 'video/webm';
+  if (ext === '.ogg' || ext === '.ogv') return 'video/ogg';
+  if (ext === '.mov') return 'video/quicktime';
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.gif') return 'image/gif';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.bmp') return 'image/bmp';
+  return 'application/octet-stream';
+}
+
+function toWebStream(filePath: string, start?: number, end?: number): ReadableStream<Uint8Array> {
+  const stream = start === undefined ? createReadStream(filePath) : createReadStream(filePath, { start, end });
+  return Readable.toWeb(stream) as ReadableStream<Uint8Array>;
+}
+
+async function serveMediaFile(request: Request, filePath: string): Promise<Response> {
+  const stat = await fs.stat(filePath);
+  const size = stat.size;
+  const range = request.headers.get('range');
+
+  const headers = new Headers();
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Content-Type', getMimeType(filePath));
+
+  if (!range) {
+    headers.set('Content-Length', String(size));
+    return new Response(toWebStream(filePath), { status: 200, headers });
+  }
+
+  const match = /^bytes=(\d+)-(\d*)$/i.exec(range.trim());
+  if (!match) {
+    return new Response('Invalid Range', { status: 416 });
+  }
+
+  const start = Number(match[1]);
+  const end = match[2] ? Number(match[2]) : size - 1;
+  if (Number.isNaN(start) || Number.isNaN(end) || start > end || start >= size) {
+    return new Response('Range Not Satisfiable', { status: 416 });
+  }
+
+  headers.set('Content-Range', `bytes ${start}-${end}/${size}`);
+  headers.set('Content-Length', String(end - start + 1));
+  return new Response(toWebStream(filePath, start, end), { status: 206, headers });
+}
+
+function registerMediaProtocol(): void {
+  if (typeof protocol.handle === 'function') {
+    protocol.handle('media', async (request) => {
+      const result = resolveMediaPathFromUrl(request.url);
+      if ('status' in result) {
+        return new Response(result.message, { status: result.status });
+      }
+
+      try {
+        return await serveMediaFile(request, result.resolvedPath);
+      } catch {
+        return new Response('Not found', { status: 404 });
+      }
+    });
+    return;
+  }
+
+  protocol.registerFileProtocol('media', (request, callback) => {
+    const result = resolveMediaPathFromUrl(request.url);
+    if ('status' in result) {
+      callback({ error: -10 });
+      return;
+    }
+
+    callback({ path: result.resolvedPath });
+  });
+}
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -69,6 +182,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  registerMediaProtocol();
   createWindow();
 
   app.on('activate', () => {
