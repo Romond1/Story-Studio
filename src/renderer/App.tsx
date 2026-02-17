@@ -1,16 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { AssetItem, ProjectState, TransitionType } from '../shared/types';
-import { BUILD_VERSION } from '../shared/version';
 
-function resolveAssetUrl(_projectDir: string, relativePath: string): string {
-  const normalizedRelative = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
-  const encodedRelative = normalizedRelative
-    .split('/')
-    .map((segment) => encodeURIComponent(segment))
-    .join('/');
-  return `media://${encodedRelative}`;
+function toFileUrl(projectFolder: string, relativePath: string): string {
+  const normalized = `${projectFolder}/${relativePath}`.replaceAll('\\', '/').replace(/\/+/g, '/');
+  return encodeURI(`file://${normalized}`);
 }
-
 
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
@@ -29,8 +23,6 @@ export function App() {
   const currentAsset = currentSlide ? assetsById.get(currentSlide.assetId) ?? null : null;
   const previousSlide = previousIndex !== null ? project?.data.slides[previousIndex] : null;
   const previousAsset = previousSlide ? assetsById.get(previousSlide.assetId) ?? null : null;
-  const resolvedCurrentSrc =
-    project && currentAsset ? resolveAssetUrl(project.folderPath, currentAsset.relativePath) : null;
 
   const goToSlide = (index: number) => {
     if (!project) return;
@@ -130,7 +122,6 @@ export function App() {
         <button onClick={onOpenProject}>Open Project</button>
         <button onClick={onImportMedia} disabled={!project}>Import Media</button>
         <button onClick={onSave} disabled={!project}>Save</button>
-        <span className="build-chip" title="Build marker">Build {BUILD_VERSION}</span>
       </header>
 
       <div className="content">
@@ -200,14 +191,10 @@ export function App() {
               </div>
             )}
           </div>
-          {import.meta.env.DEV && resolvedCurrentSrc && (
-            <div>Resolved src: {resolvedCurrentSrc}</div>
-          )}
         </main>
       </div>
 
       <footer className="status">
-        <div className="build-version">Build {BUILD_VERSION}</div>
         <strong>Project Status</strong>
         <div>Folder: {project?.folderPath ?? '-'}</div>
         <div>Slides: {project?.data.slides.length ?? 0}</div>
@@ -228,7 +215,7 @@ function MediaView({
   projectFolder: string;
   className?: string;
 }) {
-  const src = resolveAssetUrl(projectFolder, asset.relativePath);
+  const src = toFileUrl(projectFolder, asset.relativePath);
   if (asset.mediaType === 'image') {
     return <img src={src} className={className} alt={asset.originalName} />;
   }

@@ -26,17 +26,6 @@ body {
   border-bottom: 1px solid #2a2a2a;
 }
 
-.build-chip {
-  margin-left: auto;
-  align-self: center;
-  font-size: 0.8rem;
-  padding: 4px 8px;
-  border: 1px solid #3a3a3a;
-  border-radius: 999px;
-  background: #1a1a1a;
-  color: #cfd8ff;
-}
-
 button,
 select {
   padding: 6px 10px;
@@ -129,21 +118,12 @@ select {
 }
 
 .status {
-  position: relative;
   display: grid;
   gap: 4px;
   padding: 10px 12px;
   border-top: 1px solid #2a2a2a;
   background: #141414;
   font-size: 0.9rem;
-}
-
-.build-version {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
-  opacity: 0.8;
-  font-size: 0.8rem;
 }
 
 .error {
