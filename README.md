@@ -28,8 +28,3 @@ npm run build
 ```
 
 Packaged output is generated in `release/`.
-
-
-## Build version
-- Current iteration: **V4**
-- The app shows this build marker in the bottom-right of Project Status so installed builds can be matched to GitHub notes.

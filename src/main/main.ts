@@ -1,26 +1,12 @@
-import { app, BrowserWindow, dialog, ipcMain, net, protocol } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { pathToFileURL } from 'node:url';
 import type { AssetItem, ImportResult, MediaType, ProjectData, ProjectState, Slide } from '../shared/types';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
 const ASSETS_DIR = 'assets';
-
-
-protocol.registerSchemesAsPrivileged([
-  {
-    scheme: 'media',
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      stream: true
-    }
-  }
-]);
 
 let mainWindow: BrowserWindow | null = null;
 let currentProjectFolder: string | null = null;
@@ -63,26 +49,6 @@ async function loadProject(folder: string): Promise<ProjectState> {
   return { folderPath: folder, data, lastSavedAt: data.updatedAt };
 }
 
-function registerMediaProtocol(): void {
-  protocol.handle('media', (request) => {
-    if (!currentProjectFolder) {
-      return new Response('No project is open', { status: 400 });
-    }
-
-    const requestUrl = new URL(request.url);
-    const relativePath = decodeURIComponent(`${requestUrl.host}${requestUrl.pathname}`).replace(/^\/+/, '');
-    const projectRoot = path.resolve(currentProjectFolder);
-    const resolvedPath = path.resolve(projectRoot, relativePath);
-    const rootWithSeparator = projectRoot.endsWith(path.sep) ? projectRoot : `${projectRoot}${path.sep}`;
-
-    if (resolvedPath !== projectRoot && !resolvedPath.startsWith(rootWithSeparator)) {
-      return new Response('Forbidden', { status: 403 });
-    }
-
-    return net.fetch(pathToFileURL(resolvedPath).toString());
-  });
-}
-
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -103,7 +69,6 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  registerMediaProtocol();
   createWindow();
 
   app.on('activate', () => {

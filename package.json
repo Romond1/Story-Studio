@@ -1,6 +1,6 @@
 {
   "name": "story-studio",
-  "version": "1.0.4",
+  "version": "1.0.0",
   "description": "Reliable and simple presentation viewer",
   "main": "dist/main/main/main.js",
   "author": "",
