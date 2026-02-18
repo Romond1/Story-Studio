@@ -627,6 +627,9 @@ function MediaView({
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const targetZoomRef = useRef(1);
+  const targetPanRef = useRef({ x: 0, y: 0 });
+
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
@@ -674,21 +677,34 @@ function MediaView({
     const cursorX = event.clientX - rect.left;
     const cursorY = event.clientY - rect.top;
 
-    const nextZoom = Math.min(4, Math.max(1, zoom + (event.deltaY < 0 ? 0.2 : -0.2)));
-    if (nextZoom === zoom) return;
+    // Calculate target zoom
+    const zoomFactor = Math.pow(1.0015, -event.deltaY);
+    let newTargetZoom = targetZoomRef.current * zoomFactor;
+    newTargetZoom = Math.min(4, Math.max(1, newTargetZoom));
 
-    const contentX = (cursorX - pan.x) / zoom;
-    const contentY = (cursorY - pan.y) / zoom;
-    const nextPanX = cursorX - contentX * nextZoom;
-    const nextPanY = cursorY - contentY * nextZoom;
+    // Calculate target pan to anchor cursor
+    // We project the cursor into content space using the current targets,
+    // then calculate where it should be with the new zoom.
+    const currentTargetPan = targetPanRef.current;
+    const currentTargetZoom = targetZoomRef.current;
+    
+    const contentX = (cursorX - currentTargetPan.x) / currentTargetZoom;
+    const contentY = (cursorY - currentTargetPan.y) / currentTargetZoom;
 
-    setZoom(nextZoom);
-    setPan({ x: nextPanX, y: nextPanY });
+    const newTargetPanX = cursorX - (contentX * newTargetZoom);
+    const newTargetPanY = cursorY - (contentY * newTargetZoom);
+
+    targetZoomRef.current = newTargetZoom;
+    targetPanRef.current = { x: newTargetPanX, y: newTargetPanY };
   };
 
   const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 1) return;
     event.preventDefault();
+    // Sync targets to current state to stop any ongoing animation
+    targetZoomRef.current = zoom;
+    targetPanRef.current = pan;
+
     panStartRef.current = {
       x: event.clientX,
       y: event.clientY,
@@ -704,10 +720,12 @@ function MediaView({
     const onMove = (event: globalThis.MouseEvent) => {
       const deltaX = event.clientX - panStartRef.current.x;
       const deltaY = event.clientY - panStartRef.current.y;
-      setPan({
+      const nextPan = {
         x: panStartRef.current.panX + deltaX,
         y: panStartRef.current.panY + deltaY
-      });
+      };
+      setPan(nextPan);
+      targetPanRef.current = nextPan;
     };
 
     const onUp = () => {
@@ -721,6 +739,34 @@ function MediaView({
       window.removeEventListener('mouseup', onUp);
     };
   }, [isPanning]);
+
+  // Smooth zoom animation loop
+  useEffect(() => {
+    let frameId: number;
+    const loop = () => {
+      // Interpolate zoom
+      setZoom((prevZoom) => {
+        const targetZoom = targetZoomRef.current;
+        if (Math.abs(targetZoom - prevZoom) < 0.001) return targetZoom;
+        return prevZoom + (targetZoom - prevZoom) * 0.2;
+      });
+
+      // Interpolate pan
+      setPan((prevPan) => {
+        const targetPan = targetPanRef.current;
+        const dist = Math.hypot(targetPan.x - prevPan.x, targetPan.y - prevPan.y);
+        if (dist < 0.1) return targetPan;
+        return {
+          x: prevPan.x + (targetPan.x - prevPan.x) * 0.2,
+          y: prevPan.y + (targetPan.y - prevPan.y) * 0.2
+        };
+      });
+
+      frameId = requestAnimationFrame(loop);
+    };
+    frameId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
 
   useEffect(() => {
     const drawFrame = () => {

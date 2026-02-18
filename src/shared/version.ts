@@ -1,1 +1,2 @@
-export const BUILD_VERSION = 'V9';
+// AG_READWRITE_TEST
+export const BUILD_VERSION = 'V10';
