@@ -1,4 +1,4 @@
-export type TransitionType = 'fade' | 'crossfade';
+export type TransitionType = 'fade' | 'crossfade' | 'fade-black' | 'cinematic' | 'pixel' | 'blur' | 'card-slide';
 
 export type MediaType = 'image' | 'video';
 
@@ -28,9 +28,32 @@ export interface AssetItem {
   importedAt: string;
 }
 
+export interface BreakMedia {
+  id: string;
+  slideId: string;
+  fit: 'cover' | 'contain';
+}
+
 export interface Section {
   id: string;
   name: string;
+  type?: 'section' | 'break'; // Defaults to 'section'
+  // Break-specific content
+  questions?: string;
+  timer?: boolean;
+  timerMode?: 'countup' | 'countdown';
+  timerDuration?: number; // in seconds
+  thumbnailSize?: number;
+  font?: string;
+  fontSize?: number;
+  isBold?: boolean;
+  isItalic?: boolean;
+  align?: 'left' | 'center' | 'right';
+  position?: 'top' | 'center' | 'bottom';
+  background?: string;
+  backgroundOpacity?: number;
+  breakMedia?: BreakMedia[];
+  markerStrokes?: MarkerStroke[];
 }
 
 export interface Slide {
@@ -38,6 +61,8 @@ export interface Slide {
   assetId: string;
   sectionId: string;
   transition: TransitionType;
+  transitionDuration?: number;
+  transitionDirection?: 'left' | 'right' | 'up' | 'down';
   markerStrokes?: MarkerStroke[];
 }
 

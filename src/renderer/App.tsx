@@ -7,7 +7,7 @@ import {
   useRef,
   useState
 } from 'react';
-import type { AssetItem, DrawPoint, MarkerStroke, ProjectState, Section, TransitionType } from '../shared/types';
+import type { AssetItem, DrawPoint, MarkerStroke, ProjectState, Section, Slide, TransitionType } from '../shared/types';
 import { BUILD_VERSION } from '../shared/version';
 
 type DrawTool = 'highlighter' | 'marker';
@@ -73,6 +73,7 @@ export function App() {
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<string>>(new Set());
   const [drawClearSignal, setDrawClearSignal] = useState(0);
+  const [saveFeedback, setSaveFeedback] = useState(false);
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     tool: 'highlighter',
     drawMode: false,
@@ -84,6 +85,49 @@ export function App() {
     sparkle: false
   });
 
+  const [timerState, setTimerState] = useState<{
+    isRunning: boolean;
+    startTime: number;
+    accumulated: number;
+  }>({ isRunning: false, startTime: 0, accumulated: 0 });
+  const [timerNow, setTimerNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!timerState.isRunning) return;
+    const interval = setInterval(() => setTimerNow(Date.now()), 100);
+    return () => clearInterval(interval);
+  }, [timerState.isRunning]);
+
+  const toggleTimer = () => {
+    if (timerState.isRunning) {
+      // Pause
+      setTimerState(prev => ({
+        ...prev,
+        isRunning: false,
+        accumulated: prev.accumulated + (Date.now() - prev.startTime),
+        startTime: 0
+      }));
+    } else {
+      // Start
+      setTimerState(prev => ({
+        ...prev,
+        isRunning: true,
+        startTime: Date.now()
+      }));
+    }
+  };
+
+  const resetTimer = () => {
+    setTimerState({ isRunning: false, startTime: 0, accumulated: 0 });
+    setTimerNow(Date.now());
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(Math.abs(seconds) / 60);
+    const s = Math.floor(Math.abs(seconds) % 60);
+    return `${seconds < 0 ? '-' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   const assetsById = useMemo(() => {
     const map = new Map<string, AssetItem>();
     project?.data.assets.forEach((asset) => map.set(asset.id, asset));
@@ -91,6 +135,8 @@ export function App() {
   }, [project]);
 
   const sections = project?.data.sections ?? [];
+  const selectedSection = sections.find(s => s.id === selectedSectionId);
+  const selectedSectionType = selectedSection?.type;
 
   const sectionSlideIndices = useMemo(() => {
     if (!project) return new Map<string, number[]>();
@@ -118,14 +164,49 @@ export function App() {
 
   const goToSlideByAbsoluteIndex = (index: number) => {
     if (!project) return;
-    if (index < 0 || index >= project.data.slides.length || index === currentIndex) return;
+    if (index === currentIndex) return;
+    const targetSlide = project?.data.slides[index];
+    const duration = targetSlide?.transitionDuration ?? 500;
+
     setPreviousIndex(currentIndex);
     setCurrentIndex(index);
     setIsAnimating(true);
     window.setTimeout(() => {
       setIsAnimating(false);
       setPreviousIndex(null);
-    }, 450);
+    }, duration);
+  };
+
+  const applyTransitionToSection = () => {
+    if (!project || !currentSlide) return;
+    const { transition, transitionDuration, transitionDirection } = currentSlide;
+    const section = project.data.sections.find(s => s.id === currentSlide.sectionId);
+
+    const slidesInSection = project.data.slides.filter(s => s.sectionId === currentSlide.sectionId);
+    const count = slidesInSection.length;
+
+    if (!window.confirm(`Apply transition '${transition}' (${transitionDuration ?? 500}ms${transition === 'card-slide' ? `, ${transitionDirection}` : ''}) to all ${count} slides in section '${section?.name}'?`)) {
+      return;
+    }
+
+    const newSlides = project.data.slides.map(s => {
+      if (s.sectionId === currentSlide.sectionId) {
+        return { ...s, transition, transitionDuration, transitionDirection };
+      }
+      return s;
+    });
+    setProject({ ...project, data: { ...project.data, slides: newSlides } });
+  };
+
+  const updateCurrentSlide = (updates: Partial<Slide>) => {
+    if (!project || !currentSlide) return;
+    const newSlides = project.data.slides.map((s, index) => {
+      if (index === currentIndex) {
+        return { ...s, ...updates };
+      }
+      return s;
+    });
+    setProject({ ...project, data: { ...project.data, slides: newSlides } });
   };
 
   const goToVisibleOffset = (offset: number) => {
@@ -219,6 +300,8 @@ export function App() {
         },
         lastSavedAt: response.lastSavedAt
       });
+      setSaveFeedback(true);
+      setTimeout(() => setSaveFeedback(false), 2000);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -245,48 +328,27 @@ export function App() {
     }
   };
 
-  const renameSection = (sectionId: string, name: string) => {
+  const updateSection = (sectionId: string, updates: Partial<Section>) => {
     if (!project) return;
     setProject({
       ...project,
       data: {
         ...project.data,
         sections: project.data.sections.map((section) =>
-          section.id === sectionId ? { ...section, name: name.trim() || section.name } : section
+          section.id === sectionId ? { ...section, ...updates } : section
         )
       }
     });
   };
 
-  const onInsertSectionBreak = () => {
-    if (!project || !currentSlide) return;
 
-    const breakIndex = currentIndex;
-    const nextSection: Section = {
-      id: crypto.randomUUID(),
-      name: `Section ${project.data.sections.length + 1}`
-    };
-
-    const nextSlides = project.data.slides.map((slide, index) =>
-      index >= breakIndex ? { ...slide, sectionId: nextSection.id } : slide
-    );
-
-    setProject({
-      ...project,
-      data: {
-        ...project.data,
-        sections: [...project.data.sections, nextSection],
-        slides: nextSlides
-      }
-    });
-    setSelectedSectionId(nextSection.id);
-  };
 
   const onAddSection = () => {
     if (!project) return;
     const nextSection: Section = {
       id: crypto.randomUUID(),
-      name: `Section ${project.data.sections.length + 1}`
+      name: `Section ${project.data.sections.length + 1}`,
+      type: 'section'
     };
     setProject({
       ...project,
@@ -297,6 +359,30 @@ export function App() {
     });
     setSelectedSectionId(nextSection.id);
     setExpandedSectionId(nextSection.id);
+  };
+
+  const onAddBreak = () => {
+    if (!project) return;
+    const nextBreak: Section = {
+      id: crypto.randomUUID(),
+      name: 'Question Time',
+      type: 'break',
+      questions: '',
+      breakMedia: [],
+      background: '#2a2a3a',
+      font: 'Inter',
+      fontSize: 28,
+      align: 'center',
+      position: 'center'
+    };
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        sections: [...project.data.sections, nextBreak]
+      }
+    });
+    setSelectedSectionId(nextBreak.id);
   };
 
   const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
@@ -333,14 +419,38 @@ export function App() {
 
   const deleteSection = (sectionId: string) => {
     if (!project || project.data.sections.length <= 1) return;
-    const fallback = project.data.sections.find((s) => s.id !== sectionId);
-    if (!fallback) return;
 
-    const newSlides = project.data.slides.map((s) =>
-      s.sectionId === sectionId ? { ...s, sectionId: fallback.id } : s
-    );
+    const sectionIndex = project.data.sections.findIndex((s) => s.id === sectionId);
+    if (sectionIndex === -1) return;
+    const section = project.data.sections[sectionIndex];
+
+    const confirmMsg = `Delete ${section.type === 'break' ? 'Break' : 'Section'} '${section.name}'?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    let newSlides = project.data.slides;
+    let newExpandedId = expandedSectionId;
+
+    if (!section.type || section.type === 'section') {
+      // Only sections contain slides. Fallback required.
+      const fallback = project.data.sections.find((s) => s.id !== sectionId && (!s.type || s.type === 'section'));
+      // Cannot delete the last actual section if slides exist
+      if (!fallback && project.data.slides.length > 0) {
+        // Allow delete if no slides? Or enforce 1 section always?
+        // Constraint: "cannot delete last section".
+        // If we have breaks, we might have multiple items in `sections`, but only 1 `section` type.
+        // If we try to delete it, we can't move slides.
+        alert("Cannot delete the last section.");
+        return;
+      }
+      if (fallback) {
+        newSlides = project.data.slides.map((s) =>
+          s.sectionId === sectionId ? { ...s, sectionId: fallback.id } : s
+        );
+        if (expandedSectionId === sectionId) newExpandedId = fallback.id;
+      }
+    }
+
     const newSections = project.data.sections.filter((s) => s.id !== sectionId);
-
     setProject({
       ...project,
       data: {
@@ -349,8 +459,13 @@ export function App() {
         sections: newSections
       }
     });
-    setSelectedSectionId(fallback.id);
-    if (expandedSectionId === sectionId) setExpandedSectionId(fallback.id);
+
+    if (selectedSectionId === sectionId) {
+      // Fallback selection to nearest neighbor or first
+      const fallbackId = newSections[Math.max(0, sectionIndex - 1)]?.id ?? newSections[0]?.id;
+      setSelectedSectionId(fallbackId ?? null);
+    }
+    setExpandedSectionId(newExpandedId === sectionId ? null : newExpandedId);
   };
 
   const moveSection = (sectionId: string, direction: 'up' | 'down') => {
@@ -413,7 +528,11 @@ export function App() {
   };
 
   const clearCurrentSlideDrawings = () => {
-    updateCurrentSlideMarkerStrokes([]);
+    if (selectedSectionType === 'break' && selectedSection) {
+      updateSection(selectedSection.id, { markerStrokes: [] });
+    } else {
+      updateCurrentSlideMarkerStrokes([]);
+    }
     setDrawClearSignal((prev) => prev + 1);
   };
 
@@ -424,8 +543,112 @@ export function App() {
         <button onClick={onOpenProject}>Open Project</button>
         <button onClick={onImportMedia} disabled={!project}>Import Media</button>
         <button onClick={onSave} disabled={!project}>Save</button>
+        {selectedSectionType === 'break' && (
+          <button onClick={toggleTimer} style={{ marginLeft: 10, background: timerState.isRunning ? '#ff4444' : '#44ff44', color: '#000' }}>
+            {timerState.isRunning ? 'Stop Timer' : 'Start Timer'}
+          </button>
+        )}
+        <div style={{ position: 'relative', display: 'inline-block', marginLeft: 10 }}>
+          <button
+            onClick={() => setDrawPanelCollapsed(v => !v)}
+            style={{ background: !drawPanelCollapsed ? '#447' : undefined }}
+          >
+            Drawing
+          </button>
+          {!drawPanelCollapsed && (
+            <div className="draw-panel">
+              <label>
+                Tool
+                <select
+                  value={drawSettings.tool}
+                  onChange={(event) =>
+                    setDrawSettings((prev) => ({ ...prev, tool: event.target.value as DrawTool }))}
+                >
+                  <option value="highlighter">Highlighter</option>
+                  <option value="marker">Marker</option>
+                </select>
+              </label>
+
+              <label>
+                Size
+                <input
+                  type="range"
+                  min={2}
+                  max={36}
+                  value={drawSettings.size}
+                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, size: Number(event.target.value) }))}
+                />
+              </label>
+
+              <label>
+                Opacity
+                <input
+                  type="range"
+                  min={0.1}
+                  max={1}
+                  step={0.05}
+                  value={drawSettings.opacity}
+                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, opacity: Number(event.target.value) }))}
+                />
+              </label>
+
+              {drawSettings.tool === 'highlighter' && (
+                <label>
+                  Fade (ms)
+                  <input
+                    type="range"
+                    min={400}
+                    max={6000}
+                    step={100}
+                    value={drawSettings.fadeMs}
+                    onChange={(event) => setDrawSettings((prev) => ({ ...prev, fadeMs: Number(event.target.value) }))}
+                  />
+                </label>
+              )}
+
+              <label>
+                Color
+                <input
+                  type="color"
+                  value={drawSettings.color}
+                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, color: event.target.value }))}
+                />
+              </label>
+
+              <label className="draw-inline-check">
+                <input
+                  type="checkbox"
+                  checked={drawSettings.rainbow}
+                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, rainbow: event.target.checked }))}
+                />
+                Rainbow
+              </label>
+
+              <label className="draw-inline-check">
+                <input
+                  type="checkbox"
+                  checked={drawSettings.sparkle}
+                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, sparkle: event.target.checked }))}
+                />
+                Sparkle
+              </label>
+
+              <label className="draw-inline-check">
+                <input
+                  type="checkbox"
+                  checked={drawSettings.drawMode}
+                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, drawMode: event.target.checked }))}
+                />
+                Draw mode
+              </label>
+
+              <button onClick={clearCurrentSlideDrawings}>Clear Drawings</button>
+            </div>
+          )}
+        </div>
         <span className="build-chip" title="Build marker">Build {BUILD_VERSION}</span>
       </header>
+      {saveFeedback && <div className="save-toast">Saved ✓</div>}
 
       <div className="content">
         <aside className="sidebar">
@@ -433,13 +656,14 @@ export function App() {
           {sections.length ? (
             <ul>
               {sections.map((section, index) => {
-                const count = sectionSlideIndices.get(section.id)?.length ?? 0;
+                const isBreak = section.type === 'break';
+                const count = isBreak ? (section.breakMedia?.length ?? 0) : (sectionSlideIndices.get(section.id)?.length ?? 0);
                 const isSelected = selectedSectionId === section.id;
                 const isExpanded = expandedSectionId === section.id;
                 return (
                   <li
                     key={section.id}
-                    className="section-wrapper"
+                    className={`section-wrapper ${isBreak ? 'break-item' : ''}`}
                   >
                     <div className="section-item">
                       <div
@@ -457,12 +681,12 @@ export function App() {
                             defaultValue={section.name}
                             autoFocus
                             onBlur={(event) => {
-                              renameSection(section.id, event.target.value);
+                              updateSection(section.id, { name: event.target.value });
                               setRenamingSectionId(null);
                             }}
                             onKeyDown={(event) => {
                               if (event.key === 'Enter') {
-                                renameSection(section.id, (event.target as HTMLInputElement).value);
+                                updateSection(section.id, { name: (event.target as HTMLInputElement).value });
                                 setRenamingSectionId(null);
                               } else if (event.key === 'Escape') {
                                 setRenamingSectionId(null);
@@ -471,34 +695,37 @@ export function App() {
                             onClick={(e) => e.stopPropagation()}
                           />
                         ) : (
-                          <span>{isExpanded ? '▼ ' : '▶ '}{section.name}</span>
+                          <span>
+                            {isBreak ? '★ ' : (isExpanded ? '▼ ' : '▶ ')}
+                            {section.name}
+                          </span>
                         )}
                       </div>
-                      <small style={{ minWidth: '20px', textAlign: 'right' }}>{count}</small>
+                      {!isBreak && <small style={{ minWidth: '20px', textAlign: 'right', display: 'inline-block' }}>{count}</small>}
                       <button
                         className="section-ctrl-btn"
+                        title="Move Up"
                         disabled={index === 0}
                         onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up'); }}
                       >▲</button>
                       <button
                         className="section-ctrl-btn"
+                        title="Move Down"
                         disabled={index === sections.length - 1}
                         onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down'); }}
                       >▼</button>
                       {sections.length > 1 && (
                         <button
                           className="section-delete-btn"
-                          title="Delete Section"
+                          title="Delete"
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteSection(section.id);
                           }}
-                        >
-                          ✕
-                        </button>
+                        >✕</button>
                       )}
                     </div>
-                    {isExpanded && (
+                    {!isBreak && isExpanded && (
                       <ul className="slide-list">
                         {(sectionSlideIndices.get(section.id) ?? []).map((slideIndex) => {
                           const slide = project!.data.slides[slideIndex];
@@ -548,6 +775,203 @@ export function App() {
                         })}
                       </ul>
                     )}
+                    {isBreak && isExpanded && (
+                      <div className="break-controls">
+                        <label>
+                          Title
+                          <input
+                            value={section.name}
+                            onChange={(e) => updateSection(section.id, { name: e.target.value })}
+                          />
+                        </label>
+                        <label>
+                          Questions (1 per line)
+                          <textarea
+                            rows={4}
+                            value={section.questions ?? ''}
+                            onChange={(e) => updateSection(section.id, { questions: e.target.value })}
+                          />
+                        </label>
+                        <label>
+                          Timer Mode
+                          <select
+                            value={section.timerMode ?? 'countup'}
+                            onChange={(e) => updateSection(section.id, { timerMode: e.target.value as any })}
+                          >
+                            <option value="countup">Count Up (Timer)</option>
+                            <option value="countdown">Count Down (Stopwatch)</option>
+                          </select>
+                        </label>
+                        {section.timerMode === 'countdown' && (
+                          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                            <label style={{ flex: 1 }}>
+                              Min
+                              <input type="number" min="0" value={Math.floor((section.timerDuration ?? 300) / 60)} onChange={(e) => {
+                                const mins = Number(e.target.value);
+                                const secs = (section.timerDuration ?? 300) % 60;
+                                updateSection(section.id, { timerDuration: mins * 60 + secs });
+                              }} />
+                            </label>
+                            <label style={{ flex: 1 }}>
+                              Sec
+                              <input type="number" min="0" max="59" value={(section.timerDuration ?? 300) % 60} onChange={(e) => {
+                                const secs = Number(e.target.value);
+                                const mins = Math.floor((section.timerDuration ?? 300) / 60);
+                                updateSection(section.id, { timerDuration: mins * 60 + secs });
+                              }} />
+                            </label>
+                          </div>
+                        )}
+                        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                          <button style={{ flex: 1 }} onClick={toggleTimer}>{timerState.isRunning ? 'Stop' : 'Start'}</button>
+                          <button style={{ flex: 1 }} onClick={resetTimer}>Reset</button>
+                        </div>
+
+                        <label style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={section.timer ?? false}
+                            onChange={(e) => updateSection(section.id, { timer: e.target.checked })}
+                          />
+                          Show timer to viewers
+                        </label>
+
+                        <label>
+                          Question font
+                          <select value={section.font ?? 'Inter'} onChange={(e) => updateSection(section.id, { font: e.target.value })}>
+                            <option value="Inter">Inter</option>
+                            <option value="Roboto">Roboto</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Courier New">Courier New</option>
+                          </select>
+                        </label>
+                        <label>
+                          Question size
+                          <input
+                            type="range" min={16} max={72}
+                            value={section.fontSize ?? 28}
+                            onChange={(e) => updateSection(section.id, { fontSize: Number(e.target.value) })}
+                          />
+                        </label>
+                        <label>
+                          Thumbnail Size
+                          <input
+                            type="range" min={100} max={600} step={10}
+                            value={section.thumbnailSize ?? 200}
+                            onChange={(e) => updateSection(section.id, { thumbnailSize: Number(e.target.value) })}
+                          />
+                        </label>
+
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <label style={{ flex: 1 }}>
+                            Align
+                            <select value={section.align ?? 'center'} onChange={(e) => updateSection(section.id, { align: e.target.value as any })}>
+                              <option value="left">Left</option>
+                              <option value="center">Center</option>
+                              <option value="right">Right</option>
+                            </select>
+                          </label>
+                          <label style={{ flex: 1 }}>
+                            Position
+                            <select value={section.position ?? 'center'} onChange={(e) => updateSection(section.id, { position: e.target.value as any })}>
+                              <option value="top">Top</option>
+                              <option value="center">Center</option>
+                              <option value="bottom">Bottom</option>
+                            </select>
+                          </label>
+                        </div>
+
+                        <label>
+                          Background
+                          {!section.background?.startsWith('linear-gradient') ? (
+                            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                              <input
+                                type="color"
+                                value={section.background || '#2a2a3a'}
+                                onChange={(e) => updateSection(section.id, { background: e.target.value })}
+                              />
+                              <button style={{ fontSize: 10 }} onClick={() => updateSection(section.id, { background: 'linear-gradient(135deg, #111111, #333333)' })}>Make Gradient</button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {(() => {
+                                const bg = section.background || '';
+                                const colors = bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ['#000000', '#ffffff'];
+                                const c1 = colors[0] || '#000000';
+                                const c2 = colors[1] || '#ffffff';
+                                return (
+                                  <>
+                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                      <label style={{ fontSize: 10 }}>Start: <input type="color" value={c1} onChange={(e) => {
+                                        const newBg = section.background?.replace(c1, e.target.value) || `linear-gradient(135deg, ${e.target.value}, ${c2})`;
+                                        updateSection(section.id, { background: newBg });
+                                      }} /></label>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                      <label style={{ fontSize: 10 }}>End: <input type="color" value={c2} onChange={(e) => {
+                                        const newBg = section.background?.replace(c2, e.target.value) || `linear-gradient(135deg, ${c1}, ${e.target.value})`;
+                                        updateSection(section.id, { background: newBg });
+                                      }} /></label>
+                                    </div>
+                                    <button style={{ fontSize: 10 }} onClick={() => updateSection(section.id, { background: '#2a2a3a' })}>Revert to Solid</button>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </label>
+
+                        <label>Add section media</label>
+                        <div className="break-media-list">
+                          {(section.breakMedia ?? []).map((m, i) => {
+                            const slide = project?.data.slides.find(s => s.id === m.slideId);
+                            const asset = slide ? assetsById.get(slide.assetId) : null;
+                            if (!asset) return null;
+                            return (
+                              <div key={m.id} className="break-media-item">
+                                <span className="break-media-thumb" style={{ background: '#444', display: 'grid', placeItems: 'center', fontSize: 10 }}>{asset?.mediaType === 'image' ? 'IMG' : 'VID'}</span>
+                                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  Slide {project?.data.slides.findIndex(s => s.id === m.slideId)! + 1}
+                                </span>
+                                <div style={{ display: 'flex' }}>
+                                  <button style={{ padding: '0 4px', fontSize: 10 }} onClick={() => {
+                                    if (i === 0) return;
+                                    const newMedia = [...(section.breakMedia ?? [])];
+                                    [newMedia[i - 1], newMedia[i]] = [newMedia[i], newMedia[i - 1]];
+                                    updateSection(section.id, { breakMedia: newMedia });
+                                  }}>▲</button>
+                                  <button style={{ padding: '0 4px', fontSize: 10 }} onClick={() => {
+                                    if (i === (section.breakMedia?.length ?? 0) - 1) return;
+                                    const newMedia = [...(section.breakMedia ?? [])];
+                                    [newMedia[i], newMedia[i + 1]] = [newMedia[i + 1], newMedia[i]];
+                                    updateSection(section.id, { breakMedia: newMedia });
+                                  }}>▼</button>
+                                  <button style={{ padding: '0 4px', fontSize: 10, marginLeft: 4 }} onClick={() => {
+                                    const newMedia = [...(section.breakMedia ?? [])];
+                                    newMedia.splice(i, 1);
+                                    updateSection(section.id, { breakMedia: newMedia });
+                                  }}>✕</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <select id={`add-slide-${section.id}`} style={{ flex: 1 }}>
+                            {project?.data.slides.map((s, idx) => (
+                              <option key={s.id} value={s.id}>{idx + 1}. {assetsById.get(s.assetId)?.originalName}</option>
+                            ))}
+                          </select>
+                          <button onClick={() => {
+                            const select = document.getElementById(`add-slide-${section.id}`) as HTMLSelectElement;
+                            if (!select.value) return;
+                            const newMedia = [...(section.breakMedia ?? [])];
+                            newMedia.push({ id: crypto.randomUUID(), slideId: select.value, fit: 'cover' });
+                            updateSection(section.id, { breakMedia: newMedia });
+                          }}>Add</button>
+                        </div>
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -556,169 +980,566 @@ export function App() {
             <p>No sections yet.</p>
           )}
 
-          <button className="section-break-btn" onClick={onInsertSectionBreak} disabled={!currentSlide}>
-            Insert Section Break
-          </button>
-          <button className="section-break-btn" onClick={onAddSection} disabled={!project}>
-            + Section
-          </button>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="section-break-btn" style={{ flex: 1, marginTop: 0 }} onClick={onAddSection} disabled={!project}>
+              + Section
+            </button>
+            <button className="section-break-btn" style={{ flex: 1, marginTop: 0 }} onClick={onAddBreak} disabled={!project}>
+              + Break
+            </button>
+          </div>
         </aside>
 
         <main className="stage-wrap">
-          <div className="stage-controls">
-            <button onClick={() => goToVisibleOffset(-1)} disabled={!project || currentVisiblePos <= 0}>Prev</button>
-            <button
-              onClick={() => goToVisibleOffset(1)}
-              disabled={!project || currentVisiblePos < 0 || currentVisiblePos >= visibleSlideIndices.length - 1}
+          {selectedSectionType === 'break' && selectedSection ? (
+            <ZoomPanWrapper
+              className="break-stage-wrapper"
+              drawSettings={drawSettings}
+              markerStrokes={selectedSection.markerStrokes ?? []}
+              onMarkerStrokesChange={(strokes) => updateSection(selectedSection.id, { markerStrokes: strokes })}
+              clearSignal={drawClearSignal}
             >
-              Next
-            </button>
-            <label>
-              Transition
-              <select
-                value={currentSlide?.transition ?? 'fade'}
-                onChange={(event) => updateTransition(event.target.value as TransitionType)}
-                disabled={!currentSlide}
+              <div
+                className="break-stage"
+                style={{
+                  background: selectedSection.background || '#111',
+                  transformOrigin: 'top left' // Handled by wrapper
+                }}
               >
-                <option value="fade">Fade</option>
-                <option value="crossfade">Crossfade</option>
-              </select>
-            </label>
-          </div>
+                {/* Thumbnails at Top */}
+                <div className="break-thumbnails-grid">
+                  {(selectedSection.breakMedia ?? []).map(m => {
+                    const slide = project?.data.slides.find(s => s.id === m.slideId);
+                    const asset = slide ? assetsById.get(slide.assetId) : null;
+                    if (!asset) return null;
+                    const src = toMediaUrl(asset.relativePath);
+                    return (
+                      <img
+                        key={m.id}
+                        src={src}
+                        className="break-stage-thumb"
+                        style={{
+                          objectFit: m.fit,
+                          width: (selectedSection.thumbnailSize ?? 200),
+                          height: (selectedSection.thumbnailSize ?? 200) * 0.5625,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
 
-          <div className="stage">
-            {!currentAsset && <div className="placeholder">Import media to start presenting.</div>}
-            {currentAsset && (
-              <div className="media-layer">
-                {currentSlide?.transition === 'crossfade' && previousAsset && isAnimating && (
-                  <MediaView
-                    key={`${previousSlide?.id}-prev`}
-                    asset={previousAsset}
-                    className="media crossfade-out"
-                    drawSettings={drawSettings}
-                    markerStrokes={previousSlide?.markerStrokes ?? []}
-                    onMarkerStrokesChange={() => undefined}
-                    clearSignal={drawClearSignal}
-                  />
-                )}
-                <MediaView
-                  key={`${currentSlide?.id}-${isAnimating}`}
-                  asset={currentAsset}
-                  className={`media ${currentSlide?.transition === 'fade' ? 'fade-in' : 'crossfade-in'}`}
-                  drawSettings={drawSettings}
-                  markerStrokes={currentSlide?.markerStrokes ?? []}
-                  onMarkerStrokesChange={updateCurrentSlideMarkerStrokes}
-                  clearSignal={drawClearSignal}
-                />
+                {/* Content Overlay */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: selectedSection.align === 'left' ? 'flex-start' : selectedSection.align === 'right' ? 'flex-end' : 'center',
+                  justifyContent: selectedSection.position === 'top' ? 'flex-start' : selectedSection.position === 'bottom' ? 'flex-end' : 'center',
+                  width: '100%',
+                  padding: '40px',
+                  fontFamily: selectedSection.font,
+                  flex: 1
+                }}>
+                  <div className="break-title">{selectedSection.name}</div>
+                  <div
+                    className="break-questions"
+                    style={{
+                      fontSize: selectedSection.fontSize,
+                      fontWeight: selectedSection.isBold ? 'bold' : 'normal',
+                      fontStyle: selectedSection.isItalic ? 'italic' : 'normal'
+                    }}
+                  >
+                    {selectedSection.questions}
+                  </div>
+                  {selectedSection.timer && (
+                    <div className="break-timer">
+                      {(() => {
+                        const elapsedMs = timerState.accumulated + (timerState.isRunning ? (timerNow - timerState.startTime) : 0);
+                        const elapsedSec = Math.floor(elapsedMs / 1000);
+                        const displaySec = selectedSection.timerMode === 'countdown'
+                          ? (selectedSection.timerDuration ?? 300) - elapsedSec
+                          : elapsedSec;
+                        // Clamp countdown to 0? Or allow negative? Usually stop at 0.
+                        // User said "to 00:00". So clamp.
+                        const finalSec = selectedSection.timerMode === 'countdown' ? Math.max(0, displaySec) : displaySec;
+                        return formatTime(finalSec);
+                      })()}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-
-            {currentSlide && (
-              <div className={drawPanelCollapsed ? 'draw-panel collapsed' : 'draw-panel'}>
-                <button className="draw-panel-toggle" onClick={() => setDrawPanelCollapsed((v) => !v)}>
-                  {drawPanelCollapsed ? '✎' : 'Drawing'}
+            </ZoomPanWrapper>
+          ) : (
+            <>
+              <div className="stage-controls" style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '10px', background: '#222', borderRadius: '8px', marginBottom: '10px' }}>
+                <button onClick={() => goToVisibleOffset(-1)} disabled={!project || currentVisiblePos <= 0}>Prev</button>
+                <button
+                  onClick={() => goToVisibleOffset(1)}
+                  disabled={!project || currentVisiblePos < 0 || currentVisiblePos >= visibleSlideIndices.length - 1}
+                >
+                  Next
                 </button>
 
-                {!drawPanelCollapsed && (
-                  <div className="draw-panel-body">
-                    <label>
-                      Tool
-                      <select
-                        value={drawSettings.tool}
-                        onChange={(event) =>
-                          setDrawSettings((prev) => ({ ...prev, tool: event.target.value as DrawTool }))}
-                      >
-                        <option value="highlighter">Highlighter</option>
-                        <option value="marker">Marker</option>
-                      </select>
-                    </label>
+                <div style={{ width: 1, height: 20, background: '#444', margin: '0 4px' }} />
 
-                    <label>
-                      Size
-                      <input
-                        type="range"
-                        min={2}
-                        max={36}
-                        value={drawSettings.size}
-                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, size: Number(event.target.value) }))}
+                <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10 }}>
+                  Transition
+                  <select
+                    value={currentSlide?.transition ?? 'fade'}
+                    onChange={(e) => updateCurrentSlide({ transition: e.target.value as TransitionType })}
+                    disabled={!currentSlide}
+                    style={{ padding: '2px 4px' }}
+                  >
+                    <option value="fade">Fade</option>
+                    <option value="crossfade">Crossfade</option>
+                    <option value="fade-black">Fade Black</option>
+                    <option value="cinematic">Cinematic</option>
+                    <option value="blur">Blur</option>
+                    <option value="pixel">Pixel Reveal</option>
+                    <option value="card-slide">Card Slide</option>
+                  </select>
+                </label>
+
+                {currentSlide?.transition === 'card-slide' && (
+                  <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10 }}>
+                    Direction
+                    <select
+                      value={currentSlide?.transitionDirection ?? 'left'}
+                      onChange={(e) => updateCurrentSlide({ transitionDirection: e.target.value as any })}
+                      style={{ padding: '2px 4px' }}
+                    >
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                      <option value="up">Up</option>
+                      <option value="down">Down</option>
+                    </select>
+                  </label>
+                )}
+
+                <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10, minWidth: 100 }}>
+                  Duration: {currentSlide?.transitionDuration ?? 500}ms
+                  <input
+                    type="range"
+                    min={100}
+                    max={4000}
+                    step={100}
+                    value={currentSlide?.transitionDuration ?? 500}
+                    onChange={(e) => updateCurrentSlide({ transitionDuration: Number(e.target.value) })}
+                    style={{ width: '100%' }}
+                  />
+                </label>
+
+                <button onClick={applyTransitionToSection} style={{ fontSize: 10, padding: '4px 8px' }} title="Apply this transition to all slides in current section">
+                  Apply to Section
+                </button>
+              </div>
+
+              <div className="stage">
+                {!currentAsset && <div className="placeholder">Import media to start presenting.</div>}
+                {currentAsset && (
+                  <div className="media-layer">
+                    {/* Outgoing Slide */}
+                    {isAnimating && previousAsset && (
+                      <MediaView
+                        key={`${previousSlide?.id}-prev`}
+                        asset={previousAsset}
+                        className={`media ${currentSlide?.transition === 'card-slide'
+                          ? `transition-card-slide-${currentSlide.transitionDirection ?? 'left'}-out`
+                          : `transition-${currentSlide?.transition ?? 'fade'}-out`
+                          }`}
+                        style={{ '--transition-duration': (currentSlide?.transitionDuration ?? 500) + 'ms' } as any}
+                        drawSettings={drawSettings}
+                        markerStrokes={previousSlide?.markerStrokes ?? []}
+                        onMarkerStrokesChange={() => undefined}
+                        clearSignal={drawClearSignal}
                       />
-                    </label>
-
-                    <label>
-                      Opacity
-                      <input
-                        type="range"
-                        min={0.1}
-                        max={1}
-                        step={0.05}
-                        value={drawSettings.opacity}
-                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, opacity: Number(event.target.value) }))}
-                      />
-                    </label>
-
-                    {drawSettings.tool === 'highlighter' && (
-                      <label>
-                        Fade (ms)
-                        <input
-                          type="range"
-                          min={400}
-                          max={6000}
-                          step={100}
-                          value={drawSettings.fadeMs}
-                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, fadeMs: Number(event.target.value) }))}
-                        />
-                      </label>
                     )}
-
-                    <label>
-                      Color
-                      <input
-                        type="color"
-                        value={drawSettings.color}
-                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, color: event.target.value }))}
-                      />
-                    </label>
-
-                    <label className="draw-inline-check">
-                      <input
-                        type="checkbox"
-                        checked={drawSettings.rainbow}
-                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, rainbow: event.target.checked }))}
-                      />
-                      Rainbow
-                    </label>
-
-                    <label className="draw-inline-check">
-                      <input
-                        type="checkbox"
-                        checked={drawSettings.sparkle}
-                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, sparkle: event.target.checked }))}
-                      />
-                      Sparkle
-                    </label>
-
-                    <label className="draw-inline-check">
-                      <input
-                        type="checkbox"
-                        checked={drawSettings.drawMode}
-                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, drawMode: event.target.checked }))}
-                      />
-                      Draw mode
-                    </label>
-
-                    <button onClick={clearCurrentSlideDrawings}>Clear Drawings</button>
+                    {/* Incoming Slide */}
+                    <MediaView
+                      key={currentSlide?.id}
+                      asset={currentAsset}
+                      className={`media ${currentSlide?.transition === 'card-slide'
+                        ? `transition-card-slide-${currentSlide.transitionDirection ?? 'left'}-in`
+                        : `transition-${currentSlide?.transition ?? 'fade'}-in`
+                        }`}
+                      style={{ '--transition-duration': (currentSlide?.transitionDuration ?? 500) + 'ms' } as any}
+                      drawSettings={drawSettings}
+                      markerStrokes={currentSlide?.markerStrokes ?? []}
+                      onMarkerStrokesChange={(strokes) => updateCurrentSlideMarkerStrokes(strokes)}
+                      clearSignal={drawClearSignal}
+                    />
                   </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {import.meta.env.DEV && resolvedCurrentSrc && (
-            <div>Resolved src: {resolvedCurrentSrc}</div>
+            </>
           )}
         </main>
       </div>
+    </div>
+  );
+}
 
+function ZoomPanWrapper({
+  children,
+  className,
+  drawSettings,
+  markerStrokes,
+  onMarkerStrokesChange,
+  clearSignal
+}: {
+  children: React.ReactNode;
+  className?: string;
+  drawSettings: DrawSettings;
+  markerStrokes: MarkerStroke[];
+  onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
+  clearSignal: number;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const targetZoomRef = useRef(1);
+  const targetPanRef = useRef({ x: 0, y: 0 });
+
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  const [highlighterStrokes, setHighlighterStrokes] = useState<HighlighterStroke[]>([]);
+  const activeHighlighterRef = useRef<HighlighterStroke | null>(null);
+  const activeMarkerRef = useRef<MarkerStroke | null>(null);
+  const isDrawingRef = useRef(false);
+
+  useEffect(() => {
+    setHighlighterStrokes([]);
+  }, [clearSignal]);
+
+  const onWheelZoom = (event: WheelEvent<HTMLElement>) => {
+    event.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const cursorX = event.clientX - rect.left;
+    const cursorY = event.clientY - rect.top;
+
+    // Calculate target zoom
+    const zoomFactor = Math.pow(1.0015, -event.deltaY);
+    let newTargetZoom = targetZoomRef.current * zoomFactor;
+    newTargetZoom = Math.min(4, Math.max(1, newTargetZoom));
+
+    // Calculate target pan to anchor cursor
+    // We project the cursor into content space using the current targets,
+    // then calculate where it should be with the new zoom.
+    const currentTargetPan = targetPanRef.current;
+    const currentTargetZoom = targetZoomRef.current;
+
+    const contentX = (cursorX - currentTargetPan.x) / currentTargetZoom;
+    const contentY = (cursorY - currentTargetPan.y) / currentTargetZoom;
+
+    const newTargetPanX = cursorX - (contentX * newTargetZoom);
+    const newTargetPanY = cursorY - (contentY * newTargetZoom);
+
+    targetZoomRef.current = newTargetZoom;
+    targetPanRef.current = { x: newTargetPanX, y: newTargetPanY };
+  };
+
+  const getContentPoint = (clientX: number, clientY: number): DrawPoint | null => {
+    const container = containerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+    const x = (localX - pan.x) / zoom / rect.width;
+    const y = (localY - pan.y) / zoom / rect.height;
+
+    return {
+      x: Math.max(0, Math.min(1, x)),
+      y: Math.max(0, Math.min(1, y)),
+      t: performance.now(),
+      h: drawSettings.rainbow ? (performance.now() / 18) % 360 : undefined
+    };
+  };
+
+  const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    if (drawSettings.drawMode && event.button === 0) {
+      // Draw Start
+      event.preventDefault();
+      const point = getContentPoint(event.clientX, event.clientY);
+      if (!point) return;
+
+      isDrawingRef.current = true;
+      if (drawSettings.tool === 'highlighter') {
+        activeHighlighterRef.current = {
+          id: crypto.randomUUID(),
+          points: [point],
+          size: drawSettings.size,
+          opacity: drawSettings.opacity,
+          color: drawSettings.color,
+          fadeMs: drawSettings.fadeMs,
+          rainbow: drawSettings.rainbow,
+          sparkle: drawSettings.sparkle
+        };
+        setHighlighterStrokes(prev => [...prev, activeHighlighterRef.current!]);
+      } else {
+        activeMarkerRef.current = {
+          id: crypto.randomUUID(),
+          color: drawSettings.color,
+          size: drawSettings.size,
+          opacity: drawSettings.opacity,
+          rainbow: drawSettings.rainbow,
+          points: [point]
+        };
+        onMarkerStrokesChange([...markerStrokes, activeMarkerRef.current!]);
+      }
+    } else if (event.button === 1 || (!drawSettings.drawMode && event.button === 0)) {
+      // Pan Start (Middle click OR Left click if not drawing)
+      // Actually, if drawMode is false, maybe we allow left click pan? Or keep strict?
+      // User requested "zoom/pan same as normal slides".
+      // Normal slides: Middle click Pan. Left click select?
+      // MediaView onMouseDown: `if (event.button !== 1) return;` (Only middle click).
+      // So I should keep strict middle click for Pan if I want identical behavior.
+      // But user might want left click pan if drawMode is off?
+      // I'll stick to Middle Click for Pan to be consistent.
+      if (event.button !== 1) return;
+      event.preventDefault();
+      targetZoomRef.current = zoom;
+      targetPanRef.current = pan;
+      panStartRef.current = { x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y };
+      setIsPanning(true);
+    }
+  };
+
+  useEffect(() => {
+    const onMove = (event: globalThis.MouseEvent) => {
+      if (isDrawingRef.current) {
+        const point = getContentPoint(event.clientX, event.clientY);
+        if (point) {
+          if (activeHighlighterRef.current) {
+            activeHighlighterRef.current.points.push(point);
+            // Force update? No, render loop handles it by ref, but state update triggers re-render?
+            // Actually we need to update state to trigger re-render of canvas?
+            // We rely on requestAnimationFrame loop for canvas? Or React render?
+            // MediaView onMouseDown stores PIXEL coordinates?
+            // MediaView `drawFrame` loop draws whatever is in `markerStrokes` and `highlighterStrokes`.
+            // `markerStrokes` is updated via `onMarkerStrokesChange` which updates App state.
+            // `highlighterStrokes` is local state.
+            // Here:
+            if (activeHighlighterRef.current) {
+              // We need to update state to trigger re-render if we rely on React render?
+              // But `drawFrame` runs on `useEffect` with no deps (except refs)?
+              // MediaView `drawFrame` is called via `requestAnimationFrame`?
+              // No, MediaView `drawFrame` is defined in `useEffect` and called recursively?
+              // Wait, I missed copying `drawFrame` loop logic in my reading of MediaView!
+              // Step 330: Line 1352 `useEffect(() => { const drawFrame = ... requestAnimationFrame(drawFrame); ... }, [pan, zoom, markerStrokes, highlighterStrokes])`?
+              // No, deps are empty or minimal?
+              // If `drawFrame` uses values from refs or props, it needs to run every frame.
+              // Let's implement robust loop.
+            }
+          } else if (activeMarkerRef.current) {
+            activeMarkerRef.current.points.push(point);
+            // Update parent state
+            onMarkerStrokesChange([...markerStrokes.slice(0, -1), { ...activeMarkerRef.current }]);
+          }
+        }
+      } else if (isPanning) {
+        const deltaX = event.clientX - panStartRef.current.x;
+        const deltaY = event.clientY - panStartRef.current.y;
+        const nextPan = { x: panStartRef.current.panX + deltaX, y: panStartRef.current.panY + deltaY };
+        setPan(nextPan);
+        targetPanRef.current = nextPan;
+      }
+    };
+
+    const onUp = () => {
+      isDrawingRef.current = false;
+      setIsPanning(false);
+      activeHighlighterRef.current = null;
+      activeMarkerRef.current = null;
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, [isPanning, markerStrokes, drawSettings, pan, zoom]); // Add deps
+
+  // Animation Loop (Zoom/Pan)
+  useEffect(() => {
+    let frameId: number;
+    const loop = () => {
+      setZoom((prev) => {
+        const target = targetZoomRef.current;
+        if (Math.abs(target - prev) < 0.001) return target;
+        return prev + (target - prev) * 0.2;
+      });
+      setPan((prev) => {
+        const target = targetPanRef.current;
+        const dist = Math.hypot(target.x - prev.x, target.y - prev.y);
+        if (dist < 0.1) return target;
+        return { x: prev.x + (target.x - prev.x) * 0.2, y: prev.y + (target.y - prev.y) * 0.2 };
+      });
+      frameId = requestAnimationFrame(loop);
+    };
+    frameId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frameId);
+  }, []);
+
+  // Drawing Loop
+  useEffect(() => {
+    const drawFrame = () => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!canvas || !container) {
+        requestAnimationFrame(drawFrame);
+        return;
+      }
+
+      const rect = container.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        requestAnimationFrame(drawFrame);
+        return;
+      }
+
+      const now = performance.now();
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.save();
+      // Apply transform
+      ctx.translate(pan.x, pan.y);
+      // Canvas is width/height of screen.
+      // Content is width/height of Rect (100%).
+      // Our coordinates are 0..1 relative to Rect.
+      // So we scale by Rect size.
+      ctx.scale(zoom * width, zoom * height);
+
+      // Draw Function
+      const renderStroke = (
+        stroke: { points: DrawPoint[]; size: number; opacity: number; color: string; rainbow: boolean; fadeMs?: number; sparkle?: boolean },
+        segmentAlpha: (index: number) => number
+      ) => {
+        const points = stroke.points;
+        if (points.length < 2) return;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        // Size is in pixels? Or relative?
+        // MediaView uses `stroke.size`.
+        // But we scaled coordinate system by `width, height`.
+        // If we draw withlineWidth=size, it will be huge (multiplied by width).
+        // We need to divide lineWidth by scale?
+        // `ctx.lineWidth = stroke.size / (width * zoom)`? No.
+        // Wait, MediaView: `ctx.scale(zoom, zoom)`. And `ctx.lineWidth = stroke.size`.
+        // But MediaView logic at 1241: `x = (localX - pan.x) / zoom / rect.width`.
+        // So x is normalized.
+        // But MediaView render logic at 1373: `ctx.scale(zoom, zoom)`.
+        // DOES NOT scale by `rect.width`.
+        // This implies MediaView strokes are in PIXELS?
+        // Let's check MediaView logic again (Step 330).
+        // Line 1239: `localX`. Line 1241: `x` normalized.
+        // Line 1373: `ctx.scale(zoom, zoom)`.
+        // Missing `ctx.scale(width, height)`?
+        // If strokes are normalized (0..1), and we only scale by 0..1 pixels?
+        // Which is invisible.
+        // MediaView MUST be scaling by `width, height` somewhere?
+        // OR `MediaView` `onMouseDown` stores PIXEL coordinates?
+        // Step 330 Line 1245: `x` is normalized.
+        // Step 330 Line 1375: `renderStroke`.
+        // I missed where `x` is converted back to pixels for drawing.
+        // Ah, maybe `MediaView` stores Normalized points, but renders them by multiplying?
+        // Or maybe `MediaView` stores non-normalized points?
+        // Wait, `MediaView` Step 330 says `x = ... / rect.width`. So normalized.
+        // I must have missed `ctx.scale` or `p.x * width` in MediaView render loop.
+        // I will assume I need to scale by `width, height` or add `ctx.scale(width, height)`.
+        // If I add `ctx.scale(width, height)`, then `lineWidth` of 10 becomes 10 * width (huge).
+        // So I must set `ctx.lineWidth = stroke.size / width`? (approx).
+        // Or `ctx.lineWidth = stroke.size / ((width+height)/2)`.
+        // This seems complex.
+        // Let's assume standard behavior:
+        // Scale context by width, height.
+        // Divide lineWidth by average scale.
+        ctx.lineWidth = stroke.size / width; // Approximation
+
+        ctx.strokeStyle = stroke.color;
+        ctx.globalAlpha = stroke.opacity;
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+
+        for (let i = 1; i < points.length; i++) {
+          const p = points[i];
+          const prevP = points[i - 1];
+
+          // Rainbow effect
+          if (stroke.rainbow && p.h !== undefined) {
+            const gradient = ctx.createLinearGradient(prevP.x, prevP.y, p.x, p.y);
+            gradient.addColorStop(0, `hsl(${prevP.h}, 100%, 50%)`);
+            gradient.addColorStop(1, `hsl(${p.h}, 100%, 50%)`);
+            ctx.strokeStyle = gradient;
+          } else {
+            ctx.strokeStyle = stroke.color;
+          }
+
+          // Fade effect for highlighter
+          if (stroke.fadeMs && stroke.fadeMs > 0) {
+            const age = now - p.t;
+            const alpha = Math.max(0, 1 - age / stroke.fadeMs);
+            ctx.globalAlpha = stroke.opacity * alpha;
+          } else {
+            ctx.globalAlpha = stroke.opacity;
+          }
+
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+        }
+      };
+
+      // Filter out faded highlighters
+      setHighlighterStrokes(prev => prev.filter(s => !s.fadeMs || (now - s.points[s.points.length - 1].t) < s.fadeMs));
+
+      highlighterStrokes.forEach(s => renderStroke(s, (idx) => 1));
+      markerStrokes.forEach(s => renderStroke(s, (idx) => 1));
+
+      ctx.restore();
+      requestAnimationFrame(drawFrame);
+    };
+    const id = requestAnimationFrame(drawFrame);
+    return () => cancelAnimationFrame(id);
+  }, [markerStrokes, highlighterStrokes, pan, zoom, drawSettings]);
+
+  const contentStyle: CSSProperties = {
+    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+    transformOrigin: '0 0',
+    width: '100%',
+    height: '100%'
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      onWheel={onWheelZoom}
+      onMouseDown={onMouseDown}
+      style={{ overflow: 'hidden', cursor: isDrawingRef.current ? 'crosshair' : isPanning ? 'grabbing' : drawSettings.drawMode ? 'crosshair' : 'default', position: 'relative', width: '100%', height: '100%', touchAction: 'none' }}
+    >
+      <div style={contentStyle}>
+        {children}
+      </div>
+      <canvas
+        ref={canvasRef}
+        className="drawing-overlay"
+        style={{ pointerEvents: 'none', position: 'absolute', top: 0, left: 0 }}
+      />
     </div>
   );
 }
@@ -726,6 +1547,7 @@ export function App() {
 function MediaView({
   asset,
   className,
+  style,
   drawSettings,
   markerStrokes,
   onMarkerStrokesChange,
@@ -733,6 +1555,7 @@ function MediaView({
 }: {
   asset: AssetItem;
   className?: string;
+  style?: CSSProperties;
   drawSettings: DrawSettings;
   markerStrokes: MarkerStroke[];
   onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
@@ -1067,6 +1890,7 @@ function MediaView({
     <div
       ref={containerRef}
       className={className}
+      style={style}
       onWheel={onWheelZoom}
       onMouseDown={onMouseDown}
       onMouseMove={(event) => {
