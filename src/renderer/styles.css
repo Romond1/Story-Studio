@@ -16,7 +16,7 @@ body {
 .app {
   height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
 }
 
 .topbar {
@@ -71,8 +71,12 @@ input {
   margin-bottom: 6px;
 }
 
-.slide-btn.active {
+.slide-btn.selected {
   background: #2f5f9d;
+}
+
+.slide-btn.current-slide {
+  border-left: 2px solid #f7f06d;
 }
 
 .slide-row.drag-over .slide-btn {
@@ -81,10 +85,19 @@ input {
 
 .section-item {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
+  /* Name, Count, Del */
   gap: 6px;
   align-items: center;
   margin-bottom: 6px;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.section-item.drag-over {
+  border-color: #7aa7ff;
+  background: #1a1a2a;
 }
 
 .section-input {
@@ -102,6 +115,39 @@ input {
   border-radius: 6px;
 }
 
+.section-delete-btn {
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.section-delete-btn:hover {
+  opacity: 1;
+  background: #3a1111;
+  border-color: #522;
+}
+
+.section-ctrl-btn {
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.section-ctrl-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: #333;
+}
+
+.section-ctrl-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
 .section-break-btn {
   width: 100%;
   margin: 8px 0 12px;
@@ -110,6 +156,13 @@ input {
 .slide-btn small {
   opacity: 0.7;
   margin-left: 8px;
+}
+
+.sidebar .slide-list {
+  margin-top: 4px;
+  border-left: 2px solid #333;
+  padding-left: 8px;
+  margin-left: 4px;
 }
 
 .stage-wrap {
@@ -227,24 +280,6 @@ input {
   color: #999;
 }
 
-.status {
-  position: relative;
-  display: grid;
-  gap: 4px;
-  padding: 10px 12px;
-  border-top: 1px solid #2a2a2a;
-  background: #141414;
-  font-size: 0.9rem;
-}
-
-.build-version {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
-  opacity: 0.8;
-  font-size: 0.8rem;
-}
-
 .error {
   color: #f07070;
 }
@@ -265,6 +300,7 @@ input {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -274,6 +310,7 @@ input {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -283,6 +320,7 @@ input {
   from {
     opacity: 1;
   }
+
   to {
     opacity: 0;
   }

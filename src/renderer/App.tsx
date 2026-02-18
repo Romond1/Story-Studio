@@ -70,6 +70,8 @@ export function App() {
   const [draggedSlideIndex, setDraggedSlideIndex] = useState<number | null>(null);
   const [dragOverSlideIndex, setDragOverSlideIndex] = useState<number | null>(null);
   const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(false);
+  const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
+  const [selectedSlideIds, setSelectedSlideIds] = useState<Set<string>>(new Set());
   const [drawClearSignal, setDrawClearSignal] = useState(0);
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     tool: 'highlighter',
@@ -141,12 +143,18 @@ export function App() {
       setCurrentIndex(0);
       setPreviousIndex(null);
       setError(null);
+      setExpandedSectionId(null);
+      setSelectedSlideIds(new Set());
       return;
     }
 
     const normalized = ensureSections(next);
     setProject(normalized);
     setSelectedSectionId(normalized.data.sections[0]?.id ?? null);
+    setExpandedSectionId(normalized.data.sections[0]?.id ?? null);
+    if (normalized.data.slides[0]) {
+      setSelectedSlideIds(new Set([normalized.data.slides[0].id]));
+    }
     setCurrentIndex(0);
     setPreviousIndex(null);
     setError(null);
@@ -274,6 +282,23 @@ export function App() {
     setSelectedSectionId(nextSection.id);
   };
 
+  const onAddSection = () => {
+    if (!project) return;
+    const nextSection: Section = {
+      id: crypto.randomUUID(),
+      name: `Section ${project.data.sections.length + 1}`
+    };
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        sections: [...project.data.sections, nextSection]
+      }
+    });
+    setSelectedSectionId(nextSection.id);
+    setExpandedSectionId(nextSection.id);
+  };
+
   const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
 
   const reorderSlidesWithinSection = (fromIndex: number, toIndex: number) => {
@@ -305,6 +330,74 @@ export function App() {
     setDraggedSlideIndex(null);
     setDragOverSlideIndex(null);
   };
+
+  const deleteSection = (sectionId: string) => {
+    if (!project || project.data.sections.length <= 1) return;
+    const fallback = project.data.sections.find((s) => s.id !== sectionId);
+    if (!fallback) return;
+
+    const newSlides = project.data.slides.map((s) =>
+      s.sectionId === sectionId ? { ...s, sectionId: fallback.id } : s
+    );
+    const newSections = project.data.sections.filter((s) => s.id !== sectionId);
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: newSlides,
+        sections: newSections
+      }
+    });
+    setSelectedSectionId(fallback.id);
+    if (expandedSectionId === sectionId) setExpandedSectionId(fallback.id);
+  };
+
+  const moveSection = (sectionId: string, direction: 'up' | 'down') => {
+    if (!project) return;
+    const index = project.data.sections.findIndex((s) => s.id === sectionId);
+    if (index === -1) return;
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === project.data.sections.length - 1) return;
+
+    const newSections = [...project.data.sections];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    [newSections[index], newSections[swapIndex]] = [newSections[swapIndex], newSections[index]];
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        sections: newSections
+      }
+    });
+  };
+
+  const onSlideWrapperClick = (slideIndex: number, event: MouseEvent) => {
+    if (!project) return;
+    const slide = project.data.slides[slideIndex];
+    if (!slide) return;
+
+    if (event.ctrlKey || event.metaKey) {
+      const next = new Set(selectedSlideIds);
+      if (next.has(slide.id)) next.delete(slide.id);
+      else next.add(slide.id);
+      setSelectedSlideIds(next);
+    } else if (event.shiftKey) {
+      const start = Math.min(currentIndex, slideIndex);
+      const end = Math.max(currentIndex, slideIndex);
+      const next = new Set<string>();
+      for (let i = start; i <= end; i++) {
+        next.add(project.data.slides[i].id);
+      }
+      setSelectedSlideIds(next);
+    } else {
+      goToSlideByAbsoluteIndex(slideIndex);
+      setSelectedSlideIds(new Set([slide.id]));
+    }
+  };
+
+  /* Removed reorderSections logic */
 
   const updateCurrentSlideMarkerStrokes = (strokes: MarkerStroke[]) => {
     if (!project || !currentSlide) return;
@@ -339,40 +432,121 @@ export function App() {
           <h3>Sections</h3>
           {sections.length ? (
             <ul>
-              {sections.map((section) => {
+              {sections.map((section, index) => {
                 const count = sectionSlideIndices.get(section.id)?.length ?? 0;
                 const isSelected = selectedSectionId === section.id;
+                const isExpanded = expandedSectionId === section.id;
                 return (
-                  <li key={section.id} className="section-item">
-                    <button
-                      className={isSelected ? 'slide-btn active' : 'slide-btn'}
-                      onClick={() => selectSection(section.id)}
-                    >
-                      {renamingSectionId === section.id ? (
-                        <input
-                          className="section-input"
-                          defaultValue={section.name}
-                          autoFocus
-                          onBlur={(event) => {
-                            renameSection(section.id, event.target.value);
-                            setRenamingSectionId(null);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              renameSection(section.id, (event.target as HTMLInputElement).value);
+                  <li
+                    key={section.id}
+                    className="section-wrapper"
+                  >
+                    <div className="section-item">
+                      <div
+                        className="section-name"
+                        style={{ fontWeight: isSelected ? 'bold' : 'normal', cursor: 'pointer', flex: 1 }}
+                        onClick={() => {
+                          selectSection(section.id);
+                          setExpandedSectionId(isExpanded ? null : section.id);
+                        }}
+                        onDoubleClick={() => setRenamingSectionId(section.id)}
+                      >
+                        {renamingSectionId === section.id ? (
+                          <input
+                            className="section-input"
+                            defaultValue={section.name}
+                            autoFocus
+                            onBlur={(event) => {
+                              renameSection(section.id, event.target.value);
                               setRenamingSectionId(null);
-                            }
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                renameSection(section.id, (event.target as HTMLInputElement).value);
+                                setRenamingSectionId(null);
+                              } else if (event.key === 'Escape') {
+                                setRenamingSectionId(null);
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <span>{isExpanded ? '▼ ' : '▶ '}{section.name}</span>
+                        )}
+                      </div>
+                      <small style={{ minWidth: '20px', textAlign: 'right' }}>{count}</small>
+                      <button
+                        className="section-ctrl-btn"
+                        disabled={index === 0}
+                        onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up'); }}
+                      >▲</button>
+                      <button
+                        className="section-ctrl-btn"
+                        disabled={index === sections.length - 1}
+                        onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down'); }}
+                      >▼</button>
+                      {sections.length > 1 && (
+                        <button
+                          className="section-delete-btn"
+                          title="Delete Section"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteSection(section.id);
                           }}
-                        />
-                      ) : (
-                        <>
-                          <span>{section.name}</span>
-                          <small>{count}</small>
-                        </>
+                        >
+                          ✕
+                        </button>
                       )}
-                    </button>
-                    {renamingSectionId !== section.id && (
-                      <button className="rename-btn" onClick={() => setRenamingSectionId(section.id)}>Rename</button>
+                    </div>
+                    {isExpanded && (
+                      <ul className="slide-list">
+                        {(sectionSlideIndices.get(section.id) ?? []).map((slideIndex) => {
+                          const slide = project!.data.slides[slideIndex];
+                          const asset = assetsById.get(slide.assetId);
+                          const isDragging = draggedSlideIndex === slideIndex;
+                          const isDragOver = dragOverSlideIndex === slideIndex;
+                          const isSlideSelected = selectedSlideIds.has(slide.id);
+                          const isCurrent = slideIndex === currentIndex;
+
+                          return (
+                            <li
+                              key={slide.id}
+                              className={isDragOver ? 'slide-row drag-over' : 'slide-row'}
+                              onDragOver={(event) => {
+                                event.preventDefault();
+                                if (draggedSlideIndex !== null) {
+                                  setDragOverSlideIndex(slideIndex);
+                                }
+                              }}
+                              onDrop={(event) => {
+                                event.preventDefault();
+                                if (draggedSlideIndex === null) return;
+                                reorderSlidesWithinSection(draggedSlideIndex, slideIndex);
+                              }}
+                            >
+                              <button
+                                draggable
+                                className={`slide-btn ${isSlideSelected ? 'selected' : ''} ${isCurrent ? 'current-slide' : ''}`}
+                                onClick={(e) => onSlideWrapperClick(slideIndex, e)}
+                                onDragStart={(event) => {
+                                  event.stopPropagation();
+                                  event.dataTransfer.effectAllowed = 'move';
+                                  event.dataTransfer.setData('text/plain', String(slideIndex));
+                                  setDraggedSlideIndex(slideIndex);
+                                  setDragOverSlideIndex(slideIndex);
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedSlideIndex(null);
+                                  setDragOverSlideIndex(null);
+                                }}
+                              >
+                                <span>{slideIndex + 1}.</span> {asset?.originalName ?? 'Unknown asset'}
+                                {isDragging && <small> (Dragging)</small>}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     )}
                   </li>
                 );
@@ -385,56 +559,9 @@ export function App() {
           <button className="section-break-btn" onClick={onInsertSectionBreak} disabled={!currentSlide}>
             Insert Section Break
           </button>
-
-          <h3>Slides</h3>
-          {visibleSlideIndices.length ? (
-            <ul>
-              {visibleSlideIndices.map((slideIndex) => {
-                const slide = project!.data.slides[slideIndex];
-                const asset = assetsById.get(slide.assetId);
-                const isDragging = draggedSlideIndex === slideIndex;
-                const isDragOver = dragOverSlideIndex === slideIndex;
-                return (
-                  <li
-                    key={slide.id}
-                    className={isDragOver ? 'slide-row drag-over' : 'slide-row'}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      if (draggedSlideIndex !== null) {
-                        setDragOverSlideIndex(slideIndex);
-                      }
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      if (draggedSlideIndex === null) return;
-                      reorderSlidesWithinSection(draggedSlideIndex, slideIndex);
-                    }}
-                  >
-                    <button
-                      draggable
-                      className={slideIndex === currentIndex ? 'slide-btn active' : 'slide-btn'}
-                      onClick={() => goToSlideByAbsoluteIndex(slideIndex)}
-                      onDragStart={(event) => {
-                        event.dataTransfer.effectAllowed = 'move';
-                        event.dataTransfer.setData('text/plain', String(slideIndex));
-                        setDraggedSlideIndex(slideIndex);
-                        setDragOverSlideIndex(slideIndex);
-                      }}
-                      onDragEnd={() => {
-                        setDraggedSlideIndex(null);
-                        setDragOverSlideIndex(null);
-                      }}
-                    >
-                      <span>{slideIndex + 1}.</span> {asset?.originalName ?? 'Unknown asset'}
-                      {isDragging && <small> (Dragging)</small>}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p>No slides in this section.</p>
-          )}
+          <button className="section-break-btn" onClick={onAddSection} disabled={!project}>
+            + Section
+          </button>
         </aside>
 
         <main className="stage-wrap">
@@ -592,16 +719,6 @@ export function App() {
         </main>
       </div>
 
-      <footer className="status">
-        <div className="build-version">Build {BUILD_VERSION}</div>
-        <strong>Project Status</strong>
-        <div>Folder: {project?.folderPath ?? '-'}</div>
-        <div>Sections: {project?.data.sections.length ?? 0}</div>
-        <div>Slides: {project?.data.slides.length ?? 0}</div>
-        <div>Assets: {project?.data.assets.length ?? 0}</div>
-        <div>Last saved: {project?.lastSavedAt ?? '-'}</div>
-        {error && <div className="error">Error: {error}</div>}
-      </footer>
     </div>
   );
 }
@@ -687,7 +804,7 @@ function MediaView({
     // then calculate where it should be with the new zoom.
     const currentTargetPan = targetPanRef.current;
     const currentTargetZoom = targetZoomRef.current;
-    
+
     const contentX = (cursorX - currentTargetPan.x) / currentTargetZoom;
     const contentY = (cursorY - currentTargetPan.y) / currentTargetZoom;
 
