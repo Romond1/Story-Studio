@@ -1,7 +1,38 @@
-// src/renderer/App.tsx
-import { type CSSProperties, type MouseEvent, type WheelEvent, useMemo, useState } from 'react';
-import type { AssetItem, ProjectState, Section, TransitionType } from '../shared/types';
+import {
+  type CSSProperties,
+  type MouseEvent,
+  type WheelEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
+import type { AssetItem, DrawPoint, MarkerStroke, ProjectState, Section, TransitionType } from '../shared/types';
 import { BUILD_VERSION } from '../shared/version';
+
+type DrawTool = 'highlighter' | 'marker';
+
+interface DrawSettings {
+  tool: DrawTool;
+  drawMode: boolean;
+  size: number;
+  opacity: number;
+  fadeMs: number;
+  color: string;
+  rainbow: boolean;
+  sparkle: boolean;
+}
+
+interface HighlighterStroke {
+  id: string;
+  points: DrawPoint[];
+  size: number;
+  opacity: number;
+  color: string;
+  fadeMs: number;
+  rainbow: boolean;
+  sparkle: boolean;
+}
 
 function toMediaUrl(relativePath: string): string {
   const normalizedRelative = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
@@ -36,6 +67,20 @@ export function App() {
   const [previousIndex, setPreviousIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [draggedSlideIndex, setDraggedSlideIndex] = useState<number | null>(null);
+  const [dragOverSlideIndex, setDragOverSlideIndex] = useState<number | null>(null);
+  const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(false);
+  const [drawClearSignal, setDrawClearSignal] = useState(0);
+  const [drawSettings, setDrawSettings] = useState<DrawSettings>({
+    tool: 'highlighter',
+    drawMode: false,
+    size: 12,
+    opacity: 0.45,
+    fadeMs: 2000,
+    color: '#f7f06d',
+    rainbow: false,
+    sparkle: false
+  });
 
   const assetsById = useMemo(() => {
     const map = new Map<string, AssetItem>();
@@ -231,6 +276,54 @@ export function App() {
 
   const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
 
+  const reorderSlidesWithinSection = (fromIndex: number, toIndex: number) => {
+    if (!project) return;
+    if (fromIndex === toIndex) return;
+
+    const fromSlide = project.data.slides[fromIndex];
+    const toSlide = project.data.slides[toIndex];
+    if (!fromSlide || !toSlide || fromSlide.sectionId !== toSlide.sectionId) {
+      setDraggedSlideIndex(null);
+      setDragOverSlideIndex(null);
+      return;
+    }
+
+    const nextSlides = [...project.data.slides];
+    const [movedSlide] = nextSlides.splice(fromIndex, 1);
+    const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
+    nextSlides.splice(insertAt, 0, movedSlide);
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: nextSlides
+      }
+    });
+    setCurrentIndex(insertAt);
+    setPreviousIndex(null);
+    setDraggedSlideIndex(null);
+    setDragOverSlideIndex(null);
+  };
+
+  const updateCurrentSlideMarkerStrokes = (strokes: MarkerStroke[]) => {
+    if (!project || !currentSlide) return;
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: project.data.slides.map((slide, index) =>
+          index === currentIndex ? { ...slide, markerStrokes: strokes } : slide
+        )
+      }
+    });
+  };
+
+  const clearCurrentSlideDrawings = () => {
+    updateCurrentSlideMarkerStrokes([]);
+    setDrawClearSignal((prev) => prev + 1);
+  };
+
   return (
     <div className="app">
       <header className="topbar">
@@ -299,13 +392,41 @@ export function App() {
               {visibleSlideIndices.map((slideIndex) => {
                 const slide = project!.data.slides[slideIndex];
                 const asset = assetsById.get(slide.assetId);
+                const isDragging = draggedSlideIndex === slideIndex;
+                const isDragOver = dragOverSlideIndex === slideIndex;
                 return (
-                  <li key={slide.id}>
+                  <li
+                    key={slide.id}
+                    className={isDragOver ? 'slide-row drag-over' : 'slide-row'}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      if (draggedSlideIndex !== null) {
+                        setDragOverSlideIndex(slideIndex);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      if (draggedSlideIndex === null) return;
+                      reorderSlidesWithinSection(draggedSlideIndex, slideIndex);
+                    }}
+                  >
                     <button
+                      draggable
                       className={slideIndex === currentIndex ? 'slide-btn active' : 'slide-btn'}
                       onClick={() => goToSlideByAbsoluteIndex(slideIndex)}
+                      onDragStart={(event) => {
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', String(slideIndex));
+                        setDraggedSlideIndex(slideIndex);
+                        setDragOverSlideIndex(slideIndex);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedSlideIndex(null);
+                        setDragOverSlideIndex(null);
+                      }}
                     >
                       <span>{slideIndex + 1}.</span> {asset?.originalName ?? 'Unknown asset'}
+                      {isDragging && <small> (Dragging)</small>}
                     </button>
                   </li>
                 );
@@ -347,16 +468,124 @@ export function App() {
                     key={`${previousSlide?.id}-prev`}
                     asset={previousAsset}
                     className="media crossfade-out"
+                    drawSettings={drawSettings}
+                    markerStrokes={previousSlide?.markerStrokes ?? []}
+                    onMarkerStrokesChange={() => undefined}
+                    clearSignal={drawClearSignal}
                   />
                 )}
                 <MediaView
                   key={`${currentSlide?.id}-${isAnimating}`}
                   asset={currentAsset}
                   className={`media ${currentSlide?.transition === 'fade' ? 'fade-in' : 'crossfade-in'}`}
+                  drawSettings={drawSettings}
+                  markerStrokes={currentSlide?.markerStrokes ?? []}
+                  onMarkerStrokesChange={updateCurrentSlideMarkerStrokes}
+                  clearSignal={drawClearSignal}
                 />
               </div>
             )}
+
+            {currentSlide && (
+              <div className={drawPanelCollapsed ? 'draw-panel collapsed' : 'draw-panel'}>
+                <button className="draw-panel-toggle" onClick={() => setDrawPanelCollapsed((v) => !v)}>
+                  {drawPanelCollapsed ? '✎' : 'Drawing'}
+                </button>
+
+                {!drawPanelCollapsed && (
+                  <div className="draw-panel-body">
+                    <label>
+                      Tool
+                      <select
+                        value={drawSettings.tool}
+                        onChange={(event) =>
+                          setDrawSettings((prev) => ({ ...prev, tool: event.target.value as DrawTool }))}
+                      >
+                        <option value="highlighter">Highlighter</option>
+                        <option value="marker">Marker</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Size
+                      <input
+                        type="range"
+                        min={2}
+                        max={36}
+                        value={drawSettings.size}
+                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, size: Number(event.target.value) }))}
+                      />
+                    </label>
+
+                    <label>
+                      Opacity
+                      <input
+                        type="range"
+                        min={0.1}
+                        max={1}
+                        step={0.05}
+                        value={drawSettings.opacity}
+                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, opacity: Number(event.target.value) }))}
+                      />
+                    </label>
+
+                    {drawSettings.tool === 'highlighter' && (
+                      <label>
+                        Fade (ms)
+                        <input
+                          type="range"
+                          min={400}
+                          max={6000}
+                          step={100}
+                          value={drawSettings.fadeMs}
+                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, fadeMs: Number(event.target.value) }))}
+                        />
+                      </label>
+                    )}
+
+                    <label>
+                      Color
+                      <input
+                        type="color"
+                        value={drawSettings.color}
+                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, color: event.target.value }))}
+                      />
+                    </label>
+
+                    <label className="draw-inline-check">
+                      <input
+                        type="checkbox"
+                        checked={drawSettings.rainbow}
+                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, rainbow: event.target.checked }))}
+                      />
+                      Rainbow
+                    </label>
+
+                    <label className="draw-inline-check">
+                      <input
+                        type="checkbox"
+                        checked={drawSettings.sparkle}
+                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, sparkle: event.target.checked }))}
+                      />
+                      Sparkle
+                    </label>
+
+                    <label className="draw-inline-check">
+                      <input
+                        type="checkbox"
+                        checked={drawSettings.drawMode}
+                        onChange={(event) => setDrawSettings((prev) => ({ ...prev, drawMode: event.target.checked }))}
+                      />
+                      Draw mode
+                    </label>
+
+                    <button onClick={clearCurrentSlideDrawings}>Clear Drawings</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
           {import.meta.env.DEV && resolvedCurrentSrc && (
             <div>Resolved src: {resolvedCurrentSrc}</div>
           )}
@@ -379,51 +608,328 @@ export function App() {
 
 function MediaView({
   asset,
-  className
+  className,
+  drawSettings,
+  markerStrokes,
+  onMarkerStrokesChange,
+  clearSignal
 }: {
   asset: AssetItem;
   className?: string;
+  drawSettings: DrawSettings;
+  markerStrokes: MarkerStroke[];
+  onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
+  clearSignal: number;
 }) {
   const src = toMediaUrl(asset.relativePath);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const [zoom, setZoom] = useState(1);
-  const [origin, setOrigin] = useState('50% 50%');
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+
+  const [highlighterStrokes, setHighlighterStrokes] = useState<HighlighterStroke[]>([]);
+  const activeHighlighterRef = useRef<HighlighterStroke | null>(null);
+  const activeMarkerRef = useRef<MarkerStroke | null>(null);
+  const isDrawingRef = useRef(false);
+
+  useEffect(() => {
+    setHighlighterStrokes([]);
+  }, [clearSignal]);
 
   const mediaStyle: CSSProperties = {
-    transform: `scale(${zoom})`,
-    transformOrigin: origin,
-    transition: 'transform 50ms linear'
+    transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+    transformOrigin: '0 0',
+    transition: isPanning ? 'none' : 'transform 50ms linear',
+    cursor: isPanning ? 'grabbing' : zoom > 1 ? 'grab' : 'default'
+  };
+
+  const getContentPoint = (clientX: number, clientY: number): DrawPoint | null => {
+    const container = containerRef.current;
+    if (!container) return null;
+    const rect = container.getBoundingClientRect();
+    if (!rect.width || !rect.height) return null;
+
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+    const x = (localX - pan.x) / zoom / rect.width;
+    const y = (localY - pan.y) / zoom / rect.height;
+
+    return {
+      x: Math.max(0, Math.min(1, x)),
+      y: Math.max(0, Math.min(1, y)),
+      t: performance.now(),
+      h: drawSettings.rainbow ? (performance.now() / 18) % 360 : undefined
+    };
   };
 
   const onWheelZoom = (event: WheelEvent<HTMLElement>) => {
     event.preventDefault();
-    const next = Math.min(4, Math.max(1, zoom + (event.deltaY < 0 ? 0.2 : -0.2)));
-    setZoom(next);
-    if (next === 1) {
-      setOrigin('50% 50%');
+    const container = containerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const cursorX = event.clientX - rect.left;
+    const cursorY = event.clientY - rect.top;
+
+    const nextZoom = Math.min(4, Math.max(1, zoom + (event.deltaY < 0 ? 0.2 : -0.2)));
+    if (nextZoom === zoom) return;
+
+    const contentX = (cursorX - pan.x) / zoom;
+    const contentY = (cursorY - pan.y) / zoom;
+    const nextPanX = cursorX - contentX * nextZoom;
+    const nextPanY = cursorY - contentY * nextZoom;
+
+    setZoom(nextZoom);
+    setPan({ x: nextPanX, y: nextPanY });
+  };
+
+  const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    panStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      panX: pan.x,
+      panY: pan.y
+    };
+    setIsPanning(true);
+  };
+
+  useEffect(() => {
+    if (!isPanning) return;
+
+    const onMove = (event: globalThis.MouseEvent) => {
+      const deltaX = event.clientX - panStartRef.current.x;
+      const deltaY = event.clientY - panStartRef.current.y;
+      setPan({
+        x: panStartRef.current.panX + deltaX,
+        y: panStartRef.current.panY + deltaY
+      });
+    };
+
+    const onUp = () => {
+      setIsPanning(false);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [isPanning]);
+
+  useEffect(() => {
+    const drawFrame = () => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!canvas || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const now = performance.now();
+      ctx.clearRect(0, 0, width, height);
+      ctx.save();
+      ctx.translate(pan.x, pan.y);
+      ctx.scale(zoom, zoom);
+
+      const renderStroke = (
+        stroke: { points: DrawPoint[]; size: number; opacity: number; color: string; rainbow: boolean },
+        segmentAlpha: (index: number) => number
+      ) => {
+        const points = stroke.points;
+        if (points.length < 2) return;
+
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = stroke.size;
+
+        for (let i = 1; i < points.length; i += 1) {
+          const p0 = points[i - 1];
+          const p1 = points[i];
+          const alpha = Math.max(0, Math.min(1, segmentAlpha(i))) * stroke.opacity;
+          if (alpha <= 0) continue;
+          const hue = stroke.rainbow ? (p1.h ?? (now / 18 + i * 8)) : undefined;
+          ctx.strokeStyle = stroke.rainbow ? `hsla(${hue}, 95%, 62%, ${alpha})` : stroke.color;
+          if (!stroke.rainbow) {
+            const color = stroke.color;
+            const clean = color.startsWith('#') ? color.slice(1) : color;
+            if (clean.length === 6) {
+              const r = Number.parseInt(clean.slice(0, 2), 16);
+              const g = Number.parseInt(clean.slice(2, 4), 16);
+              const b = Number.parseInt(clean.slice(4, 6), 16);
+              ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+          }
+          ctx.beginPath();
+          ctx.moveTo(p0.x * width, p0.y * height);
+          ctx.lineTo(p1.x * width, p1.y * height);
+          ctx.stroke();
+        }
+      };
+
+      markerStrokes.forEach((stroke) => {
+        renderStroke(stroke, () => 1);
+      });
+
+      const activeHighlighter = activeHighlighterRef.current;
+      const allHighlighter = activeHighlighter ? [...highlighterStrokes, activeHighlighter] : highlighterStrokes;
+      allHighlighter.forEach((stroke) => {
+        renderStroke(stroke, (index) => {
+          const age = now - stroke.points[index].t;
+          return 1 - age / stroke.fadeMs;
+        });
+      });
+
+      const sparkleStroke = allHighlighter[allHighlighter.length - 1];
+      if (sparkleStroke?.sparkle && sparkleStroke.points.length > 0) {
+        const lastPoint = sparkleStroke.points[sparkleStroke.points.length - 1];
+        for (let i = 0; i < 6; i += 1) {
+          const angle = (now / 120 + i) * 1.7;
+          const dist = 2 + (i % 3) * 2;
+          const sx = lastPoint.x * width + Math.cos(angle) * dist;
+          const sy = lastPoint.y * height + Math.sin(angle) * dist;
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.3 - i * 0.04})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, Math.max(0.6, 2.2 - i * 0.25), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+
+      setHighlighterStrokes((prev) => prev.filter((stroke) => {
+        const lastPoint = stroke.points[stroke.points.length - 1];
+        return now - lastPoint.t < stroke.fadeMs;
+      }));
+    };
+
+    let raf = 0;
+    const loop = () => {
+      drawFrame();
+      raf = window.requestAnimationFrame(loop);
+    };
+    raf = window.requestAnimationFrame(loop);
+    return () => window.cancelAnimationFrame(raf);
+  }, [highlighterStrokes, markerStrokes, pan.x, pan.y, zoom]);
+
+  const handleDrawStart = (event: MouseEvent<HTMLCanvasElement>) => {
+    if (!drawSettings.drawMode || event.button !== 0) return;
+    const point = getContentPoint(event.clientX, event.clientY);
+    if (!point) return;
+    event.preventDefault();
+
+    isDrawingRef.current = true;
+    if (drawSettings.tool === 'highlighter') {
+      activeHighlighterRef.current = {
+        id: crypto.randomUUID(),
+        points: [point],
+        size: drawSettings.size,
+        opacity: drawSettings.opacity,
+        color: drawSettings.color,
+        fadeMs: drawSettings.fadeMs,
+        rainbow: drawSettings.rainbow,
+        sparkle: drawSettings.sparkle
+      };
+      return;
+    }
+
+    activeMarkerRef.current = {
+      id: crypto.randomUUID(),
+      points: [point],
+      size: drawSettings.size,
+      opacity: drawSettings.opacity,
+      color: drawSettings.color,
+      rainbow: drawSettings.rainbow
+    };
+  };
+
+  const handleDrawMove = (event: MouseEvent<HTMLCanvasElement>) => {
+    if (!drawSettings.drawMode || !isDrawingRef.current) return;
+    const point = getContentPoint(event.clientX, event.clientY);
+    if (!point) return;
+    event.preventDefault();
+
+    if (drawSettings.tool === 'highlighter' && activeHighlighterRef.current) {
+      activeHighlighterRef.current = {
+        ...activeHighlighterRef.current,
+        points: [...activeHighlighterRef.current.points, point]
+      };
+      return;
+    }
+
+    if (drawSettings.tool === 'marker' && activeMarkerRef.current) {
+      activeMarkerRef.current = {
+        ...activeMarkerRef.current,
+        points: [...activeMarkerRef.current.points, point]
+      };
     }
   };
 
-  const onPointerMove = (event: MouseEvent<HTMLElement>) => {
-    if (zoom <= 1) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 100;
-    const y = ((event.clientY - rect.top) / rect.height) * 100;
-    setOrigin(`${Math.min(100, Math.max(0, x))}% ${Math.min(100, Math.max(0, y))}%`);
+  const handleDrawEnd = () => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+
+    if (drawSettings.tool === 'highlighter' && activeHighlighterRef.current) {
+      const stroke = activeHighlighterRef.current;
+      if (stroke.points.length > 1) {
+        setHighlighterStrokes((prev) => [...prev, stroke]);
+      }
+      activeHighlighterRef.current = null;
+      return;
+    }
+
+    if (drawSettings.tool === 'marker' && activeMarkerRef.current) {
+      const stroke = activeMarkerRef.current;
+      if (stroke.points.length > 1) {
+        onMarkerStrokesChange([...markerStrokes, stroke]);
+      }
+      activeMarkerRef.current = null;
+    }
   };
 
-  if (asset.mediaType === 'image') {
-    return (
-      <img
-        src={src}
-        className={className}
-        alt={asset.originalName}
-        style={mediaStyle}
-        onWheel={onWheelZoom}
-        onMouseMove={onPointerMove}
-        title="Scroll to zoom"
-      />
-    );
-  }
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      onWheel={onWheelZoom}
+      onMouseDown={onMouseDown}
+      onMouseMove={(event) => {
+        if (isPanning) event.preventDefault();
+      }}
+      onMouseUp={() => setIsPanning(false)}
+      onMouseLeave={() => {
+        if (isPanning) setIsPanning(false);
+      }}
+      title="Mouse wheel: zoom | Middle mouse drag: pan"
+    >
+      {asset.mediaType === 'image' ? (
+        <img src={src} className="media-content" alt={asset.originalName} style={mediaStyle} draggable={false} />
+      ) : (
+        <video src={src} className="media-content" style={mediaStyle} controls autoPlay muted />
+      )}
 
-  return <video src={src} className={className} controls autoPlay muted />;
+      <canvas
+        ref={canvasRef}
+        className={drawSettings.drawMode ? 'drawing-overlay active' : 'drawing-overlay'}
+        onMouseDown={handleDrawStart}
+        onMouseMove={handleDrawMove}
+        onMouseUp={handleDrawEnd}
+        onMouseLeave={handleDrawEnd}
+        onWheel={onWheelZoom}
+      />
+    </div>
+  );
 }

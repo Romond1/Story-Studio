@@ -1,7 +1,22 @@
-// src/shared/types.ts
 export type TransitionType = 'fade' | 'crossfade';
 
 export type MediaType = 'image' | 'video';
+
+export interface DrawPoint {
+  x: number;
+  y: number;
+  t: number;
+  h?: number;
+}
+
+export interface MarkerStroke {
+  id: string;
+  color: string;
+  size: number;
+  opacity: number;
+  rainbow: boolean;
+  points: DrawPoint[];
+}
 
 export interface AssetItem {
   id: string;
@@ -23,6 +38,7 @@ export interface Slide {
   assetId: string;
   sectionId: string;
   transition: TransitionType;
+  markerStrokes?: MarkerStroke[];
 }
 
 export interface ProjectData {
