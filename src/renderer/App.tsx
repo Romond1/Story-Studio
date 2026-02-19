@@ -3,6 +3,7 @@ import {
   type MouseEvent,
   type WheelEvent,
   useEffect,
+  useCallback,
   useMemo,
   useRef,
   useState
@@ -162,7 +163,7 @@ export function App() {
   const resolvedCurrentSrc =
     project && currentAsset ? toMediaUrl(currentAsset.relativePath) : null;
 
-  const goToSlideByAbsoluteIndex = (index: number) => {
+  const goToSlideByAbsoluteIndex = useCallback((index: number) => {
     if (!project) return;
     if (index === currentIndex) return;
     const targetSlide = project?.data.slides[index];
@@ -175,7 +176,7 @@ export function App() {
       setIsAnimating(false);
       setPreviousIndex(null);
     }, duration);
-  };
+  }, [project, currentIndex]);
 
   const applyTransitionToSection = () => {
     if (!project || !currentSlide) return;
@@ -209,13 +210,64 @@ export function App() {
     setProject({ ...project, data: { ...project.data, slides: newSlides } });
   };
 
-  const goToVisibleOffset = (offset: number) => {
+  const goToVisibleOffset = useCallback((offset: number) => {
     const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
     if (currentVisiblePos < 0) return;
     const target = visibleSlideIndices[currentVisiblePos + offset];
     if (target === undefined) return;
     goToSlideByAbsoluteIndex(target);
-  };
+  }, [visibleSlideIndices, currentIndex, goToSlideByAbsoluteIndex]);
+
+  const selectSection = useCallback((sectionId: string) => {
+    setSelectedSectionId(sectionId);
+    const firstInSection = sectionSlideIndices.get(sectionId)?.[0];
+    if (firstInSection !== undefined) {
+      setCurrentIndex(firstInSection);
+    }
+  }, [sectionSlideIndices]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') {
+        goToVisibleOffset(1);
+      } else if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') {
+        goToVisibleOffset(-1);
+      } else if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (selectedSectionId) setExpandedSectionId(selectedSectionId);
+      } else if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (selectedSectionId && expandedSectionId === selectedSectionId) {
+          setExpandedSectionId(null);
+        }
+      } else {
+        const num = parseInt(e.key);
+        if (!isNaN(num) && num >= 1 && num <= 9) {
+          if (!project) return;
+          const sections = project.data.sections.filter(s => s.type !== 'break');
+          const section = sections[num - 1];
+          if (section) {
+            selectSection(section.id);
+          }
+        } else if (e.key.startsWith('F')) {
+          const fNum = parseInt(e.key.substring(1));
+          if (!isNaN(fNum) && fNum >= 1 && fNum <= 9) {
+            e.preventDefault(); // Prevent default browser actions for F-keys
+            if (!project) return;
+            const breaks = project.data.sections.filter(s => s.type === 'break');
+            const section = breaks[fNum - 1];
+            if (section) {
+              selectSection(section.id);
+            }
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [goToVisibleOffset, project, selectSection, selectedSectionId, expandedSectionId]);
 
   const setProjectState = (next: ProjectState | null) => {
     if (!next) {
@@ -320,13 +372,7 @@ export function App() {
     });
   };
 
-  const selectSection = (sectionId: string) => {
-    setSelectedSectionId(sectionId);
-    const firstInSection = sectionSlideIndices.get(sectionId)?.[0];
-    if (firstInSection !== undefined) {
-      setCurrentIndex(firstInSection);
-    }
-  };
+
 
   const updateSection = (sectionId: string, updates: Partial<Section>) => {
     if (!project) return;
@@ -345,9 +391,10 @@ export function App() {
 
   const onAddSection = () => {
     if (!project) return;
+    const count = project.data.sections.filter(s => s.type !== 'break').length;
     const nextSection: Section = {
       id: crypto.randomUUID(),
-      name: `Section ${project.data.sections.length + 1}`,
+      name: `Section ${count + 1}`,
       type: 'section'
     };
     setProject({
@@ -363,9 +410,10 @@ export function App() {
 
   const onAddBreak = () => {
     if (!project) return;
+    const count = project.data.sections.filter(s => s.type === 'break').length;
     const nextBreak: Section = {
       id: crypto.randomUUID(),
-      name: 'Question Time',
+      name: `Question Time ${count + 1}`,
       type: 'break',
       questions: '',
       breakMedia: [],
@@ -1900,7 +1948,6 @@ function MediaView({
       onMouseLeave={() => {
         if (isPanning) setIsPanning(false);
       }}
-      title="Mouse wheel: zoom | Middle mouse drag: pan"
     >
       {asset.mediaType === 'image' ? (
         <img src={src} className="media-content" alt={asset.originalName} style={mediaStyle} draggable={false} />

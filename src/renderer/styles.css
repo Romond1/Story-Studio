@@ -76,7 +76,8 @@ input {
 }
 
 .slide-btn.current-slide {
-  border-left: 2px solid #f7f06d;
+  border: 1px solid #ff4444;
+  box-shadow: 0 0 8px rgba(255, 68, 68, 0.6);
 }
 
 .slide-row.drag-over .slide-btn {
