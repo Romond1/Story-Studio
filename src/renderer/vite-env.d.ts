@@ -8,6 +8,7 @@ declare global {
       createProject: () => Promise<ProjectState | null>;
       openProject: () => Promise<ProjectState | null>;
       importMedia: () => Promise<ImportResult | null>;
+      importAudio: () => Promise<AssetItem[] | null>;
       saveProject: (data: ProjectData) => Promise<{ lastSavedAt: string } | null>;
       forceClose: () => void;
       onRequestClose: (callback: () => void) => () => void;

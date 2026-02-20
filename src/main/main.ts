@@ -29,10 +29,12 @@ let currentProjectFolder: string | null = null;
 
 const imageExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
 const videoExts = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi']);
+const audioExts = new Set(['.mp3', '.wav', '.ogg', '.aac', '.m4a']);
 
 function detectMediaType(ext: string): MediaType | null {
   if (imageExts.has(ext)) return 'image';
   if (videoExts.has(ext)) return 'video';
+  if (audioExts.has(ext)) return 'audio';
   return null;
 }
 
@@ -119,6 +121,10 @@ function getMimeType(filePath: string): string {
   if (ext === '.gif') return 'image/gif';
   if (ext === '.webp') return 'image/webp';
   if (ext === '.bmp') return 'image/bmp';
+  if (ext === '.mp3') return 'audio/mpeg';
+  if (ext === '.wav') return 'audio/wav';
+  if (ext === '.aac') return 'audio/aac';
+  if (ext === '.m4a') return 'audio/mp4';
   return 'application/octet-stream';
 }
 
@@ -343,4 +349,43 @@ ipcMain.handle('project:save', async (_, data: ProjectData) => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
   const lastSavedAt = await writeProjectAtomic(currentProjectFolder, data);
   return { lastSavedAt };
+});
+
+ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => {
+  if (!currentProjectFolder) throw new Error('Create or open a project first');
+
+  const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
+    title: 'Import Audio',
+    properties: ['openFile', 'multiSelections'],
+    filters: [
+      { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'aac', 'm4a'] }
+    ]
+  });
+  if (canceled || filePaths.length === 0) return null;
+
+  const importedAssets: AssetItem[] = [];
+
+  for (const sourcePath of filePaths) {
+    const ext = path.extname(sourcePath).toLowerCase();
+    const mediaType = detectMediaType(ext);
+    if (mediaType !== 'audio') continue;
+
+    const id = randomUUID();
+    const filename = `${id}${ext}`;
+    const targetPath = path.join(currentProjectFolder, ASSETS_DIR, filename);
+    const stat = await fs.stat(sourcePath);
+    await fs.copyFile(sourcePath, targetPath);
+
+    importedAssets.push({
+      id,
+      relativePath: path.join(ASSETS_DIR, filename).replaceAll('\\', '/'),
+      filename,
+      originalName: path.basename(sourcePath),
+      mediaType,
+      sizeBytes: stat.size,
+      importedAt: new Date().toISOString()
+    });
+  }
+
+  return importedAssets;
 });

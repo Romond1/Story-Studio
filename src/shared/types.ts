@@ -1,6 +1,12 @@
 export type TransitionType = 'fade' | 'crossfade' | 'fade-black' | 'cinematic' | 'pixel' | 'blur' | 'card-slide';
 
-export type MediaType = 'image' | 'video';
+export type MediaType = 'image' | 'video' | 'audio';
+
+export interface AudioClip {
+  url: string;
+  volume: number;
+  name?: string;
+}
 
 export interface DrawPoint {
   x: number;
@@ -54,6 +60,7 @@ export interface Section {
   backgroundOpacity?: number;
   breakMedia?: BreakMedia[];
   markerStrokes?: MarkerStroke[];
+  bgm?: AudioClip;
 }
 
 export interface Slide {
@@ -64,6 +71,9 @@ export interface Slide {
   transitionDuration?: number;
   transitionDirection?: 'left' | 'right' | 'up' | 'down';
   markerStrokes?: MarkerStroke[];
+  dialogue?: AudioClip[];
+  sfx?: AudioClip[];
+  bgm?: AudioClip;
 }
 
 export interface ProjectData {
