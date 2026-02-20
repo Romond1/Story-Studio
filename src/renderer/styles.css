@@ -27,7 +27,7 @@ body {
 }
 
 .build-chip {
-  margin-left: auto;
+  margin-left: 10px;
   align-self: center;
   font-size: 0.8rem;
   padding: 4px 8px;

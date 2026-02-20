@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { AssetItem, DrawPoint, MarkerStroke, ProjectState, Section, Slide, TransitionType } from '../shared/types';
 import { BUILD_VERSION } from '../shared/version';
+import { type AppMode, DEFAULT_MODE, ensureEditMode } from './mode';
 
 type DrawTool = 'highlighter' | 'marker';
 
@@ -62,6 +63,7 @@ function ensureSections(project: ProjectState): ProjectState {
 
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
+  const [appMode, setAppMode] = useState<AppMode>(DEFAULT_MODE);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [renamingSectionId, setRenamingSectionId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -226,6 +228,27 @@ export function App() {
     }
   }, [sectionSlideIndices]);
 
+  const toggleMode = useCallback(() => {
+    setAppMode(prev => {
+      const next = prev === 'edit' ? 'teach' : 'edit';
+      console.log(`MODE: ${next}`);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'm' || e.key === 'M')) {
+        // It must work even if focus is inside inputs (unless that breaks text typing; then ignore when target is input/textarea).
+        // Ctrl+Shift+M usually doesn't type text, so we allow it.
+        e.preventDefault();
+        toggleMode();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, [toggleMode]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -312,6 +335,7 @@ export function App() {
   };
 
   const onImportMedia = async () => {
+    if (!ensureEditMode(appMode, 'import media')) return;
     if (!project) return;
     try {
       const result = await window.appApi.importMedia();
@@ -340,6 +364,7 @@ export function App() {
   };
 
   const onSave = async () => {
+    if (!ensureEditMode(appMode, 'save')) return;
     if (!project) return;
     try {
       const response = await window.appApi.saveProject(project.data);
@@ -390,6 +415,7 @@ export function App() {
 
 
   const onAddSection = () => {
+    if (!ensureEditMode(appMode, 'add section')) return;
     if (!project) return;
     const count = project.data.sections.filter(s => s.type !== 'break').length;
     const nextSection: Section = {
@@ -409,6 +435,7 @@ export function App() {
   };
 
   const onAddBreak = () => {
+    if (!ensureEditMode(appMode, 'add break')) return;
     if (!project) return;
     const count = project.data.sections.filter(s => s.type === 'break').length;
     const nextBreak: Section = {
@@ -436,6 +463,7 @@ export function App() {
   const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
 
   const reorderSlidesWithinSection = (fromIndex: number, toIndex: number) => {
+    if (!ensureEditMode(appMode, 'reorder slides')) return;
     if (!project) return;
     if (fromIndex === toIndex) return;
 
@@ -466,6 +494,7 @@ export function App() {
   };
 
   const deleteSection = (sectionId: string) => {
+    if (!ensureEditMode(appMode, 'delete section')) return;
     if (!project || project.data.sections.length <= 1) return;
 
     const sectionIndex = project.data.sections.findIndex((s) => s.id === sectionId);
@@ -517,6 +546,7 @@ export function App() {
   };
 
   const moveSection = (sectionId: string, direction: 'up' | 'down') => {
+    if (!ensureEditMode(appMode, 'reorder section')) return;
     if (!project) return;
     const index = project.data.sections.findIndex((s) => s.id === sectionId);
     if (index === -1) return;
@@ -596,6 +626,9 @@ export function App() {
             {timerState.isRunning ? 'Stop Timer' : 'Start Timer'}
           </button>
         )}
+        <div style={{ marginLeft: 'auto', marginRight: '10px', fontSize: '0.8rem', opacity: 0.7, alignSelf: 'center', fontWeight: 'bold' }}>
+          {appMode.toUpperCase()}
+        </div>
         <div style={{ position: 'relative', display: 'inline-block', marginLeft: 10 }}>
           <button
             onClick={() => setDrawPanelCollapsed(v => !v)}
@@ -1656,7 +1689,7 @@ function MediaView({
     };
   };
 
-  const onWheelZoom = (event: WheelEvent<HTMLElement>) => {
+  const onWheelZoom = useCallback((event: globalThis.WheelEvent | WheelEvent<HTMLElement>) => {
     event.preventDefault();
     const container = containerRef.current;
     if (!container) return;
@@ -1684,7 +1717,16 @@ function MediaView({
 
     targetZoomRef.current = newTargetZoom;
     targetPanRef.current = { x: newTargetPanX, y: newTargetPanY };
-  };
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const handler = (e: globalThis.WheelEvent) => onWheelZoom(e);
+    container.addEventListener('wheel', handler, { passive: false });
+    return () => container.removeEventListener('wheel', handler);
+  }, [onWheelZoom]);
+
 
   const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 1) return;
@@ -1939,7 +1981,6 @@ function MediaView({
       ref={containerRef}
       className={className}
       style={style}
-      onWheel={onWheelZoom}
       onMouseDown={onMouseDown}
       onMouseMove={(event) => {
         if (isPanning) event.preventDefault();
@@ -1962,7 +2003,6 @@ function MediaView({
         onMouseMove={handleDrawMove}
         onMouseUp={handleDrawEnd}
         onMouseLeave={handleDrawEnd}
-        onWheel={onWheelZoom}
       />
     </div>
   );
