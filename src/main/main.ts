@@ -24,6 +24,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 let mainWindow: BrowserWindow | null = null;
+let creatingMainWindow = false;
 let currentProjectFolder: string | null = null;
 
 const imageExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
@@ -184,7 +185,11 @@ function registerMediaProtocol(): void {
   });
 }
 
-function createWindow(): void {
+function createMainWindow(): void {
+  if (mainWindow || creatingMainWindow) return;
+  creatingMainWindow = true;
+  console.log('[main] createMainWindow called');
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 760,
@@ -201,16 +206,40 @@ function createWindow(): void {
   } else {
     void mainWindow.loadFile(path.join(__dirname, '../../renderer/index.html'));
   }
+
+  mainWindow.on('close', (e) => {
+    if (forceClose) return;
+    e.preventDefault();
+    mainWindow?.webContents.send('app:request-close');
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+    creatingMainWindow = false;
+  });
 }
 
-app.whenReady().then(() => {
-  registerMediaProtocol();
-  createWindow();
+let forceClose = false;
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+ipcMain.on('app:force-close', () => {
+  forceClose = true;
+  mainWindow?.close();
 });
+
+const isSingleInstance = app.requestSingleInstanceLock();
+if (!isSingleInstance) {
+  console.log('[main] Quitting secondary instance');
+  app.quit();
+} else {
+  app.whenReady().then(() => {
+    registerMediaProtocol();
+    createMainWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    });
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

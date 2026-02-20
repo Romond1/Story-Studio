@@ -9,6 +9,8 @@ declare global {
       openProject: () => Promise<ProjectState | null>;
       importMedia: () => Promise<ImportResult | null>;
       saveProject: (data: ProjectData) => Promise<{ lastSavedAt: string } | null>;
+      forceClose: () => void;
+      onRequestClose: (callback: () => void) => () => void;
     };
   }
 }

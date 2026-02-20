@@ -14,6 +14,12 @@ import { type AppMode, DEFAULT_MODE, ensureEditMode } from './mode';
 
 type DrawTool = 'highlighter' | 'marker';
 
+// Internal type for communication, not strict state control
+interface ViewportState {
+  zoom: number;
+  pan: { x: number; y: number };
+}
+
 interface DrawSettings {
   tool: DrawTool;
   drawMode: boolean;
@@ -63,6 +69,16 @@ function ensureSections(project: ProjectState): ProjectState {
 
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
+  // Track viewport of ACTIVE slide without triggering re-renders
+  const viewportRef = useRef<ViewportState>({ zoom: 1, pan: { x: 0, y: 0 } });
+  // Track playback time of ACTIVE media (for seamless transition freezing)
+  const lastMediaTimeRef = useRef(0);
+
+  // Transition UI Staging State
+  const [stagedTransition, setStagedTransition] = useState<TransitionType>('fade');
+  const [stagedDuration, setStagedDuration] = useState(500);
+  const [stagedDirection, setStagedDirection] = useState<'left' | 'right' | 'up' | 'down'>('left');
+
   const [appMode, setAppMode] = useState<AppMode>(DEFAULT_MODE);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [renamingSectionId, setRenamingSectionId] = useState<string | null>(null);
@@ -76,7 +92,11 @@ export function App() {
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(null);
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<string>>(new Set());
   const [drawClearSignal, setDrawClearSignal] = useState(0);
-  const [saveFeedback, setSaveFeedback] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'create' | 'open' | 'close' | null>(null);
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'teach' | 'edit'; duration: number; id: number } | null>(null);
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     tool: 'highlighter',
     drawMode: false,
@@ -87,6 +107,7 @@ export function App() {
     rainbow: false,
     sparkle: false
   });
+
 
   const [timerState, setTimerState] = useState<{
     isRunning: boolean;
@@ -125,11 +146,33 @@ export function App() {
     setTimerNow(Date.now());
   };
 
+  // Check for unsaved changes on close
+  // Handle window close request from main process
+  useEffect(() => {
+    const unsub = window.appApi.onRequestClose(() => {
+      if (isDirty) {
+        setPendingAction('close');
+        setShowConfirmModal(true);
+      } else {
+        window.appApi.forceClose();
+      }
+    });
+    return () => unsub();
+  }, [isDirty]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(Math.abs(seconds) / 60);
     const s = Math.floor(Math.abs(seconds) % 60);
     return `${seconds < 0 ? '-' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+
+  const showToast = useCallback((message: string, type: 'success' | 'teach' | 'edit' = 'success', duration = 2000) => {
+    const id = Date.now();
+    setToast({ message, type, duration, id });
+    setTimeout(() => {
+      setToast((prev) => (prev?.id === id ? null : prev));
+    }, duration);
+  }, []);
 
   const assetsById = useMemo(() => {
     const map = new Map<string, AssetItem>();
@@ -165,11 +208,24 @@ export function App() {
   const resolvedCurrentSrc =
     project && currentAsset ? toMediaUrl(currentAsset.relativePath) : null;
 
+  // Sync staged transition controls when slide changes
+  useEffect(() => {
+    if (currentSlide) {
+      setStagedTransition(currentSlide.transition);
+      setStagedDuration(currentSlide.transitionDuration ?? 500);
+      setStagedDirection(currentSlide.transitionDirection ?? 'left');
+    }
+  }, [currentSlide]);
+
   const goToSlideByAbsoluteIndex = useCallback((index: number) => {
     if (!project) return;
     if (index === currentIndex) return;
     const targetSlide = project?.data.slides[index];
     const duration = targetSlide?.transitionDuration ?? 500;
+
+    // Capture current time before switching?
+    // Actually the ref is updated constantly by onTimeUpdate.
+    // So lastMediaTimeRef.current is already approx correct.
 
     setPreviousIndex(currentIndex);
     setCurrentIndex(index);
@@ -180,27 +236,6 @@ export function App() {
     }, duration);
   }, [project, currentIndex]);
 
-  const applyTransitionToSection = () => {
-    if (!project || !currentSlide) return;
-    const { transition, transitionDuration, transitionDirection } = currentSlide;
-    const section = project.data.sections.find(s => s.id === currentSlide.sectionId);
-
-    const slidesInSection = project.data.slides.filter(s => s.sectionId === currentSlide.sectionId);
-    const count = slidesInSection.length;
-
-    if (!window.confirm(`Apply transition '${transition}' (${transitionDuration ?? 500}ms${transition === 'card-slide' ? `, ${transitionDirection}` : ''}) to all ${count} slides in section '${section?.name}'?`)) {
-      return;
-    }
-
-    const newSlides = project.data.slides.map(s => {
-      if (s.sectionId === currentSlide.sectionId) {
-        return { ...s, transition, transitionDuration, transitionDirection };
-      }
-      return s;
-    });
-    setProject({ ...project, data: { ...project.data, slides: newSlides } });
-  };
-
   const updateCurrentSlide = (updates: Partial<Slide>) => {
     if (!project || !currentSlide) return;
     const newSlides = project.data.slides.map((s, index) => {
@@ -210,6 +245,37 @@ export function App() {
       return s;
     });
     setProject({ ...project, data: { ...project.data, slides: newSlides } });
+    setIsDirty(true);
+  };
+
+  const applyTransitionToSlide = () => {
+    if (!project || !currentSlide) return;
+    updateCurrentSlide({
+      transition: stagedTransition,
+      transitionDuration: stagedDuration,
+      transitionDirection: stagedDirection
+    });
+    showToast('Applied ✓', 'success', 1000);
+  };
+
+  const applyTransitionToSection = () => {
+    if (!project || !currentSlide) return;
+    const { transition, transitionDuration, transitionDirection } = {
+      transition: stagedTransition,
+      transitionDuration: stagedDuration,
+      transitionDirection: stagedDirection
+    };
+    /* Removed confirm dialog as requested */
+
+    const newSlides = project.data.slides.map(s => {
+      if (s.sectionId === currentSlide.sectionId) {
+        return { ...s, transition, transitionDuration, transitionDirection };
+      }
+      return s;
+    });
+    setProject({ ...project, data: { ...project.data, slides: newSlides } });
+    setIsDirty(true);
+    showToast('Applied ✓', 'success', 1000);
   };
 
   const goToVisibleOffset = useCallback((offset: number) => {
@@ -232,9 +298,14 @@ export function App() {
     setAppMode(prev => {
       const next = prev === 'edit' ? 'teach' : 'edit';
       console.log(`MODE: ${next}`);
+      if (next === 'teach') {
+        showToast('Teach Mode', 'teach', 1200);
+      } else {
+        showToast('Edit Mode', 'edit', 1200);
+      }
       return next;
     });
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
@@ -314,23 +385,69 @@ export function App() {
     setCurrentIndex(0);
     setPreviousIndex(null);
     setError(null);
+    setError(null);
+    setAppMode('teach');
+    setIsDirty(false);
   };
 
-  const onCreateProject = async () => {
+
+
+  const executePendingAction = async (action: 'create' | 'open' | 'close') => {
+    if (action === 'close') {
+      window.appApi.forceClose();
+      return;
+    }
+
     try {
-      const next = await window.appApi.createProject();
+      let next;
+      if (action === 'create') {
+        next = await window.appApi.createProject();
+      } else {
+        next = await window.appApi.openProject();
+      }
       if (next) setProjectState(next);
     } catch (err) {
       setError((err as Error).message);
     }
   };
 
-  const onOpenProject = async () => {
-    try {
-      const next = await window.appApi.openProject();
-      if (next) setProjectState(next);
-    } catch (err) {
-      setError((err as Error).message);
+  const handleConfirmSave = async () => {
+    setShowConfirmModal(false);
+    await onSave();
+    if (pendingAction) {
+      executePendingAction(pendingAction);
+      setPendingAction(null);
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowConfirmModal(false);
+    if (pendingAction) {
+      executePendingAction(pendingAction);
+      setPendingAction(null);
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    setShowConfirmModal(false);
+    setPendingAction(null);
+  };
+
+  const onCreateProject = () => {
+    if (isDirty) {
+      setPendingAction('create');
+      setShowConfirmModal(true);
+    } else {
+      executePendingAction('create');
+    }
+  };
+
+  const onOpenProject = () => {
+    if (isDirty) {
+      setPendingAction('open');
+      setShowConfirmModal(true);
+    } else {
+      executePendingAction('open');
     }
   };
 
@@ -355,6 +472,7 @@ export function App() {
           assets: nextAssets
         }
       });
+      setIsDirty(true);
       if (nextSlides.length > 0 && project.data.slides.length === 0) {
         setCurrentIndex(0);
       }
@@ -377,8 +495,8 @@ export function App() {
         },
         lastSavedAt: response.lastSavedAt
       });
-      setSaveFeedback(true);
-      setTimeout(() => setSaveFeedback(false), 2000);
+      setIsDirty(false);
+      showToast('Saved ✓', 'success', 2000);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -395,6 +513,7 @@ export function App() {
         )
       }
     });
+    setIsDirty(true);
   };
 
 
@@ -410,6 +529,7 @@ export function App() {
         )
       }
     });
+    setIsDirty(true);
   };
 
 
@@ -432,6 +552,7 @@ export function App() {
     });
     setSelectedSectionId(nextSection.id);
     setExpandedSectionId(nextSection.id);
+    setIsDirty(true);
   };
 
   const onAddBreak = () => {
@@ -458,6 +579,7 @@ export function App() {
       }
     });
     setSelectedSectionId(nextBreak.id);
+    setIsDirty(true);
   };
 
   const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
@@ -487,6 +609,7 @@ export function App() {
         slides: nextSlides
       }
     });
+    setIsDirty(true);
     setCurrentIndex(insertAt);
     setPreviousIndex(null);
     setDraggedSlideIndex(null);
@@ -536,6 +659,7 @@ export function App() {
         sections: newSections
       }
     });
+    setIsDirty(true);
 
     if (selectedSectionId === sectionId) {
       // Fallback selection to nearest neighbor or first
@@ -564,6 +688,7 @@ export function App() {
         sections: newSections
       }
     });
+    setIsDirty(true);
   };
 
   const onSlideWrapperClick = (slideIndex: number, event: MouseEvent) => {
@@ -616,7 +741,7 @@ export function App() {
 
   return (
     <div className="app">
-      <header className="topbar">
+      <header className="topbar" style={{ background: appMode === 'edit' ? '#331515' : undefined, borderBottomColor: appMode === 'edit' ? '#552222' : undefined }}>
         <button onClick={onCreateProject}>Create Project</button>
         <button onClick={onOpenProject}>Open Project</button>
         <button onClick={onImportMedia} disabled={!project}>Import Media</button>
@@ -626,110 +751,85 @@ export function App() {
             {timerState.isRunning ? 'Stop Timer' : 'Start Timer'}
           </button>
         )}
-        <div style={{ marginLeft: 'auto', marginRight: '10px', fontSize: '0.8rem', opacity: 0.7, alignSelf: 'center', fontWeight: 'bold' }}>
-          {appMode.toUpperCase()}
-        </div>
-        <div style={{ position: 'relative', display: 'inline-block', marginLeft: 10 }}>
-          <button
-            onClick={() => setDrawPanelCollapsed(v => !v)}
-            style={{ background: !drawPanelCollapsed ? '#447' : undefined }}
-          >
-            Drawing
-          </button>
-          {!drawPanelCollapsed && (
-            <div className="draw-panel">
-              <label>
-                Tool
-                <select
-                  value={drawSettings.tool}
-                  onChange={(event) =>
-                    setDrawSettings((prev) => ({ ...prev, tool: event.target.value as DrawTool }))}
-                >
-                  <option value="highlighter">Highlighter</option>
-                  <option value="marker">Marker</option>
-                </select>
-              </label>
+        <button
+          onClick={toggleMode}
+          style={{
+            marginLeft: 'auto',
+            marginRight: 10,
+            alignSelf: 'center',
+            fontSize: '0.8rem',
+            opacity: 0.9,
+            background: appMode === 'edit' ? '#5a2525' : undefined,
+            borderColor: appMode === 'edit' ? '#883333' : undefined
+          }}
+        >
+          {appMode === 'edit' ? 'Edit' : 'Teach'}
+        </button>
 
-              <label>
-                Size
-                <input
-                  type="range"
-                  min={2}
-                  max={36}
-                  value={drawSettings.size}
-                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, size: Number(event.target.value) }))}
-                />
-              </label>
-
-              <label>
-                Opacity
-                <input
-                  type="range"
-                  min={0.1}
-                  max={1}
-                  step={0.05}
-                  value={drawSettings.opacity}
-                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, opacity: Number(event.target.value) }))}
-                />
-              </label>
-
-              {drawSettings.tool === 'highlighter' && (
-                <label>
-                  Fade (ms)
-                  <input
-                    type="range"
-                    min={400}
-                    max={6000}
-                    step={100}
-                    value={drawSettings.fadeMs}
-                    onChange={(event) => setDrawSettings((prev) => ({ ...prev, fadeMs: Number(event.target.value) }))}
-                  />
-                </label>
-              )}
-
-              <label>
-                Color
-                <input
-                  type="color"
-                  value={drawSettings.color}
-                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, color: event.target.value }))}
-                />
-              </label>
-
-              <label className="draw-inline-check">
-                <input
-                  type="checkbox"
-                  checked={drawSettings.rainbow}
-                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, rainbow: event.target.checked }))}
-                />
-                Rainbow
-              </label>
-
-              <label className="draw-inline-check">
-                <input
-                  type="checkbox"
-                  checked={drawSettings.sparkle}
-                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, sparkle: event.target.checked }))}
-                />
-                Sparkle
-              </label>
-
-              <label className="draw-inline-check">
-                <input
-                  type="checkbox"
-                  checked={drawSettings.drawMode}
-                  onChange={(event) => setDrawSettings((prev) => ({ ...prev, drawMode: event.target.checked }))}
-                />
-                Draw mode
-              </label>
-
-              <button onClick={clearCurrentSlideDrawings}>Clear Drawings</button>
-            </div>
-          )}
-        </div>
         <span className="build-chip" title="Build marker">Build {BUILD_VERSION}</span>
       </header>
-      {saveFeedback && <div className="save-toast">Saved ✓</div>}
+      {toast && (
+        <div
+          className="toast-msg"
+          key={toast.id}
+          style={{
+            background: toast.type === 'edit' ? 'rgba(180, 40, 40, 0.85)' : 'rgba(42, 90, 42, 0.9)',
+            borderColor: toast.type === 'edit' ? 'rgba(255, 80, 80, 0.3)' : 'rgba(74, 138, 74, 0.4)',
+            animation: `fadeToast ${toast.duration}ms forwards`
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      {showConfirmModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: '#2a2a30',
+            border: '1px solid #444',
+            borderRadius: 8,
+            padding: 24,
+            width: 400,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#eee' }}>Unsaved Changes</h3>
+            <p style={{ margin: 0, color: '#aaa', lineHeight: 1.5 }}>
+              You have unsaved changes in your project. Do you want to save them before continuing?
+            </p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={handleConfirmCancel}
+                style={{ background: 'transparent', border: '1px solid #555' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDiscard}
+                style={{ background: '#442222', border: '1px solid #663333', color: '#ffaaaa' }}
+              >
+                Discard
+              </button>
+              <button
+                onClick={handleConfirmSave}
+                style={{ background: '#2a5a2a', border: '1px solid #4a8a4a', color: '#fff' }}
+              >
+                Yes, Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="content">
         <aside className="sidebar">
@@ -1166,11 +1266,12 @@ export function App() {
                 <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10 }}>
                   Transition
                   <select
-                    value={currentSlide?.transition ?? 'fade'}
-                    onChange={(e) => updateCurrentSlide({ transition: e.target.value as TransitionType })}
+                    value={stagedTransition}
+                    onChange={(e) => setStagedTransition(e.target.value as TransitionType)}
                     disabled={!currentSlide}
                     style={{ padding: '2px 4px' }}
                   >
+                    <option value="none">None</option>
                     <option value="fade">Fade</option>
                     <option value="crossfade">Crossfade</option>
                     <option value="fade-black">Fade Black</option>
@@ -1181,38 +1282,140 @@ export function App() {
                   </select>
                 </label>
 
-                {currentSlide?.transition === 'card-slide' && (
-                  <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10 }}>
-                    Direction
-                    <select
-                      value={currentSlide?.transitionDirection ?? 'left'}
-                      onChange={(e) => updateCurrentSlide({ transitionDirection: e.target.value as any })}
-                      style={{ padding: '2px 4px' }}
-                    >
-                      <option value="left">Left</option>
-                      <option value="right">Right</option>
-                      <option value="up">Up</option>
-                      <option value="down">Down</option>
-                    </select>
-                  </label>
-                )}
+                <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10 }}>
+                  Direction
+                  <select
+                    value={stagedDirection}
+                    onChange={(e) => setStagedDirection(e.target.value as any)}
+                    style={{ padding: '2px 4px' }}
+                  >
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                    <option value="up">Up</option>
+                    <option value="down">Down</option>
+                  </select>
+                </label>
 
                 <label style={{ display: 'flex', flexDirection: 'column', fontSize: 10, minWidth: 100 }}>
-                  Duration: {currentSlide?.transitionDuration ?? 500}ms
+                  Duration: {stagedDuration}ms
                   <input
                     type="range"
                     min={100}
                     max={4000}
                     step={100}
-                    value={currentSlide?.transitionDuration ?? 500}
-                    onChange={(e) => updateCurrentSlide({ transitionDuration: Number(e.target.value) })}
+                    value={stagedDuration}
+                    onChange={(e) => setStagedDuration(Number(e.target.value))}
                     style={{ width: '100%' }}
                   />
                 </label>
 
-                <button onClick={applyTransitionToSection} style={{ fontSize: 10, padding: '4px 8px' }} title="Apply this transition to all slides in current section">
-                  Apply to Section
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <button onClick={applyTransitionToSection} style={{ fontSize: 10, padding: '4px 8px' }} title="Apply this transition to all slides in current section">
+                    Apply to Section
+                  </button>
+                  <button onClick={applyTransitionToSlide} style={{ fontSize: 10, padding: '4px 8px' }} title="Apply this transition only to current slide">
+                    Apply to Slide
+                  </button>
+                </div>
+
+                <div style={{ position: 'relative', display: 'inline-block', marginLeft: 10 }}>
+                  <button
+                    onClick={() => setDrawPanelCollapsed(v => !v)}
+                    style={{ background: !drawPanelCollapsed ? '#447' : undefined, fontSize: 10, padding: '4px 8px' }}
+                  >
+                    Draw
+                  </button>
+                  {!drawPanelCollapsed && (
+                    <div className="draw-panel" style={{ top: '100%', right: 0, left: 'auto', marginTop: 4 }}>
+                      <label>
+                        Tool
+                        <select
+                          value={drawSettings.tool}
+                          onChange={(event) =>
+                            setDrawSettings((prev) => ({ ...prev, tool: event.target.value as DrawTool }))}
+                        >
+                          <option value="highlighter">Highlighter</option>
+                          <option value="marker">Marker</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        Size
+                        <input
+                          type="range"
+                          min={2}
+                          max={36}
+                          value={drawSettings.size}
+                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, size: Number(event.target.value) }))}
+                        />
+                      </label>
+
+                      <label>
+                        Opacity
+                        <input
+                          type="range"
+                          min={0.1}
+                          max={1}
+                          step={0.05}
+                          value={drawSettings.opacity}
+                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, opacity: Number(event.target.value) }))}
+                        />
+                      </label>
+
+                      {drawSettings.tool === 'highlighter' && (
+                        <label>
+                          Fade (ms)
+                          <input
+                            type="range"
+                            min={400}
+                            max={6000}
+                            step={100}
+                            value={drawSettings.fadeMs}
+                            onChange={(event) => setDrawSettings((prev) => ({ ...prev, fadeMs: Number(event.target.value) }))}
+                          />
+                        </label>
+                      )}
+
+                      <label>
+                        Color
+                        <input
+                          type="color"
+                          value={drawSettings.color}
+                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, color: event.target.value }))}
+                        />
+                      </label>
+
+                      <label className="draw-inline-check">
+                        <input
+                          type="checkbox"
+                          checked={drawSettings.rainbow}
+                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, rainbow: event.target.checked }))}
+                        />
+                        Rainbow
+                      </label>
+
+                      <label className="draw-inline-check">
+                        <input
+                          type="checkbox"
+                          checked={drawSettings.sparkle}
+                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, sparkle: event.target.checked }))}
+                        />
+                        Sparkle
+                      </label>
+
+                      <label className="draw-inline-check">
+                        <input
+                          type="checkbox"
+                          checked={drawSettings.drawMode}
+                          onChange={(event) => setDrawSettings((prev) => ({ ...prev, drawMode: event.target.checked }))}
+                        />
+                        Draw mode
+                      </label>
+
+                      <button onClick={clearCurrentSlideDrawings}>Clear Drawings</button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="stage">
@@ -1222,7 +1425,7 @@ export function App() {
                     {/* Outgoing Slide */}
                     {isAnimating && previousAsset && (
                       <MediaView
-                        key={`${previousSlide?.id}-prev`}
+                        key={previousSlide?.id}
                         asset={previousAsset}
                         className={`media ${currentSlide?.transition === 'card-slide'
                           ? `transition-card-slide-${currentSlide.transitionDirection ?? 'left'}-out`
@@ -1233,6 +1436,11 @@ export function App() {
                         markerStrokes={previousSlide?.markerStrokes ?? []}
                         onMarkerStrokesChange={() => undefined}
                         clearSignal={drawClearSignal}
+                        initialZoom={viewportRef.current.zoom}
+                        initialPan={viewportRef.current.pan}
+                        paused={true}
+                        initialTime={lastMediaTimeRef.current}
+                        showControls={false}
                       />
                     )}
                     {/* Incoming Slide */}
@@ -1248,6 +1456,12 @@ export function App() {
                       markerStrokes={currentSlide?.markerStrokes ?? []}
                       onMarkerStrokesChange={(strokes) => updateCurrentSlideMarkerStrokes(strokes)}
                       clearSignal={drawClearSignal}
+                      initialZoom={viewportRef.current.zoom}
+                      initialPan={viewportRef.current.pan}
+                      onViewportChange={(v) => { viewportRef.current = v; }}
+                      paused={false}
+                      onTimeUpdate={(t) => { lastMediaTimeRef.current = t; }}
+                      showControls={true}
                     />
                   </div>
                 )}
@@ -1632,7 +1846,14 @@ function MediaView({
   drawSettings,
   markerStrokes,
   onMarkerStrokesChange,
-  clearSignal
+  clearSignal,
+  initialZoom,
+  initialPan,
+  onViewportChange,
+  paused,
+  initialTime,
+  onTimeUpdate,
+  showControls = true
 }: {
   asset: AssetItem;
   className?: string;
@@ -1641,15 +1862,46 @@ function MediaView({
   markerStrokes: MarkerStroke[];
   onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
   clearSignal: number;
+  initialZoom?: number;
+  initialPan?: { x: number; y: number };
+  onViewportChange?: (v: ViewportState) => void;
+  paused?: boolean;
+  initialTime?: number;
+  onTimeUpdate?: (t: number) => void;
+  showControls?: boolean;
 }) {
   const src = toMediaUrl(asset.relativePath);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const targetZoomRef = useRef(1);
-  const targetPanRef = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    // If we have an initial time and we are paused (outgoing), snap to that frame.
+    // If not paused (incoming), we might also want to restore time if we were tracking history?
+    // For now, only outgoing needs to freeze at specific time.
+    if (initialTime !== undefined && videoRef.current) {
+      videoRef.current.currentTime = initialTime;
+    }
+  }, []); // Run once on mount
+
+  useEffect(() => {
+    if (paused && videoRef.current) {
+      videoRef.current.pause();
+    } else if (!paused && videoRef.current) {
+      // If initialTime provided and we are starting, ensure we are there?
+      // No, initialTime effect handles the seek.
+      videoRef.current.play().catch(() => { });
+    }
+  }, [paused]);
+
+  const [zoom, setZoom] = useState(initialZoom ?? 1);
+  const [pan, setPan] = useState(initialPan ?? { x: 0, y: 0 });
+  const targetZoomRef = useRef(initialZoom ?? 1);
+  const targetPanRef = useRef(initialPan ?? { x: 0, y: 0 });
+
+  useEffect(() => {
+    onViewportChange?.({ zoom, pan });
+  }, [zoom, pan, onViewportChange]);
 
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
@@ -1993,7 +2245,16 @@ function MediaView({
       {asset.mediaType === 'image' ? (
         <img src={src} className="media-content" alt={asset.originalName} style={mediaStyle} draggable={false} />
       ) : (
-        <video src={src} className="media-content" style={mediaStyle} controls autoPlay muted />
+        <video
+          ref={videoRef}
+          src={src}
+          className="media-content"
+          style={mediaStyle}
+          controls={showControls}
+          autoPlay={!paused}
+          muted
+          onTimeUpdate={(e) => onTimeUpdate?.((e.target as HTMLVideoElement).currentTime)}
+        />
       )}
 
       <canvas
