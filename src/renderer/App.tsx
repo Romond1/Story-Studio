@@ -79,7 +79,7 @@ function AudioClipPlayer({
       <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6, overflow: "hidden" }}>
         <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
         <input type="text" value={clip.name || label} onChange={e => onUpdate({ name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: "0.80rem", minWidth: 0, outline: "none", textOverflow: "ellipsis" }} />
-        <button onClick={() => setShowSettings(!showSettings)} style={{ background: "transparent", border: "none", padding: 0 }}>⚙️</button>
+        <button onClick={() => setShowSettings(!showSettings)} style={{ background: "transparent", border: "none", padding: 0 }}>⚙︁E/button>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
@@ -421,7 +421,7 @@ export function App() {
       transitionDuration: stagedDuration,
       transitionDirection: stagedDirection,
     });
-    showToast("Applied ✓", "success", 1000);
+    showToast("Applied ✁E, "success", 1000);
   };
 
   const applyTransitionToSection = () => {
@@ -441,7 +441,7 @@ export function App() {
     });
     setProject({ ...project, data: { ...project.data, slides: newSlides } });
     setIsDirty(true);
-    showToast("Applied ✓", "success", 1000);
+    showToast("Applied ✁E, "success", 1000);
   };
 
   const goToVisibleOffset = useCallback(
@@ -797,7 +797,7 @@ export function App() {
         lastSavedAt: response.lastSavedAt,
       });
       setIsDirty(false);
-      showToast("Saved ✓", "success", 2000);
+      showToast("Saved ✁E, "success", 2000);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -1100,7 +1100,7 @@ export function App() {
           borderBottomColor: appMode === "edit" ? "#552222" : undefined,
         }}
       >
-        <button onClick={onCreateProject}>Story Studio Sandbox Build Sandbox Build</button>
+        <button onClick={onCreateProject}>Create Project</button>
         <button onClick={onOpenProject}>Open Project</button>
         <button onClick={onImportMedia} disabled={!project}>
           Import Media
@@ -1287,7 +1287,7 @@ export function App() {
                           />
                         ) : (
                           <span>
-                            {isBreak ? "★ " : isExpanded ? "▼ " : "▶ "}
+                            {isBreak ? "☁E" : isExpanded ? "▼ " : "▶ "}
                             {section.name}
                           </span>
                         )}
@@ -1334,8 +1334,7 @@ export function App() {
                             deleteSection(section.id);
                           }}
                         >
-                          ✕
-                        </button>
+                          ✁E                        </button>
                       )}
                     </div>
                     {!isBreak && isExpanded && (
@@ -1806,8 +1805,7 @@ export function App() {
                                       });
                                     }}
                                   >
-                                    ✕
-                                  </button>
+                                    ✁E                                  </button>
                                 </div>
                               </div>
                             );
