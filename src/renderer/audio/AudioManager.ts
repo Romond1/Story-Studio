@@ -11,7 +11,7 @@ export class AudioManager {
 
   // WebAudio Integration
   private ctx: AudioContext;
-  private masterGain: GainNode; // the splitter bus
+  private masterGain: GainNode; // masterMusicBus splitter
   private monitorGain: GainNode;
   private cableGain: GainNode;
   private destination: MediaStreamAudioDestinationNode;
@@ -95,6 +95,21 @@ export class AudioManager {
     return this.activeNodes.has(url);
   }
 
+  private cleanupNode(url: string) {
+    const node = this.activeNodes.get(url);
+    if (!node) return;
+
+    node.source.onended = null;
+    try {
+      node.source.stop();
+    } catch {
+      // ignore if already stopped
+    }
+    node.source.disconnect();
+    node.gainNode.disconnect();
+    this.activeNodes.delete(url);
+  }
+
   public playClip(url: string, volume: number = 1, loop: boolean = false, fadeOptions?: { fadeEnabled: boolean }) {
     const buffer = this.buffers.get(url);
     if (!buffer) {
@@ -107,8 +122,10 @@ export class AudioManager {
 
     if (this.ctx.state === "suspended") this.ctx.resume();
 
-    // Already playing?
-    if (this.isPlaying(url)) return;
+    // Ensure single active playback path per URL
+    if (this.isPlaying(url)) {
+      this.cleanupNode(url);
+    }
 
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
@@ -136,6 +153,8 @@ export class AudioManager {
       // onended fires if stopped manually or ended naturally.
       // we only clean up if it's the exact same node that ended naturally
       if (this.activeNodes.get(url)?.source === source) {
+        source.disconnect();
+        gainNode.disconnect();
         this.activeNodes.delete(url);
         this.pauseTimes.set(url, 0);
         this.notify();
@@ -153,26 +172,30 @@ export class AudioManager {
     const elapsed = this.ctx.currentTime - start;
     this.pauseTimes.set(url, elapsed);
 
-    node.source.onended = null;
-    node.source.stop();
-    this.activeNodes.delete(url);
+    this.cleanupNode(url);
     this.notify();
   }
 
   public stopClip(url: string, fadeOptions?: { fadeEnabled: boolean }) {
     const node = this.activeNodes.get(url);
     if (node) {
-      node.source.onended = null;
       if (fadeOptions?.fadeEnabled) {
         const currentVol = node.gainNode.gain.value;
         node.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
         node.gainNode.gain.setValueAtTime(currentVol, this.ctx.currentTime);
         node.gainNode.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 3);
+        node.source.onended = () => {
+          if (this.activeNodes.get(url)?.source === node.source) {
+            node.source.disconnect();
+            node.gainNode.disconnect();
+            this.activeNodes.delete(url);
+            this.notify();
+          }
+        };
         node.source.stop(this.ctx.currentTime + 3);
       } else {
-        node.source.stop();
+        this.cleanupNode(url);
       }
-      this.activeNodes.delete(url);
     }
     this.pauseTimes.set(url, 0); // reset to beginning!
     this.notify();

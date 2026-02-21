@@ -28,6 +28,7 @@ export class AudioRouting {
         try {
             // @ts-ignore - setSinkId is not in standard TS DOM lib yet
             await this.outputNode.setSinkId(deviceId);
+            await this.outputNode.play();
             console.log(`[AudioRouting] Set sink ID to: ${deviceId}`);
         } catch (e) {
             console.error(`[AudioRouting] Failed to set sink ID to ${deviceId}`, e);
@@ -39,6 +40,7 @@ export class AudioRouting {
         try {
             // @ts-ignore
             await this.monitorNode.setSinkId(deviceId);
+            await this.monitorNode.play();
             console.log(`[AudioRouting] Set monitor sink ID to: ${deviceId}`);
         } catch (e) {
             console.error(`[AudioRouting] Failed to set monitor sink ID to ${deviceId}, falling back to master.`, e);
@@ -52,11 +54,21 @@ export class AudioRouting {
     }
 
     public setSourceStream(stream: MediaStream) {
-        this.outputNode.srcObject = stream;
+        if (this.outputNode.srcObject !== stream) {
+            this.outputNode.srcObject = stream;
+        }
+        this.outputNode.play().catch((err) => {
+            console.warn("[AudioRouting] Could not autoplay output node", err);
+        });
     }
 
     public setMonitorStream(stream: MediaStream) {
-        this.monitorNode.srcObject = stream;
+        if (this.monitorNode.srcObject !== stream) {
+            this.monitorNode.srcObject = stream;
+        }
+        this.monitorNode.play().catch((err) => {
+            console.warn("[AudioRouting] Could not autoplay monitor node", err);
+        });
     }
 }
 
