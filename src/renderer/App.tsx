@@ -75,30 +75,40 @@ function AudioClipPlayer({
   const bgColors = clip.color ? clip.color : "transparent";
 
   return (
-    <div style={{ background: isPlaying ? `${bgColors}ee` : bgColors, filter: isPlaying ? "brightness(1.5)" : "none", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 6, padding: "8px", borderRadius: 6, marginBottom: 8, border: `1px solid ${isPlaying ? "#88c" : "#333"}`, boxSizing: "border-box", overflow: "hidden", maxWidth: "100%" }}>
-      <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6, overflow: "hidden" }}>
-        <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
-        <input type="text" value={clip.name || label} onChange={e => onUpdate({ name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: "0.80rem", minWidth: 0, outline: "none", textOverflow: "ellipsis" }} />
-        <button onClick={() => setShowSettings(!showSettings)} style={{ background: "transparent", border: "none", padding: 0 }}>⚙︁E/button>
+    <div style={{ background: isPlaying ? `${bgColors}ee` : bgColors, filter: isPlaying ? "brightness(1.5)" : "none", transition: "all 0.2s", display: "flex", gap: 10, padding: "8px", borderRadius: 6, marginBottom: 8, border: `1px solid ${isPlaying ? "#88c" : "#333"}`, boxSizing: "border-box", overflow: "hidden", maxWidth: "100%" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6, overflow: "hidden" }}>
+          <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
+          <input type="text" value={clip.name || label} onChange={e => onUpdate({ name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: "0.80rem", minWidth: 0, outline: "none", textOverflow: "ellipsis" }} />
+          <button onClick={() => setShowSettings(!showSettings)} style={{ background: "transparent", border: "none", padding: 0, color: "#fff", cursor: "pointer" }}>Settings</button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
+          <button onClick={() => isPlaying ? onPause(clip.url) : onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 44, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem" }}>
+            {isPlaying ? "Pause" : "Play"}
+          </button>
+          <button onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 44, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem" }}>
+            Stop
+          </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
+          <input type="range" min={0} max={duration} step={0.1} value={time} onChange={(e) => audioManager.seek(clip.url, Number(e.target.value))} style={{ flex: 1, minWidth: 40 }} />
+          <span style={{ fontSize: "0.7rem", color: "#b9b9b9", minWidth: 48, textAlign: "right" }}>{Math.floor(time)} / {Math.floor(duration)}s</span>
+        </div>
+
+        {showSettings && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", background: "rgba(0,0,0,0.3)", padding: "4px 8px", borderRadius: 4, marginTop: 4, fontSize: "0.75rem", color: "#ccc", boxSizing: "border-box" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Shortcut <input type="text" maxLength={1} value={clip.shortcut || ""} onChange={e => onUpdate({ shortcut: e.target.value })} style={{ width: 20, background: "#222", border: "1px solid #444", color: "#fff", textAlign: "center" }} /></label>
+            <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Fade <input type="checkbox" checked={clip.fadeEnabled || false} onChange={e => onUpdate({ fadeEnabled: e.target.checked })} /></label>
+            <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Color <input type="color" value={clip.color || "#111111"} onChange={e => onUpdate({ color: e.target.value })} style={{ width: 16, height: 16, padding: 0, border: "none", background: "transparent" }} /></label>
+          </div>
+        )}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
-        <button onClick={() => isPlaying ? onPause(clip.url) : onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 26, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {isPlaying ? "⏸" : "▶"}
-        </button>
-        <button onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 26, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          ⏹
-        </button>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
-        <input type="range" min={0} max={duration} step={0.1} value={time} onChange={(e) => audioManager.seek(clip.url, Number(e.target.value))} style={{ flex: 1, minWidth: 40 }} />
-        <span style={{ fontSize: "0.7rem", color: "#b9b9b9", minWidth: 48, textAlign: "right" }}>{Math.floor(time)} / {Math.floor(duration)}s</span>
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: "0.72rem", color: "#b9b9b9", minWidth: 42 }}>Volume</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ width: 44, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", background: "rgba(0,0,0,0.2)", borderRadius: 4, padding: "4px 0" }}>
+        <span style={{ fontSize: "0.65rem", color: "#aaa" }}>Vol</span>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", position: "relative", minHeight: 70 }}>
           <input
             type="range"
             min={0}
@@ -110,19 +120,11 @@ function AudioClipPlayer({
               audioManager.setVolume(clip.url, v);
               onUpdate({ volume: v });
             }}
-            style={{ width: 70, height: 20, transform: "rotate(-90deg)" }}
+            style={{ width: 70, height: 20, transform: "rotate(-90deg)", cursor: "pointer" }}
           />
-          <span style={{ fontSize: "0.72rem", color: "#b9b9b9", minWidth: 36 }}>{Math.round((clip.volume ?? 1) * 100)}%</span>
         </div>
+        <span style={{ fontSize: "0.65rem", color: "#aaa" }}>{Math.round((clip.volume ?? 1) * 100)}%</span>
       </div>
-
-      {showSettings && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", background: "rgba(0,0,0,0.3)", padding: "4px 8px", borderRadius: 4, marginTop: 4, fontSize: "0.75rem", color: "#ccc", boxSizing: "border-box" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Shortcut <input type="text" maxLength={1} value={clip.shortcut || ""} onChange={e => onUpdate({ shortcut: e.target.value })} style={{ width: 20, background: "#222", border: "1px solid #444", color: "#fff", textAlign: "center" }} /></label>
-          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Fade <input type="checkbox" checked={clip.fadeEnabled || false} onChange={e => onUpdate({ fadeEnabled: e.target.checked })} /></label>
-          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Color <input type="color" value={clip.color || "#111111"} onChange={e => onUpdate({ color: e.target.value })} style={{ width: 16, height: 16, padding: 0, border: "none", background: "transparent" }} /></label>
-        </div>
-      )}
     </div>
   );
 }
@@ -421,7 +423,7 @@ export function App() {
       transitionDuration: stagedDuration,
       transitionDirection: stagedDirection,
     });
-    showToast("Applied ✁E, "success", 1000);
+    showToast("Applied", "success", 1000);
   };
 
   const applyTransitionToSection = () => {
@@ -441,7 +443,7 @@ export function App() {
     });
     setProject({ ...project, data: { ...project.data, slides: newSlides } });
     setIsDirty(true);
-    showToast("Applied ✁E, "success", 1000);
+    showToast("Applied", "success", 1000);
   };
 
   const goToVisibleOffset = useCallback(
@@ -797,7 +799,7 @@ export function App() {
         lastSavedAt: response.lastSavedAt,
       });
       setIsDirty(false);
-      showToast("Saved ✁E, "success", 2000);
+      showToast("Saved", "success", 2000);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -1287,7 +1289,7 @@ export function App() {
                           />
                         ) : (
                           <span>
-                            {isBreak ? "☁E" : isExpanded ? "▼ " : "▶ "}
+                            {isBreak ? "* " : isExpanded ? "v " : "> "}
                             {section.name}
                           </span>
                         )}
@@ -1334,7 +1336,8 @@ export function App() {
                             deleteSection(section.id);
                           }}
                         >
-                          ✁E                        </button>
+                          X
+                        </button>
                       )}
                     </div>
                     {!isBreak && isExpanded && (
@@ -1805,7 +1808,8 @@ export function App() {
                                       });
                                     }}
                                   >
-                                    ✁E                                  </button>
+                                    X
+                                  </button>
                                 </div>
                               </div>
                             );
