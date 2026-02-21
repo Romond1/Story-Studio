@@ -1083,7 +1083,7 @@ export function App() {
           borderBottomColor: appMode === "edit" ? "#552222" : undefined,
         }}
       >
-        <button onClick={onCreateProject}>Create Project</button>
+        <button onClick={onCreateProject}>Story Studio Sandbox Build Sandbox Build</button>
         <button onClick={onOpenProject}>Open Project</button>
         <button onClick={onImportMedia} disabled={!project}>
           Import Media
