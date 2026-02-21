@@ -7,6 +7,7 @@ export class AudioManager {
   private startTimes = new Map<string, number>();
 
   private sectionMusicUrl: string | null = null;
+  private playClipCalls = 0;
   private listeners = new Set<() => void>();
 
   // WebAudio Integration
@@ -111,6 +112,10 @@ export class AudioManager {
   }
 
   public playClip(url: string, volume: number = 1, loop: boolean = false, fadeOptions?: { fadeEnabled: boolean }) {
+    this.playClipCalls += 1;
+    const wasPlaying = this.isPlaying(url);
+    console.log("[audio] playClip", { callCount: this.playClipCalls, url, wasPlaying, ctxState: this.ctx.state });
+
     const buffer = this.buffers.get(url);
     if (!buffer) {
       // If not preloaded, preload then play
@@ -140,6 +145,7 @@ export class AudioManager {
 
     const offset = this.pauseTimes.get(url) || 0;
     source.start(0, offset);
+    console.log("[audio] source.start", { url });
 
     if (fadeOptions?.fadeEnabled) {
       gainNode.gain.setValueAtTime(0, this.ctx.currentTime);
