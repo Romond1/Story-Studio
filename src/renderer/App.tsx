@@ -75,7 +75,7 @@ function AudioClipPlayer({
   const bgColors = clip.color ? clip.color : "transparent";
 
   return (
-    <div style={{ background: isPlaying ? `${bgColors}ee` : bgColors, filter: isPlaying ? "brightness(1.5)" : "none", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 6, padding: "8px", borderRadius: 6, marginBottom: 8, border: `1px solid ${isPlaying ? "#88c" : "#333"}`, boxSizing: "border-box", overflow: "hidden" }}>
+    <div style={{ background: isPlaying ? `${bgColors}ee` : bgColors, filter: isPlaying ? "brightness(1.5)" : "none", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 6, padding: "8px", borderRadius: 6, marginBottom: 8, border: `1px solid ${isPlaying ? "#88c" : "#333"}`, boxSizing: "border-box", overflow: "hidden", maxWidth: "100%" }}>
       <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6, overflow: "hidden" }}>
         <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
         <input type="text" value={clip.name || label} onChange={e => onUpdate({ name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: "0.80rem", minWidth: 0, outline: "none", textOverflow: "ellipsis" }} />
@@ -83,20 +83,37 @@ function AudioClipPlayer({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
-        <button onClick={() => isPlaying ? onPause(clip.url) : onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={() => isPlaying ? onPause(clip.url) : onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 26, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {isPlaying ? "⏸" : "▶"}
         </button>
-        <button onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 26, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           ⏹
         </button>
+      </div>
 
+      <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
         <input type="range" min={0} max={duration} step={0.1} value={time} onChange={(e) => audioManager.seek(clip.url, Number(e.target.value))} style={{ flex: 1, minWidth: 40 }} />
+        <span style={{ fontSize: "0.7rem", color: "#b9b9b9", minWidth: 48, textAlign: "right" }}>{Math.floor(time)} / {Math.floor(duration)}s</span>
+      </div>
 
-        <input type="range" min={0} max={1} step={0.05} value={clip.volume ?? 1} onChange={(e) => {
-          const v = Number(e.target.value);
-          audioManager.setVolume(clip.url, v);
-          onUpdate({ volume: v });
-        }} style={{ width: 40 }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: "0.72rem", color: "#b9b9b9", minWidth: 42 }}>Volume</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={clip.volume ?? 1}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              audioManager.setVolume(clip.url, v);
+              onUpdate({ volume: v });
+            }}
+            style={{ width: 70, height: 20, transform: "rotate(-90deg)" }}
+          />
+          <span style={{ fontSize: "0.72rem", color: "#b9b9b9", minWidth: 36 }}>{Math.round((clip.volume ?? 1) * 100)}%</span>
+        </div>
       </div>
 
       {showSettings && (
