@@ -10,6 +10,25 @@ export class AudioRouting {
         this.monitorNode.autoplay = true;
     }
 
+    private normalizeSinkId(sinkId: string | undefined): string {
+        const normalized = (sinkId || "").trim();
+        return normalized === "" || normalized === "default" ? "default" : normalized;
+    }
+
+    private sinksAreSame(): boolean {
+        // @ts-ignore - sinkId is available at runtime where setSinkId is supported
+        const outputSink = this.normalizeSinkId(this.outputNode.sinkId);
+        // @ts-ignore - sinkId is available at runtime where setSinkId is supported
+        const monitorSink = this.normalizeSinkId(this.monitorNode.sinkId);
+        return outputSink === monitorSink;
+    }
+
+    private disableMonitorPlayback() {
+        this.monitorNode.pause();
+        this.monitorNode.srcObject = null;
+        this.monitorNode.load();
+    }
+
     public async listDevices(): Promise<{ inputs: MediaDeviceInfo[], outputs: MediaDeviceInfo[] }> {
         try {
             // Must request permission first to get labels on some browsers/platforms
@@ -28,6 +47,10 @@ export class AudioRouting {
         try {
             // @ts-ignore - setSinkId is not in standard TS DOM lib yet
             await this.outputNode.setSinkId(deviceId);
+            await this.outputNode.play();
+            if (this.sinksAreSame()) {
+                this.disableMonitorPlayback();
+            }
             console.log(`[AudioRouting] Set sink ID to: ${deviceId}`);
         } catch (e) {
             console.error(`[AudioRouting] Failed to set sink ID to ${deviceId}`, e);
@@ -39,12 +62,18 @@ export class AudioRouting {
         try {
             // @ts-ignore
             await this.monitorNode.setSinkId(deviceId);
+            if (this.sinksAreSame()) {
+                this.disableMonitorPlayback();
+            } else {
+                await this.monitorNode.play();
+            }
             console.log(`[AudioRouting] Set monitor sink ID to: ${deviceId}`);
         } catch (e) {
             console.error(`[AudioRouting] Failed to set monitor sink ID to ${deviceId}, falling back to master.`, e);
             try {
                 // @ts-ignore - Fallback to current master sinkId
                 await this.monitorNode.setSinkId(this.outputNode.sinkId || "");
+                this.disableMonitorPlayback();
             } catch (fallbackErr) {
                 console.error("[AudioRouting] Fallback also failed", fallbackErr);
             }
@@ -52,11 +81,25 @@ export class AudioRouting {
     }
 
     public setSourceStream(stream: MediaStream) {
-        this.outputNode.srcObject = stream;
+        if (this.outputNode.srcObject !== stream) {
+            this.outputNode.srcObject = stream;
+        }
+        this.outputNode.play().catch((err) => {
+            console.warn("[AudioRouting] Could not autoplay output node", err);
+        });
     }
 
     public setMonitorStream(stream: MediaStream) {
-        this.monitorNode.srcObject = stream;
+        if (this.sinksAreSame()) {
+            this.disableMonitorPlayback();
+            return;
+        }
+        if (this.monitorNode.srcObject !== stream) {
+            this.monitorNode.srcObject = stream;
+        }
+        this.monitorNode.play().catch((err) => {
+            console.warn("[AudioRouting] Could not autoplay monitor node", err);
+        });
     }
 }
 

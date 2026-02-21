@@ -5,13 +5,16 @@ export class AudioManager {
   private activeNodes = new Map<string, { source: AudioBufferSourceNode, gainNode: GainNode }>();
   private pauseTimes = new Map<string, number>();
   private startTimes = new Map<string, number>();
+  private playRequestsPendingBuffer = new Set<string>();
+  private playClipInFlight = new Set<string>();
 
   private sectionMusicUrl: string | null = null;
+  private playClipCalls = 0;
   private listeners = new Set<() => void>();
 
   // WebAudio Integration
   private ctx: AudioContext;
-  private masterGain: GainNode; // the splitter bus
+  private masterGain: GainNode; // masterMusicBus splitter
   private monitorGain: GainNode;
   private cableGain: GainNode;
   private destination: MediaStreamAudioDestinationNode;
@@ -26,6 +29,18 @@ export class AudioManager {
     this.destination = this.ctx.createMediaStreamDestination();
     this.monitorDestination = this.ctx.createMediaStreamDestination();
 
+    this.initializeRouting();
+
+    // Link to our Virtual Cable Router
+    audioRouting.setSourceStream(this.destination.stream);
+    audioRouting.setMonitorStream(this.monitorDestination.stream);
+  }
+
+  private initializeRouting() {
+    this.masterGain.disconnect();
+    this.monitorGain.disconnect();
+    this.cableGain.disconnect();
+
     // Master splits into the two output routes
     this.masterGain.connect(this.cableGain);
     this.masterGain.connect(this.monitorGain);
@@ -33,10 +48,6 @@ export class AudioManager {
     // Each sub-bus goes to its respective sink
     this.cableGain.connect(this.destination);
     this.monitorGain.connect(this.monitorDestination);
-
-    // Link to our Virtual Cable Router
-    audioRouting.setSourceStream(this.destination.stream);
-    audioRouting.setMonitorStream(this.monitorDestination.stream);
   }
 
   public subscribe(listener: () => void) {
@@ -95,54 +106,92 @@ export class AudioManager {
     return this.activeNodes.has(url);
   }
 
+  private cleanupNode(url: string) {
+    const node = this.activeNodes.get(url);
+    if (!node) return;
+
+    node.source.onended = null;
+    try {
+      node.source.stop();
+    } catch {
+      // ignore if already stopped
+    }
+    node.source.disconnect();
+    node.gainNode.disconnect();
+    this.activeNodes.delete(url);
+  }
+
   public playClip(url: string, volume: number = 1, loop: boolean = false, fadeOptions?: { fadeEnabled: boolean }) {
+    this.playClipCalls += 1;
+    const wasPlaying = this.isPlaying(url);
+    console.log("[audio] playClip", { callCount: this.playClipCalls, url, wasPlaying, ctxState: this.ctx.state });
+
+    if (this.playClipInFlight.has(url)) {
+      console.log("[audio] playClip skipped (already in-flight)", { url });
+      return;
+    }
+
     const buffer = this.buffers.get(url);
     if (!buffer) {
-      // If not preloaded, preload then play
+      if (this.playRequestsPendingBuffer.has(url)) {
+        return;
+      }
+      this.playRequestsPendingBuffer.add(url);
       this.preload(url).then(() => {
+        this.playRequestsPendingBuffer.delete(url);
         if (this.buffers.has(url)) this.playClip(url, volume, loop, fadeOptions);
       });
       return;
     }
 
-    if (this.ctx.state === "suspended") this.ctx.resume();
+    this.playClipInFlight.add(url);
+    try {
+      if (this.ctx.state === "suspended") this.ctx.resume();
 
-    // Already playing?
-    if (this.isPlaying(url)) return;
-
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = loop;
-
-    const gainNode = this.ctx.createGain();
-    gainNode.gain.value = fadeOptions?.fadeEnabled ? 0 : Math.max(0, Math.min(1, volume));
-
-    // Connect to the master splitter, NOT multiple outputs directly
-    source.connect(gainNode);
-    gainNode.connect(this.masterGain);
-
-    const offset = this.pauseTimes.get(url) || 0;
-    source.start(0, offset);
-
-    if (fadeOptions?.fadeEnabled) {
-      gainNode.gain.setValueAtTime(0, this.ctx.currentTime);
-      gainNode.gain.linearRampToValueAtTime(Math.max(0, Math.min(1, volume)), this.ctx.currentTime + 3);
-    }
-
-    this.startTimes.set(url, this.ctx.currentTime - offset);
-    this.activeNodes.set(url, { source, gainNode });
-
-    source.onended = () => {
-      // onended fires if stopped manually or ended naturally.
-      // we only clean up if it's the exact same node that ended naturally
-      if (this.activeNodes.get(url)?.source === source) {
-        this.activeNodes.delete(url);
-        this.pauseTimes.set(url, 0);
-        this.notify();
+      // Ensure single active playback path per URL
+      if (this.isPlaying(url)) {
+        this.cleanupNode(url);
       }
-    };
 
-    this.notify();
+      const source = this.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = loop;
+
+      const gainNode = this.ctx.createGain();
+      gainNode.gain.value = fadeOptions?.fadeEnabled ? 0 : Math.max(0, Math.min(1, volume));
+
+      // Connect to the master splitter, NOT multiple outputs directly
+      source.connect(gainNode);
+      gainNode.connect(this.masterGain);
+
+      const offset = this.pauseTimes.get(url) || 0;
+      source.start(0, offset);
+      console.log("[audio] source.start", { url });
+
+      if (fadeOptions?.fadeEnabled) {
+        gainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(Math.max(0, Math.min(1, volume)), this.ctx.currentTime + 3);
+      }
+
+      this.startTimes.set(url, this.ctx.currentTime - offset);
+      this.activeNodes.set(url, { source, gainNode });
+
+      source.onended = () => {
+        // onended fires if stopped manually or ended naturally.
+        // we only clean up if it's the exact same node that ended naturally
+        if (this.activeNodes.get(url)?.source === source) {
+          source.disconnect();
+          gainNode.disconnect();
+          this.activeNodes.delete(url);
+          this.pauseTimes.set(url, 0);
+          this.notify();
+        }
+      };
+
+      this.notify();
+    } finally {
+      this.playClipInFlight.delete(url);
+    }
   }
 
   public pauseClip(url: string) {
@@ -153,26 +202,30 @@ export class AudioManager {
     const elapsed = this.ctx.currentTime - start;
     this.pauseTimes.set(url, elapsed);
 
-    node.source.onended = null;
-    node.source.stop();
-    this.activeNodes.delete(url);
+    this.cleanupNode(url);
     this.notify();
   }
 
   public stopClip(url: string, fadeOptions?: { fadeEnabled: boolean }) {
     const node = this.activeNodes.get(url);
     if (node) {
-      node.source.onended = null;
       if (fadeOptions?.fadeEnabled) {
         const currentVol = node.gainNode.gain.value;
         node.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
         node.gainNode.gain.setValueAtTime(currentVol, this.ctx.currentTime);
         node.gainNode.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 3);
+        node.source.onended = () => {
+          if (this.activeNodes.get(url)?.source === node.source) {
+            node.source.disconnect();
+            node.gainNode.disconnect();
+            this.activeNodes.delete(url);
+            this.notify();
+          }
+        };
         node.source.stop(this.ctx.currentTime + 3);
       } else {
-        node.source.stop();
+        this.cleanupNode(url);
       }
-      this.activeNodes.delete(url);
     }
     this.pauseTimes.set(url, 0); // reset to beginning!
     this.notify();
