@@ -16,19 +16,18 @@ export class MicrophoneInput {
             });
             const ctx = audioManager.getContext();
 
-            // Safari requires context resume when using mic 
+            // Safari requires context resume when using mic
             if (ctx.state === "suspended") await ctx.resume();
 
             this.sourceNode = ctx.createMediaStreamSource(this.mediaStream);
             this.gainNode = ctx.createGain();
             this.gainNode.gain.value = 1.0;
 
-            // Prevent local echo by ONLY sending this to the CableGain bus, 
-            // preventing loops going straight to OS Default out
+            // Prevent local echo by ONLY sending this to the cable/broadcast bus
             this.sourceNode.connect(this.gainNode);
             this.gainNode.connect(audioManager.getCableGain());
 
-            console.log("[Mic] Enabled and routed to MasterMix");
+            console.log("[Mic] Enabled and routed to cable/broadcast path");
         } catch (e) {
             console.error("[Mic] Failed to enable microphone", e);
             throw e;
