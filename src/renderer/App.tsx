@@ -21,6 +21,95 @@ import type {
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
 import { audioManager } from "./audio/AudioManager";
+import { audioRouting } from "./audio/AudioRouting";
+import { micInput } from "./audio/MicrophoneInput";
+
+// CLIP PLAYER COMPONENT
+function AudioClipPlayer({
+  clip,
+  label,
+  onUpdate,
+  onPlay,
+  onStop,
+  onPause,
+  isSelected,
+  onToggleSelect,
+}: {
+  clip: AudioClip;
+  label: string;
+  onUpdate: (updates: Partial<AudioClip>) => void;
+  onPlay: (url: string, volume: number, fadeOptions?: { fadeEnabled: boolean }) => void;
+  onStop: (url: string, fadeOptions?: { fadeEnabled: boolean }) => void;
+  onPause: (url: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
+}) {
+  const [time, setTime] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
+  const isPlaying = audioManager.isPlaying(clip.url);
+  const duration = audioManager.getDuration(clip.url) || 100;
+
+  // time polling
+  useEffect(() => {
+    const interval = setInterval(() => setTime(audioManager.getCurrentTime(clip.url)), 100);
+    return () => clearInterval(interval);
+  }, [clip.url]);
+
+  // hotkey handling
+  useEffect(() => {
+    if (!clip.shortcut) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === clip.shortcut) {
+        if (audioManager.isPlaying(clip.url)) {
+          onPause(clip.url); // pausing via hotkey is best so we resume later!
+        } else {
+          onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false });
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [clip, onPlay, onPause]);
+
+  const bgColors = clip.color ? clip.color : "transparent";
+
+  return (
+    <div style={{ background: isPlaying ? `${bgColors}ee` : bgColors, filter: isPlaying ? "brightness(1.5)" : "none", transition: "all 0.2s", display: "flex", flexDirection: "column", gap: 6, padding: "8px", borderRadius: 6, marginBottom: 8, border: `1px solid ${isPlaying ? "#88c" : "#333"}`, boxSizing: "border-box", overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6, overflow: "hidden" }}>
+        <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
+        <input type="text" value={clip.name || label} onChange={e => onUpdate({ name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: "0.80rem", minWidth: 0, outline: "none", textOverflow: "ellipsis" }} />
+        <button onClick={() => setShowSettings(!showSettings)} style={{ background: "transparent", border: "none", padding: 0 }}>⚙️</button>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
+        <button onClick={() => isPlaying ? onPause(clip.url) : onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {isPlaying ? "⏸" : "▶"}
+        </button>
+        <button onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          ⏹
+        </button>
+
+        <input type="range" min={0} max={duration} step={0.1} value={time} onChange={(e) => audioManager.seek(clip.url, Number(e.target.value))} style={{ flex: 1, minWidth: 40 }} />
+
+        <input type="range" min={0} max={1} step={0.05} value={clip.volume ?? 1} onChange={(e) => {
+          const v = Number(e.target.value);
+          audioManager.setVolume(clip.url, v);
+          onUpdate({ volume: v });
+        }} style={{ width: 40 }} />
+      </div>
+
+      {showSettings && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", background: "rgba(0,0,0,0.3)", padding: "4px 8px", borderRadius: 4, marginTop: 4, fontSize: "0.75rem", color: "#ccc", boxSizing: "border-box" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Shortcut <input type="text" maxLength={1} value={clip.shortcut || ""} onChange={e => onUpdate({ shortcut: e.target.value })} style={{ width: 20, background: "#222", border: "1px solid #444", color: "#fff", textAlign: "center" }} /></label>
+          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Fade <input type="checkbox" checked={clip.fadeEnabled || false} onChange={e => onUpdate({ fadeEnabled: e.target.checked })} /></label>
+          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Color <input type="color" value={clip.color || "#111111"} onChange={e => onUpdate({ color: e.target.value })} style={{ width: 16, height: 16, padding: 0, border: "none", background: "transparent" }} /></label>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 type DrawTool = "highlighter" | "marker";
 
@@ -153,6 +242,14 @@ export function App() {
   }>({ isRunning: false, startTime: 0, accumulated: 0 });
   const [timerNow, setTimerNow] = useState(Date.now());
 
+  // Audio Routing State
+  const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedAudioOutput, setSelectedAudioOutput] = useState<string>("default");
+  const [selectedMonitorOutput, setSelectedMonitorOutput] = useState<string>("default");
+  const [selectedAudioInput, setSelectedAudioInput] = useState<string>("default");
+  const [micEnabled, setMicEnabled] = useState(false);
+
   useEffect(() => {
     if (!timerState.isRunning) return;
     const interval = setInterval(() => setTimerNow(Date.now()), 100);
@@ -184,7 +281,10 @@ export function App() {
   };
 
   // Check for unsaved changes on close
-  // Handle window close request from main process
+  // General UI Selected audio items tracking for bulk ops
+  const [selectedAudioKeys, setSelectedAudioKeys] = useState<Set<string>>(new Set());
+
+  // Initialization: apply stored window dimensions if present from main process
   useEffect(() => {
     const unsub = window.appApi.onRequestClose(() => {
       if (isDirty) {
@@ -469,6 +569,53 @@ export function App() {
     setError(null);
     setAppMode("teach");
     setIsDirty(false);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    audioRouting.listDevices().then((devices) => {
+      if (mounted) {
+        setAudioInputDevices(devices.inputs);
+        setAudioOutputDevices(devices.outputs);
+      }
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const handleDeviceChange = async (deviceId: string) => {
+    try {
+      await audioRouting.setDevice(deviceId);
+      setSelectedAudioOutput(deviceId);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to set audio output device.");
+    }
+  };
+
+  const handleMonitorDeviceChange = async (deviceId: string) => {
+    try {
+      await audioRouting.setMonitorDevice(deviceId);
+      setSelectedMonitorOutput(deviceId);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to set monitor output device.");
+    }
+  };
+
+  const toggleMic = async () => {
+    try {
+      if (micEnabled) {
+        micInput.disableMic();
+        setMicEnabled(false);
+      } else {
+        await micInput.enableMic(selectedAudioInput !== "default" ? selectedAudioInput : undefined);
+        setMicEnabled(true);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to access microphone.");
+      setMicEnabled(false);
+    }
   };
 
   const executePendingAction = async (action: "create" | "open" | "close") => {
@@ -888,17 +1035,17 @@ export function App() {
   const updateSlideAudio = (
     type: "dialogue" | "sfx" | "bgm",
     index: number | null,
-    volume: number,
+    updates: Partial<AudioClip>,
   ) => {
     if (!project || !currentSlide) return;
     const updateAudioClipArray = (
       arr: AudioClip[] | undefined,
       idx: number,
-      vol: number,
+      upds: Partial<AudioClip>,
     ) => {
       if (!arr) return arr;
       const res = [...arr];
-      if (res[idx]) res[idx] = { ...res[idx], volume: vol };
+      if (res[idx]) res[idx] = { ...res[idx], ...upds };
       return res;
     };
 
@@ -907,12 +1054,12 @@ export function App() {
       nextSlide.dialogue = updateAudioClipArray(
         nextSlide.dialogue,
         index,
-        volume,
+        updates,
       );
     } else if (type === "sfx" && index !== null) {
-      nextSlide.sfx = updateAudioClipArray(nextSlide.sfx, index, volume);
+      nextSlide.sfx = updateAudioClipArray(nextSlide.sfx, index, updates);
     } else if (type === "bgm") {
-      if (nextSlide.bgm) nextSlide.bgm = { ...nextSlide.bgm, volume };
+      if (nextSlide.bgm) nextSlide.bgm = { ...nextSlide.bgm, ...updates };
     }
 
     setProject({
@@ -2182,102 +2329,66 @@ export function App() {
                   {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("dialogue")}>+</button>}
                 </div>
                 {currentSlide.dialogue?.map((clip, idx) => (
-                  <div key={`diag-${idx}`} className="audio-item">
-                    <span>{clip.name || `Dialogue ${idx + 1}`}</span>
-                    <button
-                      onClick={() => {
-                        if (audioManager.isPlaying(clip.url))
-                          audioManager.stopClip(clip.url);
-                        else
-                          audioManager.playClip(clip.url, clip.volume, false);
-                      }}
-                    >
-                      {audioManager.isPlaying(clip.url) ? "■" : "▶"}
-                    </button>
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={clip.volume ?? 1}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        audioManager.setVolume(clip.url, v);
-                        updateSlideAudio("dialogue", idx, v);
-                      }}
-                    />
-                  </div>
+                  <AudioClipPlayer
+                    key={`diag-${idx}`}
+                    clip={clip}
+                    label={`Dialogue ${idx + 1}`}
+                    onUpdate={(upds) => updateSlideAudio("dialogue", idx, upds)}
+                    onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
+                    onPause={(url) => audioManager.pauseClip(url)}
+                    onStop={(url, opts) => audioManager.stopClip(url, opts)}
+                    isSelected={selectedAudioKeys.has(`diag-${idx}`)}
+                    onToggleSelect={() => {
+                      const s = new Set(selectedAudioKeys);
+                      if (s.has(`diag-${idx}`)) s.delete(`diag-${idx}`);
+                      else s.add(`diag-${idx}`);
+                      setSelectedAudioKeys(s);
+                    }}
+                  />
                 ))}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
                   <span>SFX</span>
                   {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("sfx")}>+</button>}
                 </div>
                 {currentSlide.sfx?.map((clip, idx) => (
-                  <div key={`sfx-${idx}`} className="audio-item">
-                    <span>{clip.name || `SFX ${idx + 1}`}</span>
-                    <button
-                      onClick={() => {
-                        if (audioManager.isPlaying(clip.url))
-                          audioManager.stopClip(clip.url);
-                        else
-                          audioManager.playClip(clip.url, clip.volume, false);
-                      }}
-                    >
-                      {audioManager.isPlaying(clip.url) ? "■" : "▶"}
-                    </button>
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={clip.volume ?? 1}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        audioManager.setVolume(clip.url, v);
-                        updateSlideAudio("sfx", idx, v);
-                      }}
-                    />
-                  </div>
+                  <AudioClipPlayer
+                    key={`sfx-${idx}`}
+                    clip={clip}
+                    label={`SFX ${idx + 1}`}
+                    onUpdate={(upds) => updateSlideAudio("sfx", idx, upds)}
+                    onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
+                    onPause={(url) => audioManager.pauseClip(url)}
+                    onStop={(url, opts) => audioManager.stopClip(url, opts)}
+                    isSelected={selectedAudioKeys.has(`sfx-${idx}`)}
+                    onToggleSelect={() => {
+                      const s = new Set(selectedAudioKeys);
+                      if (s.has(`sfx-${idx}`)) s.delete(`sfx-${idx}`);
+                      else s.add(`sfx-${idx}`);
+                      setSelectedAudioKeys(s);
+                    }}
+                  />
                 ))}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
                   <span>Slide BGM</span>
                   {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("bgm")}>+</button>}
                 </div>
-                {currentSlide.bgm &&
-                  (() => {
-                    const clip = currentSlide.bgm;
-                    return (
-                      <div className="audio-item">
-                        <span>{clip.name || "Slide BGM"}</span>
-                        <button
-                          onClick={() => {
-                            if (audioManager.isPlaying(clip.url))
-                              audioManager.stopClip(clip.url);
-                            else
-                              audioManager.playClip(
-                                clip.url,
-                                clip.volume,
-                                true,
-                              );
-                          }}
-                        >
-                          {audioManager.isPlaying(clip.url) ? "■" : "▶"}
-                        </button>
-                        <input
-                          type="range"
-                          min={0}
-                          max={1}
-                          step={0.05}
-                          value={clip.volume ?? 1}
-                          onChange={(e) => {
-                            const v = Number(e.target.value);
-                            audioManager.setVolume(clip.url, v);
-                            updateSlideAudio("bgm", null, v);
-                          }}
-                        />
-                      </div>
-                    );
-                  })()}
+                {currentSlide.bgm && (
+                  <AudioClipPlayer
+                    clip={currentSlide.bgm}
+                    label={"Slide BGM"}
+                    onUpdate={(upds) => updateSlideAudio("bgm", null, upds)}
+                    onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, opts)}
+                    onPause={(url) => audioManager.pauseClip(url)}
+                    onStop={(url, opts) => audioManager.stopClip(url, opts)}
+                    isSelected={selectedAudioKeys.has("slide-bgm")}
+                    onToggleSelect={() => {
+                      const s = new Set(selectedAudioKeys);
+                      if (s.has("slide-bgm")) s.delete("slide-bgm");
+                      else s.add("slide-bgm");
+                      setSelectedAudioKeys(s);
+                    }}
+                  />
+                )}
                 {!currentSlide.dialogue?.length &&
                   !currentSlide.sfx?.length &&
                   !currentSlide.bgm && (
@@ -2302,37 +2413,21 @@ export function App() {
               {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a", color: "#fff" }} onClick={() => onImportAudio("section-bgm")}>+</button>}
             </h4>
             {selectedSection?.bgm ? (
-              (() => {
-                const bgm = selectedSection.bgm;
-                return (
-                  <div className="audio-item">
-                    <span>{bgm.name || "Section BGM"}</span>
-                    <button
-                      onClick={() => {
-                        if (audioManager.isPlaying(bgm.url))
-                          audioManager.stopSectionMusic();
-                        else audioManager.playSectionMusic(bgm.url, bgm.volume);
-                      }}
-                    >
-                      {audioManager.isPlaying(bgm.url) ? "■" : "▶"}
-                    </button>
-                    <input
-                      type="range"
-                      min={0}
-                      max={1}
-                      step={0.05}
-                      value={bgm.volume ?? 1}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        audioManager.setVolume(bgm.url, v);
-                        updateSection(selectedSection.id, {
-                          bgm: { ...bgm, volume: v },
-                        });
-                      }}
-                    />
-                  </div>
-                );
-              })()
+              <AudioClipPlayer
+                clip={selectedSection.bgm}
+                label="Section BGM"
+                onUpdate={(upds) => updateSection(selectedSection.id, { bgm: { ...selectedSection.bgm!, ...upds } })}
+                onPlay={(url, vol, opts) => audioManager.playSectionMusic(url, vol, opts?.fadeEnabled)}
+                onPause={(url) => audioManager.pauseClip(url)}
+                onStop={(url, opts) => audioManager.stopSectionMusic(opts?.fadeEnabled)}
+                isSelected={selectedAudioKeys.has("section-bgm")}
+                onToggleSelect={() => {
+                  const s = new Set(selectedAudioKeys);
+                  if (s.has("section-bgm")) s.delete("section-bgm");
+                  else s.add("section-bgm");
+                  setSelectedAudioKeys(s);
+                }}
+              />
             ) : (
               <div
                 style={{
@@ -2346,13 +2441,106 @@ export function App() {
               </div>
             )}
 
+            {/* Bulk Actions Structure Placeholder */}
+            {selectedAudioKeys.size > 0 && (
+              <div style={{ marginTop: 8, padding: 8, background: "#332a10", borderRadius: 4, display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "0.75rem", color: "#ddaa55" }}>{selectedAudioKeys.size} Selected</span>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button style={{ fontSize: "0.7rem", padding: "2px 6px" }} disabled>Fade All</button>
+                  <button style={{ fontSize: "0.7rem", padding: "2px 6px" }} disabled>Stop All</button>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          <div className="audio-block" style={{ marginTop: 'auto', background: "#111112", border: '1px solid #222225', padding: '16px' }}>
+            <h4 style={{ margin: "0 0 16px 0", color: "#666", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "1px" }}>Audio Routing</h4>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: "0.75rem", color: "#888" }}>MIX OUTPUT DEVICE</span>
+              </div>
+              <select
+                value={selectedAudioOutput}
+                onChange={(e) => handleDeviceChange(e.target.value)}
+                style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+              >
+                <option value="default">System Default</option>
+                {audioOutputDevices.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label || `Output ${d.deviceId.slice(0, 5)}...`}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: "0.75rem", color: "#888" }}>MONITOR DEVICE</span>
+              </div>
+              <select
+                value={selectedMonitorOutput}
+                onChange={(e) => handleMonitorDeviceChange(e.target.value)}
+                style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+              >
+                <option value="default">System Default</option>
+                {audioOutputDevices.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label || `Monitor ${d.deviceId.slice(0, 5)}...`}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: "0.75rem", color: "#888" }}>MICROPHONE INPUT</span>
+                <button
+                  onClick={toggleMic}
+                  style={{
+                    padding: "2px 8px",
+                    fontSize: "0.7rem",
+                    fontWeight: "bold",
+                    background: micEnabled ? "#4a1a1a" : "#1a1a1c",
+                    border: `1px solid ${micEnabled ? "#8a3a3a" : "#333"}`,
+                    color: micEnabled ? "#ffaaaa" : "#666",
+                    borderRadius: "4px"
+                  }}
+                >
+                  {micEnabled ? "LIVE" : "OFF"}
+                </button>
+              </div>
+              <select
+                value={selectedAudioInput}
+                onChange={(e) => {
+                  setSelectedAudioInput(e.target.value);
+                  if (micEnabled) {
+                    // Force restart if live
+                    micInput.disableMic();
+                    micInput.enableMic(e.target.value !== "default" ? e.target.value : undefined).catch(err => {
+                      console.error(err);
+                      setMicEnabled(false);
+                    });
+                  }
+                }}
+                style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+              >
+                <option value="default">Default Mic</option>
+                {audioInputDevices.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label || `Mic ${d.deviceId.slice(0, 5)}...`}</option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={() => audioManager.stopAll()}
               style={{
                 width: "100%",
-                marginTop: 12,
-                background: "#4a2a2a",
-                borderColor: "#7a3a3a",
+                marginTop: 24,
+                padding: "8px",
+                background: "#2a1515",
+                color: "#ff8888",
+                borderColor: "#4a2525",
+                fontSize: "0.85rem",
+                borderRadius: "4px",
+                cursor: "pointer"
               }}
             >
               Stop All Audio

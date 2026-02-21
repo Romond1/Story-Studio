@@ -1,0 +1,148 @@
+import { audioRouting } from "./AudioRouting";
+
+export class AudioManager {
+  private cache = new Map<string, HTMLAudioElement>();
+  private sectionMusicUrl: string | null = null;
+  private listeners = new Set<() => void>();
+
+  // WebAudio Integration
+  private ctx: AudioContext;
+  private masterGain: GainNode;
+  private destination: MediaStreamAudioDestinationNode;
+  private sources = new Map<string, MediaElementAudioSourceNode>();
+
+  constructor() {
+    this.ctx = new AudioContext();
+    this.masterGain = this.ctx.createGain();
+    this.destination = this.ctx.createMediaStreamDestination();
+
+    // Route entire mix into output destination
+    this.masterGain.connect(this.destination);
+
+    // Link to our Virtual Cable Router
+    audioRouting.setSourceStream(this.destination.stream);
+  }
+
+  public subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify = () => {
+    this.listeners.forEach((l) => l());
+  };
+
+  private getAudio(url: string, volume: number = 1): HTMLAudioElement {
+    if (!this.cache.has(url)) {
+      const audio = new Audio(url);
+      audio.crossOrigin = "anonymous";
+
+      // We control volume strictly via WebAudio graph now to preserve unity gain passing to sink
+      const srcNode = this.ctx.createMediaElementSource(audio);
+      const gainNode = this.ctx.createGain();
+      gainNode.gain.value = volume;
+
+      srcNode.connect(gainNode);
+      gainNode.connect(this.masterGain);
+
+      this.sources.set(url, srcNode);
+
+      audio.onerror = (e) => console.error(`[audio] Error loading ${url}`, e);
+      audio.onplay = () => {
+        if (this.ctx.state === "suspended") this.ctx.resume();
+        this.notify();
+      };
+      audio.onpause = this.notify;
+      audio.onended = this.notify;
+      this.cache.set(url, audio);
+    }
+    return this.cache.get(url)!;
+  }
+
+  public playClip(url: string, volume: number = 1, loop: boolean = false) {
+    this.setVolume(url, volume); // instantiate or set node gain before play
+    const audio = this.getAudio(url, volume);
+    audio.loop = loop;
+    audio.currentTime = 0;
+    audio
+      .play()
+      .catch((e) => console.error(`[audio] Play failed for ${url}`, e));
+  }
+
+  public stopClip(url: string) {
+    const audio = this.cache.get(url);
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  }
+
+  public isPlaying(url: string): boolean {
+    const audio = this.cache.get(url);
+    if (!audio) return false;
+    return !audio.paused && !audio.ended;
+  }
+
+  public setVolume(url: string, volume: number) {
+    const _ = this.getAudio(url, volume); // force instantiation cache
+    const srcNode = this.sources.get(url);
+    if (!srcNode) return;
+
+    // We disconnect and reconnect to a newly scaled gain node to ensure exact volume
+    srcNode.disconnect();
+    const gainNode = this.ctx.createGain();
+    gainNode.gain.value = Math.max(0, Math.min(1, volume));
+    srcNode.connect(gainNode);
+    gainNode.connect(this.masterGain);
+  }
+
+  public playSectionMusic(url: string, volume: number = 1) {
+    if (this.sectionMusicUrl && this.sectionMusicUrl !== url) {
+      this.stopClip(this.sectionMusicUrl);
+    }
+    this.sectionMusicUrl = url;
+    const audio = this.getAudio(url, volume);
+    this.setVolume(url, volume);
+    audio.loop = true;
+    if (audio.paused) {
+      audio
+        .play()
+        .catch((e) =>
+          console.error(`[audio] Play section music failed ${url}`, e),
+        );
+    }
+  }
+
+  public stopSectionMusic() {
+    if (this.sectionMusicUrl) {
+      this.stopClip(this.sectionMusicUrl);
+      this.sectionMusicUrl = null;
+    }
+  }
+
+  public stopSlideAudio() {
+    this.cache.forEach((audio, url) => {
+      if (url !== this.sectionMusicUrl && !audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    });
+  }
+
+  public stopAll() {
+    this.cache.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    this.sectionMusicUrl = null;
+  }
+  public getMasterGain() {
+    return this.masterGain;
+  }
+
+  public getContext() {
+    return this.ctx;
+  }
+}
+
+export const audioManager = new AudioManager();

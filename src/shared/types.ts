@@ -6,6 +6,9 @@ export interface AudioClip {
   url: string;
   volume: number;
   name?: string;
+  shortcut?: string;
+  color?: string;
+  fadeEnabled?: boolean;
 }
 
 export interface DrawPoint {
