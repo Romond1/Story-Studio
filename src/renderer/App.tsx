@@ -124,6 +124,15 @@ function AudioClipPlayer({
           >
             ⚙️
           </button>
+          {showRemove && onRemove && (
+            <button
+              onClick={onRemove}
+              style={{ background: "transparent", border: "none", padding: 0, marginLeft: 4, color: "#ff6666" }}
+              title="Remove audio"
+            >
+              🗑️
+            </button>
+          )}
         </div>
 
         {/* Row 2: single long seek bar + time (under controls) */}
@@ -318,8 +327,10 @@ export function App() {
     new Set(),
   );
   const [drawClearSignal, setDrawClearSignal] = useState(0);
+  const [showBreakEditor, setShowBreakEditor] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSlideSelector, setShowSlideSelector] = useState(false);
   const [pendingAction, setPendingAction] = useState<
     "create" | "open" | "close" | null
   >(null);
@@ -433,6 +444,14 @@ export function App() {
   const sections = project?.data.sections ?? [];
   const selectedSection = sections.find((s) => s.id === selectedSectionId);
   const selectedSectionType = selectedSection?.type;
+
+  useEffect(() => {
+    if (selectedSectionType === "break" && appMode === "edit") {
+      setShowBreakEditor(true);
+    } else {
+      setShowBreakEditor(false);
+    }
+  }, [selectedSectionType, selectedSectionId, appMode]);
 
   const sectionSlideIndices = useMemo(() => {
     if (!project) return new Map<string, number[]>();
@@ -1321,6 +1340,30 @@ export function App() {
         </div>
       )}
 
+      {showSlideSelector && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}>
+          <div style={{ background: "#2a2a30", border: "1px solid #444", borderRadius: 8, padding: 24, width: 400, display: "flex", flexDirection: "column", gap: 16, maxHeight: "80vh" }}>
+            <h3 style={{ margin: 0, color: "#eee" }}>Select Slide</h3>
+            <div style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+              {project?.data.slides.map((s, idx) => {
+                const asset = assetsById.get(s.assetId);
+                return (
+                  <button key={s.id} onClick={() => {
+                    const newMedia = [{ id: `img-${Date.now()}`, slideId: s.id, fit: "contain" as const }];
+                    const nextBreakMedia = [...(selectedSection?.breakMedia || []), ...newMedia];
+                    if (selectedSection) updateSection(selectedSection.id, { breakMedia: nextBreakMedia });
+                    setShowSlideSelector(false);
+                  }} style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer" }}>
+                    {idx + 1}. {asset?.originalName || "Unknown"}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => setShowSlideSelector(false)} style={{ alignSelf: "flex-end", padding: "6px 12px" }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       {showConfirmModal && (
         <div
           style={{
@@ -1568,447 +1611,7 @@ export function App() {
                         )}
                       </ul>
                     )}
-                    {isBreak && isExpanded && (
-                      <div className="break-controls">
-                        <label>
-                          Title
-                          <input
-                            value={section.name}
-                            onChange={(e) =>
-                              updateSection(section.id, {
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                        </label>
-                        <label>
-                          Questions (1 per line)
-                          <textarea
-                            rows={4}
-                            value={section.questions ?? ""}
-                            onChange={(e) =>
-                              updateSection(section.id, {
-                                questions: e.target.value,
-                              })
-                            }
-                          />
-                        </label>
-                        <label>
-                          Timer Mode
-                          <select
-                            value={section.timerMode ?? "countup"}
-                            onChange={(e) =>
-                              updateSection(section.id, {
-                                timerMode: e.target.value as any,
-                              })
-                            }
-                          >
-                            <option value="countup">Count Up (Timer)</option>
-                            <option value="countdown">
-                              Count Down (Stopwatch)
-                            </option>
-                          </select>
-                        </label>
-                        {section.timerMode === "countdown" && (
-                          <div
-                            style={{ display: "flex", gap: 4, marginBottom: 8 }}
-                          >
-                            <label style={{ flex: 1 }}>
-                              Min
-                              <input
-                                type="number"
-                                min="0"
-                                value={Math.floor(
-                                  (section.timerDuration ?? 300) / 60,
-                                )}
-                                onChange={(e) => {
-                                  const mins = Number(e.target.value);
-                                  const secs =
-                                    (section.timerDuration ?? 300) % 60;
-                                  updateSection(section.id, {
-                                    timerDuration: mins * 60 + secs,
-                                  });
-                                }}
-                              />
-                            </label>
-                            <label style={{ flex: 1 }}>
-                              Sec
-                              <input
-                                type="number"
-                                min="0"
-                                max="59"
-                                value={(section.timerDuration ?? 300) % 60}
-                                onChange={(e) => {
-                                  const secs = Number(e.target.value);
-                                  const mins = Math.floor(
-                                    (section.timerDuration ?? 300) / 60,
-                                  );
-                                  updateSection(section.id, {
-                                    timerDuration: mins * 60 + secs,
-                                  });
-                                }}
-                              />
-                            </label>
-                          </div>
-                        )}
-                        <div
-                          style={{ display: "flex", gap: 4, marginBottom: 8 }}
-                        >
-                          <button style={{ flex: 1 }} onClick={toggleTimer}>
-                            {timerState.isRunning ? "Stop" : "Start"}
-                          </button>
-                          <button style={{ flex: 1 }} onClick={resetTimer}>
-                            Reset
-                          </button>
-                        </div>
 
-                        <label
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={section.timer ?? false}
-                            onChange={(e) =>
-                              updateSection(section.id, {
-                                timer: e.target.checked,
-                              })
-                            }
-                          />
-                          Show timer to viewers
-                        </label>
-
-                        <label>
-                          Question font
-                          <select
-                            value={section.font ?? "Inter"}
-                            onChange={(e) =>
-                              updateSection(section.id, {
-                                font: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="Inter">Inter</option>
-                            <option value="Roboto">Roboto</option>
-                            <option value="Arial">Arial</option>
-                            <option value="Courier New">Courier New</option>
-                          </select>
-                        </label>
-                        <label>
-                          Question size
-                          <input
-                            type="range"
-                            min={16}
-                            max={72}
-                            value={section.fontSize ?? 28}
-                            onChange={(e) =>
-                              updateSection(section.id, {
-                                fontSize: Number(e.target.value),
-                              })
-                            }
-                          />
-                        </label>
-                        <label>
-                          Thumbnail Size
-                          <input
-                            type="range"
-                            min={100}
-                            max={600}
-                            step={10}
-                            value={section.thumbnailSize ?? 200}
-                            onChange={(e) =>
-                              updateSection(section.id, {
-                                thumbnailSize: Number(e.target.value),
-                              })
-                            }
-                          />
-                        </label>
-
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <label style={{ flex: 1 }}>
-                            Align
-                            <select
-                              value={section.align ?? "center"}
-                              onChange={(e) =>
-                                updateSection(section.id, {
-                                  align: e.target.value as any,
-                                })
-                              }
-                            >
-                              <option value="left">Left</option>
-                              <option value="center">Center</option>
-                              <option value="right">Right</option>
-                            </select>
-                          </label>
-                          <label style={{ flex: 1 }}>
-                            Position
-                            <select
-                              value={section.position ?? "center"}
-                              onChange={(e) =>
-                                updateSection(section.id, {
-                                  position: e.target.value as any,
-                                })
-                              }
-                            >
-                              <option value="top">Top</option>
-                              <option value="center">Center</option>
-                              <option value="bottom">Bottom</option>
-                            </select>
-                          </label>
-                        </div>
-
-                        <label>
-                          Background
-                          {!section.background?.startsWith(
-                            "linear-gradient",
-                          ) ? (
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: 4,
-                                alignItems: "center",
-                              }}
-                            >
-                              <input
-                                type="color"
-                                value={section.background || "#2a2a3a"}
-                                onChange={(e) =>
-                                  updateSection(section.id, {
-                                    background: e.target.value,
-                                  })
-                                }
-                              />
-                              <button
-                                style={{ fontSize: 10 }}
-                                onClick={() =>
-                                  updateSection(section.id, {
-                                    background:
-                                      "linear-gradient(135deg, #111111, #333333)",
-                                  })
-                                }
-                              >
-                                Make Gradient
-                              </button>
-                            </div>
-                          ) : (
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 4,
-                              }}
-                            >
-                              {(() => {
-                                const bg = section.background || "";
-                                const colors = bg.match(
-                                  /#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g,
-                                ) || ["#000000", "#ffffff"];
-                                const c1 = colors[0] || "#000000";
-                                const c2 = colors[1] || "#ffffff";
-                                return (
-                                  <>
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        gap: 4,
-                                        alignItems: "center",
-                                      }}
-                                    >
-                                      <label style={{ fontSize: 10 }}>
-                                        Start:{" "}
-                                        <input
-                                          type="color"
-                                          value={c1}
-                                          onChange={(e) => {
-                                            const newBg =
-                                              section.background?.replace(
-                                                c1,
-                                                e.target.value,
-                                              ) ||
-                                              `linear-gradient(135deg, ${e.target.value}, ${c2})`;
-                                            updateSection(section.id, {
-                                              background: newBg,
-                                            });
-                                          }}
-                                        />
-                                      </label>
-                                    </div>
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        gap: 4,
-                                        alignItems: "center",
-                                      }}
-                                    >
-                                      <label style={{ fontSize: 10 }}>
-                                        End:{" "}
-                                        <input
-                                          type="color"
-                                          value={c2}
-                                          onChange={(e) => {
-                                            const newBg =
-                                              section.background?.replace(
-                                                c2,
-                                                e.target.value,
-                                              ) ||
-                                              `linear-gradient(135deg, ${c1}, ${e.target.value})`;
-                                            updateSection(section.id, {
-                                              background: newBg,
-                                            });
-                                          }}
-                                        />
-                                      </label>
-                                    </div>
-                                    <button
-                                      style={{ fontSize: 10 }}
-                                      onClick={() =>
-                                        updateSection(section.id, {
-                                          background: "#2a2a3a",
-                                        })
-                                      }
-                                    >
-                                      Revert to Solid
-                                    </button>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          )}
-                        </label>
-
-                        <label>Add section media</label>
-                        <div className="break-media-list">
-                          {(section.breakMedia ?? []).map((m, i) => {
-                            const slide = project?.data.slides.find(
-                              (s) => s.id === m.slideId,
-                            );
-                            const asset = slide
-                              ? assetsById.get(slide.assetId)
-                              : null;
-                            if (!asset) return null;
-                            return (
-                              <div key={m.id} className="break-media-item">
-                                <span
-                                  className="break-media-thumb"
-                                  style={{
-                                    background: "#444",
-                                    display: "grid",
-                                    placeItems: "center",
-                                    fontSize: 10,
-                                  }}
-                                >
-                                  {asset?.mediaType === "image" ? "IMG" : "VID"}
-                                </span>
-                                <span
-                                  style={{
-                                    flex: 1,
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                    whiteSpace: "nowrap",
-                                  }}
-                                >
-                                  Slide{" "}
-                                  {project?.data.slides.findIndex(
-                                    (s) => s.id === m.slideId,
-                                  )! + 1}
-                                </span>
-                                <div style={{ display: "flex" }}>
-                                  <button
-                                    style={{ padding: "0 4px", fontSize: 10 }}
-                                    onClick={() => {
-                                      if (i === 0) return;
-                                      const newMedia = [
-                                        ...(section.breakMedia ?? []),
-                                      ];
-                                      [newMedia[i - 1], newMedia[i]] = [
-                                        newMedia[i],
-                                        newMedia[i - 1],
-                                      ];
-                                      updateSection(section.id, {
-                                        breakMedia: newMedia,
-                                      });
-                                    }}
-                                  >
-                                    ▲
-                                  </button>
-                                  <button
-                                    style={{ padding: "0 4px", fontSize: 10 }}
-                                    onClick={() => {
-                                      if (
-                                        i ===
-                                        (section.breakMedia?.length ?? 0) - 1
-                                      )
-                                        return;
-                                      const newMedia = [
-                                        ...(section.breakMedia ?? []),
-                                      ];
-                                      [newMedia[i], newMedia[i + 1]] = [
-                                        newMedia[i + 1],
-                                        newMedia[i],
-                                      ];
-                                      updateSection(section.id, {
-                                        breakMedia: newMedia,
-                                      });
-                                    }}
-                                  >
-                                    ▼
-                                  </button>
-                                  <button
-                                    style={{
-                                      padding: "0 4px",
-                                      fontSize: 10,
-                                      marginLeft: 4,
-                                    }}
-                                    onClick={() => {
-                                      const newMedia = [
-                                        ...(section.breakMedia ?? []),
-                                      ];
-                                      newMedia.splice(i, 1);
-                                      updateSection(section.id, {
-                                        breakMedia: newMedia,
-                                      });
-                                    }}
-                                  >
-                                    X
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div style={{ display: "flex", gap: 4 }}>
-                          <select
-                            id={`add-slide-${section.id}`}
-                            style={{ flex: 1 }}
-                          >
-                            {project?.data.slides.map((s, idx) => (
-                              <option key={s.id} value={s.id}>
-                                {idx + 1}.{" "}
-                                {assetsById.get(s.assetId)?.originalName}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => {
-                              const select = document.getElementById(
-                                `add-slide-${section.id}`,
-                              ) as HTMLSelectElement;
-                              if (!select.value) return;
-                              const newMedia = [...(section.breakMedia ?? [])];
-                              newMedia.push({
-                                id: crypto.randomUUID(),
-                                slideId: select.value,
-                                fit: "cover",
-                              });
-                              updateSection(section.id, {
-                                breakMedia: newMedia,
-                              });
-                            }}
-                          >
-                            Add
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </li>
                 );
               })}
@@ -2037,110 +1640,501 @@ export function App() {
           </div>
         </aside>
 
-        <main className="stage-wrap">
+        <main className="stage-wrap" style={{ position: "relative" }}>
           {selectedSectionType === "break" && selectedSection ? (
-            <ZoomPanWrapper
-              className="break-stage-wrapper"
-              drawSettings={drawSettings}
-              markerStrokes={selectedSection.markerStrokes ?? []}
-              onMarkerStrokesChange={(strokes) =>
-                updateSection(selectedSection.id, { markerStrokes: strokes })
-              }
-              clearSignal={drawClearSignal}
-            >
-              <div
-                className="break-stage"
-                style={{
-                  background: selectedSection.background || "#111",
-                  transformOrigin: "top left", // Handled by wrapper
-                }}
-              >
-                {/* Thumbnails at Top */}
-                <div className="break-thumbnails-grid">
-                  {(selectedSection.breakMedia ?? []).map((m) => {
-                    const slide = project?.data.slides.find(
-                      (s) => s.id === m.slideId,
-                    );
-                    const asset = slide ? assetsById.get(slide.assetId) : null;
-                    if (!asset) return null;
-                    const src = toMediaUrl(asset.relativePath);
-                    return (
-                      <img
-                        key={m.id}
-                        src={src}
-                        className="break-stage-thumb"
-                        style={{
-                          objectFit: m.fit,
-                          width: selectedSection.thumbnailSize ?? 200,
-                          height:
-                            (selectedSection.thumbnailSize ?? 200) * 0.5625,
+            <>
+              {appMode === "edit" && !showBreakEditor && (
+                <button
+                  style={{ position: "absolute", top: 10, right: 10, zIndex: 60, padding: "8px 12px", background: "#333", border: "1px solid #555", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: "0.85rem" }}
+                  onClick={() => setShowBreakEditor(true)}
+                >
+                  Edit Break
+                </button>
+              )}
+              {appMode === "edit" && showBreakEditor && (
+                <div style={{ position: "absolute", top: 10, right: 10, width: "300px", maxHeight: "calc(100% - 20px)", height: "auto", backgroundColor: "rgba(30,30,35,0.98)", border: "1px solid #444", borderRadius: "8px", zIndex: 60, padding: "12px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", color: "#ddd", boxShadow: "-2px 0 10px rgba(0,0,0,0.5)", boxSizing: "border-box" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #444", paddingBottom: "8px", margin: 0 }}>
+                    <h3 style={{ margin: 0, color: "#fff" }}>Break Editor</h3>
+                    <button onClick={() => setShowBreakEditor(false)} style={{ background: "transparent", border: "none", color: "#aaa", cursor: "pointer", fontSize: "16px", padding: "0 4px" }}>✕</button>
+                  </div>
+
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Title</span>
+                    <textarea
+                      value={selectedSection.name || ""}
+                      onChange={(e) => updateSection(selectedSection.id, { name: e.target.value })}
+                      style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "6px", borderRadius: 4, fontFamily: "inherit", minHeight: 40, resize: "vertical" }}
+                    />
+                  </label>
+
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Questions</span>
+                    <textarea
+                      value={selectedSection.questions || ""}
+                      onChange={(e) => updateSection(selectedSection.id, { questions: e.target.value })}
+                      style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "6px", borderRadius: 4, minHeight: 100, fontFamily: "inherit", resize: "vertical" }}
+                    />
+                  </label>
+
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 100 }}>
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Font Family</span>
+                      <select
+                        value={selectedSection.font || "sans-serif"}
+                        onChange={(e) => updateSection(selectedSection.id, { font: e.target.value })}
+                        style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "6px", borderRadius: 4, outline: "none" }}
+                      >
+                        <option value="sans-serif">Sans-Serif</option>
+                        <option value="serif">Serif</option>
+                        <option value="monospace">Monospace</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                      </select>
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, width: "70px" }}>
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Q-Size</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={selectedSection.fontSize || 24}
+                        onChange={(e) => updateSection(selectedSection.id, { fontSize: Number(e.target.value) })}
+                        style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "6px", borderRadius: 4, outline: "none" }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, width: "70px" }}>
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>T-Size</span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={selectedSection.titleFontSize || 40}
+                        onChange={(e) => updateSection(selectedSection.id, { titleFontSize: Number(e.target.value) })}
+                        style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "6px", borderRadius: 4, outline: "none" }}
+                      />
+                    </label>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "16px", flexDirection: "column" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Text Color</span>
+                      <input
+                        type="color"
+                        value={(selectedSection as any).textColor || "#ffffff"}
+                        onChange={(e) => updateSection(selectedSection.id, { textColor: e.target.value } as any)}
+                        style={{ background: "transparent", border: "none", width: 24, height: 24, cursor: "pointer", padding: 0 }}
+                      />
+                    </label>
+
+                    <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Background</span>
+                      {(() => {
+                        const bg = selectedSection.background || "#111111";
+                        const isGrad = bg.startsWith("linear-gradient");
+                        const isImg = bg.startsWith("url");
+                        return (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                              {!isImg && !isGrad ? (
+                                <input type="color" value={bg} onChange={(e) => updateSection(selectedSection.id, { background: e.target.value })} style={{ background: "transparent", border: "none", width: 24, height: 24, cursor: "pointer", padding: 0 }} />
+                              ) : null}
+                              {isGrad ? (
+                                <>
+                                  <input type="color" value={(bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"])[0]} onChange={(e) => { const c = bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"]; updateSection(selectedSection.id, { background: `linear-gradient(180deg, ${e.target.value}, ${c[1] || c[0]})` }) }} style={{ background: "transparent", border: "none", width: 24, height: 24, cursor: "pointer", padding: 0 }} />
+                                  <input type="color" value={(bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"])[1]} onChange={(e) => { const c = bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"]; updateSection(selectedSection.id, { background: `linear-gradient(180deg, ${c[0]}, ${e.target.value})` }) }} style={{ background: "transparent", border: "none", width: 24, height: 24, cursor: "pointer", padding: 0 }} />
+                                </>
+                              ) : null}
+                              {isImg ? (
+                                <span style={{ fontSize: "0.8rem", color: "#fff", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Image BG</span>
+                              ) : null}
+                              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                <button onClick={() => updateSection(selectedSection.id, { background: "#111111" })} style={{ padding: "4px 8px", background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: "0.75rem" }}>Solid</button>
+                                <button onClick={() => updateSection(selectedSection.id, { background: "linear-gradient(180deg, #111111, #333333)" })} style={{ padding: "4px 8px", background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: "0.75rem" }}>Gradient</button>
+                                <button onClick={async () => {
+                                  if (!project) return;
+                                  const result = await window.appApi.importMedia();
+                                  if (result && result.importedAssets.length > 0) {
+                                    const nextAssets = [...project.data.assets, ...result.importedAssets];
+                                    setProject({
+                                      ...project,
+                                      data: { ...project.data, assets: nextAssets }
+                                    });
+                                    updateSection(selectedSection.id, { background: `url('${toMediaUrl(result.importedAssets[0].relativePath)}')` });
+                                  }
+                                }} style={{ padding: "4px 8px", background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: "0.75rem" }}>Image</button>
+                              </div>
+                            </div>
+
+                            {isImg && (
+                              <div style={{ display: "flex", gap: 4, flexDirection: "column", background: "rgba(0,0,0,0.2)", padding: 8, borderRadius: 4 }}>
+                                <span style={{ fontSize: "0.75rem", color: "#aaa" }}>BG Transform & Blur</span>
+                                <div style={{ display: "flex", gap: 4 }}>
+                                  <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>X <input type="text" value={selectedSection.bgTransform?.x ?? 0} onBlur={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { y: 0, scale: 1, blur: 0 }), x: Number(e.target.value) || 0 } })} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { y: 0, scale: 1, blur: 0 }), x: e.target.value as any } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
+                                  <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>Y <input type="text" value={selectedSection.bgTransform?.y ?? 0} onBlur={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, scale: 1, blur: 0 }), y: Number(e.target.value) || 0 } })} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, scale: 1, blur: 0 }), y: e.target.value as any } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
+                                </div>
+                                <div style={{ display: "flex", gap: 4 }}>
+                                  <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>Scale <input type="number" step="0.1" value={selectedSection.bgTransform?.scale ?? 1} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, y: 0, blur: 0 }), scale: Number(e.target.value) || 1 } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
+                                  <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>Blur <input type="number" min="0" step="1" value={selectedSection.bgTransform?.blur ?? 0} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, y: 0, scale: 1 }), blur: Number(e.target.value) || 0 } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </label>
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: "10px", borderTop: "1px solid #444", paddingTop: "10px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Images</span>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button
+                          onClick={async () => {
+                            if (!project) return;
+                            const result = await window.appApi.importMedia();
+                            if (result && result.createdSlides && result.createdSlides.length > 0) {
+                              const newMedia = result.createdSlides.map((s, i) => ({ id: `img-${Date.now()}-${i}`, slideId: s.id, fit: "contain" as const }));
+                              const nextAssets = [...project.data.assets, ...result.importedAssets];
+                              const nextSlides = [...project.data.slides, ...result.createdSlides.map(s => ({ ...s, sectionId: selectedSection.id }))];
+                              const nextBreakMedia = [...(selectedSection.breakMedia || []), ...newMedia];
+                              setProject({
+                                ...project,
+                                data: {
+                                  ...project.data,
+                                  assets: nextAssets,
+                                  slides: nextSlides,
+                                  sections: project.data.sections.map(s => s.id === selectedSection.id ? { ...s, breakMedia: nextBreakMedia } : s)
+                                }
+                              });
+                              setIsDirty(true);
+                            }
+                          }}
+                          style={{ background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}
+                        >
+                          + Local
+                        </button>
+                        <button
+                          onClick={() => setShowSlideSelector(true)}
+                          style={{ background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}
+                        >
+                          + Project
+                        </button>
+                      </div>
+                    </div>
+                    {selectedSection.breakMedia && selectedSection.breakMedia.map((m, i) => {
+                      const slide = project?.data.slides.find((s) => s.id === m.slideId);
+                      const asset = slide ? project?.data.assets.find(a => a.id === slide.assetId) : null;
+                      return (
+                        <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: 4, background: "#222", padding: "6px", borderRadius: 4 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.7rem", color: "#ccc", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", flex: 1, marginRight: 8 }}>
+                              {asset?.originalName || `Image ${i + 1}`}
+                            </span>
+                            <button
+                              onClick={() => {
+                                const arr = [...(selectedSection.breakMedia || [])];
+                                arr.splice(i, 1);
+                                updateSection(selectedSection.id, { breakMedia: arr });
+                              }}
+                              title="Remove image"
+                              style={{ background: "transparent", border: "none", color: "#ff6666", cursor: "pointer", padding: 0 }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "flex-end" }}>
+                            <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column", minWidth: 60 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                X
+                                <div style={{ display: "flex", gap: 2 }}>
+                                  <button onClick={() => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, x: (Number(m.x) || 0) - 10 }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ padding: "0 2px", background: "#444", border: "none", color: "#bbb", fontSize: "0.6rem", cursor: "pointer" }}>-10</button>
+                                  <button onClick={() => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, x: (Number(m.x) || 0) + 10 }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ padding: "0 2px", background: "#444", border: "none", color: "#bbb", fontSize: "0.6rem", cursor: "pointer" }}>+10</button>
+                                </div>
+                              </div>
+                              <input type="text" value={m.x ?? 0} onBlur={(e) => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, x: Number(e.target.value) || 0 }; updateSection(selectedSection.id, { breakMedia: arr }) }} onChange={(e) => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, x: e.target.value as any }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem", width: "100%" }} />
+                            </label>
+
+                            <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column", minWidth: 60 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                Y
+                                <div style={{ display: "flex", gap: 2 }}>
+                                  <button onClick={() => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, y: (Number(m.y) || 0) - 10 }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ padding: "0 2px", background: "#444", border: "none", color: "#bbb", fontSize: "0.6rem", cursor: "pointer" }}>-10</button>
+                                  <button onClick={() => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, y: (Number(m.y) || 0) + 10 }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ padding: "0 2px", background: "#444", border: "none", color: "#bbb", fontSize: "0.6rem", cursor: "pointer" }}>+10</button>
+                                </div>
+                              </div>
+                              <input type="text" value={m.y ?? 0} onBlur={(e) => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, y: Number(e.target.value) || 0 }; updateSection(selectedSection.id, { breakMedia: arr }) }} onChange={(e) => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, y: e.target.value as any }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem", width: "100%" }} />
+                            </label>
+
+                            <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column", minWidth: 60 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                SCL
+                                <div style={{ display: "flex", gap: 2 }}>
+                                  <button onClick={() => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, scale: Math.max(0.1, (Number(m.scale) || 1) - 0.1) }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ padding: "0 2px", background: "#444", border: "none", color: "#bbb", fontSize: "0.6rem", cursor: "pointer" }}>-</button>
+                                  <button onClick={() => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, scale: (Number(m.scale) || 1) + 0.1 }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ padding: "0 2px", background: "#444", border: "none", color: "#bbb", fontSize: "0.6rem", cursor: "pointer" }}>+</button>
+                                </div>
+                              </div>
+                              <input type="number" step="0.1" value={m.scale ?? 1} onChange={(e) => { const arr = [...(selectedSection.breakMedia || [])]; arr[i] = { ...m, scale: Number(e.target.value) }; updateSection(selectedSection.id, { breakMedia: arr }) }} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem", width: "100%" }} />
+                            </label>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: "10px", borderTop: "1px solid #444", paddingTop: "10px" }}>
+                    <h4 style={{ margin: 0, color: "#fff" }}>Timer</h4>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Mode</span>
+                      <select
+                        value={selectedSection.timerMode ?? "countup"}
+                        onChange={(e) => updateSection(selectedSection.id, { timerMode: e.target.value as any })}
+                        style={{ flex: 1, background: "#111", border: "1px solid #333", color: "#fff", padding: "4px", borderRadius: 4 }}
+                      >
+                        <option value="countup">Count Up (Timer)</option>
+                        <option value="countdown">Count Down (Stopwatch)</option>
+                      </select>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, width: "100px" }}>
+                        <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Size</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.1"
+                          value={selectedSection.timerSize || 4.0}
+                          onChange={(e) => updateSection(selectedSection.id, { timerSize: Number(e.target.value) })}
+                          style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "4px", borderRadius: 4, width: "100%" }}
+                        />
+                      </label>
+                    </label>
+                    {selectedSection.timerMode === "countdown" && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <label style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+                          <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Min</span>
+                          <input
+                            type="number" min="0" value={Math.floor((selectedSection.timerDuration ?? 300) / 60)}
+                            onChange={(e) => { const mins = Number(e.target.value); const secs = (selectedSection.timerDuration ?? 300) % 60; updateSection(selectedSection.id, { timerDuration: mins * 60 + secs }); }}
+                            style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "4px", borderRadius: 4 }}
+                          />
+                        </label>
+                        <label style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+                          <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Sec</span>
+                          <input
+                            type="number" min="0" max="59" value={(selectedSection.timerDuration ?? 300) % 60}
+                            onChange={(e) => { const secs = Number(e.target.value); const mins = Math.floor((selectedSection.timerDuration ?? 300) / 60); updateSection(selectedSection.id, { timerDuration: mins * 60 + secs }); }}
+                            style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "4px", borderRadius: 4 }}
+                          />
+                        </label>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button style={{ flex: 1, padding: "6px", background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }} onClick={toggleTimer}>
+                        {timerState.isRunning ? "Stop" : "Start"}
+                      </button>
+                      <button style={{ flex: 1, padding: "6px", background: "#3a3a4a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }} onClick={resetTimer}>
+                        Reset
+                      </button>
+                    </div>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input type="checkbox" checked={selectedSection.timer ?? false} onChange={(e) => updateSection(selectedSection.id, { timer: e.target.checked })} />
+                      <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Show timer to viewers</span>
+                    </label>
+                  </div>
+
+                  <div style={{ marginTop: "10px", borderTop: "1px solid #444", paddingTop: "10px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <h4 style={{ margin: 0, color: "#fff" }}>Break Music</h4>
+                      <button
+                        onClick={async () => {
+                          if (!project) return;
+                          try {
+                            const importedAssets = await window.appApi.importAudio();
+                            if (!importedAssets || importedAssets.length === 0) return;
+
+                            const newClips = importedAssets.map(a => ({
+                              url: toMediaUrl(a.relativePath),
+                              volume: 1,
+                              name: a.originalName,
+                              fadeEnabled: true
+                            }));
+
+                            const nextAssets = [...project.data.assets, ...importedAssets];
+                            const nextBgm = [...(selectedSection.bgm || []), ...newClips];
+
+                            setProject({
+                              ...project,
+                              data: {
+                                ...project.data,
+                                assets: nextAssets,
+                                sections: project.data.sections.map(s => s.id === selectedSection.id ? { ...s, bgm: nextBgm } : s)
+                              }
+                            });
+                            setIsDirty(true);
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        style={{ background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}
+                      >
+                        + Audio (File)
+                      </button>
+                    </div>
+                    {(selectedSection.bgm ?? []).map((clip, idx) => (
+                      <AudioClipPlayer
+                        key={idx}
+                        clip={clip}
+                        label={`BTM ${idx + 1}`}
+                        onUpdate={(updates) => {
+                          const bgm = [...selectedSection.bgm!];
+                          bgm[idx] = { ...bgm[idx], ...updates };
+                          updateSection(selectedSection.id, { bgm });
+                        }}
+                        onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, { fadeEnabled: opts?.fadeEnabled || false })}
+                        onPause={(url) => audioManager.pauseClip(url)}
+                        onStop={(url, opts) => audioManager.stopClip(url, { fadeEnabled: opts?.fadeEnabled || false })}
+                        showRemove={true}
+                        onRemove={() => {
+                          audioManager.stopClip(clip.url, { fadeEnabled: clip.fadeEnabled || false });
+                          const bgm = [...selectedSection.bgm!];
+                          bgm.splice(idx, 1);
+                          updateSection(selectedSection.id, { bgm });
                         }}
                       />
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
 
-                {/* Content Overlay */}
+                  <div style={{ flex: 1 }} />
+                  <button
+                    onClick={() => setShowBreakEditor(false)}
+                    style={{ background: "#3a3a4a", color: "#fff", border: "1px solid #556", padding: "10px", borderRadius: 4, cursor: "pointer", fontWeight: "bold", marginTop: 10 }}
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
+              <ZoomPanWrapper
+                className="break-stage-wrapper"
+                drawSettings={drawSettings}
+                markerStrokes={selectedSection.markerStrokes ?? []}
+                contentWidth={1920}
+                contentHeight={1080}
+                onMarkerStrokesChange={(strokes) =>
+                  updateSection(selectedSection.id, { markerStrokes: strokes })
+                }
+                clearSignal={drawClearSignal}
+                initialViewport={selectedSection.breakViewport}
+                onViewportChange={(vp) => {
+                  if (appMode === "edit" || (appMode === "teach" && !selectedSection.breakViewport)) { // Try recording it the first time Teach interacts with it? Actually user wants Edit changes saved. Let's record in both places, or maybe strictly edit. Let's just do it broadly for break. Wait, user specifically said "Update viewport state whenever the user changes pan/zoom in Edit".
+                    if (appMode === "edit") {
+                      updateSection(selectedSection.id, { breakViewport: vp });
+                    }
+                  }
+                }}
+              >
                 <div
+                  className="break-stage"
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems:
-                      selectedSection.align === "left"
-                        ? "flex-start"
-                        : selectedSection.align === "right"
-                          ? "flex-end"
-                          : "center",
-                    justifyContent:
-                      selectedSection.position === "top"
-                        ? "flex-start"
-                        : selectedSection.position === "bottom"
-                          ? "flex-end"
-                          : "center",
-                    width: "100%",
-                    padding: "40px",
-                    fontFamily: selectedSection.font,
-                    flex: 1,
+                    backgroundColor: selectedSection.background && !selectedSection.background.startsWith("url") ? undefined : "#111",
+                    background: selectedSection.bgTransform && selectedSection.bgTransform.blur ? "transparent" : (selectedSection.background || "#111"),
+                    backgroundSize: selectedSection.bgTransform ? `${(selectedSection.bgTransform.scale ?? 1) * 100}%` : "cover",
+                    backgroundPosition: selectedSection.bgTransform ? `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)` : "center",
+                    width: 1920,
+                    height: 1080,
+                    position: "relative",
+                    overflow: "hidden",
+                    transformOrigin: "top left", // Handled by wrapper
                   }}
                 >
-                  <div className="break-title">{selectedSection.name}</div>
+                  {selectedSection.bgTransform && selectedSection.bgTransform.blur && selectedSection.background?.startsWith("url") ? (
+                    <div style={{ position: "absolute", zIndex: -1, inset: -100, pointerEvents: "none", background: selectedSection.background || "#111", backgroundSize: `${(selectedSection.bgTransform.scale ?? 1) * 100}%`, backgroundPosition: `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)`, filter: `blur(${selectedSection.bgTransform.blur}px)` }} />
+                  ) : null}
+                  {/* Thumbnails at Top */}
+                  <div className="break-thumbnails-grid">
+                    {(selectedSection.breakMedia ?? []).map((m) => {
+                      const slide = project?.data.slides.find(
+                        (s) => s.id === m.slideId,
+                      );
+                      const asset = slide ? assetsById.get(slide.assetId) : null;
+                      if (!asset) return null;
+                      const src = toMediaUrl(asset.relativePath);
+                      return (
+                        <img
+                          key={m.id}
+                          src={src}
+                          className="break-stage-thumb"
+                          style={{
+                            objectFit: m.fit,
+                            width: selectedSection.thumbnailSize ?? 200,
+                            height: (selectedSection.thumbnailSize ?? 200) * 0.5625,
+                            transform: `translate(${m.x ?? 0}px, ${m.y ?? 0}px) scale(${m.scale ?? 1})`,
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Content Overlay */}
                   <div
-                    className="break-questions"
                     style={{
-                      fontSize: selectedSection.fontSize,
-                      fontWeight: selectedSection.isBold ? "bold" : "normal",
-                      fontStyle: selectedSection.isItalic ? "italic" : "normal",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems:
+                        selectedSection.align === "left"
+                          ? "flex-start"
+                          : selectedSection.align === "right"
+                            ? "flex-end"
+                            : "center",
+                      justifyContent:
+                        selectedSection.position === "top"
+                          ? "flex-start"
+                          : selectedSection.position === "bottom"
+                            ? "flex-end"
+                            : "center",
+                      width: "100%",
+                      padding: "40px",
+                      fontFamily: selectedSection.font,
+                      color: (selectedSection as any).textColor || "#ffffff",
+                      flex: 1,
                     }}
                   >
-                    {selectedSection.questions}
-                  </div>
-                  {selectedSection.timer && (
-                    <div className="break-timer">
-                      {(() => {
-                        const elapsedMs =
-                          timerState.accumulated +
-                          (timerState.isRunning
-                            ? timerNow - timerState.startTime
-                            : 0);
-                        const elapsedSec = Math.floor(elapsedMs / 1000);
-                        const displaySec =
-                          selectedSection.timerMode === "countdown"
-                            ? (selectedSection.timerDuration ?? 300) -
-                            elapsedSec
-                            : elapsedSec;
-                        // Clamp countdown to 0? Or allow negative? Usually stop at 0.
-                        // User said "to 00:00". So clamp.
-                        const finalSec =
-                          selectedSection.timerMode === "countdown"
-                            ? Math.max(0, displaySec)
-                            : displaySec;
-                        return formatTime(finalSec);
-                      })()}
+                    <div className="break-title" style={{ fontSize: selectedSection.titleFontSize ? `${selectedSection.titleFontSize}px` : "2.5rem" }}>
+                      {selectedSection.name}
                     </div>
-                  )}
+                    <div
+                      className="break-questions"
+                      style={{
+                        fontSize: selectedSection.fontSize,
+                        fontWeight: selectedSection.isBold ? "bold" : "normal",
+                        fontStyle: selectedSection.isItalic ? "italic" : "normal",
+                      }}
+                    >
+                      {selectedSection.questions}
+                    </div>
+                    {selectedSection.timer && (
+                      <div className="break-timer" style={{ fontSize: selectedSection.timerSize ? `${selectedSection.timerSize}rem` : "4.0rem" }}>
+                        {(() => {
+                          const elapsedMs =
+                            timerState.accumulated +
+                            (timerState.isRunning
+                              ? timerNow - timerState.startTime
+                              : 0);
+                          const elapsedSec = Math.floor(elapsedMs / 1000);
+                          const displaySec =
+                            selectedSection.timerMode === "countdown"
+                              ? (selectedSection.timerDuration ?? 300) -
+                              elapsedSec
+                              : elapsedSec;
+                          // Clamp countdown to 0? Or allow negative? Usually stop at 0.
+                          // User said "to 00:00". So clamp.
+                          const finalSec =
+                            selectedSection.timerMode === "countdown"
+                              ? Math.max(0, displaySec)
+                              : displaySec;
+                          return formatTime(finalSec);
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </ZoomPanWrapper>
+              </ZoomPanWrapper>
+            </>
           ) : (
             <>
               <div
@@ -2706,8 +2700,12 @@ function ZoomPanWrapper({
   className,
   drawSettings,
   markerStrokes,
+  contentWidth,
+  contentHeight,
   onMarkerStrokesChange,
   clearSignal,
+  initialViewport,
+  onViewportChange,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -2715,14 +2713,29 @@ function ZoomPanWrapper({
   markerStrokes: MarkerStroke[];
   onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
   clearSignal: number;
+  contentWidth?: number;
+  contentHeight?: number;
+  initialViewport?: { zoom: number; panX: number; panY: number };
+  onViewportChange?: (viewport: { zoom: number; panX: number; panY: number }) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const targetZoomRef = useRef(1);
-  const targetPanRef = useRef({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(initialViewport?.zoom ?? 1);
+  const [pan, setPan] = useState({ x: initialViewport?.panX ?? 0, y: initialViewport?.panY ?? 0 });
+  const targetZoomRef = useRef(initialViewport?.zoom ?? 1);
+  const targetPanRef = useRef({ x: initialViewport?.panX ?? 0, y: initialViewport?.panY ?? 0 });
+
+  const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (initialViewport) {
+      targetZoomRef.current = initialViewport.zoom;
+      targetPanRef.current = { x: initialViewport.panX, y: initialViewport.panY };
+      setZoom(initialViewport.zoom);
+      setPan({ x: initialViewport.panX, y: initialViewport.panY });
+    }
+  }, [initialViewport]);
 
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
@@ -2766,6 +2779,13 @@ function ZoomPanWrapper({
 
     targetZoomRef.current = newTargetZoom;
     targetPanRef.current = { x: newTargetPanX, y: newTargetPanY };
+
+    if (onViewportChange) {
+      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+      wheelTimeoutRef.current = setTimeout(() => {
+        onViewportChange({ zoom: newTargetZoom, panX: newTargetPanX, panY: newTargetPanY });
+      }, 300);
+    }
   };
 
   const getContentPoint = (
@@ -2777,10 +2797,13 @@ function ZoomPanWrapper({
     const rect = container.getBoundingClientRect();
     if (!rect.width || !rect.height) return null;
 
+    const cWidth = contentWidth ?? rect.width;
+    const cHeight = contentHeight ?? rect.height;
+
     const localX = clientX - rect.left;
     const localY = clientY - rect.top;
-    const x = (localX - pan.x) / zoom / rect.width;
-    const y = (localY - pan.y) / zoom / rect.height;
+    const x = (localX - pan.x) / zoom / cWidth;
+    const y = (localY - pan.y) / zoom / cHeight;
 
     return {
       x: Math.max(0, Math.min(1, x)),
@@ -2902,6 +2925,9 @@ function ZoomPanWrapper({
       setIsPanning(false);
       activeHighlighterRef.current = null;
       activeMarkerRef.current = null;
+      if (onViewportChange) {
+        onViewportChange({ zoom: targetZoomRef.current, panX: targetPanRef.current.x, panY: targetPanRef.current.y });
+      }
     };
 
     window.addEventListener("mousemove", onMove);
@@ -2963,6 +2989,9 @@ function ZoomPanWrapper({
       const now = performance.now();
       ctx.clearRect(0, 0, width, height);
 
+      const cWidth = contentWidth ?? width;
+      const cHeight = contentHeight ?? height;
+
       ctx.save();
       // Apply transform
       ctx.translate(pan.x, pan.y);
@@ -2970,7 +2999,7 @@ function ZoomPanWrapper({
       // Content is width/height of Rect (100%).
       // Our coordinates are 0..1 relative to Rect.
       // So we scale by Rect size.
-      ctx.scale(zoom * width, zoom * height);
+      ctx.scale(zoom * cWidth, zoom * cHeight);
 
       // Draw Function
       const renderStroke = (
@@ -3024,7 +3053,7 @@ function ZoomPanWrapper({
         // Let's assume standard behavior:
         // Scale context by width, height.
         // Divide lineWidth by average scale.
-        ctx.lineWidth = stroke.size / width; // Approximation
+        ctx.lineWidth = stroke.size / ((cWidth + cHeight) / 2); // Approximation
 
         ctx.strokeStyle = stroke.color;
         ctx.globalAlpha = stroke.opacity;

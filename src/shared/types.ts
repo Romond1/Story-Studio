@@ -41,6 +41,9 @@ export interface BreakMedia {
   id: string;
   slideId: string;
   fit: 'cover' | 'contain';
+  x?: number;
+  y?: number;
+  scale?: number;
 }
 
 export interface Section {
@@ -64,6 +67,10 @@ export interface Section {
   breakMedia?: BreakMedia[];
   markerStrokes?: MarkerStroke[];
   bgm?: AudioClip[];
+  breakViewport?: { zoom: number; panX: number; panY: number };
+  bgTransform?: { x: number; y: number; scale: number; blur: number };
+  titleFontSize?: number;
+  timerSize?: number;
 }
 
 export interface Slide {
