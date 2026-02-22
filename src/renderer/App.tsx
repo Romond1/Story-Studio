@@ -34,6 +34,8 @@ function AudioClipPlayer({
   onPause,
   isSelected,
   onToggleSelect,
+  showRemove = false,
+  onRemove,
 }: {
   clip: AudioClip;
   label: string;
@@ -43,6 +45,8 @@ function AudioClipPlayer({
   onPause: (url: string) => void;
   isSelected?: boolean;
   onToggleSelect?: () => void;
+  showRemove?: boolean;
+  onRemove?: () => void;
 }) {
   const [time, setTime] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
@@ -80,7 +84,49 @@ function AudioClipPlayer({
         <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6, overflow: "hidden" }}>
           <input type="checkbox" checked={isSelected} onChange={onToggleSelect} />
           <input type="text" value={clip.name || label} onChange={e => onUpdate({ name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: "0.80rem", minWidth: 0, outline: "none", textOverflow: "ellipsis" }} />
-          <button onClick={() => setShowSettings(!showSettings)} style={{ background: "transparent", border: "none", padding: 0, color: "#fff", cursor: "pointer" }}>Settings</button>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            style={{
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              width: 20,
+              height: 20,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#bbb",
+            }}
+            aria-label="Audio settings"
+            title="Settings"
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M19.14,12.94a7.49,7.49,0,0,0,.05-.94,7.49,7.49,0,0,0-.05-.94l2.03-1.58a.5.5,0,0,0,.12-.64l-1.92-3.32a.5.5,0,0,0-.6-.22l-2.39.96a7.28,7.28,0,0,0-1.63-.94l-.36-2.54A.5.5,0,0,0,13.9,2H10.1a.5.5,0,0,0-.49.42L9.25,4.96a7.28,7.28,0,0,0-1.63.94l-2.39-.96a.5.5,0,0,0-.6.22L2.71,8.48a.5.5,0,0,0,.12.64l2.03,1.58a7.49,7.49,0,0,0-.05.94,7.49,7.49,0,0,0,.05.94L2.83,14.16a.5.5,0,0,0-.12.64l1.92,3.32a.5.5,0,0,0,.6.22l2.39-.96a7.28,7.28,0,0,0,1.63.94l.36,2.54a.5.5,0,0,0,.49.42h3.8a.5.5,0,0,0,.49-.42l.36-2.54a7.28,7.28,0,0,0,1.63-.94l2.39.96a.5.5,0,0,0,.6-.22l1.92-3.32a.5.5,0,0,0-.12-.64ZM12,15.5A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"
+              />
+            </svg>
+          </button>
+
+          {showRemove && onRemove && (
+            <button
+              onClick={onRemove}
+              style={{
+                background: "transparent",
+                border: "1px solid #555",
+                color: "#bbb",
+                borderRadius: 3,
+                fontSize: "10px",
+                lineHeight: 1,
+                padding: "2px 4px",
+                minWidth: 18,
+              }}
+              aria-label={`Remove ${label}`}
+              title="Remove"
+            >
+              X
+            </button>
+          )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
@@ -742,19 +788,23 @@ export function App() {
       let nextData = { ...project.data, assets: nextAssets };
 
       if (type === "section-bgm" && selectedSectionId) {
-        const newClips = importedAssets.map((a) => ({
+        const clips = importedAssets.map((a) => ({
           url: toMediaUrl(a.relativePath),
           volume: 1,
           name: a.originalName,
         }));
-        nextData.sections = nextData.sections.map((s) => {
-          if (s.id !== selectedSectionId) return s;
-          const existing = s.bgms ?? (s.bgm ? [s.bgm] : []);
-          return {
-            ...s,
-            bgms: [...existing, ...newClips],
-          };
-        });
+
+        nextData.sections = nextData.sections.map((s) =>
+          s.id === selectedSectionId
+            ? {
+              ...s,
+              bgm: [
+                ...(Array.isArray(s.bgm) ? s.bgm : (s.bgm ? [s.bgm] : [])),
+                ...clips,
+              ],
+            }
+            : s,
+        );
       } else if (currentSlide) {
         const clips = importedAssets.map((a) => ({
           url: toMediaUrl(a.relativePath),
@@ -1091,6 +1141,52 @@ export function App() {
       },
     });
     setIsDirty(true);
+  };
+
+  const removeSlideAudio = (type: "dialogue" | "sfx" | "bgm", index?: number) => {
+    if (!project || !currentSlide) return;
+
+    const clipToRemove =
+      type === "bgm"
+        ? currentSlide.bgm
+        : (type === "dialogue" ? currentSlide.dialogue : currentSlide.sfx)?.[index ?? -1];
+
+    if (clipToRemove) {
+      audioManager.stopClip(clipToRemove.url, { fadeEnabled: clipToRemove.fadeEnabled || false });
+    }
+
+    const nextSlide = { ...currentSlide };
+    if (type === "dialogue" && typeof index === "number") {
+      nextSlide.dialogue = (nextSlide.dialogue || []).filter((_, i) => i !== index);
+    } else if (type === "sfx" && typeof index === "number") {
+      nextSlide.sfx = (nextSlide.sfx || []).filter((_, i) => i !== index);
+    } else if (type === "bgm") {
+      nextSlide.bgm = undefined;
+    }
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: project.data.slides.map((s) => (s.id === currentSlide.id ? nextSlide : s)),
+      },
+    });
+    setIsDirty(true);
+  };
+
+  const removeSectionBgm = (index: number) => {
+    if (!project || !selectedSection) return;
+    const sectionTracks = selectedSection.bgm || [];
+    const clip = sectionTracks[index];
+    if (!clip) return;
+
+    audioManager.stopClip(clip.url, { fadeEnabled: clip.fadeEnabled || false });
+    // keep section music singleton state clean if this one was active
+    audioManager.stopSectionMusic(undefined, clip.fadeEnabled || false);
+
+    updateSection(selectedSection.id, {
+      bgm: sectionTracks.filter((_, i) => i !== index),
+    });
   };
 
   return (
@@ -2363,6 +2459,8 @@ export function App() {
                       else s.add(`diag-${idx}`);
                       setSelectedAudioKeys(s);
                     }}
+                    showRemove={appMode === "edit"}
+                    onRemove={() => removeSlideAudio("dialogue", idx)}
                   />
                 ))}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
@@ -2385,6 +2483,8 @@ export function App() {
                       else s.add(`sfx-${idx}`);
                       setSelectedAudioKeys(s);
                     }}
+                    showRemove={appMode === "edit"}
+                    onRemove={() => removeSlideAudio("sfx", idx)}
                   />
                 ))}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
@@ -2406,6 +2506,8 @@ export function App() {
                       else s.add("slide-bgm");
                       setSelectedAudioKeys(s);
                     }}
+                    showRemove={appMode === "edit"}
+                    onRemove={() => removeSlideAudio("bgm")}
                   />
                 )}
                 {!currentSlide.dialogue?.length &&
@@ -2431,45 +2533,36 @@ export function App() {
               Section Music
               {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a", color: "#fff" }} onClick={() => onImportAudio("section-bgm")}>+</button>}
             </h4>
-            {(() => {
-              const sectionBgms = selectedSection ? (selectedSection.bgms ?? (selectedSection.bgm ? [selectedSection.bgm] : [])) : [];
-              return sectionBgms.length > 0 ? (
-                sectionBgms.map((clip, idx) => (
-                  <AudioClipPlayer
-                    key={`section-bgm-${idx}`}
-                    clip={clip}
-                    label={`Section BGM ${idx + 1}`}
-                    onUpdate={(upds) => {
-                      const next = [...sectionBgms];
-                      next[idx] = { ...next[idx], ...upds };
-                      updateSection(selectedSection!.id, { bgms: next });
-                    }}
-                    onPlay={(url, vol, opts) => audioManager.playSectionMusic(url, vol, opts?.fadeEnabled)}
-                    onPause={(url) => audioManager.pauseClip(url)}
-                    onStop={(url, opts) => audioManager.stopSectionMusic(url, opts?.fadeEnabled)}
-                    isSelected={selectedAudioKeys.has(`section-bgm-${idx}`)}
-                    onToggleSelect={() => {
-                      const key = `section-bgm-${idx}`;
-                      const s = new Set(selectedAudioKeys);
-                      if (s.has(key)) s.delete(key);
-                      else s.add(key);
-                      setSelectedAudioKeys(s);
-                    }}
-                  />
-                ))
-              ) : (
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#666",
-                    textAlign: "center",
-                    padding: "10px 0",
+            {selectedSection?.bgm?.length ? (
+              selectedSection.bgm.map((clip, idx) => (
+                <AudioClipPlayer
+                  key={`section-bgm-${idx}`}
+                  clip={clip}
+                  label={`Section BGM ${idx + 1}`}
+                  onUpdate={(upds) =>
+                    updateSection(selectedSection.id, {
+                      bgm: (selectedSection.bgm || []).map((c, i) => (i === idx ? { ...c, ...upds } : c)),
+                    })
+                  }
+                  onPlay={(url, vol, opts) => audioManager.playSectionMusic(url, vol, opts?.fadeEnabled)}
+                  onPause={(url) => audioManager.pauseClip(url)}
+                  onStop={(url, opts) => audioManager.stopSectionMusic(undefined, opts?.fadeEnabled)}
+                  isSelected={selectedAudioKeys.has(`section-bgm-${idx}`)}
+                  onToggleSelect={() => {
+                    const s = new Set(selectedAudioKeys);
+                    if (s.has(`section-bgm-${idx}`)) s.delete(`section-bgm-${idx}`);
+                    else s.add(`section-bgm-${idx}`);
+                    setSelectedAudioKeys(s);
                   }}
-                >
-                  No section music
-                </div>
-              );
-            })()}
+                  showRemove={appMode === "edit"}
+                  onRemove={() => removeSectionBgm(idx)}
+                />
+              ))
+            ) : (
+              <div style={{ fontSize: "0.85rem", color: "#666", textAlign: "center", padding: "10px 0" }}>
+                No section music
+              </div>
+            )}
 
             {/* Bulk Actions Structure Placeholder */}
             {selectedAudioKeys.size > 0 && (
