@@ -48,6 +48,15 @@ function AudioClipPlayer({
   const [showSettings, setShowSettings] = useState(false);
   const isPlaying = audioManager.isPlaying(clip.url);
   const duration = audioManager.getDuration(clip.url) || 100;
+  const shortcutBadge = (() => {
+    const s = clip.shortcut || "";
+    if (!s) return "";
+    if (s.startsWith("Key")) return s.slice(3);         // KeyA -> A
+    if (s.startsWith("Digit")) return s.slice(5);       // Digit1 -> 1
+    if (s.startsWith("Numpad")) return `NP${s.slice(6)}`; // Numpad1 -> NP1
+    if (s === "Space") return "SPACE";
+    return s.toUpperCase();
+  })();
 
   // time polling
   useEffect(() => {
@@ -58,11 +67,14 @@ function AudioClipPlayer({
   // hotkey handling
   useEffect(() => {
     if (!clip.shortcut) return;
+
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === clip.shortcut) {
+      if (e.repeat) return;
+
+      if (e.code === clip.shortcut) {
         if (audioManager.isPlaying(clip.url)) {
-          onPause(clip.url); // pausing via hotkey is best so we resume later!
+          onPause(clip.url);
         } else {
           onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false });
         }
@@ -70,7 +82,7 @@ function AudioClipPlayer({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [clip, onPlay, onPause]);
+  }, [clip.url, clip.shortcut, clip.volume, clip.fadeEnabled, onPlay, onPause]);
 
   const bgColors = clip.color ? clip.color : "transparent";
 
@@ -109,6 +121,11 @@ function AudioClipPlayer({
           <button onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 44, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem" }}>
             Stop
           </button>
+          {clip.shortcut ? (
+            <span style={{ fontSize: "0.65rem", color: "#bbb", border: "1px solid #555", borderRadius: 3, padding: "1px 4px", lineHeight: 1.2 }}>
+              SH {shortcutBadge}
+            </span>
+          ) : null}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
@@ -118,7 +135,30 @@ function AudioClipPlayer({
 
         {showSettings && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", background: "rgba(0,0,0,0.3)", padding: "4px 8px", borderRadius: 4, marginTop: 4, fontSize: "0.75rem", color: "#ccc", boxSizing: "border-box" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Shortcut <input type="text" maxLength={1} value={clip.shortcut || ""} onChange={e => onUpdate({ shortcut: e.target.value })} style={{ width: 20, background: "#222", border: "1px solid #444", color: "#fff", textAlign: "center" }} /></label>
+            <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              Shortcut{" "}
+              <input
+                type="text"
+                readOnly
+                value={shortcutBadge}
+                placeholder="-"
+                onKeyDown={(e) => {
+                  const blocked = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "Tab"]);
+                  if (blocked.has(e.key)) return;
+
+                  if (e.key === "Escape") return; // optional cancel
+                  e.preventDefault();
+
+                  if (e.key === "Backspace" || e.key === "Delete") {
+                    onUpdate({ shortcut: "" });
+                    return;
+                  }
+
+                  onUpdate({ shortcut: e.code }); // stores Digit1 vs Numpad1 distinctly
+                }}
+                style={{ width: 44, background: "#222", border: "1px solid #444", color: "#fff", textAlign: "center" }}
+              />
+            </label>
             <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Fade <input type="checkbox" checked={clip.fadeEnabled || false} onChange={e => onUpdate({ fadeEnabled: e.target.checked })} /></label>
             <label style={{ display: "flex", alignItems: "center", gap: 4 }}>Color <input type="color" value={clip.color || "#111111"} onChange={e => onUpdate({ color: e.target.value })} style={{ width: 16, height: 16, padding: 0, border: "none", background: "transparent" }} /></label>
           </div>
@@ -550,12 +590,11 @@ export function App() {
           setExpandedSectionId(null);
         }
       } else {
-        const num = parseInt(e.key);
-        if (!isNaN(num) && num >= 1 && num <= 9) {
+        const digitMatch = /^Digit([1-9])$/.exec(e.code); // top row only
+        if (digitMatch) {
           if (!project) return;
-          const sections = project.data.sections.filter(
-            (s) => s.type !== "break",
-          );
+          const num = Number(digitMatch[1]);
+          const sections = project.data.sections.filter((s) => s.type !== "break");
           const section = sections[num - 1];
           if (section) {
             selectSection(section.id);
