@@ -63,7 +63,8 @@ export interface Section {
   backgroundOpacity?: number;
   breakMedia?: BreakMedia[];
   markerStrokes?: MarkerStroke[];
-  bgm?: AudioClip;
+  bgms?: AudioClip[]; // new canonical shape
+  bgm?: AudioClip;    // legacy (read-only compatibility)
 }
 
 export interface Slide {

@@ -742,19 +742,19 @@ export function App() {
       let nextData = { ...project.data, assets: nextAssets };
 
       if (type === "section-bgm" && selectedSectionId) {
-        const bgmUrl = toMediaUrl(importedAssets[0].relativePath);
-        nextData.sections = nextData.sections.map((s) =>
-          s.id === selectedSectionId
-            ? {
-              ...s,
-              bgm: {
-                url: bgmUrl,
-                volume: 1,
-                name: importedAssets[0].originalName,
-              },
-            }
-            : s,
-        );
+        const newClips = importedAssets.map((a) => ({
+          url: toMediaUrl(a.relativePath),
+          volume: 1,
+          name: a.originalName,
+        }));
+        nextData.sections = nextData.sections.map((s) => {
+          if (s.id !== selectedSectionId) return s;
+          const existing = s.bgms ?? (s.bgm ? [s.bgm] : []);
+          return {
+            ...s,
+            bgms: [...existing, ...newClips],
+          };
+        });
       } else if (currentSlide) {
         const clips = importedAssets.map((a) => ({
           url: toMediaUrl(a.relativePath),
@@ -2431,34 +2431,45 @@ export function App() {
               Section Music
               {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a", color: "#fff" }} onClick={() => onImportAudio("section-bgm")}>+</button>}
             </h4>
-            {selectedSection?.bgm ? (
-              <AudioClipPlayer
-                clip={selectedSection.bgm}
-                label="Section BGM"
-                onUpdate={(upds) => updateSection(selectedSection.id, { bgm: { ...selectedSection.bgm!, ...upds } })}
-                onPlay={(url, vol, opts) => audioManager.playSectionMusic(url, vol, opts?.fadeEnabled)}
-                onPause={(url) => audioManager.pauseClip(url)}
-                onStop={(url, opts) => audioManager.stopSectionMusic(opts?.fadeEnabled)}
-                isSelected={selectedAudioKeys.has("section-bgm")}
-                onToggleSelect={() => {
-                  const s = new Set(selectedAudioKeys);
-                  if (s.has("section-bgm")) s.delete("section-bgm");
-                  else s.add("section-bgm");
-                  setSelectedAudioKeys(s);
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  color: "#666",
-                  textAlign: "center",
-                  padding: "10px 0",
-                }}
-              >
-                No section music
-              </div>
-            )}
+            {(() => {
+              const sectionBgms = selectedSection ? (selectedSection.bgms ?? (selectedSection.bgm ? [selectedSection.bgm] : [])) : [];
+              return sectionBgms.length > 0 ? (
+                sectionBgms.map((clip, idx) => (
+                  <AudioClipPlayer
+                    key={`section-bgm-${idx}`}
+                    clip={clip}
+                    label={`Section BGM ${idx + 1}`}
+                    onUpdate={(upds) => {
+                      const next = [...sectionBgms];
+                      next[idx] = { ...next[idx], ...upds };
+                      updateSection(selectedSection!.id, { bgms: next });
+                    }}
+                    onPlay={(url, vol, opts) => audioManager.playSectionMusic(url, vol, opts?.fadeEnabled)}
+                    onPause={(url) => audioManager.pauseClip(url)}
+                    onStop={(url, opts) => audioManager.stopSectionMusic(url, opts?.fadeEnabled)}
+                    isSelected={selectedAudioKeys.has(`section-bgm-${idx}`)}
+                    onToggleSelect={() => {
+                      const key = `section-bgm-${idx}`;
+                      const s = new Set(selectedAudioKeys);
+                      if (s.has(key)) s.delete(key);
+                      else s.add(key);
+                      setSelectedAudioKeys(s);
+                    }}
+                  />
+                ))
+              ) : (
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "#666",
+                    textAlign: "center",
+                    padding: "10px 0",
+                  }}
+                >
+                  No section music
+                </div>
+              );
+            })()}
 
             {/* Bulk Actions Structure Placeholder */}
             {selectedAudioKeys.size > 0 && (

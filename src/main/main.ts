@@ -69,15 +69,28 @@ async function loadProject(folder: string): Promise<ProjectState> {
 }
 
 
+function normalizeSectionMusic(section: Section): Section {
+  if (Array.isArray((section as Section & { bgms?: Section["bgm"][] }).bgms)) {
+    return section;
+  }
+  if (section.bgm) {
+    return { ...section, bgms: [section.bgm] };
+  }
+  return { ...section, bgms: [] };
+}
+
 function normalizeProjectData(data: ProjectData): ProjectData {
   const hasSections = Array.isArray((data as ProjectData & { sections?: Section[] }).sections)
     && ((data as ProjectData & { sections?: Section[] }).sections?.length ?? 0) > 0;
 
   if (hasSections) {
-    return data;
+    return {
+      ...data,
+      sections: data.sections.map(normalizeSectionMusic),
+    };
   }
 
-  const defaultSection: Section = { id: randomUUID(), name: 'Section 1' };
+  const defaultSection: Section = normalizeSectionMusic({ id: randomUUID(), name: 'Section 1' });
   return {
     ...data,
     sections: [defaultSection],

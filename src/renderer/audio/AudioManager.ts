@@ -272,9 +272,11 @@ export class AudioManager {
     this.playClip(url, volume, true, { fadeEnabled });
   }
 
-  public stopSectionMusic(fadeEnabled: boolean = false) {
-    if (this.sectionMusicUrl) {
-      this.stopClip(this.sectionMusicUrl, { fadeEnabled });
+  public stopSectionMusic(url?: string, fadeEnabled: boolean = false) {
+    const target = url ?? this.sectionMusicUrl;
+    if (!target) return;
+    this.stopClip(target, { fadeEnabled });
+    if (this.sectionMusicUrl === target) {
       this.sectionMusicUrl = null;
     }
   }
