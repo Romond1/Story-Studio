@@ -89,49 +89,77 @@ function AudioClipPlayer({
   return (
     <div style={{ background: isPlaying ? `${bgColors}ee` : bgColors, filter: isPlaying ? "brightness(1.5)" : "none", transition: "all 0.2s", display: "flex", gap: 10, padding: "8px", borderRadius: 6, marginBottom: 8, border: `1px solid ${isPlaying ? "#88c" : "#333"}`, boxSizing: "border-box", overflow: "hidden", maxWidth: "100%" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6, overflow: "hidden" }}>
-          <input type="text" value={clip.name || label} onChange={e => onUpdate({ name: e.target.value })} style={{ flex: 1, background: "transparent", border: "none", color: "#fff", fontSize: "0.80rem", minWidth: 0, outline: "none", textOverflow: "ellipsis" }} />
-          <button onClick={() => setShowSettings(!showSettings)} style={{ background: "transparent", border: "none", padding: 0 }}>⚙️</button>
-
-          {showRemove && onRemove && (
-            <button
-              onClick={onRemove}
-              style={{
-                background: "transparent",
-                border: "1px solid #555",
-                color: "#bbb",
-                borderRadius: 3,
-                fontSize: "10px",
-                lineHeight: 1,
-                padding: "2px 4px",
-                minWidth: 18,
-              }}
-              aria-label={`Remove ${label}`}
-              title="Remove"
-            >
-              X
-            </button>
-          )}
-        </div>
-
+        {/* Row 1: transport + shortcut + volume (top) */}
         <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
-          <button onClick={() => isPlaying ? onPause(clip.url) : onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 44, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem" }}>
-            {isPlaying ? "Pause" : "Play"}
+          <button
+            onClick={() =>
+              isPlaying
+                ? onPause(clip.url)
+                : onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false })
+            }
+            style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            {isPlaying ? "⏸" : "▶"}
           </button>
-          <button onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })} style={{ width: 44, height: 26, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.7rem" }}>
-            Stop
+
+          <button
+            onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })}
+            style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            ⏹
           </button>
+
           {clip.shortcut ? (
             <span style={{ fontSize: "0.65rem", color: "#bbb", border: "1px solid #555", borderRadius: 3, padding: "1px 4px", lineHeight: 1.2 }}>
               SH {shortcutBadge}
             </span>
           ) : null}
+
+          <div style={{ flex: 1 }} />
+
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            style={{ background: "transparent", border: "none", padding: 0 }}
+            aria-label="Audio settings"
+          >
+            ⚙️
+          </button>
         </div>
 
+        {/* Row 2: single long seek bar + time (under controls) */}
         <div style={{ display: "flex", alignItems: "center", width: "100%", gap: 6 }}>
-          <input type="range" min={0} max={duration} step={0.1} value={time} onChange={(e) => audioManager.seek(clip.url, Number(e.target.value))} style={{ flex: 1, minWidth: 40 }} />
-          <span style={{ fontSize: "0.7rem", color: "#b9b9b9", minWidth: 48, textAlign: "right" }}>{Math.floor(time)} / {Math.floor(duration)}s</span>
+          <input
+            type="range"
+            min={0}
+            max={duration}
+            step={0.1}
+            value={time}
+            onChange={(e) => audioManager.seek(clip.url, Number(e.target.value))}
+            style={{ flex: 1, minWidth: 0 }}
+          />
+          <span style={{ fontSize: "0.75rem", color: "#ddd", whiteSpace: "nowrap" }}>
+            {Math.floor(time)} / {Math.floor(duration)}s
+          </span>
         </div>
+
+        {/* Row 3: editable file/track name (full width) */}
+        <input
+          type="text"
+          value={clip.name || label}
+          onChange={(e) => onUpdate({ name: e.target.value })}
+          style={{
+            width: "100%",
+            background: "transparent",
+            border: "1px solid #333",
+            color: "#fff",
+            fontSize: "0.9rem",
+            minWidth: 0,
+            outline: "none",
+            padding: "3px 6px",
+            borderRadius: 4,
+            boxSizing: "border-box",
+          }}
+        />
 
         {showSettings && (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", background: "rgba(0,0,0,0.3)", padding: "4px 8px", borderRadius: 4, marginTop: 4, fontSize: "0.75rem", color: "#ccc", boxSizing: "border-box" }}>
@@ -576,6 +604,26 @@ export function App() {
         e.target instanceof HTMLTextAreaElement
       )
         return;
+
+      if (e.code === "NumpadAdd" || e.code === "NumpadSubtract") {
+        const bgms = selectedSection?.bgm;
+        if (!bgms || bgms.length === 0) return;
+
+        e.preventDefault();
+
+        const delta = e.code === "NumpadAdd" ? 0.05 : -0.05;
+        const first = bgms[0];
+        const current = first.volume ?? 1;
+        const next = Math.max(0, Math.min(1, Number((current + delta).toFixed(2))));
+        if (next === current) return;
+
+        updateSection(selectedSection.id, {
+          bgm: bgms.map((b, i) => (i === 0 ? { ...b, volume: next } : b)),
+        });
+
+        audioManager.setVolume(first.url, next);
+        return;
+      }
 
       if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") {
         goToVisibleOffset(1);
