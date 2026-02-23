@@ -453,11 +453,14 @@ export function App() {
   let _matchedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
 
   let activeItem: SequenceItem | null = null;
-  if (topMode === 'boost' && project?.data.boostPack) {
-    const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
-    activeItem = activeSequence.find(i => i.id === selectedBoostItemId) ?? null;
-    if (activeItem?.type === 'breakRef') {
-      _matchedSection = sections.find(s => s.id === activeItem.breakId) ?? null;
+  if (topMode === 'boost') {
+    _matchedSection = null;
+    if (project?.data.boostPack) {
+      const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
+      activeItem = activeSequence.find(i => i.id === selectedBoostItemId) ?? null;
+      if (activeItem?.type === 'breakRef') {
+        _matchedSection = sections.find(s => s.id === activeItem.breakId) ?? null;
+      }
     }
   }
 
