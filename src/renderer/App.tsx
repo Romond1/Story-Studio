@@ -450,16 +450,29 @@ export function App() {
   }, [project]);
 
   const sections = project?.data.sections ?? [];
-  const selectedSection = sections.find((s) => s.id === selectedSectionId);
-  const selectedSectionType = selectedSection?.type;
+  let _matchedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
+
+  let activeItem: SequenceItem | null = null;
+  if (topMode === 'boost' && project?.data.boostPack) {
+    const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
+    activeItem = activeSequence.find(i => i.id === selectedBoostItemId) ?? null;
+    if (activeItem?.type === 'breakRef') {
+      _matchedSection = sections.find(s => s.id === activeItem.breakId) ?? null;
+    }
+  }
+
+  const selectedSection = _matchedSection;
+  const selectedSectionType = topMode === 'boost' && activeItem && activeItem.type !== 'slideRef' && activeItem.type !== 'breakRef'
+    ? activeItem.type
+    : selectedSection?.type;
 
   useEffect(() => {
-    if (selectedSectionType === "break" && appMode === "edit") {
+    if (selectedSection?.type === "break" && appMode === "edit" && topMode === 'story') {
       setShowBreakEditor(true);
     } else {
       setShowBreakEditor(false);
     }
-  }, [selectedSectionType, selectedSectionId, appMode]);
+  }, [selectedSection, appMode, topMode]);
 
   const sectionSlideIndices = useMemo(() => {
     if (!project) return new Map<string, number[]>();
@@ -483,14 +496,15 @@ export function App() {
     ? (assetsById.get(currentSlide.assetId) ?? null)
     : null;
 
-  if (topMode === 'boost' && project?.data.boostPack) {
-    const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof typeof project.data.boostPack] || [];
-    const activeItem = activeSequence.find(i => i.id === selectedBoostItemId);
-    const activeSlide = activeItem?.type === 'slideRef'
-      ? project.data.slides.find(s => s.id === activeItem.slideId) ?? null
-      : null;
-    currentSlide = activeSlide;
-    currentAsset = activeSlide ? (assetsById.get(activeSlide.assetId) ?? null) : null;
+  if (topMode === 'boost' && activeItem) {
+    if (activeItem.type === 'slideRef') {
+      const activeSlide = project?.data.slides.find(s => s.id === activeItem.slideId) ?? null;
+      currentSlide = activeSlide;
+      currentAsset = activeSlide ? (assetsById.get(activeSlide.assetId) ?? null) : null;
+    } else {
+      currentSlide = null;
+      currentAsset = null;
+    }
   }
 
   const previousSlide =
@@ -581,6 +595,75 @@ export function App() {
     },
     [visibleSlideIndices, currentIndex, goToSlideByAbsoluteIndex],
   );
+
+  const updateSequenceItem = (itemId: string, updates: Partial<SequenceItem>) => {
+    if (!project || !project.data.boostPack) return;
+    const prop = (boostTab + 'Sequence') as 'activationSequence' | 'languageSequence' | 'gamesSequence';
+    const seq = project.data.boostPack[prop] || [];
+    const newSeq = seq.map(item => item.id === itemId ? { ...item, ...updates } as SequenceItem : item);
+    setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack, [prop]: newSeq } } });
+    setIsDirty(true);
+  };
+
+  const addSequenceItem = (type: 'slideRef' | 'breakRef' | 'promptCard' | 'miniGame') => {
+    if (!project || !project.data.boostPack) return;
+    const prop = (boostTab + 'Sequence') as 'activationSequence' | 'languageSequence' | 'gamesSequence';
+    const seq = project.data.boostPack[prop] || [];
+    let newItem: SequenceItem;
+    const id = `item-${Date.now()}`;
+    if (type === 'slideRef') {
+      newItem = { id, type, slideId: project.data.slides[0]?.id || '' };
+    } else if (type === 'breakRef') {
+      newItem = { id, type, breakId: project.data.sections.find(s => s.type === 'break')?.id || '' };
+    } else if (type === 'promptCard') {
+      newItem = { id, type, body: '' };
+    } else {
+      newItem = { id, type, gameType: 'placeholder' };
+    }
+    setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack, [prop]: [...seq, newItem] } } });
+    setSelectedBoostItemId(id);
+    setIsDirty(true);
+  };
+
+  const renderTagEditor = (slide: Slide | null) => {
+    if (!slide || !project) return null;
+    return (
+      <div style={{ marginBottom: 16, borderBottom: '1px solid #333', paddingBottom: 16 }}>
+        <h4 style={{ margin: "0 0 10px 0", color: "#66f", fontSize: "0.9rem" }}>Tags</h4>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+          {(slide.tags || []).map((tag, idx) => (
+            <span key={idx} style={{ background: '#333', padding: '2px 6px', borderRadius: 4, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+              {tag}
+              <button onClick={() => {
+                const newTags = slide.tags!.filter((_, i) => i !== idx);
+                const newSlides = project.data.slides.map(s => s.id === slide.id ? { ...s, tags: newTags } : s);
+                setProject({ ...project, data: { ...project.data, slides: newSlides } });
+                setIsDirty(true);
+              }} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>X</button>
+            </span>
+          ))}
+          {!(slide.tags || []).length && <span style={{ color: '#666', fontSize: '0.8rem' }}>No tags</span>}
+        </div>
+        <input
+          type="text"
+          placeholder="Add tag and press Enter"
+          style={{ width: '100%', boxSizing: 'border-box', background: '#222', color: '#fff', border: '1px solid #444', padding: '6px', borderRadius: 4, fontSize: '0.8rem', outline: 'none' }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const val = e.currentTarget.value.trim();
+              if (val && !(slide.tags || []).includes(val)) {
+                const newTags = [...(slide.tags || []), val];
+                const newSlides = project.data.slides.map(s => s.id === slide.id ? { ...s, tags: newTags } : s);
+                setProject({ ...project, data: { ...project.data, slides: newSlides } });
+                setIsDirty(true);
+                e.currentTarget.value = '';
+              }
+            }
+          }}
+        />
+      </div>
+    );
+  };
 
   const selectSection = useCallback(
     (sectionId: string) => {
@@ -2242,6 +2325,24 @@ export function App() {
                 </div>
               </ZoomPanWrapper>
             </>
+          ) : activeItem?.type === 'promptCard' ? (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef', color: '#111', borderRadius: 8 }}>
+              <div style={{ background: '#fff', padding: 40, borderRadius: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', maxWidth: 600, textAlign: 'center' }}>
+                <h2 style={{ fontSize: '2rem', marginBottom: 20 }}>{activeItem.title || 'Prompt Card'}</h2>
+                <p style={{ fontSize: '1.25rem', whiteSpace: 'pre-wrap' }}>{activeItem.body || 'Add a prompt body in the tools panel.'}</p>
+              </div>
+            </div>
+          ) : activeItem?.type === 'miniGame' ? (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', color: '#fff', borderRadius: 8 }}>
+              <div style={{ textAlign: 'center', padding: 40, border: '2px dashed #444', borderRadius: 8 }}>
+                <h2 style={{ fontSize: '2rem', marginBottom: 10 }}>🎮 Mini-Game</h2>
+                <p>Placeholder. Game logic not implemented.</p>
+              </div>
+            </div>
+          ) : activeItem?.type === 'breakRef' && !selectedSection ? (
+            <div className="stage">
+              <div className="placeholder">Referenced break section not found.</div>
+            </div>
           ) : (
             <>
               <div
@@ -2530,7 +2631,9 @@ export function App() {
               <div className="stage">
                 {!currentAsset && (
                   <div className="placeholder">
-                    Import media to start presenting.
+                    {topMode === 'boost' && activeItem?.type === 'slideRef'
+                      ? 'Selected Slide or Asset not found.'
+                      : 'Import media to start presenting.'}
                   </div>
                 )}
                 {currentAsset && (
@@ -2603,6 +2706,7 @@ export function App() {
           {topMode === 'story' ? (
             <>
               <div className="audio-block">
+                {currentSlide && renderTagEditor(currentSlide)}
                 <h4>Slide Audio</h4>
                 {currentSlide && (
                   <>
@@ -2801,51 +2905,79 @@ export function App() {
             </>
           ) : (
             <div className="audio-block" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <h4 style={{ margin: "0 0 10px 0", color: "#66f", fontSize: "0.9rem", borderBottom: "1px solid #333", paddingBottom: "6px" }}>Slide Picker</h4>
-              <input
-                type="text"
-                placeholder="Search slides..."
-                value={boostSearchQuery}
-                onChange={e => setBoostSearchQuery(e.target.value)}
-                style={{ width: '100%', boxSizing: 'border-box', background: '#222', color: '#fff', border: '1px solid #444', padding: '6px', marginBottom: 12, borderRadius: 4 }}
-              />
-              <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {project?.data.slides.map((s, idx) => {
-                  const asset = assetsById.get(s.assetId);
-                  const name = asset?.originalName || s.id;
-                  const matches = name.toLowerCase().includes(boostSearchQuery.toLowerCase());
-                  if (boostSearchQuery && !matches) return null;
-                  return (
-                    <div key={s.id} style={{ padding: '6px', background: '#222', border: '1px solid #444', borderRadius: 4 }}>
-                      <div style={{ fontSize: '0.8rem', color: '#ddd', marginBottom: 4 }} title={name}>{idx + 1}. {name.length > 30 ? name.slice(0, 30) + '...' : name}</div>
-                      <button
-                        style={{ width: '100%', padding: '4px', background: '#334', border: 'none', color: '#88f', cursor: 'pointer', borderRadius: 2 }}
-                        onClick={() => {
-                          if (!project || !project.data.boostPack) return;
-                          const prop = (boostTab + 'Sequence') as 'activationSequence' | 'languageSequence' | 'gamesSequence';
-                          const prev = project.data.boostPack[prop] || [];
-                          const newItem = {
-                            id: `item-${Date.now()}`,
-                            type: 'slideRef' as const,
-                            slideId: s.id
-                          };
-                          setProject({
-                            ...project,
-                            data: {
-                              ...project.data,
-                              boostPack: {
-                                ...project.data.boostPack,
-                                [prop]: [...prev, newItem]
-                              }
-                            }
-                          });
-                          setIsDirty(true);
-                        }}
-                      >+ Add slideRef</button>
-                    </div>
-                  );
-                })}
+              <h4 style={{ margin: "0", color: "#66f", fontSize: "1rem" }}>Boost Tools</h4>
+
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', margin: "10px 0", borderBottom: '1px solid #333', paddingBottom: 10 }}>
+                <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('slideRef')}>+ SlideRef</button>
+                <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('breakRef')}>+ BreakRef</button>
+                <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('promptCard')}>+ Prompt</button>
+                <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('miniGame')}>+ Game</button>
               </div>
+
+              {activeItem ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {activeItem.type === 'slideRef' && (
+                    <>
+                      <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Editing SlideRef</h4>
+                      <details style={{ marginBottom: 16 }}>
+                        <summary style={{ cursor: 'pointer', color: '#88f', fontSize: '0.85rem', marginBottom: 8 }}>Select Slide</summary>
+                        <input
+                          type="text"
+                          placeholder="Search slides..."
+                          value={boostSearchQuery}
+                          onChange={e => setBoostSearchQuery(e.target.value)}
+                          style={{ width: '100%', boxSizing: 'border-box', background: '#222', color: '#fff', border: '1px solid #444', padding: '6px', marginBottom: 12, borderRadius: 4 }}
+                        />
+                        <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {project?.data.slides.map((s, idx) => {
+                            const asset = assetsById.get(s.assetId);
+                            const name = asset?.originalName || s.id;
+                            const matches = name.toLowerCase().includes(boostSearchQuery.toLowerCase());
+                            if (boostSearchQuery && !matches) return null;
+                            return (
+                              <button
+                                key={s.id}
+                                style={{ padding: '6px', background: activeItem.slideId === s.id ? '#556' : '#222', border: activeItem.slideId === s.id ? '1px solid #77f' : '1px solid #444', color: '#ddd', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: '0.8rem' }}
+                                onClick={() => updateSequenceItem(activeItem.id, { slideId: s.id })}
+                              >
+                                {idx + 1}. {name.length > 30 ? name.slice(0, 30) + '...' : name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    </>
+                  )}
+                  {activeItem.type === 'breakRef' && (
+                    <>
+                      <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Editing BreakRef</h4>
+                      <select
+                        value={activeItem.breakId}
+                        onChange={e => updateSequenceItem(activeItem.id, { breakId: e.target.value })}
+                        style={{ background: '#222', color: '#fff', padding: 4, border: '1px solid #555', borderRadius: 4 }}
+                      >
+                        <option value="">(Select a break)</option>
+                        {project?.data.sections.filter(s => s.type === 'break').map(b => (
+                          <option key={b.id} value={b.id}>{b.name || 'Unnamed Break'}</option>
+                        ))}
+                      </select>
+                    </>
+                  )}
+                  {activeItem.type === 'promptCard' && (
+                    <>
+                      <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Editing PromptCard</h4>
+                      <input type="text" placeholder="Title (optional)" value={activeItem.title || ''} onChange={e => updateSequenceItem(activeItem.id, { title: e.target.value })} style={{ background: '#222', color: '#fff', padding: 6, border: '1px solid #555', borderRadius: 4 }} />
+                      <textarea placeholder="Body" value={activeItem.body} onChange={e => updateSequenceItem(activeItem.id, { body: e.target.value })} style={{ background: '#222', color: '#fff', padding: 6, border: '1px solid #555', borderRadius: 4, minHeight: 80, resize: 'vertical' }} />
+                    </>
+                  )}
+                  {activeItem.type === 'miniGame' && (
+                    <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Editing MiniGame</h4>
+                  )}
+                  {activeItem.type === 'slideRef' && currentSlide && renderTagEditor(currentSlide)}
+                </div>
+              ) : (
+                <div style={{ color: '#888', fontSize: '0.85rem', textAlign: 'center', marginTop: 24 }}>Select an item in Boost Sequences to edit</div>
+              )}
             </div>
           )}
         </aside>
