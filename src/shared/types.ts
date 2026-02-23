@@ -9,6 +9,7 @@ export interface AudioClip {
   shortcut?: string;
   color?: string;
   fadeEnabled?: boolean;
+  tags?: string[];
 }
 
 export interface DrawPoint {
@@ -71,6 +72,7 @@ export interface Section {
   bgTransform?: { x: number; y: number; scale: number; blur: number };
   titleFontSize?: number;
   timerSize?: number;
+  tags?: string[];
 }
 
 export interface Slide {
@@ -84,15 +86,88 @@ export interface Slide {
   dialogue?: AudioClip[];
   sfx?: AudioClip[];
   bgm?: AudioClip;
+  tags?: string[];
+  overlays?: OverlayItem[];
+  audioCues?: AudioCue[];
+}
+
+export type ProjectSchemaVersion = 1 | 2;
+
+export interface OverlayItem {
+  id: string;
+  type: 'speechBubble' | 'textBox';
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  align?: 'left' | 'center' | 'right';
+  theme?: 'light' | 'dark' | 'accent';
+  visible?: boolean;
+  zIndex?: number;
+}
+
+export interface AudioCue {
+  id: string;
+  kind: 'dialogue' | 'sfx' | 'bgm' | 'music' | 'voiceover';
+  label: string;
+  timeSec: number;
+  targetAssetId?: string;
+  targetUrl?: string;
+  volume?: number;
+  fadeMs?: number;
+  tags?: string[];
+}
+
+export interface SlideRefItem {
+  id: string;
+  type: 'slideRef';
+  slideId: string;
+  viewOverride?: {
+    zoom?: number;
+    panX?: number;
+    panY?: number;
+  };
+}
+
+export interface BreakRefItem {
+  id: string;
+  type: 'breakRef';
+  breakId: string;
+  textOverride?: string;
+}
+
+export interface PromptCardItem {
+  id: string;
+  type: 'promptCard';
+  title?: string;
+  body: string;
+  durationMs?: number;
+}
+
+export interface MiniGameItem {
+  id: string;
+  type: 'miniGame';
+  gameType: 'placeholder';
+  config?: Record<string, unknown>;
+}
+
+export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem;
+
+export interface BoostPack {
+  activationSequence: SequenceItem[];
+  languageSequence: SequenceItem[];
+  gamesSequence: SequenceItem[];
 }
 
 export interface ProjectData {
-  version: 1;
+  version: ProjectSchemaVersion;
   createdAt: string;
   updatedAt: string;
   slides: Slide[];
   assets: AssetItem[];
   sections: Section[];
+  boostPack?: BoostPack;
 }
 
 export interface ProjectState {

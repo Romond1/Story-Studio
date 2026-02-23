@@ -17,6 +17,7 @@ import type {
   Slide,
   TransitionType,
   AudioClip,
+  BoostPack
 } from "../shared/types";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -302,6 +303,13 @@ export function App() {
   >("left");
 
   const [appMode, setAppMode] = useState<AppMode>(DEFAULT_MODE);
+
+  const ENABLE_BOOST_MODE = true;
+  const [topMode, setTopMode] = useState<'story' | 'boost'>('story');
+  const [boostTab, setBoostTab] = useState<'activation' | 'language' | 'games'>('activation');
+  const [selectedBoostItemId, setSelectedBoostItemId] = useState<string | null>(null);
+  const [boostSearchQuery, setBoostSearchQuery] = useState("");
+
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
   );
@@ -470,10 +478,21 @@ export function App() {
     return sectionSlideIndices.get(selectedSectionId) ?? [];
   }, [project, sectionSlideIndices, selectedSectionId]);
 
-  const currentSlide = project?.data.slides[currentIndex] ?? null;
-  const currentAsset = currentSlide
+  let currentSlide = project?.data.slides[currentIndex] ?? null;
+  let currentAsset = currentSlide
     ? (assetsById.get(currentSlide.assetId) ?? null)
     : null;
+
+  if (topMode === 'boost' && project?.data.boostPack) {
+    const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof typeof project.data.boostPack] || [];
+    const activeItem = activeSequence.find(i => i.id === selectedBoostItemId);
+    const activeSlide = activeItem?.type === 'slideRef'
+      ? project.data.slides.find(s => s.id === activeItem.slideId) ?? null
+      : null;
+    currentSlide = activeSlide;
+    currentAsset = activeSlide ? (assetsById.get(activeSlide.assetId) ?? null) : null;
+  }
+
   const previousSlide =
     previousIndex !== null ? project?.data.slides[previousIndex] : null;
   const previousAsset = previousSlide
@@ -1316,6 +1335,19 @@ export function App() {
           {appMode === "edit" ? "Edit" : "Teach"}
         </button>
 
+        {ENABLE_BOOST_MODE && (
+          <div style={{ display: 'flex', gap: 4, background: '#222', padding: '2px', borderRadius: 4, marginRight: 10 }}>
+            <button
+              style={{ background: topMode === 'story' ? '#444' : 'transparent', color: topMode === 'story' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
+              onClick={() => setTopMode('story')}
+            >Story</button>
+            <button
+              style={{ background: topMode === 'boost' ? '#444' : 'transparent', color: topMode === 'boost' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
+              onClick={() => setTopMode('boost')}
+            >Boost</button>
+          </div>
+        )}
+
         <span className="build-chip" title="Build marker">
           Build {BUILD_VERSION}
         </span>
@@ -1437,207 +1469,282 @@ export function App() {
 
       <div className="content">
         <aside className="sidebar">
-          <h3>Sections</h3>
-          {sections.length ? (
-            <ul>
-              {sections.map((section, index) => {
-                const isBreak = section.type === "break";
-                const count = isBreak
-                  ? (section.breakMedia?.length ?? 0)
-                  : (sectionSlideIndices.get(section.id)?.length ?? 0);
-                const isSelected = selectedSectionId === section.id;
-                const isExpanded = expandedSectionId === section.id;
-                return (
-                  <li
-                    key={section.id}
-                    className={`section-wrapper ${isBreak ? "break-item" : ""}`}
-                  >
-                    <div className="section-item">
-                      <div
-                        className="section-name"
-                        style={{
-                          fontWeight: isSelected ? "bold" : "normal",
-                          cursor: "pointer",
-                          flex: 1,
-                        }}
-                        onClick={() => {
-                          selectSection(section.id);
-                          setExpandedSectionId(isExpanded ? null : section.id);
-                        }}
-                        onDoubleClick={() => setRenamingSectionId(section.id)}
+          {topMode === 'story' ? (
+            <>
+              <h3>Sections</h3>
+              {sections.length ? (
+                <ul>
+                  {sections.map((section, index) => {
+                    const isBreak = section.type === "break";
+                    const count = isBreak
+                      ? (section.breakMedia?.length ?? 0)
+                      : (sectionSlideIndices.get(section.id)?.length ?? 0);
+                    const isSelected = selectedSectionId === section.id;
+                    const isExpanded = expandedSectionId === section.id;
+                    return (
+                      <li
+                        key={section.id}
+                        className={`section-wrapper ${isBreak ? "break-item" : ""}`}
                       >
-                        {renamingSectionId === section.id ? (
-                          <input
-                            className="section-input"
-                            defaultValue={section.name}
-                            autoFocus
-                            onBlur={(event) => {
-                              updateSection(section.id, {
-                                name: event.target.value,
-                              });
-                              setRenamingSectionId(null);
+                        <div className="section-item">
+                          <div
+                            className="section-name"
+                            style={{
+                              fontWeight: isSelected ? "bold" : "normal",
+                              cursor: "pointer",
+                              flex: 1,
                             }}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                updateSection(section.id, {
-                                  name: (event.target as HTMLInputElement)
-                                    .value,
-                                });
-                                setRenamingSectionId(null);
-                              } else if (event.key === "Escape") {
-                                setRenamingSectionId(null);
-                              }
+                            onClick={() => {
+                              selectSection(section.id);
+                              setExpandedSectionId(isExpanded ? null : section.id);
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        ) : (
-                          <span>
-                            {isBreak ? "* " : isExpanded ? "v " : "> "}
-                            {section.name}
-                          </span>
+                            onDoubleClick={() => setRenamingSectionId(section.id)}
+                          >
+                            {renamingSectionId === section.id ? (
+                              <input
+                                className="section-input"
+                                defaultValue={section.name}
+                                autoFocus
+                                onBlur={(event) => {
+                                  updateSection(section.id, {
+                                    name: event.target.value,
+                                  });
+                                  setRenamingSectionId(null);
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter") {
+                                    updateSection(section.id, {
+                                      name: (event.target as HTMLInputElement)
+                                        .value,
+                                    });
+                                    setRenamingSectionId(null);
+                                  } else if (event.key === "Escape") {
+                                    setRenamingSectionId(null);
+                                  }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <span>
+                                {isBreak ? "* " : isExpanded ? "v " : "> "}
+                                {section.name}
+                              </span>
+                            )}
+                          </div>
+                          {!isBreak && (
+                            <small
+                              style={{
+                                minWidth: "20px",
+                                textAlign: "right",
+                                display: "inline-block",
+                              }}
+                            >
+                              {count}
+                            </small>
+                          )}
+                          <button
+                            className="section-ctrl-btn"
+                            title="Move Up"
+                            disabled={index === 0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSection(section.id, "up");
+                            }}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            className="section-ctrl-btn"
+                            title="Move Down"
+                            disabled={index === sections.length - 1}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSection(section.id, "down");
+                            }}
+                          >
+                            ▼
+                          </button>
+                          {sections.length > 1 && (
+                            <button
+                              className="section-delete-btn"
+                              title="Delete"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteSection(section.id);
+                              }}
+                            >
+                              X
+                            </button>
+                          )}
+                        </div>
+                        {!isBreak && isExpanded && (
+                          <ul className="slide-list">
+                            {(sectionSlideIndices.get(section.id) ?? []).map(
+                              (slideIndex) => {
+                                const slide = project!.data.slides[slideIndex];
+                                const asset = assetsById.get(slide.assetId);
+                                const isDragging = draggedSlideIndex === slideIndex;
+                                const isDragOver =
+                                  dragOverSlideIndex === slideIndex;
+                                const isSlideSelected = selectedSlideIds.has(
+                                  slide.id,
+                                );
+                                const isCurrent = slideIndex === currentIndex;
+
+                                return (
+                                  <li
+                                    key={slide.id}
+                                    className={
+                                      isDragOver
+                                        ? "slide-row drag-over"
+                                        : "slide-row"
+                                    }
+                                    onDragOver={(event) => {
+                                      event.preventDefault();
+                                      if (draggedSlideIndex !== null) {
+                                        setDragOverSlideIndex(slideIndex);
+                                      }
+                                    }}
+                                    onDrop={(event) => {
+                                      event.preventDefault();
+                                      if (draggedSlideIndex === null) return;
+                                      reorderSlidesWithinSection(
+                                        draggedSlideIndex,
+                                        slideIndex,
+                                      );
+                                    }}
+                                  >
+                                    <button
+                                      draggable
+                                      className={`slide-btn ${isSlideSelected ? "selected" : ""} ${isCurrent && topMode === 'story' ? "current-slide" : ""}`}
+                                      onClick={(e) =>
+                                        onSlideWrapperClick(slideIndex, e)
+                                      }
+                                      onDragStart={(event) => {
+                                        event.stopPropagation();
+                                        event.dataTransfer.effectAllowed = "move";
+                                        event.dataTransfer.setData(
+                                          "text/plain",
+                                          String(slideIndex),
+                                        );
+                                        setDraggedSlideIndex(slideIndex);
+                                        setDragOverSlideIndex(slideIndex);
+                                      }}
+                                      onDragEnd={() => {
+                                        setDraggedSlideIndex(null);
+                                        setDragOverSlideIndex(null);
+                                      }}
+                                    >
+                                      <span>{slideIndex + 1}.</span>{" "}
+                                      {asset?.originalName ?? "Unknown asset"}
+                                      {isDragging && <small> (Dragging)</small>}
+                                    </button>
+                                  </li>
+                                );
+                              },
+                            )}
+                          </ul>
                         )}
-                      </div>
-                      {!isBreak && (
-                        <small
-                          style={{
-                            minWidth: "20px",
-                            textAlign: "right",
-                            display: "inline-block",
-                          }}
-                        >
-                          {count}
-                        </small>
-                      )}
+
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p>No sections yet.</p>
+              )}
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className="section-break-btn"
+                  style={{ flex: 1, marginTop: 0 }}
+                  onClick={onAddSection}
+                  disabled={!project}
+                >
+                  + Section
+                </button>
+                <button
+                  className="section-break-btn"
+                  style={{ flex: 1, marginTop: 0 }}
+                  onClick={onAddBreak}
+                  disabled={!project}
+                >
+                  + Break
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 style={{ marginBottom: 16 }}>Boost Sequences</h3>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+                {(['activation', 'language', 'games'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setBoostTab(tab)}
+                    style={{ flex: 1, padding: '4px', background: boostTab === tab ? '#555' : '#222', border: 'none', color: '#fff', fontSize: '0.8rem', cursor: 'pointer', borderRadius: 2 }}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {(project?.data.boostPack?.[`${boostTab}Sequence` as keyof BoostPack] || []).map((item, index, arr) => {
+                  const isSelected = selectedBoostItemId === item.id;
+                  let title = item.type;
+                  if (item.type === 'slideRef') {
+                    const slide = project!.data.slides.find(s => s.id === item.slideId);
+                    const asset = slide ? assetsById.get(slide.assetId) : null;
+                    title = `Slide: ${asset?.originalName || item.slideId}`;
+                  }
+
+                  return (
+                    <li key={item.id} style={{ display: 'flex', alignItems: 'center', padding: '6px', background: isSelected ? '#334' : '#222', border: isSelected ? '1px solid #66f' : '1px solid #333', cursor: 'pointer', borderRadius: 4 }} onClick={() => setSelectedBoostItemId(item.id)}>
+                      <span style={{ flex: 1, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{index + 1}. {title}</span>
                       <button
-                        className="section-ctrl-btn"
-                        title="Move Up"
+                        style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#888', cursor: index === 0 ? 'default' : 'pointer' }}
                         disabled={index === 0}
                         onClick={(e) => {
                           e.stopPropagation();
-                          moveSection(section.id, "up");
+                          if (!project) return;
+                          const seq = [...arr];
+                          [seq[index - 1], seq[index]] = [seq[index], seq[index - 1]];
+                          setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [`${boostTab}Sequence`]: seq } } });
+                          setIsDirty(true);
                         }}
-                      >
-                        ▲
-                      </button>
+                      >▲</button>
                       <button
-                        className="section-ctrl-btn"
-                        title="Move Down"
-                        disabled={index === sections.length - 1}
+                        style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#888', cursor: index === arr.length - 1 ? 'default' : 'pointer' }}
+                        disabled={index === arr.length - 1}
                         onClick={(e) => {
                           e.stopPropagation();
-                          moveSection(section.id, "down");
+                          if (!project) return;
+                          const seq = [...arr];
+                          [seq[index + 1], seq[index]] = [seq[index], seq[index + 1]];
+                          setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [`${boostTab}Sequence`]: seq } } });
+                          setIsDirty(true);
                         }}
-                      >
-                        ▼
-                      </button>
-                      {sections.length > 1 && (
-                        <button
-                          className="section-delete-btn"
-                          title="Delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteSection(section.id);
-                          }}
-                        >
-                          X
-                        </button>
-                      )}
-                    </div>
-                    {!isBreak && isExpanded && (
-                      <ul className="slide-list">
-                        {(sectionSlideIndices.get(section.id) ?? []).map(
-                          (slideIndex) => {
-                            const slide = project!.data.slides[slideIndex];
-                            const asset = assetsById.get(slide.assetId);
-                            const isDragging = draggedSlideIndex === slideIndex;
-                            const isDragOver =
-                              dragOverSlideIndex === slideIndex;
-                            const isSlideSelected = selectedSlideIds.has(
-                              slide.id,
-                            );
-                            const isCurrent = slideIndex === currentIndex;
-
-                            return (
-                              <li
-                                key={slide.id}
-                                className={
-                                  isDragOver
-                                    ? "slide-row drag-over"
-                                    : "slide-row"
-                                }
-                                onDragOver={(event) => {
-                                  event.preventDefault();
-                                  if (draggedSlideIndex !== null) {
-                                    setDragOverSlideIndex(slideIndex);
-                                  }
-                                }}
-                                onDrop={(event) => {
-                                  event.preventDefault();
-                                  if (draggedSlideIndex === null) return;
-                                  reorderSlidesWithinSection(
-                                    draggedSlideIndex,
-                                    slideIndex,
-                                  );
-                                }}
-                              >
-                                <button
-                                  draggable
-                                  className={`slide-btn ${isSlideSelected ? "selected" : ""} ${isCurrent ? "current-slide" : ""}`}
-                                  onClick={(e) =>
-                                    onSlideWrapperClick(slideIndex, e)
-                                  }
-                                  onDragStart={(event) => {
-                                    event.stopPropagation();
-                                    event.dataTransfer.effectAllowed = "move";
-                                    event.dataTransfer.setData(
-                                      "text/plain",
-                                      String(slideIndex),
-                                    );
-                                    setDraggedSlideIndex(slideIndex);
-                                    setDragOverSlideIndex(slideIndex);
-                                  }}
-                                  onDragEnd={() => {
-                                    setDraggedSlideIndex(null);
-                                    setDragOverSlideIndex(null);
-                                  }}
-                                >
-                                  <span>{slideIndex + 1}.</span>{" "}
-                                  {asset?.originalName ?? "Unknown asset"}
-                                  {isDragging && <small> (Dragging)</small>}
-                                </button>
-                              </li>
-                            );
-                          },
-                        )}
-                      </ul>
-                    )}
-
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p>No sections yet.</p>
+                      >▼</button>
+                      <button
+                        style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#f66', cursor: 'pointer' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!project) return;
+                          const seq = arr.filter((_, i) => i !== index);
+                          setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [`${boostTab}Sequence`]: seq } } });
+                          setIsDirty(true);
+                          if (isSelected) setSelectedBoostItemId(null);
+                        }}
+                      >X</button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {!(project?.data.boostPack?.[`${boostTab}Sequence` as keyof BoostPack] || []).length && (
+                <div style={{ fontSize: '0.85rem', color: '#888', textAlign: 'center', marginTop: 24 }}>Sequence is empty</div>
+              )}
+            </>
           )}
-
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              className="section-break-btn"
-              style={{ flex: 1, marginTop: 0 }}
-              onClick={onAddSection}
-              disabled={!project}
-            >
-              + Section
-            </button>
-            <button
-              className="section-break-btn"
-              style={{ flex: 1, marginTop: 0 }}
-              onClick={onAddBreak}
-              disabled={!project}
-            >
-              + Break
-            </button>
-          </div>
         </aside>
 
         <main className="stage-wrap" style={{ position: "relative" }}>
@@ -2493,202 +2600,254 @@ export function App() {
         </main>
 
         <aside className="audio-sidebar">
-          <div className="audio-block">
-            <h4>Slide Audio</h4>
-            {currentSlide && (
-              <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginBottom: 4 }}>
-                  <span>Dialogue</span>
-                  {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("dialogue")}>+</button>}
-                </div>
-                {currentSlide.dialogue?.map((clip, idx) => (
-                  <AudioClipPlayer
-                    key={`diag-${idx}`}
-                    clip={clip}
-                    label={`Dialogue ${idx + 1}`}
-                    onUpdate={(upds) => updateSlideAudio("dialogue", idx, upds)}
-                    onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
-                    onPause={(url) => audioManager.pauseClip(url)}
-                    onStop={(url, opts) => audioManager.stopClip(url, opts)}
-                    showRemove={appMode === "edit"}
-                    onRemove={() => removeSlideAudio("dialogue", idx)}
-                  />
-                ))}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
-                  <span>SFX</span>
-                  {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("sfx")}>+</button>}
-                </div>
-                {currentSlide.sfx?.map((clip, idx) => (
-                  <AudioClipPlayer
-                    key={`sfx-${idx}`}
-                    clip={clip}
-                    label={`SFX ${idx + 1}`}
-                    onUpdate={(upds) => updateSlideAudio("sfx", idx, upds)}
-                    onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
-                    onPause={(url) => audioManager.pauseClip(url)}
-                    onStop={(url, opts) => audioManager.stopClip(url, opts)}
-                    showRemove={appMode === "edit"}
-                    onRemove={() => removeSlideAudio("sfx", idx)}
-                  />
-                ))}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
-                  <span>Slide BGM</span>
-                  {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("bgm")}>+</button>}
-                </div>
-                {currentSlide.bgm && (
-                  <AudioClipPlayer
-                    clip={currentSlide.bgm}
-                    label={"Slide BGM"}
-                    onUpdate={(upds) => updateSlideAudio("bgm", null, upds)}
-                    onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, opts)}
-                    onPause={(url) => audioManager.pauseClip(url)}
-                    onStop={(url, opts) => audioManager.stopClip(url, opts)}
-                    showRemove={appMode === "edit"}
-                    onRemove={() => removeSlideAudio("bgm")}
-                  />
+          {topMode === 'story' ? (
+            <>
+              <div className="audio-block">
+                <h4>Slide Audio</h4>
+                {currentSlide && (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginBottom: 4 }}>
+                      <span>Dialogue</span>
+                      {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("dialogue")}>+</button>}
+                    </div>
+                    {currentSlide.dialogue?.map((clip, idx) => (
+                      <AudioClipPlayer
+                        key={`diag-${idx}`}
+                        clip={clip}
+                        label={`Dialogue ${idx + 1}`}
+                        onUpdate={(upds) => updateSlideAudio("dialogue", idx, upds)}
+                        onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
+                        onPause={(url) => audioManager.pauseClip(url)}
+                        onStop={(url, opts) => audioManager.stopClip(url, opts)}
+                        showRemove={appMode === "edit"}
+                        onRemove={() => removeSlideAudio("dialogue", idx)}
+                      />
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
+                      <span>SFX</span>
+                      {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("sfx")}>+</button>}
+                    </div>
+                    {currentSlide.sfx?.map((clip, idx) => (
+                      <AudioClipPlayer
+                        key={`sfx-${idx}`}
+                        clip={clip}
+                        label={`SFX ${idx + 1}`}
+                        onUpdate={(upds) => updateSlideAudio("sfx", idx, upds)}
+                        onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
+                        onPause={(url) => audioManager.pauseClip(url)}
+                        onStop={(url, opts) => audioManager.stopClip(url, opts)}
+                        showRemove={appMode === "edit"}
+                        onRemove={() => removeSlideAudio("sfx", idx)}
+                      />
+                    ))}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginTop: 10, marginBottom: 4 }}>
+                      <span>Slide BGM</span>
+                      {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("bgm")}>+</button>}
+                    </div>
+                    {currentSlide.bgm && (
+                      <AudioClipPlayer
+                        clip={currentSlide.bgm}
+                        label={"Slide BGM"}
+                        onUpdate={(upds) => updateSlideAudio("bgm", null, upds)}
+                        onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, opts)}
+                        onPause={(url) => audioManager.pauseClip(url)}
+                        onStop={(url, opts) => audioManager.stopClip(url, opts)}
+                        showRemove={appMode === "edit"}
+                        onRemove={() => removeSlideAudio("bgm")}
+                      />
+                    )}
+                    {!currentSlide.dialogue?.length &&
+                      !currentSlide.sfx?.length &&
+                      !currentSlide.bgm && (
+                        <div
+                          style={{
+                            fontSize: "0.85rem",
+                            color: "#666",
+                            textAlign: "center",
+                            padding: "10px 0",
+                          }}
+                        >
+                          No audio on this slide
+                        </div>
+                      )}
+                  </>
                 )}
-                {!currentSlide.dialogue?.length &&
-                  !currentSlide.sfx?.length &&
-                  !currentSlide.bgm && (
-                    <div
+              </div>
+
+              <div className="audio-block">
+                <h4 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 0 10px 0", color: "#ffb86c", fontSize: "0.9rem", borderBottom: "1px solid #333", paddingBottom: "6px" }}>
+                  Section Music
+                  {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a", color: "#fff" }} onClick={() => onImportAudio("section-bgm")}>+</button>}
+                </h4>
+                {selectedSection?.bgm?.length ? (
+                  selectedSection.bgm.map((clip, idx) => (
+                    <AudioClipPlayer
+                      key={`section-bgm-${idx}`}
+                      clip={clip}
+                      label={`Section BGM ${idx + 1}`}
+                      onUpdate={(upds) =>
+                        updateSection(selectedSection.id, {
+                          bgm: (selectedSection.bgm || []).map((c, i) => (i === idx ? { ...c, ...upds } : c)),
+                        })
+                      }
+                      onPlay={(url, vol, opts) => audioManager.playSectionMusic(url, vol, opts?.fadeEnabled)}
+                      onPause={(url) => audioManager.pauseClip(url)}
+                      onStop={(url, opts) => audioManager.stopSectionMusic(undefined, opts?.fadeEnabled)}
+                      showRemove={appMode === "edit"}
+                      onRemove={() => removeSectionBgm(idx)}
+                    />
+                  ))
+                ) : (
+                  <div style={{ fontSize: "0.85rem", color: "#666", textAlign: "center", padding: "10px 0" }}>
+                    No section music
+                  </div>
+                )}
+
+
+              </div>
+
+              <div className="audio-block" style={{ marginTop: 'auto', background: "#111112", border: '1px solid #222225', padding: '16px' }}>
+                <h4 style={{ margin: "0 0 16px 0", color: "#666", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "1px" }}>Audio Routing</h4>
+
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: "0.75rem", color: "#888" }}>MIX OUTPUT DEVICE</span>
+                  </div>
+                  <select
+                    value={selectedAudioOutput}
+                    onChange={(e) => handleDeviceChange(e.target.value)}
+                    style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+                  >
+                    <option value="default">System Default</option>
+                    {audioOutputDevices.map(d => (
+                      <option key={d.deviceId} value={d.deviceId}>{d.label || `Output ${d.deviceId.slice(0, 5)}...`}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: "0.75rem", color: "#888" }}>MONITOR DEVICE</span>
+                  </div>
+                  <select
+                    value={selectedMonitorOutput}
+                    onChange={(e) => handleMonitorDeviceChange(e.target.value)}
+                    style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+                  >
+                    <option value="default">System Default</option>
+                    {audioOutputDevices.map(d => (
+                      <option key={d.deviceId} value={d.deviceId}>{d.label || `Monitor ${d.deviceId.slice(0, 5)}...`}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span style={{ fontSize: "0.75rem", color: "#888" }}>MICROPHONE INPUT</span>
+                    <button
+                      onClick={toggleMic}
                       style={{
-                        fontSize: "0.85rem",
-                        color: "#666",
-                        textAlign: "center",
-                        padding: "10px 0",
+                        padding: "2px 8px",
+                        fontSize: "0.7rem",
+                        fontWeight: "bold",
+                        background: micEnabled ? "#4a1a1a" : "#1a1a1c",
+                        border: `1px solid ${micEnabled ? "#8a3a3a" : "#333"}`,
+                        color: micEnabled ? "#ffaaaa" : "#666",
+                        borderRadius: "4px"
                       }}
                     >
-                      No audio on this slide
-                    </div>
-                  )}
-              </>
-            )}
-          </div>
+                      {micEnabled ? "LIVE" : "OFF"}
+                    </button>
+                  </div>
+                  <select
+                    value={selectedAudioInput}
+                    onChange={(e) => {
+                      setSelectedAudioInput(e.target.value);
+                      if (micEnabled) {
+                        // Force restart if live
+                        micInput.disableMic();
+                        micInput.enableMic(e.target.value !== "default" ? e.target.value : undefined).catch(err => {
+                          console.error(err);
+                          setMicEnabled(false);
+                        });
+                      }
+                    }}
+                    style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+                  >
+                    <option value="default">Default Mic</option>
+                    {audioInputDevices.map(d => (
+                      <option key={d.deviceId} value={d.deviceId}>{d.label || `Mic ${d.deviceId.slice(0, 5)}...`}</option>
+                    ))}
+                  </select>
+                </div>
 
-          <div className="audio-block">
-            <h4 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 0 10px 0", color: "#ffb86c", fontSize: "0.9rem", borderBottom: "1px solid #333", paddingBottom: "6px" }}>
-              Section Music
-              {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a", color: "#fff" }} onClick={() => onImportAudio("section-bgm")}>+</button>}
-            </h4>
-            {selectedSection?.bgm?.length ? (
-              selectedSection.bgm.map((clip, idx) => (
-                <AudioClipPlayer
-                  key={`section-bgm-${idx}`}
-                  clip={clip}
-                  label={`Section BGM ${idx + 1}`}
-                  onUpdate={(upds) =>
-                    updateSection(selectedSection.id, {
-                      bgm: (selectedSection.bgm || []).map((c, i) => (i === idx ? { ...c, ...upds } : c)),
-                    })
-                  }
-                  onPlay={(url, vol, opts) => audioManager.playSectionMusic(url, vol, opts?.fadeEnabled)}
-                  onPause={(url) => audioManager.pauseClip(url)}
-                  onStop={(url, opts) => audioManager.stopSectionMusic(undefined, opts?.fadeEnabled)}
-                  showRemove={appMode === "edit"}
-                  onRemove={() => removeSectionBgm(idx)}
-                />
-              ))
-            ) : (
-              <div style={{ fontSize: "0.85rem", color: "#666", textAlign: "center", padding: "10px 0" }}>
-                No section music
-              </div>
-            )}
-
-
-          </div>
-
-          <div className="audio-block" style={{ marginTop: 'auto', background: "#111112", border: '1px solid #222225', padding: '16px' }}>
-            <h4 style={{ margin: "0 0 16px 0", color: "#666", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "1px" }}>Audio Routing</h4>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: "0.75rem", color: "#888" }}>MIX OUTPUT DEVICE</span>
-              </div>
-              <select
-                value={selectedAudioOutput}
-                onChange={(e) => handleDeviceChange(e.target.value)}
-                style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-              >
-                <option value="default">System Default</option>
-                {audioOutputDevices.map(d => (
-                  <option key={d.deviceId} value={d.deviceId}>{d.label || `Output ${d.deviceId.slice(0, 5)}...`}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: "0.75rem", color: "#888" }}>MONITOR DEVICE</span>
-              </div>
-              <select
-                value={selectedMonitorOutput}
-                onChange={(e) => handleMonitorDeviceChange(e.target.value)}
-                style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-              >
-                <option value="default">System Default</option>
-                {audioOutputDevices.map(d => (
-                  <option key={d.deviceId} value={d.deviceId}>{d.label || `Monitor ${d.deviceId.slice(0, 5)}...`}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: "0.75rem", color: "#888" }}>MICROPHONE INPUT</span>
                 <button
-                  onClick={toggleMic}
+                  onClick={() => audioManager.stopAll()}
                   style={{
-                    padding: "2px 8px",
-                    fontSize: "0.7rem",
-                    fontWeight: "bold",
-                    background: micEnabled ? "#4a1a1a" : "#1a1a1c",
-                    border: `1px solid ${micEnabled ? "#8a3a3a" : "#333"}`,
-                    color: micEnabled ? "#ffaaaa" : "#666",
-                    borderRadius: "4px"
+                    width: "100%",
+                    marginTop: 24,
+                    padding: "8px",
+                    background: "#2a1515",
+                    color: "#ff8888",
+                    borderColor: "#4a2525",
+                    fontSize: "0.85rem",
+                    borderRadius: "4px",
+                    cursor: "pointer"
                   }}
                 >
-                  {micEnabled ? "LIVE" : "OFF"}
+                  Stop All Audio
                 </button>
               </div>
-              <select
-                value={selectedAudioInput}
-                onChange={(e) => {
-                  setSelectedAudioInput(e.target.value);
-                  if (micEnabled) {
-                    // Force restart if live
-                    micInput.disableMic();
-                    micInput.enableMic(e.target.value !== "default" ? e.target.value : undefined).catch(err => {
-                      console.error(err);
-                      setMicEnabled(false);
-                    });
-                  }
-                }}
-                style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-              >
-                <option value="default">Default Mic</option>
-                {audioInputDevices.map(d => (
-                  <option key={d.deviceId} value={d.deviceId}>{d.label || `Mic ${d.deviceId.slice(0, 5)}...`}</option>
-                ))}
-              </select>
+            </>
+          ) : (
+            <div className="audio-block" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <h4 style={{ margin: "0 0 10px 0", color: "#66f", fontSize: "0.9rem", borderBottom: "1px solid #333", paddingBottom: "6px" }}>Slide Picker</h4>
+              <input
+                type="text"
+                placeholder="Search slides..."
+                value={boostSearchQuery}
+                onChange={e => setBoostSearchQuery(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#222', color: '#fff', border: '1px solid #444', padding: '6px', marginBottom: 12, borderRadius: 4 }}
+              />
+              <div style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {project?.data.slides.map((s, idx) => {
+                  const asset = assetsById.get(s.assetId);
+                  const name = asset?.originalName || s.id;
+                  const matches = name.toLowerCase().includes(boostSearchQuery.toLowerCase());
+                  if (boostSearchQuery && !matches) return null;
+                  return (
+                    <div key={s.id} style={{ padding: '6px', background: '#222', border: '1px solid #444', borderRadius: 4 }}>
+                      <div style={{ fontSize: '0.8rem', color: '#ddd', marginBottom: 4 }} title={name}>{idx + 1}. {name.length > 30 ? name.slice(0, 30) + '...' : name}</div>
+                      <button
+                        style={{ width: '100%', padding: '4px', background: '#334', border: 'none', color: '#88f', cursor: 'pointer', borderRadius: 2 }}
+                        onClick={() => {
+                          if (!project || !project.data.boostPack) return;
+                          const prop = (boostTab + 'Sequence') as 'activationSequence' | 'languageSequence' | 'gamesSequence';
+                          const prev = project.data.boostPack[prop] || [];
+                          const newItem = {
+                            id: `item-${Date.now()}`,
+                            type: 'slideRef' as const,
+                            slideId: s.id
+                          };
+                          setProject({
+                            ...project,
+                            data: {
+                              ...project.data,
+                              boostPack: {
+                                ...project.data.boostPack,
+                                [prop]: [...prev, newItem]
+                              }
+                            }
+                          });
+                          setIsDirty(true);
+                        }}
+                      >+ Add slideRef</button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-
-            <button
-              onClick={() => audioManager.stopAll()}
-              style={{
-                width: "100%",
-                marginTop: 24,
-                padding: "8px",
-                background: "#2a1515",
-                color: "#ff8888",
-                borderColor: "#4a2525",
-                fontSize: "0.85rem",
-                borderRadius: "4px",
-                cursor: "pointer"
-              }}
-            >
-              Stop All Audio
-            </button>
-          </div>
+          )}
         </aside>
       </div>
     </div>

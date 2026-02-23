@@ -4,7 +4,7 @@ import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
-import type { AssetItem, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide } from '../shared/types';
+import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide } from '../shared/types';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -70,34 +70,58 @@ async function loadProject(folder: string): Promise<ProjectState> {
 
 
 function normalizeSectionMusic(section: Section): Section {
-  if (Array.isArray((section as Section & { bgms?: Section["bgm"][] }).bgms)) {
+  if (Array.isArray((section as Section & { bgm?: Section["bgm"] }).bgm)) {
     return section;
   }
-  if (section.bgm) {
-    return { ...section, bgms: [section.bgm] };
+  if (section.bgm && !Array.isArray(section.bgm)) {
+    return { ...section, bgm: [section.bgm as any] };
   }
-  return { ...section, bgms: [] };
+  return { ...section, bgm: [] };
+}
+
+function emptyBoostPack(): BoostPack {
+  return {
+    activationSequence: [],
+    languageSequence: [],
+    gamesSequence: [],
+  };
 }
 
 function normalizeProjectData(data: ProjectData): ProjectData {
-  const hasSections = Array.isArray((data as ProjectData & { sections?: Section[] }).sections)
-    && ((data as ProjectData & { sections?: Section[] }).sections?.length ?? 0) > 0;
+  const isV1 = !data.version || data.version === 1;
 
-  if (hasSections) {
-    return {
-      ...data,
-      sections: data.sections.map(normalizeSectionMusic),
-    };
+  let sections = Array.isArray((data as any).sections) ? (data as any).sections : [];
+  if (sections.length === 0) {
+    sections = [normalizeSectionMusic({ id: randomUUID(), name: 'Section 1' })];
+  } else {
+    sections = sections.map((sec: any) => ({
+      ...normalizeSectionMusic(sec),
+      tags: Array.isArray(sec.tags) ? sec.tags : [],
+    }));
   }
 
-  const defaultSection: Section = normalizeSectionMusic({ id: randomUUID(), name: 'Section 1' });
+  const defaultSectionId = sections[0].id;
+
+  let slides = Array.isArray(data.slides) ? data.slides : [];
+  slides = slides.map((slide: any) => ({
+    ...slide,
+    sectionId: slide.sectionId || defaultSectionId,
+    tags: Array.isArray(slide.tags) ? slide.tags : [],
+    overlays: Array.isArray(slide.overlays) ? slide.overlays : [],
+    audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
+  }));
+
+  const boostPack = (data.boostPack && typeof data.boostPack === 'object' &&
+    Array.isArray((data.boostPack as any).activationSequence))
+    ? data.boostPack
+    : emptyBoostPack();
+
   return {
     ...data,
-    sections: [defaultSection],
-    slides: data.slides.map((slide) => ({
-      ...slide,
-      sectionId: defaultSection.id
-    }))
+    version: 2,
+    sections,
+    slides,
+    boostPack
   };
 }
 
@@ -276,12 +300,13 @@ ipcMain.handle('project:create', async () => {
 
   const now = new Date().toISOString();
   const data: ProjectData = {
-    version: 1,
+    version: 2,
     createdAt: now,
     updatedAt: now,
     slides: [],
     assets: [],
-    sections: [{ id: randomUUID(), name: 'Section 1' }]
+    sections: [{ id: randomUUID(), name: 'Section 1' }],
+    boostPack: emptyBoostPack()
   };
 
   await writeProjectAtomic(folderPath, data);
