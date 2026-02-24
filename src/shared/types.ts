@@ -91,7 +91,23 @@ export interface Slide {
   audioCues?: AudioCue[];
 }
 
-export type ProjectSchemaVersion = 1 | 2;
+export type ProjectSchemaVersion = 1 | 2 | 3;
+
+export interface BubbleDef {
+  bubbleDefId: string;
+  name: string;
+  templateName?: string;
+  src: string; // png src
+  type?: 'speech' | 'thought' | 'text' | 'normal';
+  textRect?: { x: number, y: number, width: number, height: number }; // Normalized 0..1 relative to image bounds
+  defaultStyle?: Record<string, unknown>;
+}
+
+export interface BubbleTemplate {
+  templateName: string;
+  imageSrc: string;
+  defaultTextRect: { x: number; y: number; width: number; height: number };
+}
 
 export interface OverlayItem {
   id: string;
@@ -105,6 +121,23 @@ export interface OverlayItem {
   theme?: 'light' | 'dark' | 'accent';
   visible?: boolean;
   zIndex?: number;
+  bubbleId?: string; // Human-readable reference ID (e.g., B1, B2)
+  bubbleDefId?: string; // Reference to BubbleDef
+  locked?: boolean;
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: string;
+  textColor?: string;
+  lineHeight?: number;
+  fontStyle?: 'normal' | 'italic';
+  textShadow?: boolean;
+  tailAngleDeg?: number;
+  tailOffsetX?: number;
+  tailOffsetY?: number;
+  // Normalized text rectangle mapping
+  textRect?: { x: number, y: number, width: number, height: number };
+  tags?: string[];
+  customImageSrc?: string;
 }
 
 export interface AudioCue {
@@ -168,6 +201,7 @@ export interface ProjectData {
   assets: AssetItem[];
   sections: Section[];
   boostPack?: BoostPack;
+  bubbleDefinitions?: BubbleTemplate[];
 }
 
 export interface ProjectState {

@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type {
+import {
   AssetItem,
   DrawPoint,
   MarkerStroke,
@@ -17,8 +17,13 @@ import type {
   Slide,
   TransitionType,
   AudioClip,
-  BoostPack
+  BoostPack,
+  OverlayItem,
+  BubbleDef,
+  BubbleTemplate,
+  SequenceItem
 } from "../shared/types";
+import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
 import { audioManager } from "./audio/AudioManager";
@@ -345,10 +350,12 @@ export function App() {
 
   const [toast, setToast] = useState<{
     message: string;
-    type: "success" | "teach" | "edit";
-    duration: number;
     id: number;
+    type: "edit" | "teach" | "success";
+    duration: number;
   } | null>(null);
+
+  const [activeOverlayId, setActiveOverlayId] = useState<string | null>(null);
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     tool: "highlighter",
     drawMode: false,
@@ -459,7 +466,8 @@ export function App() {
       const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
       activeItem = activeSequence.find(i => i.id === selectedBoostItemId) ?? null;
       if (activeItem?.type === 'breakRef') {
-        _matchedSection = sections.find(s => s.id === activeItem.breakId) ?? null;
+        const breakId = (activeItem as Extract<SequenceItem, { type: 'breakRef' }>).breakId;
+        _matchedSection = sections.find(s => s.id === breakId) ?? null;
       }
     }
   }
@@ -729,6 +737,25 @@ export function App() {
       )
         return;
 
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (activeOverlayId && project) {
+          const cSlide = project.data.slides[currentIndex];
+          if (cSlide) {
+            const nextOverlays = (cSlide.overlays || []).filter((o) => o.id !== activeOverlayId);
+            setProject({
+              ...project,
+              data: {
+                ...project.data,
+                slides: project.data.slides.map((s) => (s.id === cSlide.id ? { ...s, overlays: nextOverlays } : s)),
+              },
+            });
+            setActiveOverlayId(null);
+            setIsDirty(true);
+            return;
+          }
+        }
+      }
+
       if (e.code === "NumpadAdd" || e.code === "NumpadSubtract") {
         const bgms = selectedSection?.bgm;
         if (!bgms || bgms.length === 0) return;
@@ -795,6 +822,8 @@ export function App() {
     selectSection,
     selectedSectionId,
     expandedSectionId,
+    activeOverlayId,
+    currentIndex,
   ]);
 
   const setProjectState = (next: ProjectState | null) => {
@@ -1022,6 +1051,40 @@ export function App() {
     }
   };
 
+  const onImportBubbleTemplate = async () => {
+    if (!ensureEditMode(appMode, "import bubble template")) return;
+    if (!project) return;
+    try {
+      const result = await (window as any).api.importBubbleTemplate() as { success: boolean; relativePath: string };
+      if (!result || !result.success || !result.relativePath) return;
+
+      const filename = result.relativePath.split('/').pop() || '';
+      const templateName = filename.replace(/\.png$/i, '');
+
+      const newTemplate: BubbleTemplate = {
+        templateName,
+        imageSrc: result.relativePath,
+        defaultTextRect: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 },
+      };
+
+      const nextData = {
+        ...project.data,
+        bubbleDefinitions: [...(project.data.bubbleDefinitions || []), newTemplate],
+      };
+
+      setProject({ ...project, data: nextData });
+      setIsDirty(true);
+
+      // Persist as requested
+      await window.appApi.saveProject(nextData);
+      setIsDirty(false);
+      showToast("Bubble template imported and project saved", "success");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to import bubble template: " + (err as Error).message);
+    }
+  };
+
   const onSave = async () => {
     if (!ensureEditMode(appMode, "save")) return;
     if (!project) return;
@@ -1120,6 +1183,177 @@ export function App() {
       },
     });
     setSelectedSectionId(nextBreak.id);
+    setIsDirty(true);
+  };
+
+  const getNextBubbleId = () => {
+    if (!project) return "B0001";
+    let max = 0;
+    project.data.slides.forEach(s => {
+      (s.overlays || []).forEach(o => {
+        if (o.bubbleId?.startsWith('B')) {
+          const num = parseInt(o.bubbleId.substring(1), 10);
+          if (!isNaN(num) && num > max) max = num;
+        }
+      });
+    });
+    return `B${(max + 1).toString().padStart(4, '0')}`;
+  };
+
+  const onAddBubble = () => {
+    if (!ensureEditMode(appMode, "add bubble")) return;
+    if (!project || !currentSlide) return;
+
+    const classicDef = BUBBLE_LIBRARY.find((b) => b.bubbleDefId === "BD_CLASSIC") || BUBBLE_LIBRARY[0];
+    const newBubble: OverlayItem = {
+      id: crypto.randomUUID(),
+      type: "speechBubble",
+      text: "New Bubble text...",
+      x: 100,
+      y: 100,
+      width: 300,
+      height: 150,
+      align: "center",
+      theme: "light",
+      visible: true,
+      zIndex: 5,
+      bubbleDefId: classicDef?.bubbleDefId ?? "BD_CLASSIC",
+      bubbleId: getNextBubbleId(),
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "400",
+      fontStyle: "normal",
+      textColor: "#000000",
+      tailAngleDeg: 135,
+    };
+
+    const nextSlide: Slide = {
+      ...currentSlide,
+      overlays: [...(currentSlide.overlays || []), newBubble],
+    };
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: project.data.slides.map((s) => (s.id === currentSlide.id ? nextSlide : s)),
+      },
+    });
+    setIsDirty(true);
+  };
+
+  const onDuplicateBubble = (ov: OverlayItem) => {
+    if (!ensureEditMode(appMode, "duplicate bubble")) return;
+    if (!project || !currentSlide) return;
+
+    const newBubble: OverlayItem = {
+      ...ov,
+      id: crypto.randomUUID(),
+      bubbleId: getNextBubbleId(),
+      x: (ov.x || 0) + 20,
+      y: (ov.y || 0) + 20,
+    };
+
+    const nextSlide: Slide = {
+      ...currentSlide,
+      overlays: [...(currentSlide.overlays || []), newBubble],
+    };
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: project.data.slides.map((s) => (s.id === currentSlide.id ? nextSlide : s)),
+      },
+    });
+    setIsDirty(true);
+    setActiveOverlayId(newBubble.id);
+  };
+
+  const onCopyBubbleToSlide = (ov: OverlayItem, targetSlideId: string) => {
+    if (!ensureEditMode(appMode, "copy bubble")) return;
+    if (!project) return;
+
+    const targetIndex = project.data.slides.findIndex(s => s.id === targetSlideId);
+    if (targetIndex === -1) return;
+
+    const newBubble: OverlayItem = {
+      ...ov,
+      id: crypto.randomUUID(),
+      bubbleId: getNextBubbleId(),
+    };
+
+    const nextSlides = project.data.slides.map(s => {
+      if (s.id === targetSlideId) {
+        return { ...s, overlays: [...(s.overlays || []), newBubble] };
+      }
+      return s;
+    });
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: nextSlides,
+      },
+    });
+    setIsDirty(true);
+    showToast(`Copied ${newBubble.bubbleId} to slide ${targetIndex + 1}`, "success");
+  };
+
+  const onDeleteSlide = (slideId: string) => {
+    if (!ensureEditMode(appMode, "delete slide")) return;
+    if (!project || !currentSlide) return;
+
+    if (project.data.slides.length <= 1) {
+      // If last slide, we don't delete but reset it or similar.
+      // But the requirement says create a blank slide automatically.
+      const newSlide: Slide = {
+        id: crypto.randomUUID(),
+        assetId: project.data.assets[0]?.id || "dummy",
+        sectionId: currentSlide.sectionId,
+        transition: 'fade',
+        overlays: [],
+      };
+      setProject({ ...project, data: { ...project.data, slides: [newSlide] } });
+      setCurrentIndex(0);
+      setIsDirty(true);
+      return;
+    }
+
+    const indexToDelete = project.data.slides.findIndex(s => s.id === slideId);
+    if (indexToDelete === -1) return;
+
+    const nextSlides = project.data.slides.filter(s => s.id !== slideId);
+
+    // Selection fallback
+    if (currentIndex === indexToDelete) {
+      const nextIdx = Math.max(0, indexToDelete - 1);
+      setCurrentIndex(nextIdx);
+    } else if (currentIndex > indexToDelete) {
+      setCurrentIndex(currentIndex - 1);
+    }
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: nextSlides,
+      }
+    });
+    setIsDirty(true);
+  };
+
+  const onDeleteBubbleTemplate = (templateName: string) => {
+    if (!ensureEditMode(appMode, "delete template")) return;
+    if (!project) return;
+
+    const nextData = {
+      ...project.data,
+      bubbleDefinitions: (project.data.bubbleDefinitions || []).filter(bt => bt.templateName !== templateName)
+    };
+
+    setProject({ ...project, data: nextData });
     setIsDirty(true);
   };
 
@@ -1703,6 +1937,7 @@ export function App() {
                                     <button
                                       draggable
                                       className={`slide-btn ${isSlideSelected ? "selected" : ""} ${isCurrent && topMode === 'story' ? "current-slide" : ""}`}
+                                      style={{ position: 'relative' }}
                                       onClick={(e) =>
                                         onSlideWrapperClick(slideIndex, e)
                                       }
@@ -1724,6 +1959,29 @@ export function App() {
                                       <span>{slideIndex + 1}.</span>{" "}
                                       {asset?.originalName ?? "Unknown asset"}
                                       {isDragging && <small> (Dragging)</small>}
+                                      {appMode === "edit" && (
+                                        <div
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteSlide(slide.id);
+                                          }}
+                                          title="Delete Slide"
+                                          style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            right: 0,
+                                            padding: '2px 6px',
+                                            background: 'rgba(0, 0, 0, 0.3)',
+                                            color: '#fff',
+                                            fontSize: '0.75rem',
+                                            borderRadius: '0 0 0 4px',
+                                            cursor: 'pointer',
+                                            zIndex: 5
+                                          }}
+                                        >
+                                          X
+                                        </div>
+                                      )}
                                     </button>
                                   </li>
                                 );
@@ -1777,11 +2035,18 @@ export function App() {
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {(project?.data.boostPack?.[`${boostTab}Sequence` as keyof BoostPack] || []).map((item, index, arr) => {
                   const isSelected = selectedBoostItemId === item.id;
-                  let title = item.type;
+                  let title: string = item.type;
                   if (item.type === 'slideRef') {
-                    const slide = project!.data.slides.find(s => s.id === item.slideId);
+                    const slideRef = item as Extract<SequenceItem, { type: 'slideRef' }>;
+                    const slide = project!.data.slides.find(s => s.id === slideRef.slideId);
                     const asset = slide ? assetsById.get(slide.assetId) : null;
-                    title = `Slide: ${asset?.originalName || item.slideId}`;
+                    const bIds = slide?.overlays?.map(o => {
+                      const d = BUBBLE_LIBRARY.find(lib => lib.bubbleDefId === o.bubbleDefId);
+                      const tName = d?.templateName || d?.name || o.type;
+                      return `${o.bubbleId} - ${tName}`;
+                    }).filter(Boolean).join(', ');
+                    const bStr = bIds ? ` [${bIds}]` : '';
+                    title = `Slide: ${asset?.originalName || slideRef.slideId}${bStr}`;
                   }
 
                   return (
@@ -1830,6 +2095,79 @@ export function App() {
                 <div style={{ fontSize: '0.85rem', color: '#888', textAlign: 'center', marginTop: 24 }}>Sequence is empty</div>
               )}
             </>
+          )}
+
+          {appMode === "edit" && (
+            <div style={{ marginTop: "12px", borderTop: "1px solid #444", paddingTop: "12px" }}>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                <button
+                  className="section-break-btn"
+                  style={{ flex: 1, marginTop: 0 }}
+                  onClick={onAddBubble}
+                  disabled={!project || !currentSlide}
+                >
+                  + Bubble
+                </button>
+              </div>
+
+              {currentSlide && (currentSlide.overlays || []).length > 0 && (
+                <div className="bubble-list-container">
+                  <h4 style={{ fontSize: "0.8rem", color: "#888", marginBottom: "8px", textTransform: "uppercase" }}>Bubbles on Slide</h4>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+                    {[...(currentSlide.overlays || [])]
+                      .sort((a, b) => (a.bubbleId || "").localeCompare(b.bubbleId || ""))
+                      .map((ov) => {
+                        const def = BUBBLE_LIBRARY.find(lib => lib.bubbleDefId === ov.bubbleDefId);
+                        const templateName = def?.name || def?.templateName || "";
+                        const shortName = ov.text && ov.text.length > 20 ? ov.text.substring(0, 17) + "..." : ov.text;
+                        const label = `${ov.bubbleId}${templateName ? ` (${templateName})` : ""}${shortName ? ` - ${shortName}` : ""}`;
+                        const isActive = activeOverlayId === ov.id;
+
+                        return (
+                          <li key={ov.id} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "6px", background: isActive ? "#334" : "#222", borderRadius: 4, border: isActive ? "1px solid #55a" : "1px solid #333" }}>
+                            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" }} onClick={() => setActiveOverlayId(ov.id)}>
+                              <span style={{ fontSize: "0.75rem", color: "#eee", cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "120px" }} title={label}>
+                                {label}
+                              </span>
+                              {(ov.tags || []).map((tag, tIdx) => (
+                                <span key={tIdx} style={{ fontSize: "0.6rem", background: "#444", color: "#ddd", padding: "1px 4px", borderRadius: "10px", border: "1px solid #555" }}>
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                            <div style={{ display: "flex", gap: "4px" }}>
+                              <button
+                                onClick={() => onDuplicateBubble(ov)}
+                                style={{ fontSize: "0.7rem", padding: "2px 6px", background: "#444", border: "1px solid #555", color: "#fff", cursor: "pointer", borderRadius: 2 }}
+                              >
+                                Duplicate
+                              </button>
+                              <div style={{ position: "relative", flex: 1 }}>
+                                <select
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      onCopyBubbleToSlide(ov, e.target.value);
+                                      e.target.value = "";
+                                    }
+                                  }}
+                                  style={{ width: "100%", fontSize: "0.7rem", padding: "2px", background: "#333", border: "1px solid #444", color: "#ccc", borderRadius: 2 }}
+                                >
+                                  <option value="">Copy to...</option>
+                                  {project!.data.slides.map((s, idx) => (
+                                    <option key={s.id} value={s.id} disabled={s.id === currentSlide.id}>
+                                      Slide {idx + 1}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
         </aside>
 
@@ -2646,6 +2984,7 @@ export function App() {
                       <MediaView
                         key={previousSlide?.id}
                         asset={previousAsset}
+                        overlays={previousSlide?.overlays ?? []}
                         className={`media ${currentSlide?.transition === "card-slide"
                           ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-out`
                           : `transition-${currentSlide?.transition ?? "fade"}-out`
@@ -2665,12 +3004,14 @@ export function App() {
                         paused={true}
                         initialTime={lastMediaTimeRef.current}
                         showControls={false}
+                        bubbleDefinitions={project?.data.bubbleDefinitions}
                       />
                     )}
                     {/* Incoming Slide */}
                     <MediaView
                       key={currentSlide?.id}
                       asset={currentAsset}
+                      overlays={currentSlide?.overlays ?? []}
                       className={`media ${currentSlide?.transition === "card-slide"
                         ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-in`
                         : `transition-${currentSlide?.transition ?? "fade"}-in`
@@ -2697,6 +3038,25 @@ export function App() {
                         lastMediaTimeRef.current = t;
                       }}
                       showControls={true}
+                      isEditMode={appMode === "edit"}
+                      activeOverlayId={activeOverlayId}
+                      showOverlayIds={appMode === "edit"}
+                      onOverlaySelect={setActiveOverlayId}
+                      onOverlayChange={(id, updates) => {
+                        if (!project || !currentSlide) return;
+                        const nextOverlays = (currentSlide.overlays || []).map((o) =>
+                          o.id === id ? { ...o, ...updates } : o
+                        );
+                        setProject({
+                          ...project,
+                          data: {
+                            ...project.data,
+                            slides: project.data.slides.map((s) => (s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s)),
+                          },
+                        });
+                        setIsDirty(true);
+                      }}
+                      bubbleDefinitions={project?.data.bubbleDefinitions}
                     />
                   </div>
                 )}
@@ -2708,6 +3068,236 @@ export function App() {
         <aside className="audio-sidebar">
           {topMode === 'story' ? (
             <>
+              {(() => {
+                const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
+                return activeOverlay && appMode === "edit" ? (
+                  <div className="audio-block" style={{ border: '1px solid #55f', background: '#1a1a24' }}>
+                    <h4 style={{ color: '#88f', margin: '4px 0 8px 0' }}>Selected Bubble: {activeOverlay.bubbleId || 'N/A'}</h4>
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                      Bubble Type
+                      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                        <select
+                          value={activeOverlay.bubbleDefId || 'BD_CLASSIC'}
+                          onChange={(e) => {
+                            if (!currentSlide || !project) return;
+                            const defId = e.target.value;
+                            let customSrc: string | undefined = undefined;
+
+                            if (defId.startsWith('BD_CUSTOM_')) {
+                              const tName = defId.replace('BD_CUSTOM_', '');
+                              const bt = (project.data.bubbleDefinitions || []).find(d => d.templateName === tName);
+                              if (bt) customSrc = bt.imageSrc;
+                            }
+
+                            const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, bubbleDefId: defId, customImageSrc: customSrc } : o);
+                            setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                            setIsDirty(true);
+                          }}
+                          style={{ flex: 1, background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                        >
+                          {(() => {
+                            const mappedCustom = (project?.data.bubbleDefinitions || []).map(bt => ({
+                              bubbleDefId: `BD_CUSTOM_${bt.templateName}`,
+                              name: bt.templateName
+                            }));
+                            return [...BUBBLE_LIBRARY, ...mappedCustom].map(lib => (
+                              <option key={lib.bubbleDefId} value={lib.bubbleDefId}>{lib.name}</option>
+                            ));
+                          })()}
+                        </select>
+                        <button
+                          onClick={onImportBubbleTemplate}
+                          title="Import PNG Bubble Template"
+                          style={{ padding: '0 8px', background: '#444', color: '#fff', border: '1px solid #666', borderRadius: 4, cursor: 'pointer' }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </label>
+
+                    {(project?.data.bubbleDefinitions || []).length > 0 && (
+                      <div style={{ marginBottom: 12 }}>
+                        <h5 style={{ fontSize: '0.7rem', color: '#666', textTransform: 'uppercase', marginBottom: 4 }}>Custom Templates</h5>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {project?.data.bubbleDefinitions?.map((bt) => (
+                            <div key={bt.templateName} style={{ display: 'flex', alignItems: 'center', background: '#222', border: '1px solid #333', padding: '2px 4px', borderRadius: 4, fontSize: '0.75rem' }}>
+                              <span style={{ color: '#eee', marginRight: 8 }}>{bt.templateName}</span>
+                              <button
+                                onClick={() => onDeleteBubbleTemplate(bt.templateName)}
+                                style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, fontSize: '0.75rem', fontWeight: 'bold' }}
+                                title="Remove Template"
+                              >
+                                X
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 8, marginBottom: 8 }}>
+                      <input
+                        type="checkbox"
+                        checked={!!activeOverlay.locked}
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const nextOverlays = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, locked: e.target.checked } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                      />
+                      Locked
+                    </label>
+                    <button
+                      onClick={() => {
+                        if (!currentSlide || !project) return;
+                        const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).filter(o => o.id !== activeOverlay.id);
+                        setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                        setActiveOverlayId(null);
+                        setIsDirty(true);
+                      }}
+                      style={{ background: '#633', color: '#fff', border: 'none', padding: '6px', borderRadius: 4, width: '100%', cursor: 'pointer', marginBottom: 8 }}
+                    >
+                      Delete Bubble
+                    </button>
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                      Font Size
+                      <input
+                        type="number"
+                        min={10} max={200}
+                        value={activeOverlay.fontSize ?? 24}
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, fontSize: Number(e.target.value) } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                        style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                      />
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                      Text Alignment
+                      <select
+                        value={activeOverlay.align || 'center'}
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, align: e.target.value as any } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                        style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                      >
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                      </select>
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                      Font Family
+                      <select
+                        value={activeOverlay.fontFamily || 'sans-serif'}
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, fontFamily: e.target.value } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                        style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                      >
+                        <option value="Arial">Arial</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Comic Sans MS">Comic Sans MS</option>
+                        <option value="sans-serif">Default</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                      Bold Strength ({activeOverlay.fontWeight || 400})
+                      <input
+                        type="range"
+                        min={400} max={900} step={100}
+                        value={Number(activeOverlay.fontWeight) || 400}
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, fontWeight: String(e.target.value) } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 8, marginBottom: 8 }}>
+                      <input
+                        type="checkbox"
+                        checked={activeOverlay.fontStyle === 'italic'}
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, fontStyle: (e.target.checked ? 'italic' : 'normal') as 'italic' | 'normal' | undefined } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                      />
+                      Italic
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                      Text Color
+                      <input
+                        type="color"
+                        value={activeOverlay.textColor || '#000000'}
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, textColor: e.target.value } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                        style={{ background: "transparent", border: "none", width: "100%", height: 24, cursor: "pointer", padding: 0 }}
+                      />
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                      Tags (comma-separated)
+                      <input
+                        type="text"
+                        value={(activeOverlay.tags || []).join(', ')}
+                        placeholder="tag1, tag2..."
+                        onChange={(e) => {
+                          if (!currentSlide || !project) return;
+                          const tagArr = e.target.value.split(',').map(t => t.trim()).filter(Boolean);
+                          const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, tags: tagArr } : o);
+                          setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                          setIsDirty(true);
+                        }}
+                        style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                      />
+                    </label>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                      {(['x', 'y', 'width', 'height'] as const).map(prop => (
+                        <label key={prop} style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4 }}>
+                          TextRect {prop}
+                          <input
+                            type="number"
+                            min={0} max={1} step={0.05}
+                            value={activeOverlay.textRect?.[prop] ?? BUBBLE_LIBRARY.find(d => d.bubbleDefId === activeOverlay.bubbleDefId)?.textRect?.[prop] ?? (prop === 'width' || prop === 'height' ? 1 : 0)}
+                            onChange={(e) => {
+                              if (!currentSlide || !project) return;
+                              const val = Math.max(0, Math.min(1, Number(e.target.value)));
+                              const currentRect = activeOverlay.textRect ?? BUBBLE_LIBRARY.find(d => d.bubbleDefId === activeOverlay.bubbleDefId)?.textRect ?? { x: 0, y: 0, width: 1, height: 1 };
+                              const nextRect = { ...currentRect, [prop]: val };
+                              const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, textRect: nextRect } : o);
+                              setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                              setIsDirty(true);
+                            }}
+                            style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
               <div className="audio-block">
                 {currentSlide && renderTagEditor(currentSlide)}
                 <h4>Slide Audio</h4>
@@ -2985,7 +3575,7 @@ export function App() {
           )}
         </aside>
       </div>
-    </div>
+    </div >
   );
 }
 
@@ -3439,7 +4029,7 @@ function ZoomPanWrapper({
       <canvas
         ref={canvasRef}
         className="drawing-overlay"
-        style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0 }}
+        style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0, zIndex: 10 }}
       />
     </div>
   );
@@ -3447,6 +4037,7 @@ function ZoomPanWrapper({
 
 function MediaView({
   asset,
+  overlays,
   className,
   style,
   drawSettings,
@@ -3460,14 +4051,21 @@ function MediaView({
   initialTime,
   onTimeUpdate,
   showControls = true,
+  isEditMode = false,
+  activeOverlayId = null,
+  bubbleDefinitions,
+  showOverlayIds = false,
+  onOverlaySelect,
+  onOverlayChange,
 }: {
   asset: AssetItem;
+  overlays: OverlayItem[];
   className?: string;
   style?: CSSProperties;
   drawSettings: DrawSettings;
   markerStrokes: MarkerStroke[];
   onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
-  clearSignal: number;
+  clearSignal?: number;
   initialZoom?: number;
   initialPan?: { x: number; y: number };
   onViewportChange?: (v: ViewportState) => void;
@@ -3475,11 +4073,21 @@ function MediaView({
   initialTime?: number;
   onTimeUpdate?: (t: number) => void;
   showControls?: boolean;
+  isEditMode?: boolean;
+  activeOverlayId?: string | null;
+  bubbleDefinitions?: BubbleTemplate[];
+  showOverlayIds?: boolean;
+  onOverlaySelect?: (id: string | null) => void;
+  onOverlayChange?: (id: string, updates: Partial<OverlayItem>) => void;
 }) {
   const src = toMediaUrl(asset.relativePath);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Dragging state for overlays
+  const draggingOverlayRef = useRef<string | null>(null);
+  const dragStartRef = useRef<{ ox: number; oy: number; cx: number; cy: number; ow: number; oh: number; handle?: string } | null>(null);
 
   useEffect(() => {
     // If we have an initial time and we are paused (outgoing), snap to that frame.
@@ -3894,11 +4502,228 @@ function MediaView({
         />
       )}
 
+      {/* Overlay Layer */}
+      <div
+        className="overlay-layer"
+        style={{
+          ...mediaStyle,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: isEditMode && !drawSettings.drawMode ? "auto" : "none",
+          zIndex: 5,
+        }}
+        onPointerMove={(e) => {
+          if (draggingOverlayRef.current && dragStartRef.current && onOverlayChange) {
+            const dx = (e.clientX - dragStartRef.current.cx) / zoom;
+            const dy = (e.clientY - dragStartRef.current.cy) / zoom;
+            const { ox, oy, ow, oh, handle } = dragStartRef.current;
+
+            if (handle) {
+              let newX = ox;
+              let newY = oy;
+              let newW = ow;
+              let newH = oh;
+
+              if (handle.includes("left")) {
+                newW = Math.max(50, ow - dx);
+                newX = ox + (ow - newW);
+              } else if (handle.includes("right")) {
+                newW = Math.max(50, ow + dx);
+              }
+
+              if (handle.includes("top")) {
+                newH = Math.max(30, oh - dy);
+                newY = oy + (oh - newH);
+              } else if (handle.includes("bottom")) {
+                newH = Math.max(30, oh + dy);
+              }
+
+              onOverlayChange(draggingOverlayRef.current, {
+                x: newX,
+                y: newY,
+                width: newW,
+                height: newH,
+              });
+            } else {
+              // Move
+              onOverlayChange(draggingOverlayRef.current, {
+                x: ox + dx,
+                y: oy + dy,
+              });
+            }
+          }
+        }}
+        onPointerUp={() => {
+          if (draggingOverlayRef.current) {
+            draggingOverlayRef.current = null;
+            dragStartRef.current = null;
+          }
+        }}
+        onPointerLeave={() => {
+          if (draggingOverlayRef.current) {
+            draggingOverlayRef.current = null;
+            dragStartRef.current = null;
+          }
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget && onOverlaySelect) {
+            onOverlaySelect(null);
+          }
+        }}
+      >
+        {overlays.map((overlay) => {
+          if (overlay.visible === false) return null;
+          const isActive = overlay.id === activeOverlayId;
+          const mappedCustom: BubbleDef[] = (bubbleDefinitions || []).map(bt => ({
+            bubbleDefId: `BD_CUSTOM_${bt.templateName}`,
+            name: bt.templateName,
+            templateName: bt.templateName,
+            src: toMediaUrl(bt.imageSrc),
+            type: 'speech',
+            textRect: bt.defaultTextRect,
+          }));
+          const allBubbles = [...BUBBLE_LIBRARY, ...mappedCustom];
+          const def = allBubbles.find(d => d.bubbleDefId === overlay.bubbleDefId) || allBubbles[0] || BUBBLE_LIBRARY[0];
+          const bType = def.type || 'speech';
+          const defaultStyle = def.defaultStyle || {};
+
+          const bTextFont = overlay.fontFamily || defaultStyle.fontFamily || "inherit";
+          const bTextSize = overlay.fontSize || defaultStyle.fontSize || 24;
+          const bTextColor = overlay.textColor || defaultStyle.color || "#000000";
+          const bTextWeight = overlay.fontWeight || defaultStyle.fontWeight || "normal";
+          const bLineHeight = overlay.lineHeight || defaultStyle.lineHeight || 1.2;
+          const bFontStyle = overlay.fontStyle || "normal";
+          const bBgColor = bType === 'text' ? 'rgba(0,0,0,0.7)' : 'transparent';
+
+          const textRect = overlay.textRect ?? def.textRect ?? { x: 0, y: 0, width: 1, height: 1 };
+
+          return (
+            <div
+              key={overlay.id}
+              onPointerDown={(e) => {
+                if (!isEditMode) return;
+                e.stopPropagation();
+                if (onOverlaySelect) onOverlaySelect(overlay.id);
+                if (!overlay.locked) {
+                  draggingOverlayRef.current = overlay.id;
+                  dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY };
+                }
+              }}
+              style={{
+                position: "absolute",
+                left: `${overlay.x}px`,
+                top: `${overlay.y}px`,
+                width: `${overlay.width}px`,
+                height: `${overlay.height}px`,
+                zIndex: Math.min(overlay.zIndex ?? 1, 9),
+                boxSizing: "border-box",
+                cursor: isActive && !overlay.locked ? "move" : isActive ? "default" : "pointer",
+                pointerEvents: isEditMode && !drawSettings.drawMode ? "auto" : "none",
+                display: "block",
+                backgroundImage: bType !== 'text' ? `url(${overlay.customImageSrc ? toMediaUrl(overlay.customImageSrc) : (def.src || "")})` : 'none',
+                backgroundSize: '100% 100%',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: bBgColor as string,
+                borderRadius: bType === 'text' ? "8px" : "0",
+                outline: isActive ? "2px solid #55f" : "none",
+                boxShadow: isActive ? "0 0 0 4px rgba(85, 85, 255, 0.4)" : "none",
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                left: `${textRect.x * 100}%`,
+                top: `${textRect.y * 100}%`,
+                width: `${textRect.width * 100}%`,
+                height: `${textRect.height * 100}%`,
+                padding: "4px",
+                color: bType === 'text' ? '#fff' : (bTextColor as string),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: overlay.align === "right" ? "right" : overlay.align === "left" ? "left" : "center",
+                fontFamily: bTextFont as string,
+                fontSize: `${bTextSize}px`,
+                fontWeight: bTextWeight as string | number,
+                fontStyle: bFontStyle as string,
+                lineHeight: bLineHeight as string | number,
+                textShadow: overlay.textShadow && bType === 'text' ? "0 2px 4px rgba(0,0,0,0.8)" : "none",
+                overflow: "hidden",
+                boxSizing: "border-box",
+                zIndex: 2,
+              }}>
+                {isActive && isEditMode ? (
+                  <textarea
+                    value={overlay.text}
+                    onChange={(e) => {
+                      if (onOverlayChange) onOverlayChange(overlay.id, { text: e.target.value });
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()} // Stop dragging when clicking in text box
+                    rows={overlay.text.split('\n').length || 1}
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      background: "transparent",
+                      border: "none",
+                      resize: "none",
+                      outline: "none",
+                      color: "inherit",
+                      fontFamily: "inherit",
+                      fontSize: "inherit",
+                      fontWeight: "inherit",
+                      fontStyle: "inherit",
+                      lineHeight: "inherit",
+                      margin: 0,
+                      padding: 0,
+                      textAlign: "inherit",
+                      overflowY: "hidden",
+                    }}
+                  />
+                ) : (
+                  <div style={{ width: "100%", height: "auto", whiteSpace: "pre-wrap", margin: 0, padding: 0, fontWeight: "inherit", fontStyle: "inherit", textAlign: "inherit", lineHeight: "inherit" }}>
+                    {overlay.text}
+                  </div>
+                )}
+              </div>
+
+              {isActive && !overlay.locked && (
+                <>
+                  <div
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'top-left' }; draggingOverlayRef.current = overlay.id; }}
+                    style={{ position: "absolute", top: -4, left: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nwse-resize", borderRadius: "50%", zIndex: 10 }}
+                  />
+                  <div
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'top-right' }; draggingOverlayRef.current = overlay.id; }}
+                    style={{ position: "absolute", top: -4, right: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nesw-resize", borderRadius: "50%", zIndex: 10 }}
+                  />
+                  <div
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'bottom-left' }; draggingOverlayRef.current = overlay.id; }}
+                    style={{ position: "absolute", bottom: -4, left: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nesw-resize", borderRadius: "50%", zIndex: 10 }}
+                  />
+                  <div
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'bottom-right' }; draggingOverlayRef.current = overlay.id; }}
+                    style={{ position: "absolute", bottom: -4, right: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nwse-resize", borderRadius: "50%", zIndex: 10 }}
+                  />
+                </>
+              )}
+              {showOverlayIds && overlay.bubbleId && (
+                <div style={{ position: "absolute", top: "-10px", left: "-10px", background: "#f0f0f0", color: "#333", border: "1px solid #999", fontSize: "10px", padding: "2px 4px", borderRadius: "8px", fontWeight: "bold", pointerEvents: "none", zIndex: 10 }}>
+                  {overlay.bubbleId}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       <canvas
         ref={canvasRef}
         className={
           drawSettings.drawMode ? "drawing-overlay active" : "drawing-overlay"
         }
+        style={{ zIndex: 10 }} // Ensure drawing is above overlays
         onMouseDown={handleDrawStart}
         onMouseMove={handleDrawMove}
         onMouseUp={handleDrawEnd}

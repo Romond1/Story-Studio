@@ -1,0 +1,407 @@
+diff --git a/src/main/main.ts b/src/main/main.ts
+index 74a1bfb..94d7698 100644
+--- a/src/main/main.ts
++++ b/src/main/main.ts
+@@ -4,7 +4,7 @@ import { createReadStream, promises as fs } from 'node:fs';
+ import path from 'node:path';
+ import { randomUUID } from 'node:crypto';
+ import { Readable } from 'node:stream';
+-import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide } from '../shared/types';
++import type { AssetItem, BoostPack, BubbleDefinition, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide, SlideOverlay } from '../shared/types';
+ 
+ const PROJECT_FILENAME = 'project.json';
+ const TEMP_PROJECT_FILENAME = 'project.tmp.json';
+@@ -31,6 +31,99 @@ const imageExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
+ const videoExts = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi']);
+ const audioExts = new Set(['.mp3', '.wav', '.ogg', '.aac', '.m4a']);
+ 
++const DEFAULT_BUBBLE_DEFINITIONS: BubbleDefinition[] = [
++  {
++    bubbleDefId: 'speech-round',
++    name: 'Round Speech',
++    pngSrc: `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 70"><path d="M10 8h80a8 8 0 0 1 8 8v32a8 8 0 0 1-8 8H40l-18 12 4-12H10a8 8 0 0 1-8-8V16a8 8 0 0 1 8-8z" fill="#ffffff" stroke="#1f2937" stroke-width="3"/></svg>')}` ,
++    defaultStyle: {
++      fontFamily: 'Inter, system-ui, Arial, sans-serif',
++      fontSize: 24,
++      fontWeight: 600,
++      textColor: '#111827',
++      textAlign: 'center',
++      paddingX: 0.08,
++      paddingY: 0.12,
++    },
++    intrinsicAspectRatio: 100 / 70,
++  },
++];
++
++function clamp01(value: unknown, fallback: number): number {
++  if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
++  if (value < 0) return 0;
++  if (value > 1) return 1;
++  return value;
++}
++
++function normalizeOverlayGeometry(raw: any): SlideOverlay['geometry'] {
++  return {
++    x: clamp01(raw?.x, 0.1),
++    y: clamp01(raw?.y, 0.1),
++    width: clamp01(raw?.width, 0.3),
++    height: clamp01(raw?.height, 0.2),
++    rotation: typeof raw?.rotation === 'number' && Number.isFinite(raw.rotation) ? raw.rotation : undefined,
++  };
++}
++
++function bubbleIdNumber(raw: string | undefined): number | null {
++  if (!raw) return null;
++  const match = /^B(\d+)$/i.exec(raw.trim());
++  if (!match) return null;
++  return Number(match[1]);
++}
++
++function normalizeSlideOverlays(rawOverlays: any, nowIso: string): { overlays: SlideOverlay[]; nextBubbleSeq: number } {
++  const input = Array.isArray(rawOverlays) ? rawOverlays : [];
++  const usedBubbleIds = new Set<string>();
++  const overlays: SlideOverlay[] = [];
++  let maxBubbleSeq = 0;
++
++  for (let index = 0; index < input.length; index += 1) {
++    const raw = input[index] ?? {};
++    const geometry = raw.geometry
++      ? normalizeOverlayGeometry(raw.geometry)
++      : normalizeOverlayGeometry(raw);
++    const kind = raw.kind === 'speech-bubble' || raw.type === 'speechBubble'
++      ? 'speech-bubble'
++      : 'text';
++
++    const normalized: SlideOverlay = {
++      overlayId: typeof raw.overlayId === 'string' && raw.overlayId ? raw.overlayId : (typeof raw.id === 'string' && raw.id ? raw.id : randomUUID()),
++      bubbleId: typeof raw.bubbleId === 'string' ? raw.bubbleId.trim() : '',
++      kind,
++      bubbleDefId: typeof raw.bubbleDefId === 'string' ? raw.bubbleDefId : undefined,
++      text: typeof raw.text === 'string' ? raw.text : '',
++      geometry,
++      zIndex: typeof raw.zIndex === 'number' && Number.isFinite(raw.zIndex) ? raw.zIndex : index,
++      locked: typeof raw.locked === 'boolean' ? raw.locked : false,
++      hidden: typeof raw.hidden === 'boolean' ? raw.hidden : undefined,
++      createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : nowIso,
++      updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : nowIso,
++    };
++
++    const bubbleSeq = bubbleIdNumber(normalized.bubbleId);
++    if (!normalized.bubbleId || bubbleSeq === null || usedBubbleIds.has(normalized.bubbleId)) {
++      normalized.bubbleId = '';
++    } else {
++      usedBubbleIds.add(normalized.bubbleId);
++      maxBubbleSeq = Math.max(maxBubbleSeq, bubbleSeq);
++    }
++
++    overlays.push(normalized);
++  }
++
++  let nextBubbleSeq = maxBubbleSeq + 1;
++  for (const overlay of overlays) {
++    if (overlay.bubbleId) continue;
++    overlay.bubbleId = `B${nextBubbleSeq}`;
++    usedBubbleIds.add(overlay.bubbleId);
++    nextBubbleSeq += 1;
++  }
++
++  return { overlays, nextBubbleSeq: Math.max(1, nextBubbleSeq) };
++}
++
+ function detectMediaType(ext: string): MediaType | null {
+   if (imageExts.has(ext)) return 'image';
+   if (videoExts.has(ext)) return 'video';
+@@ -102,25 +195,39 @@ function normalizeProjectData(data: ProjectData): ProjectData {
+ 
+   const defaultSectionId = sections[0].id;
+ 
++  const nowIso = new Date().toISOString();
+   let slides = Array.isArray(data.slides) ? data.slides : [];
+-  slides = slides.map((slide: any) => ({
+-    ...slide,
+-    sectionId: slide.sectionId || defaultSectionId,
+-    tags: Array.isArray(slide.tags) ? slide.tags : [],
+-    overlays: Array.isArray(slide.overlays) ? slide.overlays : [],
+-    audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
+-  }));
++  slides = slides.map((slide: any) => {
++    const normalizedOverlays = normalizeSlideOverlays(slide.overlays, nowIso);
++    const requestedNextBubbleSeq = typeof slide.nextBubbleSeq === 'number' && Number.isFinite(slide.nextBubbleSeq)
++      ? Math.max(1, Math.floor(slide.nextBubbleSeq))
++      : normalizedOverlays.nextBubbleSeq;
++
++    return {
++      ...slide,
++      sectionId: slide.sectionId || defaultSectionId,
++      tags: Array.isArray(slide.tags) ? slide.tags : [],
++      overlays: normalizedOverlays.overlays,
++      nextBubbleSeq: Math.max(normalizedOverlays.nextBubbleSeq, requestedNextBubbleSeq),
++      audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
++    };
++  });
+ 
+   const boostPack = (data.boostPack && typeof data.boostPack === 'object' &&
+     Array.isArray((data.boostPack as any).activationSequence))
+     ? data.boostPack
+     : emptyBoostPack();
+ 
++  const bubbleDefinitions = Array.isArray((data as any).bubbleDefinitions) && (data as any).bubbleDefinitions.length > 0
++    ? (data as any).bubbleDefinitions
++    : DEFAULT_BUBBLE_DEFINITIONS;
++
+   return {
+     ...data,
+     version: 2,
+     sections,
+     slides,
++    bubbleDefinitions,
+     boostPack
+   };
+ }
+diff --git a/src/renderer/App.tsx b/src/renderer/App.tsx
+index e325477..d2fcc21 100644
+--- a/src/renderer/App.tsx
++++ b/src/renderer/App.tsx
+@@ -1,5 +1,6 @@
+ import {
+   type CSSProperties,
++  type JSX,
+   type MouseEvent,
+   type WheelEvent,
+   useEffect,
+@@ -17,7 +18,9 @@ import type {
+   Slide,
+   TransitionType,
+   AudioClip,
+-  BoostPack
++  BoostPack,
++  BubbleDefinition,
++  SlideOverlay
+ } from "../shared/types";
+ import { BUILD_VERSION } from "../shared/version";
+ import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
+@@ -25,6 +28,22 @@ import { audioManager } from "./audio/AudioManager";
+ import { audioRouting } from "./audio/AudioRouting";
+ import { micInput } from "./audio/MicrophoneInput";
+ 
++
++function normalizeTextForOverlay(value: string): string {
++  return value.trim() || 'Text';
++}
++
++function overlayStyle(overlay: SlideOverlay): CSSProperties {
++  return {
++    left: `${overlay.geometry.x * 100}%`,
++    top: `${overlay.geometry.y * 100}%`,
++    width: `${overlay.geometry.width * 100}%`,
++    height: `${overlay.geometry.height * 100}%`,
++    zIndex: overlay.zIndex,
++    transform: overlay.geometry.rotation ? `rotate(${overlay.geometry.rotation}deg)` : undefined,
++  };
++}
++
+ // CLIP PLAYER COMPONENT
+ function AudioClipPlayer({
+   clip,
+@@ -2698,6 +2717,7 @@ export function App() {
+                       }}
+                       showControls={true}
+                     />
++                    {renderSlideOverlays(currentSlide, project?.data.bubbleDefinitions)}
+                   </div>
+                 )}
+               </div>
+@@ -3907,3 +3927,56 @@ function MediaView({
+     </div>
+   );
+ }
++function renderSlideOverlays(slide: Slide | null, bubbleDefinitions: BubbleDefinition[] | undefined): JSX.Element | null {
++  if (!slide) return null;
++  const overlays = (slide.overlays ?? [])
++    .filter((overlay) => !overlay.hidden)
++    .sort((a, b) => a.zIndex - b.zIndex);
++  if (!overlays.length) return null;
++
++  const bubbleDefs = new Map<string, BubbleDefinition>();
++  for (const def of bubbleDefinitions ?? []) {
++    bubbleDefs.set(def.bubbleDefId, def);
++  }
++
++  return (
++    <div className="overlay-layer" aria-hidden>
++      {overlays.map((overlay) => {
++        const bubbleDef = overlay.bubbleDefId ? bubbleDefs.get(overlay.bubbleDefId) : undefined;
++        const textStyle: CSSProperties = {
++          fontFamily: bubbleDef?.defaultStyle.fontFamily,
++          fontSize: bubbleDef?.defaultStyle.fontSize,
++          fontWeight: bubbleDef?.defaultStyle.fontWeight,
++          color: bubbleDef?.defaultStyle.textColor ?? '#fff',
++          textAlign: bubbleDef?.defaultStyle.textAlign,
++          padding: `${(bubbleDef?.defaultStyle.paddingY ?? 0.06) * 100}% ${(bubbleDef?.defaultStyle.paddingX ?? 0.06) * 100}%`,
++        };
++
++        return (
++          <div key={overlay.overlayId} className="slide-overlay" style={overlayStyle(overlay)}>
++            {overlay.kind === 'speech-bubble' ? (
++              <>
++                {bubbleDef?.pngSrc && (
++                  <img
++                    className="slide-overlay-bubble"
++                    src={bubbleDef.pngSrc}
++                    alt=""
++                    draggable={false}
++                  />
++                )}
++                <div className="slide-overlay-text bubble" style={textStyle}>
++                  {normalizeTextForOverlay(overlay.text)}
++                </div>
++              </>
++            ) : (
++              <div className="slide-overlay-text plain" style={textStyle}>
++                {normalizeTextForOverlay(overlay.text)}
++              </div>
++            )}
++            <div className="slide-overlay-badge">{overlay.bubbleId}</div>
++          </div>
++        );
++      })}
++    </div>
++  );
++}
+diff --git a/src/renderer/styles.css b/src/renderer/styles.css
+index 0ac8fd0..c3cdfaa 100644
+--- a/src/renderer/styles.css
++++ b/src/renderer/styles.css
+@@ -826,4 +826,56 @@ input {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+-}
+\ No newline at end of file
++}
++.overlay-layer {
++  position: absolute;
++  inset: 0;
++  pointer-events: none;
++  z-index: 20;
++}
++
++.slide-overlay {
++  position: absolute;
++}
++
++.slide-overlay-bubble {
++  position: absolute;
++  inset: 0;
++  width: 100%;
++  height: 100%;
++  object-fit: fill;
++}
++
++.slide-overlay-text {
++  position: absolute;
++  inset: 0;
++  line-height: 1.2;
++  overflow: hidden;
++  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
++  white-space: pre-wrap;
++}
++
++.slide-overlay-text.bubble {
++  display: flex;
++  align-items: center;
++  justify-content: center;
++}
++
++.slide-overlay-text.plain {
++  border: 1px dashed rgba(255, 255, 255, 0.4);
++  background: rgba(0, 0, 0, 0.15);
++}
++
++.slide-overlay-badge {
++  position: absolute;
++  top: -8px;
++  left: -8px;
++  background: #111827;
++  color: #f9fafb;
++  border: 1px solid #60a5fa;
++  border-radius: 999px;
++  padding: 1px 6px;
++  font-size: 11px;
++  font-weight: 700;
++  letter-spacing: 0.02em;
++}
+diff --git a/src/shared/types.ts b/src/shared/types.ts
+index 17656c2..1d83e85 100644
+--- a/src/shared/types.ts
++++ b/src/shared/types.ts
+@@ -87,24 +87,53 @@ export interface Slide {
+   sfx?: AudioClip[];
+   bgm?: AudioClip;
+   tags?: string[];
+-  overlays?: OverlayItem[];
++  overlays?: SlideOverlay[];
++  nextBubbleSeq?: number;
+   audioCues?: AudioCue[];
+ }
+ 
+ export type ProjectSchemaVersion = 1 | 2;
+ 
+-export interface OverlayItem {
+-  id: string;
+-  type: 'speechBubble' | 'textBox';
+-  text: string;
++export type OverlayKind = 'speech-bubble' | 'text';
++
++export interface BubbleDefStyleDefaults {
++  fontFamily?: string;
++  fontSize?: number;
++  fontWeight?: 400 | 500 | 600 | 700;
++  textColor?: string;
++  textAlign?: 'left' | 'center' | 'right';
++  paddingX?: number;
++  paddingY?: number;
++}
++
++export interface BubbleDefinition {
++  bubbleDefId: string;
++  name: string;
++  pngSrc: string;
++  defaultStyle: BubbleDefStyleDefaults;
++  intrinsicAspectRatio?: number;
++}
++
++export interface OverlayGeometryNormalized {
+   x: number;
+   y: number;
+   width: number;
+   height: number;
+-  align?: 'left' | 'center' | 'right';
+-  theme?: 'light' | 'dark' | 'accent';
+-  visible?: boolean;
+-  zIndex?: number;
++  rotation?: number;
++}
++
++export interface SlideOverlay {
++  overlayId: string;
++  bubbleId: string;
++  kind: OverlayKind;
++  bubbleDefId?: string;
++  text: string;
++  geometry: OverlayGeometryNormalized;
++  zIndex: number;
++  locked: boolean;
++  hidden?: boolean;
++  createdAt?: string;
++  updatedAt?: string;
+ }
+ 
+ export interface AudioCue {
+@@ -167,6 +196,7 @@ export interface ProjectData {
+   slides: Slide[];
+   assets: AssetItem[];
+   sections: Section[];
++  bubbleDefinitions?: BubbleDefinition[];
+   boostPack?: BoostPack;
+ }

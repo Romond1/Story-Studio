@@ -87,8 +87,24 @@ function emptyBoostPack(): BoostPack {
   };
 }
 
+function generateBubbleId(data: ProjectData): string {
+  let maxId = 0;
+  for (const slide of data.slides || []) {
+    for (const overlay of slide.overlays || []) {
+      if (overlay.bubbleId && overlay.bubbleId.startsWith('B')) {
+        const num = parseInt(overlay.bubbleId.substring(1), 10);
+        if (!isNaN(num) && num > maxId) {
+          maxId = num;
+        }
+      }
+    }
+  }
+  return `B${maxId + 1}`;
+}
+
 function normalizeProjectData(data: ProjectData): ProjectData {
   const isV1 = !data.version || data.version === 1;
+  const isV2 = data.version === 2;
 
   let sections = Array.isArray((data as any).sections) ? (data as any).sections : [];
   if (sections.length === 0) {
@@ -103,13 +119,43 @@ function normalizeProjectData(data: ProjectData): ProjectData {
   const defaultSectionId = sections[0].id;
 
   let slides = Array.isArray(data.slides) ? data.slides : [];
-  slides = slides.map((slide: any) => ({
-    ...slide,
-    sectionId: slide.sectionId || defaultSectionId,
-    tags: Array.isArray(slide.tags) ? slide.tags : [],
-    overlays: Array.isArray(slide.overlays) ? slide.overlays : [],
-    audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
-  }));
+
+  // We need to pass the whole data object to generate sequential IDs if missing
+  // But we want to mutate our local copy of overlays.
+  // We'll mutate the incoming data object for the generator to see the newly generated IDs,
+  // or just track maxId locally. A simpler way is tracking the highest ID seen.
+
+  let currentMaxBubbleId = 0;
+  for (const slide of slides) {
+    for (const overlay of slide.overlays || []) {
+      if (overlay.bubbleId && overlay.bubbleId.startsWith('B')) {
+        const num = parseInt(overlay.bubbleId.substring(1), 10);
+        if (!isNaN(num) && num > currentMaxBubbleId) currentMaxBubbleId = num;
+      }
+    }
+  }
+
+  slides = slides.map((slide: any) => {
+    const overlays = Array.isArray(slide.overlays) ? slide.overlays.map((ov: any) => {
+      let bubbleId = ov.bubbleId;
+      if (!bubbleId) {
+        currentMaxBubbleId++;
+        bubbleId = `B${currentMaxBubbleId}`;
+      }
+      return {
+        ...ov,
+        bubbleId,
+      };
+    }) : [];
+
+    return {
+      ...slide,
+      sectionId: slide.sectionId || defaultSectionId,
+      tags: Array.isArray(slide.tags) ? slide.tags : [],
+      overlays,
+      audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
+    };
+  });
 
   const boostPack = (data.boostPack && typeof data.boostPack === 'object' &&
     Array.isArray((data.boostPack as any).activationSequence))
@@ -118,7 +164,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
 
   return {
     ...data,
-    version: 2,
+    version: 3,
     sections,
     slides,
     boostPack
@@ -426,4 +472,45 @@ ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => 
   }
 
   return importedAssets;
+});
+
+ipcMain.handle('import-bubble-template', async (): Promise<{ success: boolean; relativePath?: string }> => {
+  if (!currentProjectFolder) return { success: false };
+
+  const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
+    title: 'Import Bubble Template',
+    properties: ['openFile'],
+    filters: [{ name: 'PNG', extensions: ['png'] }]
+  });
+
+  if (canceled || filePaths.length === 0) return { success: false };
+
+  const sourcePath = filePaths[0];
+  const bubblesDir = path.join(currentProjectFolder, ASSETS_DIR, 'bubbles');
+
+  try {
+    // Ensure bubbles directory exists
+    await fs.mkdir(bubblesDir, { recursive: true });
+
+    const originalExt = path.extname(sourcePath);
+    const originalBase = path.basename(sourcePath, originalExt);
+    let fileName = path.basename(sourcePath);
+    let targetPath = path.join(bubblesDir, fileName);
+    let counter = 1;
+
+    // Unique filename check
+    while (await fs.stat(targetPath).then(() => true).catch(() => false)) {
+      fileName = `${originalBase}_${counter}${originalExt}`;
+      targetPath = path.join(bubblesDir, fileName);
+      counter++;
+    }
+
+    await fs.copyFile(sourcePath, targetPath);
+
+    const relativePath = path.join(ASSETS_DIR, 'bubbles', fileName).replace(/\\/g, '/');
+    return { success: true, relativePath };
+  } catch (err) {
+    console.error('Failed to import bubble template:', err);
+    return { success: false };
+  }
 });
