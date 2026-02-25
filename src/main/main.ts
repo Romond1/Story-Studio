@@ -135,6 +135,13 @@ function normalizeProjectData(data: ProjectData): ProjectData {
     }
   }
 
+  let languageBoardTemplate = data.languageBoardTemplate || {
+    background: { color: "#eeeeee" },
+    layoutItems: [],
+    defaultViewMode: "slide",
+    nextItemSeq: 1
+  };
+
   slides = slides.map((slide: any) => {
     const overlays = Array.isArray(slide.overlays) ? slide.overlays.map((ov: any) => {
       let bubbleId = ov.bubbleId;
@@ -148,12 +155,67 @@ function normalizeProjectData(data: ProjectData): ProjectData {
       };
     }) : [];
 
+    let languageContent = slide.languageContent || { items: [] };
+
+    // Migrate legacy languageBoard
+    if (slide.languageBoard && slide.languageBoard.items && slide.languageBoard.items.length > 0) {
+      slide.languageBoard.items.forEach((oldItem: any) => {
+        let layoutId = oldItem.id;
+        let existingLayout = languageBoardTemplate.layoutItems.find((l: any) => l.id === layoutId);
+
+        if (!existingLayout) {
+          const newType = oldItem.type === 'text' ? 'textSlot' : oldItem.type === 'flashcard' ? 'flashcardSlot' : 'coverSlot';
+          existingLayout = {
+            id: layoutId,
+            type: newType,
+            x: oldItem.x,
+            y: oldItem.y,
+            width: oldItem.width,
+            height: oldItem.height,
+            rotationDeg: oldItem.rotationDeg,
+            styleDefaults: {
+              fontSize: oldItem.fontSize,
+              align: oldItem.align,
+              color: oldItem.color,
+              fontWeight: oldItem.fontWeight,
+              italic: oldItem.italic,
+              fontFamily: oldItem.fontFamily,
+              fillColor: oldItem.fillColor,
+              opacity: oldItem.opacity,
+              borderRadius: oldItem.borderRadius,
+            }
+          };
+          languageBoardTemplate.layoutItems.push(existingLayout);
+        }
+
+        // Avoid pushing duplicates mapping to the same layoutId in the same slide
+        if (!languageContent.items.find((c: any) => c.layoutId === layoutId)) {
+          languageContent.items.push({
+            layoutId: layoutId,
+            text: oldItem.text,
+            frontText: oldItem.frontText,
+            backText: oldItem.backText,
+            visibleInTeach: oldItem.visibleInTeach,
+            flippedInTeach: oldItem.flippedInTeach,
+          });
+        }
+      });
+
+      // Adopt background from the first slide that has one, if template doesn't have an image
+      if (slide.languageBoard.background && !languageBoardTemplate.background.imageSrc && slide.languageBoard.background.imageSrc) {
+        languageBoardTemplate.background = { ...languageBoardTemplate.background, ...slide.languageBoard.background };
+      }
+    }
+
+    delete slide.languageBoard; // Clear the old data
+
     return {
       ...slide,
       sectionId: slide.sectionId || defaultSectionId,
       tags: Array.isArray(slide.tags) ? slide.tags : [],
       overlays,
       audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
+      languageContent,
     };
   });
 
@@ -167,7 +229,8 @@ function normalizeProjectData(data: ProjectData): ProjectData {
     version: 3,
     sections,
     slides,
-    boostPack
+    boostPack,
+    languageBoardTemplate
   };
 }
 
@@ -352,7 +415,13 @@ ipcMain.handle('project:create', async () => {
     slides: [],
     assets: [],
     sections: [{ id: randomUUID(), name: 'Section 1' }],
-    boostPack: emptyBoostPack()
+    boostPack: emptyBoostPack(),
+    languageBoardTemplate: {
+      background: { color: "#eeeeee" },
+      layoutItems: [],
+      defaultViewMode: "slide",
+      nextItemSeq: 1
+    }
   };
 
   await writeProjectAtomic(folderPath, data);
@@ -422,7 +491,12 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
       id: randomUUID(),
       assetId: id,
       sectionId: defaultSectionId,
-      transition: 'fade'
+      transition: 'fade',
+      languageBoard: {
+        background: { color: "#eeeeee" },
+        items: [],
+        nextItemSeq: 1,
+      }
     });
   }
 
@@ -514,3 +588,37 @@ ipcMain.handle('import-bubble-template', async (): Promise<{ success: boolean; r
     return { success: false };
   }
 });
+
+ipcMain.handle('import-language-bg', async (): Promise<{ success: boolean; relativePath?: string }> => {
+  if (!currentProjectFolder) return { success: false };
+
+  const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
+    title: 'Import Language Board Background',
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }]
+  });
+
+  if (canceled || filePaths.length === 0) return { success: false };
+
+  const sourcePath = filePaths[0];
+  const targetDir = path.join(currentProjectFolder, ASSETS_DIR, 'language-bg');
+
+  try {
+    await fs.mkdir(targetDir, { recursive: true });
+
+    const ext = path.extname(sourcePath);
+    const id = randomUUID();
+    const fileName = `${id}${ext}`;
+    const targetPath = path.join(targetDir, fileName);
+
+    await fs.copyFile(sourcePath, targetPath);
+
+    const relativePath = path.join(ASSETS_DIR, 'language-bg', fileName).replace(/\\/g, '/');
+    return { success: true, relativePath };
+  } catch (err) {
+    console.error('Failed to import language background:', err);
+    return { success: false };
+  }
+});
+
+

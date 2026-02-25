@@ -75,6 +75,81 @@ export interface Section {
   tags?: string[];
 }
 
+export type BackgroundConfig = {
+  imageSrc?: string | null;
+  color?: string;
+  posX?: number;
+  posY?: number;
+  scale?: number;
+  blur?: number;
+};
+
+export type LayoutItem = {
+  id: string;              // e.g. T001
+  type: "textSlot" | "flashcardSlot" | "coverSlot" | "shapeSlot";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotationDeg?: number;
+  styleDefaults?: {
+    fontSize?: number;
+    align?: "left" | "center" | "right";
+    color?: string;
+    fontWeight?: number;
+    italic?: boolean;
+    fontFamily?: string;
+    fillColor?: string;
+    opacity?: number;
+    borderRadius?: number;
+    shapeType?: "circle" | "square" | "rectangle" | "oval" | "star" | "diamond" | "heart";
+    borderWidth?: number;
+    padding?: number;
+    borderColor?: string;
+    noFill?: boolean;
+    verticalAlign?: "top" | "center" | "bottom";
+    frontColor?: string;
+    backColor?: string;
+    frontTextColor?: string;
+    backTextColor?: string;
+    flipAnimation?: "none" | "flip" | "fade" | "slide";
+    flipSpeed?: number;
+    frontFontSize?: number;
+    backFontSize?: number;
+    frontFontWeight?: number;
+    backFontWeight?: number;
+    frontItalic?: boolean;
+    backItalic?: boolean;
+    frontAlign?: "left" | "center" | "right";
+    backAlign?: "left" | "center" | "right";
+    frontVerticalAlign?: "top" | "center" | "bottom";
+    backVerticalAlign?: "top" | "center" | "bottom";
+  };
+  text?: string;
+  frontText?: string;
+  backText?: string;
+};
+
+export type LanguageBoardTemplate = {
+  background: BackgroundConfig;
+  layoutItems: LayoutItem[];
+  defaultViewMode: "slide" | "split" | "board";
+  nextItemSeq?: number;
+};
+
+export type ContentItem = {
+  layoutId: string;   // links to LayoutItem.id
+  text?: string;
+  frontText?: string;
+  backText?: string;
+  visibleInTeach?: boolean;
+  flippedInTeach?: boolean;
+};
+
+export type SlideLanguageContent = {
+  items: ContentItem[];
+};
+
 export interface Slide {
   id: string;
   assetId: string;
@@ -89,6 +164,8 @@ export interface Slide {
   tags?: string[];
   overlays?: OverlayItem[];
   audioCues?: AudioCue[];
+  languageBoard?: any; // kept for legacy migration only
+  languageContent?: SlideLanguageContent;
 }
 
 export type ProjectSchemaVersion = 1 | 2 | 3;
@@ -259,6 +336,7 @@ export interface ProjectData {
   assets: AssetItem[];
   sections: Section[];
   boostPack?: BoostPack;
+  languageBoardTemplate?: LanguageBoardTemplate;
   bubbleDefinitions?: BubbleTemplate[];
   sparkConfig?: SparkConfig;
   badgeConfig?: BadgeConfig;

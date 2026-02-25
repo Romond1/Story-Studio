@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export interface MenuItem {
-    label: string;
+    label?: string;
     onClick?: () => void;
     disabled?: boolean;
     submenu?: MenuItem[];

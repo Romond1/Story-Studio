@@ -28,6 +28,8 @@ import {
 } from "../shared/types";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
+import { LanguageBoardView } from "./language/LanguageBoardView";
+import { LanguageToolsPanel } from "./language/LanguageToolsPanel";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
 import { audioManager } from "./audio/AudioManager";
@@ -270,9 +272,13 @@ interface HighlighterStroke {
   sparkle: boolean;
 }
 
-function toMediaUrl(relativePath: string): string {
-  if (!relativePath || typeof relativePath !== 'string') return "";
-  const normalizedRelative = relativePath
+function toMediaUrl(relPath: string): string {
+  if (!relPath || typeof relPath !== 'string') return "";
+  if (relPath.startsWith("http")) return relPath;
+  if (relPath.startsWith("data:")) return relPath;
+  if (relPath.startsWith("media://")) return relPath;
+
+  const normalizedRelative = relPath
     .replace(/\\/g, "/")
     .replace(/^\/+/, "");
   const encodedRelative = normalizedRelative
@@ -308,7 +314,7 @@ function SparkLab() {
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: globalThis.MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
@@ -538,6 +544,10 @@ export function App() {
   const [boostTab, setBoostTab] = useState<'activation' | 'language' | 'games' | 'badge'>('activation');
   const [selectedBoostItemId, setSelectedBoostItemId] = useState<string | null>(null);
   const [boostSearchQuery, setBoostSearchQuery] = useState("");
+  const [selectedLanguageItemId, setSelectedLanguageItemId] = useState<string | null>(null);
+  const [languageViewMode, setLanguageViewMode] = useState<"slide" | "split" | "board">("split");
+  const [languageTemplateMode, setLanguageTemplateMode] = useState(false);
+
 
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
@@ -569,6 +579,7 @@ export function App() {
   const [isDirty, setIsDirty] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSlideSelector, setShowSlideSelector] = useState(false);
+  const [slideSelectorMode, setSlideSelectorMode] = useState<'break' | 'boost'>('break');
   const [pendingAction, setPendingAction] = useState<
     "create" | "open" | "close" | null
   >(null);
@@ -689,7 +700,7 @@ export function App() {
   if (topMode === 'boost') {
     _matchedSection = null;
     if (project?.data.boostPack) {
-      const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
+      const activeSequence = (project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || []) as SequenceItem[];
       activeItem = activeSequence.find(i => i.id === selectedBoostItemId) ?? null;
       if (activeItem?.type === 'breakRef') {
         const breakId = (activeItem as Extract<SequenceItem, { type: 'breakRef' }>).breakId;
@@ -729,15 +740,19 @@ export function App() {
   }, [project, sectionSlideIndices, selectedSectionId]);
 
   let currentSlide = project?.data.slides[currentIndex] ?? null;
+
+  if (topMode === 'boost' && activeItem && activeItem.type === 'slideRef') {
+    const activeSlide = project?.data.slides.find(s => s.id === (activeItem as any).slideId) ?? null;
+    if (activeSlide) currentSlide = activeSlide;
+  }
+
   let currentAsset = currentSlide
     ? (assetsById.get(currentSlide.assetId) ?? null)
     : null;
 
   if (topMode === 'boost' && activeItem) {
     if (activeItem.type === 'slideRef') {
-      const activeSlide = project?.data.slides.find(s => s.id === activeItem.slideId) ?? null;
-      currentSlide = activeSlide;
-      currentAsset = activeSlide ? (assetsById.get(activeSlide.assetId) ?? null) : null;
+      // already handled above
     } else {
       currentSlide = null;
       currentAsset = null;
@@ -858,13 +873,19 @@ export function App() {
 
   const updateCurrentSlide = (updates: Partial<Slide>) => {
     if (!project || !currentSlide) return;
-    const newSlides = project.data.slides.map((s, index) => {
-      if (index === currentIndex) {
-        return { ...s, ...updates };
-      }
-      return s;
+    setProject((prev) => {
+      if (!prev) return null;
+      const nextSlides = prev.data.slides.map((s) => {
+        if (s.id === currentSlide.id) {
+          return { ...s, ...updates };
+        }
+        return s;
+      });
+      return {
+        ...prev,
+        data: { ...prev.data, slides: nextSlides },
+      };
     });
-    setProject({ ...project, data: { ...project.data, slides: newSlides } });
     setIsDirty(true);
   };
 
@@ -925,7 +946,9 @@ export function App() {
     let newItem: SequenceItem;
     const id = `item-${Date.now()}`;
     if (type === 'slideRef') {
-      newItem = { id, type, slideId: project.data.slides[0]?.id || '' };
+      setSlideSelectorMode('boost');
+      setShowSlideSelector(true);
+      return; // Handled by selector
     } else if (type === 'breakRef') {
       newItem = { id, type, breakId: project.data.sections.find(s => s.type === 'break')?.id || '' };
     } else if (type === 'promptCard') {
@@ -1882,8 +1905,8 @@ export function App() {
       ...project,
       data: {
         ...project.data,
-        slides: project.data.slides.map((slide, index) =>
-          index === currentIndex ? { ...slide, markerStrokes: strokes } : slide,
+        slides: project.data.slides.map((slide) =>
+          slide.id === currentSlide.id ? { ...slide, markerStrokes: strokes } : slide,
         ),
       },
     });
@@ -2118,9 +2141,20 @@ export function App() {
                   const asset = assetsById.get(s.assetId);
                   return (
                     <button key={s.id} onClick={() => {
-                      const newMedia = [{ id: `img-${Date.now()}`, slideId: s.id, fit: "contain" as const }];
-                      const nextBreakMedia = [...(selectedSection?.breakMedia || []), ...newMedia];
-                      if (selectedSection) updateSection(selectedSection.id, { breakMedia: nextBreakMedia });
+                      if (slideSelectorMode === 'break') {
+                        const newMedia = [{ id: `img-${Date.now()}`, slideId: s.id, fit: "contain" as const }];
+                        const nextBreakMedia = [...(selectedSection?.breakMedia || []), ...newMedia];
+                        if (selectedSection) updateSection(selectedSection.id, { breakMedia: nextBreakMedia });
+                      } else {
+                        // Boost mode
+                        const prop = (boostTab + 'Sequence') as 'activationSequence' | 'languageSequence' | 'gamesSequence';
+                        const seq = project.data.boostPack![prop] || [];
+                        const id = `item-${Date.now()}`;
+                        const newItem = { id, type: 'slideRef', slideId: s.id };
+                        setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [prop]: [...seq, newItem] } } });
+                        setSelectedBoostItemId(id);
+                        setIsDirty(true);
+                      }
                       setShowSlideSelector(false);
                     }} style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer" }}>
                       {idx + 1}. {asset?.originalName || "Unknown"}
@@ -2542,6 +2576,24 @@ export function App() {
                     </ul>
                     {!(project?.data.boostPack?.[`${boostTab}Sequence` as keyof BoostPack] || []).length && (
                       <div style={{ fontSize: '0.85rem', color: '#888', textAlign: 'center', marginTop: 24 }}>Sequence is empty</div>
+                    )}
+                    {appMode === 'edit' && (
+                      <div style={{ display: 'flex', gap: 4, marginTop: 12 }}>
+                        <button
+                          className="lang-btn"
+                          style={{ flex: 1, fontSize: '0.75rem' }}
+                          onClick={() => addSequenceItem('slideRef')}
+                        >
+                          + Ref Slide
+                        </button>
+                        <button
+                          className="lang-btn"
+                          style={{ flex: 1, fontSize: '0.75rem' }}
+                          onClick={() => addSequenceItem('breakRef')}
+                        >
+                          + Ref Break
+                        </button>
+                      </div>
                     )}
                   </>
                 )}
@@ -3440,97 +3492,135 @@ export function App() {
                   </div>
                 </div>
 
-                <div className="stage" onContextMenu={handleStageContextMenu}>
-                  {!currentAsset && (
-                    <div className="placeholder">
-                      {topMode === 'boost' && activeItem?.type === 'slideRef'
-                        ? 'Selected Slide or Asset not found.'
-                        : 'Import media to start presenting.'}
-                    </div>
-                  )}
-                  {currentAsset && (
-                    <div className="media-layer">
-                      {/* Outgoing Slide */}
-                      {isAnimating && previousAsset && (
-                        <MediaView
-                          key={previousSlide?.id}
-                          asset={previousAsset}
-                          overlays={previousSlide?.overlays ?? []}
-                          className={`media ${currentSlide?.transition === "card-slide"
-                            ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-out`
-                            : `transition-${currentSlide?.transition ?? "fade"}-out`
-                            }`}
-                          style={
-                            {
-                              "--transition-duration":
-                                (currentSlide?.transitionDuration ?? 500) + "ms",
-                            } as any
-                          }
-                          drawSettings={drawSettings}
-                          markerStrokes={previousSlide?.markerStrokes ?? []}
-                          onMarkerStrokesChange={() => undefined}
-                          clearSignal={drawClearSignal}
-                          initialZoom={viewportRef.current.zoom}
-                          initialPan={viewportRef.current.pan}
-                          paused={true}
-                          initialTime={lastMediaTimeRef.current}
-                          showControls={false}
-                          bubbleDefinitions={project?.data.bubbleDefinitions}
-                        />
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, gap: topMode === 'boost' && boostTab === 'language' && languageViewMode === 'split' ? 12 : 0 }}>
+                  {!(topMode === 'boost' && boostTab === 'language' && languageViewMode === 'board') && (
+                    <div
+                      className="stage"
+                      onContextMenu={handleStageContextMenu}
+                      style={{ flex: (topMode === 'boost' && boostTab === 'language' && languageViewMode === 'split') ? '0 0 auto' : 1, height: (topMode === 'boost' && boostTab === 'language' && languageViewMode === 'split') ? '40%' : '100%', minHeight: 0 }}
+                    >
+                      {!currentAsset && (
+                        <div className="placeholder">
+                          {topMode === 'boost' && activeItem?.type === 'slideRef'
+                            ? 'Selected Slide or Asset not found.'
+                            : 'Import media to start presenting.'}
+                        </div>
                       )}
-                      {/* Incoming Slide */}
-                      <MediaView
-                        key={currentSlide?.id}
-                        asset={currentAsset}
-                        overlays={currentSlide?.overlays ?? []}
-                        className={`media ${currentSlide?.transition === "card-slide"
-                          ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-in`
-                          : `transition-${currentSlide?.transition ?? "fade"}-in`
-                          }`}
-                        style={
-                          {
-                            "--transition-duration":
-                              (currentSlide?.transitionDuration ?? 500) + "ms",
-                          } as any
-                        }
-                        drawSettings={drawSettings}
-                        markerStrokes={currentSlide?.markerStrokes ?? []}
-                        onMarkerStrokesChange={(strokes) =>
-                          updateCurrentSlideMarkerStrokes(strokes)
-                        }
-                        clearSignal={drawClearSignal}
-                        initialZoom={viewportRef.current.zoom}
-                        initialPan={viewportRef.current.pan}
-                        onViewportChange={(v) => {
-                          viewportRef.current = v;
-                        }}
-                        paused={false}
-                        onTimeUpdate={(t) => {
-                          lastMediaTimeRef.current = t;
-                        }}
-                        showControls={true}
-                        isEditMode={appMode === "edit"}
-                        activeOverlayId={activeOverlayId}
-                        showOverlayIds={appMode === "edit"}
-                        onOverlaySelect={setActiveOverlayId}
-                        onOverlayChange={(id, updates) => {
-                          if (!project || !currentSlide) return;
-                          const nextOverlays = (currentSlide.overlays || []).map((o) =>
-                            o.id === id ? { ...o, ...updates } : o
-                          );
-                          setProject({
-                            ...project,
-                            data: {
-                              ...project.data,
-                              slides: project.data.slides.map((s) => (s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s)),
-                            },
-                          });
-                          setIsDirty(true);
-                        }}
-                        bubbleDefinitions={project?.data.bubbleDefinitions}
-                      />
+                      {currentAsset && (
+                        <div className="media-layer">
+                          {/* Outgoing Slide */}
+                          {isAnimating && previousAsset && (
+                            <MediaView
+                              key={previousSlide?.id}
+                              asset={previousAsset}
+                              overlays={previousSlide?.overlays ?? []}
+                              className={`media ${currentSlide?.transition === "card-slide"
+                                ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-out`
+                                : `transition-${currentSlide?.transition ?? "fade"}-out`
+                                }`}
+                              style={
+                                {
+                                  "--transition-duration":
+                                    (currentSlide?.transitionDuration ?? 500) + "ms",
+                                } as any
+                              }
+                              drawSettings={drawSettings}
+                              markerStrokes={previousSlide?.markerStrokes ?? []}
+                              onMarkerStrokesChange={() => undefined}
+                              clearSignal={drawClearSignal}
+                              initialZoom={viewportRef.current.zoom}
+                              initialPan={viewportRef.current.pan}
+                              paused={true}
+                              initialTime={lastMediaTimeRef.current}
+                              showControls={false}
+                              bubbleDefinitions={project?.data.bubbleDefinitions}
+                            />
+                          )}
+                          {/* Incoming Slide */}
+                          <MediaView
+                            key={currentSlide?.id}
+                            asset={currentAsset}
+                            overlays={currentSlide?.overlays ?? []}
+                            className={`media ${currentSlide?.transition === "card-slide"
+                              ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-in`
+                              : `transition-${currentSlide?.transition ?? "fade"}-in`
+                              }`}
+                            style={
+                              {
+                                "--transition-duration":
+                                  (currentSlide?.transitionDuration ?? 500) + "ms",
+                              } as any
+                            }
+                            drawSettings={drawSettings}
+                            markerStrokes={currentSlide?.markerStrokes ?? []}
+                            onMarkerStrokesChange={(strokes) =>
+                              updateCurrentSlideMarkerStrokes(strokes)
+                            }
+                            clearSignal={drawClearSignal}
+                            initialZoom={viewportRef.current.zoom}
+                            initialPan={viewportRef.current.pan}
+                            onViewportChange={(v) => {
+                              viewportRef.current = v;
+                            }}
+                            paused={false}
+                            onTimeUpdate={(t) => {
+                              lastMediaTimeRef.current = t;
+                            }}
+                            showControls={true}
+                            isEditMode={appMode === "edit"}
+                            activeOverlayId={activeOverlayId}
+                            showOverlayIds={appMode === "edit"}
+                            onOverlaySelect={setActiveOverlayId}
+                            onOverlayChange={(id, updates) => {
+                              if (!project || !currentSlide) return;
+                              const nextOverlays = (currentSlide.overlays || []).map((o) =>
+                                o.id === id ? { ...o, ...updates } : o
+                              );
+                              setProject({
+                                ...project,
+                                data: {
+                                  ...project.data,
+                                  slides: project.data.slides.map((s) => (s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s)),
+                                },
+                              });
+                              setIsDirty(true);
+                            }}
+                            bubbleDefinitions={project?.data.bubbleDefinitions}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
+                  {topMode === 'boost' && boostTab === 'language' && (
+                    <LanguageBoardView
+                      slide={currentSlide}
+                      template={project?.data.languageBoardTemplate || null}
+                      onUpdateSlide={updateCurrentSlide}
+                      onUpdateTemplate={(updates) => {
+                        setProject((prev) => {
+                          if (!prev) return null;
+                          return {
+                            ...prev,
+                            data: {
+                              ...prev.data,
+                              languageBoardTemplate: {
+                                ...prev.data.languageBoardTemplate!,
+                                ...updates,
+                              },
+                            },
+                          };
+                        });
+                        setIsDirty(true);
+                      }}
+                      isEditMode={appMode === "edit"}
+                      isTemplateMode={languageTemplateMode}
+                      selectedItemId={selectedLanguageItemId}
+                      onSelectItemId={setSelectedLanguageItemId}
+                      viewMode={languageViewMode}
+                      toMediaUrl={toMediaUrl}
+                    />
+                  )}
+
                 </div>
               </>
             )}
@@ -4031,6 +4121,36 @@ export function App() {
                   }}
                 />
               </div>
+            ) : topMode === 'boost' && boostTab === 'language' ? (
+              <LanguageToolsPanel
+                slide={currentSlide}
+                template={project?.data.languageBoardTemplate || null}
+                onUpdateSlide={updateCurrentSlide}
+                onUpdateTemplate={(updates) => {
+                  setProject((prev) => {
+                    if (!prev) return null;
+                    return {
+                      ...prev,
+                      data: {
+                        ...prev.data,
+                        languageBoardTemplate: {
+                          ...prev.data.languageBoardTemplate!,
+                          ...updates,
+                        },
+                      },
+                    };
+                  });
+                  setIsDirty(true);
+                }}
+                selectedItemId={selectedLanguageItemId}
+                onSelectItemId={setSelectedLanguageItemId}
+                appMode={appMode}
+                viewMode={languageViewMode}
+                onSetViewMode={setLanguageViewMode}
+                isTemplateMode={languageTemplateMode}
+                onToggleTemplateMode={() => setLanguageTemplateMode(v => !v)}
+              />
+
             ) : (
               <div className="audio-block" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <h4 style={{ margin: "0", color: "#66f", fontSize: "1rem" }}>Boost Tools</h4>
@@ -5303,7 +5423,7 @@ function MediaView({
                 <div style={{
                   position: 'absolute',
                   inset: 0,
-                  backgroundImage: `url(${overlay.customImageSrc ? toMediaUrl(overlay.customImageSrc) : (def.src || "")})`,
+                  backgroundImage: `url(${toMediaUrl(overlay.customImageSrc || def.src || "")})`,
                   backgroundSize: '100% 100%',
                   backgroundRepeat: 'no-repeat',
                   transform: `scale(${overlay.flipX ? -1 : 1}, ${overlay.flipY ? -1 : 1})`,

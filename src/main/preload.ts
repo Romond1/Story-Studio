@@ -19,5 +19,6 @@ const api = {
 
 contextBridge.exposeInMainWorld('appApi', api);
 contextBridge.exposeInMainWorld('api', {
-  importBubbleTemplate: () => ipcRenderer.invoke('import-bubble-template')
+  importBubbleTemplate: () => ipcRenderer.invoke('import-bubble-template'),
+  importLanguageBoardBackground: () => ipcRenderer.invoke('import-language-bg')
 });
