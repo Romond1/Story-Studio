@@ -128,6 +128,8 @@ export interface OverlayItem {
   fontSize?: number;
   fontWeight?: string;
   textColor?: string;
+  flipX?: boolean;
+  flipY?: boolean;
   lineHeight?: number;
   fontStyle?: 'normal' | 'italic';
   textShadow?: boolean;

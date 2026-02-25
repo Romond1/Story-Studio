@@ -21,9 +21,12 @@ import {
   OverlayItem,
   BubbleDef,
   BubbleTemplate,
-  SequenceItem
+  SequenceItem,
+  SlideRefItem,
+  BreakRefItem
 } from "../shared/types";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
+import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
 import { audioManager } from "./audio/AudioManager";
@@ -263,6 +266,7 @@ interface HighlighterStroke {
 }
 
 function toMediaUrl(relativePath: string): string {
+  if (!relativePath || typeof relativePath !== 'string') return "";
   const normalizedRelative = relativePath
     .replace(/\\/g, "/")
     .replace(/^\/+/, "");
@@ -298,6 +302,7 @@ export function App() {
   const viewportRef = useRef<ViewportState>({ zoom: 1, pan: { x: 0, y: 0 } });
   // Track playback time of ACTIVE media (for seamless transition freezing)
   const lastMediaTimeRef = useRef(0);
+  const lastRightClickRef = useRef<number>(0);
 
   // Transition UI Staging State
   const [stagedTransition, setStagedTransition] =
@@ -333,6 +338,7 @@ export function App() {
     null,
   );
   const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(false);
+  const [routingCollapsed, setRoutingCollapsed] = useState(false);
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(
     null,
   );
@@ -356,6 +362,7 @@ export function App() {
   } | null>(null);
 
   const [activeOverlayId, setActiveOverlayId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     tool: "highlighter",
     drawMode: false,
@@ -452,7 +459,7 @@ export function App() {
 
   const assetsById = useMemo(() => {
     const map = new Map<string, AssetItem>();
-    project?.data.assets.forEach((asset) => map.set(asset.id, asset));
+    project?.data?.assets?.forEach((asset) => map.set(asset.id, asset));
     return map;
   }, [project]);
 
@@ -540,7 +547,16 @@ export function App() {
       if (!project) return;
       if (index === currentIndex) return;
       const targetSlide = project?.data.slides[index];
+      if (!targetSlide) return;
+
       const duration = targetSlide?.transitionDuration ?? 500;
+
+      // Ensure the view switches if the target slide is in a different section
+      // This fixes the bug where the stage gets "stuck" on a break section
+      if (targetSlide.sectionId !== selectedSectionId) {
+        setSelectedSectionId(targetSlide.sectionId);
+        audioManager.stopSectionMusic();
+      }
 
       setPreviousIndex(currentIndex);
       setCurrentIndex(index);
@@ -551,8 +567,75 @@ export function App() {
         setPreviousIndex(null);
       }, duration);
     },
-    [project, currentIndex],
+    [project, currentIndex, selectedSectionId],
   );
+
+  const goToNextSlide = () => {
+    if (!project) return;
+    if (selectedSection?.type === 'break') {
+      const sections = project.data.sections;
+      const currentIdx = sections.findIndex(s => s.id === selectedSection.id);
+      for (let i = currentIdx + 1; i < sections.length; i++) {
+        const firstSlide = sectionSlideIndices.get(sections[i].id)?.[0];
+        if (firstSlide !== undefined) {
+          goToSlideByAbsoluteIndex(firstSlide);
+          return;
+        }
+      }
+    } else if (currentIndex < project.data.slides.length - 1) {
+      goToSlideByAbsoluteIndex(currentIndex + 1);
+    }
+  };
+
+  const goToPrevSlide = () => {
+    if (!project) return;
+    if (selectedSection?.type === 'break') {
+      const sections = project.data.sections;
+      const currentIdx = sections.findIndex(s => s.id === selectedSection.id);
+      for (let i = currentIdx - 1; i >= 0; i--) {
+        const slides = sectionSlideIndices.get(sections[i].id);
+        if (slides && slides.length > 0) {
+          goToSlideByAbsoluteIndex(slides[slides.length - 1]);
+          return;
+        }
+      }
+    } else if (currentIndex > 0) {
+      goToSlideByAbsoluteIndex(currentIndex - 1);
+    }
+  };
+
+  const goToNextBreak = () => {
+    if (!project) return;
+    const currentSectionId = selectedSectionId || currentSlide?.sectionId;
+    if (!currentSectionId) return;
+
+    const sections = project.data.sections;
+    const currentIdx = sections.findIndex((s) => s.id === currentSectionId);
+
+    const nextBreak = sections
+      .slice(currentIdx + 1)
+      .find((s) => s.type === "break");
+    if (nextBreak) {
+      selectSection(nextBreak.id);
+    }
+  };
+
+  const goToPrevBreak = () => {
+    if (!project) return;
+    const currentSectionId = selectedSectionId || currentSlide?.sectionId;
+    if (!currentSectionId) return;
+
+    const sections = project.data.sections;
+    const currentIdx = sections.findIndex((s) => s.id === currentSectionId);
+
+    const prevBreak = [...sections]
+      .slice(0, currentIdx)
+      .reverse()
+      .find((s) => s.type === "break");
+    if (prevBreak) {
+      selectSection(prevBreak.id);
+    }
+  };
 
   const updateCurrentSlide = (updates: Partial<Slide>) => {
     if (!project || !currentSlide) return;
@@ -1303,28 +1386,36 @@ export function App() {
 
   const onDeleteSlide = (slideId: string) => {
     if (!ensureEditMode(appMode, "delete slide")) return;
-    if (!project || !currentSlide) return;
-
-    if (project.data.slides.length <= 1) {
-      // If last slide, we don't delete but reset it or similar.
-      // But the requirement says create a blank slide automatically.
-      const newSlide: Slide = {
-        id: crypto.randomUUID(),
-        assetId: project.data.assets[0]?.id || "dummy",
-        sectionId: currentSlide.sectionId,
-        transition: 'fade',
-        overlays: [],
-      };
-      setProject({ ...project, data: { ...project.data, slides: [newSlide] } });
-      setCurrentIndex(0);
-      setIsDirty(true);
-      return;
-    }
+    if (!project) return;
 
     const indexToDelete = project.data.slides.findIndex(s => s.id === slideId);
     if (indexToDelete === -1) return;
 
     const nextSlides = project.data.slides.filter(s => s.id !== slideId);
+
+    // CLEAN UP references
+    let newBoostPack = project.data.boostPack;
+    if (newBoostPack) {
+      const cleanSeq = (seq: SequenceItem[]) => (seq || []).filter(item => {
+        if (item.type === 'slideRef') return (item as SlideRefItem).slideId !== slideId;
+        return true;
+      });
+      newBoostPack = {
+        activationSequence: cleanSeq(newBoostPack.activationSequence),
+        languageSequence: cleanSeq(newBoostPack.languageSequence),
+        gamesSequence: cleanSeq(newBoostPack.gamesSequence),
+      };
+    }
+
+    const nextSections = project.data.sections.map(s => {
+      if (s.breakMedia) {
+        return {
+          ...s,
+          breakMedia: s.breakMedia.filter(bm => bm.slideId !== slideId)
+        };
+      }
+      return s;
+    });
 
     // Selection fallback
     if (currentIndex === indexToDelete) {
@@ -1339,6 +1430,8 @@ export function App() {
       data: {
         ...project.data,
         slides: nextSlides,
+        sections: nextSections,
+        boostPack: newBoostPack,
       }
     });
     setIsDirty(true);
@@ -1393,7 +1486,7 @@ export function App() {
 
   const deleteSection = (sectionId: string) => {
     if (!ensureEditMode(appMode, "delete section")) return;
-    if (!project || project.data.sections.length <= 1) return;
+    if (!project) return;
 
     const sectionIndex = project.data.sections.findIndex(
       (s) => s.id === sectionId,
@@ -1401,52 +1494,83 @@ export function App() {
     if (sectionIndex === -1) return;
     const section = project.data.sections[sectionIndex];
 
-    const confirmMsg = `Delete ${section.type === "break" ? "Break" : "Section"} '${section.name}'?`;
+    const confirmMsg = `Delete ${section.type === "break" ? "Break" : "Section"} '${section.name}'? This will also delete all slides in this section.`;
     if (!window.confirm(confirmMsg)) return;
 
-    let newSlides = project.data.slides;
-    let newExpandedId = expandedSectionId;
+    const deletedSlideIds = new Set(project.data.slides.filter(s => s.sectionId === sectionId).map(s => s.id));
+    const newSlides = project.data.slides.filter((s) => s.sectionId !== sectionId);
 
-    if (!section.type || section.type === "section") {
-      // Only sections contain slides. Fallback required.
-      const fallback = project.data.sections.find(
-        (s) => s.id !== sectionId && (!s.type || s.type === "section"),
-      );
-      // Cannot delete the last actual section if slides exist
-      if (!fallback && project.data.slides.length > 0) {
-        // Allow delete if no slides? Or enforce 1 section always?
-        // Constraint: "cannot delete last section".
-        // If we have breaks, we might have multiple items in `sections`, but only 1 `section` type.
-        // If we try to delete it, we can't move slides.
-        alert("Cannot delete the last section.");
-        return;
-      }
-      if (fallback) {
-        newSlides = project.data.slides.map((s) =>
-          s.sectionId === sectionId ? { ...s, sectionId: fallback.id } : s,
-        );
-        if (expandedSectionId === sectionId) newExpandedId = fallback.id;
-      }
+    // Remove references to deleted slides/sections in boostPack
+    let newBoostPack = project.data.boostPack;
+    if (newBoostPack) {
+      const cleanSeq = (seq: SequenceItem[]) => (seq || []).filter(item => {
+        if (item.type === 'slideRef') return !deletedSlideIds.has((item as SlideRefItem).slideId);
+        if (item.type === 'breakRef') return (item as BreakRefItem).breakId !== sectionId;
+        return true;
+      });
+      newBoostPack = {
+        activationSequence: cleanSeq(newBoostPack.activationSequence),
+        languageSequence: cleanSeq(newBoostPack.languageSequence),
+        gamesSequence: cleanSeq(newBoostPack.gamesSequence),
+      };
     }
 
-    const newSections = project.data.sections.filter((s) => s.id !== sectionId);
+    // Filter out the section and clean up any remaining sections (e.g. breakMedia referencing deleted slides)
+    const newSections = project.data.sections
+      .filter((s) => s.id !== sectionId)
+      .map(s => {
+        if (s.breakMedia) {
+          return {
+            ...s,
+            breakMedia: s.breakMedia.filter(bm => !deletedSlideIds.has(bm.slideId))
+          };
+        }
+        return s;
+      });
+
+    const currentSlideId = project.data.slides[currentIndex]?.id;
+
     setProject({
       ...project,
       data: {
         ...project.data,
         slides: newSlides,
         sections: newSections,
+        boostPack: newBoostPack,
       },
     });
     setIsDirty(true);
 
     if (selectedSectionId === sectionId) {
-      // Fallback selection to nearest neighbor or first
+      // Fallback selection to nearest neighbor or null if none left
       const fallbackId =
         newSections[Math.max(0, sectionIndex - 1)]?.id ?? newSections[0]?.id;
+
       setSelectedSectionId(fallbackId ?? null);
+
+      // Reset or update currentIndex based on new slides
+      if (fallbackId) {
+        // Find the first slide in newSlides that belongs to the fallback section
+        const firstInFallback = newSlides.findIndex(s => s.sectionId === fallbackId);
+        setCurrentIndex(firstInFallback !== -1 ? firstInFallback : 0);
+      } else {
+        setCurrentIndex(0);
+      }
+    } else {
+      // Current slide should still exist, find its new index in the merged slide array
+      if (currentSlideId) {
+        const newIdx = newSlides.findIndex(s => s.id === currentSlideId);
+        if (newIdx !== -1) {
+          setCurrentIndex(newIdx);
+        } else {
+          setCurrentIndex(0);
+        }
+      }
     }
-    setExpandedSectionId(newExpandedId === sectionId ? null : newExpandedId);
+
+    if (expandedSectionId === sectionId) {
+      setExpandedSectionId(null);
+    }
   };
 
   const moveSection = (sectionId: string, direction: "up" | "down") => {
@@ -1473,6 +1597,38 @@ export function App() {
       },
     });
     setIsDirty(true);
+  };
+
+  const onDeleteBubble = () => {
+    const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
+    if (!activeOverlay || !currentSlide || !project) return;
+    const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).filter(o => o.id !== activeOverlay.id);
+    setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+    setActiveOverlayId(null);
+    setIsDirty(true);
+  };
+
+  const deleteCurrentSection = () => {
+    if (selectedSectionId) {
+      deleteSection(selectedSectionId);
+    }
+  };
+
+  const handleStageContextMenu = (e: React.MouseEvent) => {
+    if (topMode === 'boost') return;
+    e.preventDefault();
+
+    const now = Date.now();
+    if (now - lastRightClickRef.current < 400) {
+      // Double right-click toggle
+      setAppMode(prev => prev === 'teach' ? 'edit' : 'teach');
+      setContextMenu(null);
+      lastRightClickRef.current = 0; // Reset
+      return;
+    }
+    lastRightClickRef.current = now;
+
+    setContextMenu({ x: e.clientX, y: e.clientY });
   };
 
   const onSlideWrapperClick = (slideIndex: number, event: MouseEvent) => {
@@ -1862,39 +2018,41 @@ export function App() {
                               {count}
                             </small>
                           )}
-                          <button
-                            className="section-ctrl-btn"
-                            title="Move Up"
-                            disabled={index === 0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              moveSection(section.id, "up");
-                            }}
-                          >
-                            ▲
-                          </button>
-                          <button
-                            className="section-ctrl-btn"
-                            title="Move Down"
-                            disabled={index === sections.length - 1}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              moveSection(section.id, "down");
-                            }}
-                          >
-                            ▼
-                          </button>
-                          {sections.length > 1 && (
-                            <button
-                              className="section-delete-btn"
-                              title="Delete"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteSection(section.id);
-                              }}
-                            >
-                              X
-                            </button>
+                          {appMode === 'edit' && (
+                            <>
+                              <button
+                                className="section-ctrl-btn"
+                                title="Move Up"
+                                disabled={index === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveSection(section.id, "up");
+                                }}
+                              >
+                                ▲
+                              </button>
+                              <button
+                                className="section-ctrl-btn"
+                                title="Move Down"
+                                disabled={index === sections.length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveSection(section.id, "down");
+                                }}
+                              >
+                                ▼
+                              </button>
+                              <button
+                                className="section-delete-btn"
+                                title="Delete"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteSection(section.id);
+                                }}
+                              >
+                                X
+                              </button>
+                            </>
                           )}
                         </div>
                         {!isBreak && isExpanded && (
@@ -2561,6 +2719,7 @@ export function App() {
               >
                 <div
                   className="break-stage"
+                  onContextMenu={handleStageContextMenu}
                   style={{
                     backgroundColor: selectedSection.background && !selectedSection.background.startsWith("url") ? undefined : "#111",
                     background: selectedSection.bgTransform && selectedSection.bgTransform.blur ? "transparent" : (selectedSection.background || "#111"),
@@ -2969,7 +3128,7 @@ export function App() {
                 </div>
               </div>
 
-              <div className="stage">
+              <div className="stage" onContextMenu={handleStageContextMenu}>
                 {!currentAsset && (
                   <div className="placeholder">
                     {topMode === 'boost' && activeItem?.type === 'slideRef'
@@ -3241,6 +3400,35 @@ export function App() {
                       />
                       Italic
                     </label>
+
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 4, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={!!activeOverlay.flipX}
+                          onChange={(e) => {
+                            if (!currentSlide || !project) return;
+                            const nextOverlays = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, flipX: e.target.checked } : o);
+                            setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                            setIsDirty(true);
+                          }}
+                        />
+                        Flip H
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 4, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={!!activeOverlay.flipY}
+                          onChange={(e) => {
+                            if (!currentSlide || !project) return;
+                            const nextOverlays = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, flipY: e.target.checked } : o);
+                            setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                            setIsDirty(true);
+                          }}
+                        />
+                        Flip V
+                      </label>
+                    </div>
                     <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
                       Text Color
                       <input
@@ -3403,97 +3591,118 @@ export function App() {
 
               </div>
 
-              <div className="audio-block" style={{ marginTop: 'auto', background: "#111112", border: '1px solid #222225', padding: '16px' }}>
-                <h4 style={{ margin: "0 0 16px 0", color: "#666", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "1px" }}>Audio Routing</h4>
-
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: "0.75rem", color: "#888" }}>MIX OUTPUT DEVICE</span>
-                  </div>
-                  <select
-                    value={selectedAudioOutput}
-                    onChange={(e) => handleDeviceChange(e.target.value)}
-                    style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-                  >
-                    <option value="default">System Default</option>
-                    {audioOutputDevices.map(d => (
-                      <option key={d.deviceId} value={d.deviceId}>{d.label || `Output ${d.deviceId.slice(0, 5)}...`}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: "0.75rem", color: "#888" }}>MONITOR DEVICE</span>
-                  </div>
-                  <select
-                    value={selectedMonitorOutput}
-                    onChange={(e) => handleMonitorDeviceChange(e.target.value)}
-                    style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-                  >
-                    <option value="default">System Default</option>
-                    {audioOutputDevices.map(d => (
-                      <option key={d.deviceId} value={d.deviceId}>{d.label || `Monitor ${d.deviceId.slice(0, 5)}...`}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: "0.75rem", color: "#888" }}>MICROPHONE INPUT</span>
-                    <button
-                      onClick={toggleMic}
-                      style={{
-                        padding: "2px 8px",
-                        fontSize: "0.7rem",
-                        fontWeight: "bold",
-                        background: micEnabled ? "#4a1a1a" : "#1a1a1c",
-                        border: `1px solid ${micEnabled ? "#8a3a3a" : "#333"}`,
-                        color: micEnabled ? "#ffaaaa" : "#666",
-                        borderRadius: "4px"
-                      }}
-                    >
-                      {micEnabled ? "LIVE" : "OFF"}
-                    </button>
-                  </div>
-                  <select
-                    value={selectedAudioInput}
-                    onChange={(e) => {
-                      setSelectedAudioInput(e.target.value);
-                      if (micEnabled) {
-                        // Force restart if live
-                        micInput.disableMic();
-                        micInput.enableMic(e.target.value !== "default" ? e.target.value : undefined).catch(err => {
-                          console.error(err);
-                          setMicEnabled(false);
-                        });
-                      }
-                    }}
-                    style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-                  >
-                    <option value="default">Default Mic</option>
-                    {audioInputDevices.map(d => (
-                      <option key={d.deviceId} value={d.deviceId}>{d.label || `Mic ${d.deviceId.slice(0, 5)}...`}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  onClick={() => audioManager.stopAll()}
+              <div className="audio-block" style={{ marginTop: 'auto', background: "#111112", border: '1px solid #222225', padding: '12px 16px' }}>
+                <h4
+                  onClick={() => setRoutingCollapsed(!routingCollapsed)}
                   style={{
-                    width: "100%",
-                    marginTop: 24,
-                    padding: "8px",
-                    background: "#2a1515",
-                    color: "#ff8888",
-                    borderColor: "#4a2525",
+                    margin: 0,
+                    color: "#666",
                     fontSize: "0.85rem",
-                    borderRadius: "4px",
-                    cursor: "pointer"
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    userSelect: 'none'
                   }}
                 >
-                  Stop All Audio
-                </button>
+                  Audio Routing
+                  <span>{routingCollapsed ? '+' : '−'}</span>
+                </h4>
+
+                {!routingCollapsed && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <span style={{ fontSize: "0.75rem", color: "#888" }}>MIX OUTPUT DEVICE</span>
+                      </div>
+                      <select
+                        value={selectedAudioOutput}
+                        onChange={(e) => handleDeviceChange(e.target.value)}
+                        style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+                      >
+                        <option value="default">System Default</option>
+                        {audioOutputDevices.map(d => (
+                          <option key={d.deviceId} value={d.deviceId}>{d.label || `Output ${d.deviceId.slice(0, 5)}...`}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <span style={{ fontSize: "0.75rem", color: "#888" }}>MONITOR DEVICE</span>
+                      </div>
+                      <select
+                        value={selectedMonitorOutput}
+                        onChange={(e) => handleMonitorDeviceChange(e.target.value)}
+                        style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+                      >
+                        <option value="default">System Default</option>
+                        {audioOutputDevices.map(d => (
+                          <option key={d.deviceId} value={d.deviceId}>{d.label || `Monitor ${d.deviceId.slice(0, 5)}...`}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <span style={{ fontSize: "0.75rem", color: "#888" }}>MICROPHONE INPUT</span>
+                        <button
+                          onClick={toggleMic}
+                          style={{
+                            padding: "2px 8px",
+                            fontSize: "0.7rem",
+                            fontWeight: "bold",
+                            background: micEnabled ? "#4a1a1a" : "#1a1a1c",
+                            border: `1px solid ${micEnabled ? "#8a3a3a" : "#333"}`,
+                            color: micEnabled ? "#ffaaaa" : "#666",
+                            borderRadius: "4px"
+                          }}
+                        >
+                          {micEnabled ? "LIVE" : "OFF"}
+                        </button>
+                      </div>
+                      <select
+                        value={selectedAudioInput}
+                        onChange={(e) => {
+                          setSelectedAudioInput(e.target.value);
+                          if (micEnabled) {
+                            // Force restart if live
+                            micInput.disableMic();
+                            micInput.enableMic(e.target.value !== "default" ? e.target.value : undefined).catch(err => {
+                              console.error(err);
+                              setMicEnabled(false);
+                            });
+                          }
+                        }}
+                        style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
+                      >
+                        <option value="default">Default Mic</option>
+                        {audioInputDevices.map(d => (
+                          <option key={d.deviceId} value={d.deviceId}>{d.label || `Mic ${d.deviceId.slice(0, 5)}...`}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={() => audioManager.stopAll()}
+                      style={{
+                        width: "100%",
+                        marginTop: 24,
+                        padding: "8px",
+                        background: "#2a1515",
+                        color: "#ff8888",
+                        borderColor: "#4a2525",
+                        fontSize: "0.85rem",
+                        borderRadius: "4px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Stop All Audio
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -3575,6 +3784,148 @@ export function App() {
           )}
         </aside>
       </div>
+      {
+        contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+            items={(() => {
+              if (appMode === 'teach') {
+                return [
+                  {
+                    label: "Draw",
+                    submenu: [
+                      {
+                        label: drawSettings.drawMode ? "Disable Drawing" : "Enable Drawing",
+                        onClick: () => setDrawSettings(prev => ({ ...prev, drawMode: !prev.drawMode }))
+                      },
+                      {
+                        label: "Clear Drawing",
+                        onClick: clearCurrentSlideDrawings
+                      }
+                    ]
+                  },
+                  {
+                    label: "Next Slide",
+                    onClick: goToNextSlide,
+                    disabled: !project || (currentIndex >= project.data.slides.length - 1 && selectedSection?.type !== 'break')
+                  },
+                  {
+                    label: "Prev Slide",
+                    onClick: goToPrevSlide,
+                    disabled: !project || (currentIndex <= 0 && selectedSection?.type !== 'break')
+                  },
+                  {
+                    label: "Next Break",
+                    onClick: goToNextBreak
+                  },
+                  {
+                    label: "Prev Break",
+                    onClick: goToPrevBreak
+                  }
+                ];
+              }
+
+              // Edit Mode
+              const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
+              const isSlideFirst = currentIndex === 0;
+              const isSlideLast = project ? currentIndex === project.data.slides.length - 1 : true;
+
+              const sectionIndex = project ? project.data.sections.findIndex(s => s.id === selectedSectionId) : -1;
+              const isSectionFirst = sectionIndex === 0;
+              const isSectionLast = project ? sectionIndex === (project.data.sections?.length || 0) - 1 : true;
+
+              return [
+                {
+                  label: "Slide",
+                  submenu: [
+                    { label: "Add Slide", onClick: onImportMedia },
+                    { label: "Delete Slide", onClick: () => currentSlide && onDeleteSlide(currentSlide.id) },
+                    { isDivider: true },
+                    { label: "Move Slide Up", disabled: isSlideFirst, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex - 1) },
+                    { label: "Move Slide Down", disabled: isSlideLast, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex + 1) },
+                  ]
+                },
+                {
+                  label: "Break",
+                  submenu: [
+                    { label: "Add Break", onClick: onAddBreak },
+                    { label: "Delete Break", onClick: deleteCurrentSection, disabled: !selectedSectionId },
+                    { isDivider: true },
+                    { label: "Move Break Up", disabled: isSectionFirst, onClick: () => selectedSectionId && moveSection(selectedSectionId, "up") },
+                    { label: "Move Break Down", disabled: isSectionLast, onClick: () => selectedSectionId && moveSection(selectedSectionId, "down") },
+                  ]
+                },
+                {
+                  label: "Audio",
+                  submenu: [
+                    { label: "Add Dialogue", onClick: () => onImportAudio('dialogue') },
+                    { label: "Add SFX", onClick: () => onImportAudio('sfx') },
+                    { label: "Add Background", onClick: () => onImportAudio('bgm') },
+                    { label: "Add Section Background Sound", onClick: () => onImportAudio('section-bgm') }
+                  ]
+                },
+                {
+                  label: "Bubbles",
+                  submenu: [
+                    { label: "Add Bubble", onClick: onAddBubble },
+                    { label: "Delete Bubble", disabled: !activeOverlay, onClick: onDeleteBubble },
+                    { label: "Duplicate Bubble", disabled: !activeOverlay, onClick: () => activeOverlay && onDuplicateBubble(activeOverlay) },
+                    {
+                      label: "Remove Bubble Template",
+                      disabled: !activeOverlay || !activeOverlay.bubbleDefId?.startsWith('BD_CUSTOM_'),
+                      onClick: () => {
+                        if (activeOverlay?.bubbleDefId?.startsWith('BD_CUSTOM_')) {
+                          onDeleteBubbleTemplate(activeOverlay.bubbleDefId.replace('BD_CUSTOM_', ''));
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  label: "Transition",
+                  submenu: [
+                    {
+                      label: "Apply to Slide",
+                      submenu: (['fade', 'crossfade', 'fade-black', 'cinematic', 'pixel', 'blur', 'card-slide'] as TransitionType[]).map(t => ({
+                        label: t,
+                        onClick: () => {
+                          if (!currentSlide) return;
+                          updateCurrentSlide({
+                            transition: t,
+                            transitionDuration: stagedDuration,
+                            transitionDirection: stagedDirection,
+                          });
+                          showToast(`Applied ${t}`, "success", 1000);
+                        }
+                      }))
+                    },
+                    {
+                      label: "Apply to Section",
+                      submenu: (['fade', 'crossfade', 'fade-black', 'cinematic', 'pixel', 'blur', 'card-slide'] as TransitionType[]).map(t => ({
+                        label: t,
+                        onClick: () => {
+                          if (!currentSlide || !project) return;
+                          const newSlides = project.data.slides.map((s) => {
+                            if (s.sectionId === currentSlide.sectionId) {
+                              return { ...s, transition: t, transitionDuration: stagedDuration, transitionDirection: stagedDirection };
+                            }
+                            return s;
+                          });
+                          setProject({ ...project, data: { ...project.data, slides: newSlides } });
+                          setIsDirty(true);
+                          showToast(`Applied ${t} to Section`, "success", 1000);
+                        }
+                      }))
+                    }
+                  ]
+                }
+              ];
+            })()}
+          />
+        )
+      }
     </div >
   );
 }
@@ -3774,14 +4125,6 @@ function ZoomPanWrapper({
             // Here:
             if (activeHighlighterRef.current) {
               // We need to update state to trigger re-render if we rely on React render?
-              // But `drawFrame` runs on `useEffect` with no deps (except refs)?
-              // MediaView `drawFrame` is called via `requestAnimationFrame`?
-              // No, MediaView `drawFrame` is defined in `useEffect` and called recursively?
-              // Wait, I missed copying `drawFrame` loop logic in my reading of MediaView!
-              // Step 330: Line 1352 `useEffect(() => { const drawFrame = ... requestAnimationFrame(drawFrame); ... }, [pan, zoom, markerStrokes, highlighterStrokes])`?
-              // No, deps are empty or minimal?
-              // If `drawFrame` uses values from refs or props, it needs to run every frame.
-              // Let's implement robust loop.
             }
           } else if (activeMarkerRef.current) {
             activeMarkerRef.current.points.push(point);
@@ -4623,15 +4966,26 @@ function MediaView({
                 cursor: isActive && !overlay.locked ? "move" : isActive ? "default" : "pointer",
                 pointerEvents: isEditMode && !drawSettings.drawMode ? "auto" : "none",
                 display: "block",
-                backgroundImage: bType !== 'text' ? `url(${overlay.customImageSrc ? toMediaUrl(overlay.customImageSrc) : (def.src || "")})` : 'none',
-                backgroundSize: '100% 100%',
-                backgroundRepeat: 'no-repeat',
                 backgroundColor: bBgColor as string,
                 borderRadius: bType === 'text' ? "8px" : "0",
                 outline: isActive ? "2px solid #55f" : "none",
                 boxShadow: isActive ? "0 0 0 4px rgba(85, 85, 255, 0.4)" : "none",
               }}
             >
+              {/* Bubble Graphic Layer */}
+              {bType !== 'text' && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `url(${overlay.customImageSrc ? toMediaUrl(overlay.customImageSrc) : (def.src || "")})`,
+                  backgroundSize: '100% 100%',
+                  backgroundRepeat: 'no-repeat',
+                  transform: `scale(${overlay.flipX ? -1 : 1}, ${overlay.flipY ? -1 : 1})`,
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                }} />
+              )}
+
               <div style={{
                 position: 'absolute',
                 left: `${textRect.x * 100}%`,
