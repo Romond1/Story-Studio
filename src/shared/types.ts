@@ -195,6 +195,62 @@ export interface BoostPack {
   gamesSequence: SequenceItem[];
 }
 
+export interface BadgeConfig {
+  congratsText?: string;
+  showStudentName?: boolean;
+  showFinalScore?: boolean;
+  fontSize?: number;
+  celebrationDurationMs?: number;
+  confettiCount?: number;
+  // Background setting
+  background?: {
+    assetId?: string;
+    posX?: number;
+    posY?: number;
+    scale?: number;
+    blur?: number;
+    brightness?: number;
+  };
+  tabBackground?: {
+    assetId?: string;
+    posX?: number;
+    posY?: number;
+    scale?: number;
+    blur?: number;
+    brightness?: number;
+  };
+  // Animation settings
+  animation?: {
+    durationMs?: number;
+    rotationDeg?: number;
+    motionType?: 'zoomPop' | 'slideUp' | 'fadeIn' | 'spinPop';
+    colorIntensity?: number;
+    glowIntensity?: number;
+    motionIntensity?: number;
+  };
+  previewShield?: {
+    size?: number;
+    posX?: number;
+    posY?: number;
+    spinDirection?: 'cw' | 'ccw';
+    spinIntensity?: number;
+    visible?: boolean;
+  };
+}
+
+export interface SparkConfig {
+  burstDurationMs: number;
+  particleCount: number;
+  glowIntensity: number;
+  colorIntensity: number;
+  counterVisibleMs: number;
+  scalePopIntensity: number;
+  counterSize: number;
+  sparkSize: number;
+  positionTop: number;
+  positionRight: number;
+}
+
 export interface ProjectData {
   version: ProjectSchemaVersion;
   createdAt: string;
@@ -204,6 +260,9 @@ export interface ProjectData {
   sections: Section[];
   boostPack?: BoostPack;
   bubbleDefinitions?: BubbleTemplate[];
+  sparkConfig?: SparkConfig;
+  badgeConfig?: BadgeConfig;
+  badgeImageAssetId?: string;
 }
 
 export interface ProjectState {

@@ -1,0 +1,416 @@
+.spark-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.spark-anchor {
+    position: absolute;
+    top: 120px;
+    right: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.spark-counter {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: var(--spark-counter-size, 2.5rem);
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5), 0 0 20px var(--spark-glow);
+    animation: spark-counter-pop var(--spark-counter-duration, 2s) ease-out forwards;
+    pointer-events: none;
+    margin-top: 10px;
+}
+
+@keyframes spark-counter-pop {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    10% {
+        transform: scale(var(--spark-pop-intensity, 1.2));
+        opacity: 1;
+    }
+
+    20% {
+        transform: scale(1);
+    }
+
+    80% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+}
+
+.spark-burst-container {
+    position: relative;
+    width: 1px;
+    height: 1px;
+}
+
+.spark-svg-main {
+    position: absolute;
+    left: calc(var(--spark-size, 50px) / -2);
+    top: calc(var(--spark-size, 50px) / -2);
+    width: var(--spark-size, 50px);
+    height: var(--spark-size, 50px);
+    filter: drop-shadow(0 0 8px var(--spark-glow));
+    animation: spark-main-anim var(--spark-burst-duration, 0.8s) ease-out forwards;
+}
+
+@keyframes spark-main-anim {
+    0% {
+        transform: scale(0) rotate(-45deg);
+        opacity: 1;
+    }
+
+    30% {
+        transform: scale(var(--spark-pop-intensity, 1.2)) rotate(0deg);
+    }
+
+    100% {
+        transform: scale(0.8) translateY(-40px);
+        opacity: 0;
+    }
+}
+
+.spark-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--spark-color);
+    box-shadow: 0 0 6px var(--spark-glow);
+    opacity: 0;
+    animation: spark-particle-fire var(--spark-burst-duration, 0.9s) ease-out forwards;
+}
+
+@keyframes spark-particle-fire {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(var(--dx), var(--dy)) scale(0);
+        opacity: 0;
+    }
+}
+
+/* Final Badge Overlay */
+.final-badge-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    overflow: hidden;
+}
+
+.badge-background-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.badge-background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(calc(var(--badge-bg-blur, 0) * 1px)) brightness(var(--badge-bg-brightness, 100%));
+    transform: scale(var(--badge-bg-scale, 1));
+    object-position: var(--badge-bg-posX, 50%) var(--badge-bg-posY, 50%);
+}
+
+.tab-background-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.tab-background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(calc(var(--tab-bg-blur, 0) * 1px)) brightness(var(--tab-bg-brightness, 100%));
+    transform: scale(var(--tab-bg-scale, 1));
+    object-position: var(--tab-bg-posX, 50%) var(--tab-bg-posY, 50%);
+}
+
+.badge-content-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    /* subtle overlay for contrast if bg exists */
+}
+
+/* Base Entrance Animation (will be swapped by motionType) */
+.badge-shield-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+}
+
+.badge-shield-container.anim-zoomPop {
+    animation: badge-zoomPop var(--badge-anim-duration, 0.8s) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.badge-shield-container.anim-slideUp {
+    animation: badge-slideUp var(--badge-anim-duration, 0.8s) ease-out forwards;
+}
+
+.badge-shield-container.anim-fadeIn {
+    animation: badge-fadeIn var(--badge-anim-duration, 0.8s) ease-out forwards;
+}
+
+.badge-shield-container.anim-spinPop {
+    animation: badge-spinPop var(--badge-anim-duration, 0.8s) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes badge-zoomPop {
+    0% {
+        transform: scale(calc(1 - (0.4 * var(--badge-motion-intensity, 1)))) rotate(var(--badge-rotation, 0deg));
+        opacity: 0;
+    }
+
+    70% {
+        transform: scale(calc(1 + (0.1 * var(--badge-motion-intensity, 1)))) rotate(calc(var(--badge-rotation, 0deg) * 0.5));
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes badge-slideUp {
+    0% {
+        transform: translateY(calc(100px * var(--badge-motion-intensity, 1))) rotate(var(--badge-rotation, 0deg));
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes badge-fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes badge-spinPop {
+    0% {
+        transform: scale(0) rotate(calc(var(--badge-rotation, 0deg) - 180deg));
+        opacity: 0;
+    }
+
+    70% {
+        transform: scale(calc(1 + (0.1 * var(--badge-motion-intensity, 1)))) rotate(10deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.badge-shield-svg {
+    width: 240px;
+    /* Slightly smaller SVG */
+    height: auto;
+    filter: drop-shadow(0 0 calc(20px * var(--badge-glow-intensity, 1)) rgba(255, 215, 0, 0.4)) saturate(var(--badge-color-intensity, 100%));
+    animation: badge-pulse 3s infinite ease-in-out;
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+    }
+
+    50% {
+        transform: translateY(-8px);
+        filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.7));
+    }
+}
+
+.badge-text-content {
+    text-align: center;
+    color: #fff;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.badge-congrats {
+    font-size: 1.8rem;
+    /* Slightly smaller */
+    margin: 5px 0 0 0;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    order: 2;
+    /* Ensure it's below name */
+}
+
+.badge-student-name {
+    font-size: 2.2rem;
+    /* Reduced from 3.5rem to fix sizing */
+    margin: 0;
+    color: #ffd700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    order: 1;
+}
+
+.badge-close-btn {
+    margin-top: 20px;
+    padding: 10px 30px;
+    background: #ffd700;
+    color: #000;
+    border: none;
+    border-radius: 99px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.badge-close-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Confetti */
+.confetti-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.confetti-particle {
+    position: absolute;
+    top: -20px;
+    width: 10px;
+    height: 10px;
+    opacity: 0;
+    animation: confetti-fall 2.5s linear infinite;
+}
+
+@keyframes confetti-fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* Preview Shield */
+.preview-shield-wrap {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 50;
+    /* High z-index to stay in front */
+    perspective: 1000px;
+    /* Enable 3D depth */
+}
+
+.preview-shield-svg {
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+    animation: preview-spin var(--preview-spin-speed, 10s) linear infinite;
+    transform-style: preserve-3d;
+}
+
+@keyframes preview-spin {
+    from {
+        transform: rotateY(0deg);
+    }
+
+    to {
+        transform: rotateY(var(--preview-spin-dir, 360deg));
+    }
+}
+
+.badge-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    isolation: isolate;
+    background: transparent;
+    overflow: hidden;
+    grid-row: 1 / -1;
+    grid-column: 1 / -1;
+    z-index: 1;
+    /* Underlays overlays */
+}
+
+.badge-bg-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
+.badge-shield-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.preview-question-mark {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    fill: #5a3e00;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}

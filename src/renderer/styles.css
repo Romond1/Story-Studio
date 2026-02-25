@@ -51,6 +51,18 @@ input {
   display: grid;
   grid-template-columns: 280px 1fr 280px;
   min-height: 0;
+  position: relative;
+}
+
+.content.is-badge-mode .sidebar,
+.content.is-badge-mode .audio-sidebar {
+  background: rgba(20, 20, 20, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.content.is-badge-mode .audio-block {
+  background: rgba(26, 26, 32, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar {
