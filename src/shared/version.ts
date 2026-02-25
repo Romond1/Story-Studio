@@ -1,2 +1,2 @@
 // AG_READWRITE_TEST
-export const BUILD_VERSION = 'V15';
+export const BUILD_VERSION = 'V20';
