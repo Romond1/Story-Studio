@@ -124,6 +124,8 @@ export type LayoutItem = {
     backAlign?: "left" | "center" | "right";
     frontVerticalAlign?: "top" | "center" | "bottom";
     backVerticalAlign?: "top" | "center" | "bottom";
+    shadowOpacity?: number;
+    shadowBlur?: number;
   };
   text?: string;
   frontText?: string;
@@ -345,6 +347,7 @@ export interface ProjectData {
 
 export interface ProjectState {
   folderPath: string;
+  projectPath: string; // Add this
   data: ProjectData;
   lastSavedAt?: string;
 }

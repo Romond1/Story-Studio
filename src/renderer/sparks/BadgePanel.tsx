@@ -12,6 +12,7 @@ interface BadgePanelProps {
 export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onUpdateProject, show = 'both' }) => {
     const {
         totalSparks,
+        sparkCounts,
         badgeChildName,
         setBadgeChildName,
         showFinalSparkBadge,
@@ -205,10 +206,28 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
             </section>
 
             <section style={{ background: '#1a1a24', padding: '12px', borderRadius: '8px', border: '1px solid #334', marginTop: 10 }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.8rem', color: '#aaa' }}>Current Total</div>
-                    <div style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '2px 0' }}>{totalSparks}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#ffd700' }}>SPARKS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5db1', margin: '0 auto 4px' }} />
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{sparkCounts.pink}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#3aa8ff', margin: '0 auto 4px' }} />
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{sparkCounts.blue}</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ffd84a', margin: '0 auto 4px' }} />
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{sparkCounts.gold}</div>
+                        </div>
+                    </div>
+
+                    <div style={{ height: '1px', background: '#334', margin: '4px 0' }} />
+
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#aaa' }}>TOTAL SPARKS</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#fff' }}>{totalSparks}</div>
+                    </div>
                 </div>
             </section>
 
@@ -246,7 +265,7 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
             {/* PREVIEW SHIELD SETTINGS */}
             <div className="collapsible-group">
                 <div style={sectionHeaderStyle} onClick={() => setIsPreviewOpen(!isPreviewOpen)}>
-                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#6fa' }}>Spinning Shield</h3>
+                    <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#6fa' }}>Trophies</h3>
                     <span>{isPreviewOpen ? '▼' : '▶'}</span>
                 </div>
 

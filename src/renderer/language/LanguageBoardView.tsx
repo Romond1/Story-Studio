@@ -453,6 +453,9 @@ export function LanguageBoardView({
                     const fItalic = sd.frontItalic !== undefined ? sd.frontItalic : (sd.italic || false);
                     const bItalic = sd.backItalic !== undefined ? sd.backItalic : (sd.italic || false);
 
+                    const cardShadow = sd.shadowBlur ? `0 ${sd.shadowBlur / 4}px ${sd.shadowBlur}px rgba(0,0,0,${sd.shadowOpacity ?? 0.3})` : "none";
+                    const cardBorder = sd.borderWidth ? `${sd.borderWidth}px solid ${sd.borderColor || "#000000"}` : "none";
+
                     const commonFaceStyle: React.CSSProperties = {
                         position: "absolute",
                         inset: 0,
@@ -462,6 +465,9 @@ export function LanguageBoardView({
                         display: "flex",
                         borderRadius: sd.borderRadius ?? 8,
                         backfaceVisibility: "hidden",
+                        border: cardBorder,
+                        boxShadow: cardShadow,
+                        boxSizing: "border-box",
                     };
 
                     const frontStyle: React.CSSProperties = {
@@ -539,7 +545,7 @@ export function LanguageBoardView({
                             style={{
                                 ...itemStyle,
                                 borderRadius: sd.borderRadius ?? 8,
-                                boxShadow: isEditing ? "0 0 10px rgba(0,0,0,0.2)" : (isEditMode ? "0 2px 4px rgba(0,0,0,0.05)" : "0 4px 6px rgba(0,0,0,0.1)"),
+                                boxShadow: "none", // Shadow is handled by faces for 3D realism
                                 userSelect: "none",
                                 perspective: "1000px",
                             }}

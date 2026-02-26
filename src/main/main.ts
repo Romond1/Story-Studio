@@ -26,6 +26,7 @@ protocol.registerSchemesAsPrivileged([
 let mainWindow: BrowserWindow | null = null;
 let creatingMainWindow = false;
 let currentProjectFolder: string | null = null;
+let currentProjectFile: string | null = null;
 
 const imageExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
 const videoExts = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi']);
@@ -61,11 +62,17 @@ async function writeProjectAtomic(folder: string, data: ProjectData): Promise<st
   return now;
 }
 
-async function loadProject(folder: string): Promise<ProjectState> {
-  const raw = await fs.readFile(projectPath(folder), 'utf8');
+async function loadProject(filePath: string): Promise<ProjectState> {
+  const raw = await fs.readFile(filePath, 'utf8');
   const parsed = JSON.parse(raw) as ProjectData;
   const data = normalizeProjectData(parsed);
-  return { folderPath: folder, data, lastSavedAt: data.updatedAt };
+  const folder = path.dirname(filePath);
+  return {
+    folderPath: folder,
+    projectPath: filePath,
+    data,
+    lastSavedAt: data.updatedAt
+  };
 }
 
 
@@ -426,28 +433,36 @@ ipcMain.handle('project:create', async () => {
 
   await writeProjectAtomic(folderPath, data);
   currentProjectFolder = folderPath;
-  return { folderPath, data, lastSavedAt: now } satisfies ProjectState;
+  currentProjectFile = projectPath(folderPath);
+
+  return {
+    folderPath,
+    projectPath: currentProjectFile,
+    data,
+    lastSavedAt: now
+  } satisfies ProjectState;
 });
 
 ipcMain.handle('project:open', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
-    title: 'Open Project Folder',
-    properties: ['openDirectory']
+    title: 'Open Project File',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Story Studio Project', extensions: ['json'] }
+    ]
   });
   if (canceled || filePaths.length === 0) return null;
 
-  const folderPath = filePaths[0];
+  const filePath = filePaths[0];
+  const folderPath = path.dirname(filePath);
+
+  // Ensure assets folder exists in the same directory as the chosen file
   await ensureProjectFolder(folderPath);
 
-  const pjPath = projectPath(folderPath);
-  try {
-    await fs.access(pjPath);
-  } catch {
-    throw new Error('project.json not found in selected folder');
-  }
-
   currentProjectFolder = folderPath;
-  return loadProject(folderPath);
+  currentProjectFile = filePath;
+
+  return loadProject(filePath);
 });
 
 ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> => {
@@ -464,7 +479,8 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
 
   const importedAssets: AssetItem[] = [];
   const createdSlides: Slide[] = [];
-  const defaultSectionId = (await loadProject(currentProjectFolder)).data.sections[0]?.id ?? randomUUID();
+  if (!currentProjectFile) throw new Error('No project file path tracked');
+  const defaultSectionId = (await loadProject(currentProjectFile)).data.sections[0]?.id ?? randomUUID();
 
   for (const sourcePath of filePaths) {
     const ext = path.extname(sourcePath).toLowerCase();
@@ -504,9 +520,65 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
 });
 
 ipcMain.handle('project:save', async (_, data: ProjectData) => {
-  if (!currentProjectFolder) throw new Error('Create or open a project first');
-  const lastSavedAt = await writeProjectAtomic(currentProjectFolder, data);
-  return { lastSavedAt };
+  if (!currentProjectFile) throw new Error('No project file path tracked');
+
+  const now = new Date().toISOString();
+  const finalData: ProjectData = { ...data, updatedAt: now };
+
+  // Use atomic write but to the specific file
+  const tmpPath = `${currentProjectFile}.tmp`;
+  await fs.writeFile(tmpPath, JSON.stringify(finalData, null, 2), 'utf8');
+  await fs.rename(tmpPath, currentProjectFile);
+
+  return { lastSavedAt: now };
+});
+
+ipcMain.handle('project:save-as', async (_, data: ProjectData) => {
+  const { canceled, filePath } = await dialog.showSaveDialog(getWindow(), {
+    title: 'Save Project As',
+    defaultPath: 'StoryStudioProject.json',
+    filters: [{ name: 'JSON', extensions: ['json'] }]
+  });
+
+  if (canceled || !filePath) return { success: false, cancelled: true };
+
+  const oldProjectFolder = currentProjectFolder;
+  const newProjectFolder = path.dirname(filePath);
+
+  // If we are saving to a new folder, copy the assets folder recursively
+  if (oldProjectFolder && path.resolve(oldProjectFolder) !== path.resolve(newProjectFolder)) {
+    const oldAssetsPath = path.join(oldProjectFolder, ASSETS_DIR);
+    const newAssetsPath = path.join(newProjectFolder, ASSETS_DIR);
+
+    try {
+      const assetsExist = await fs.stat(oldAssetsPath).then(() => true).catch(() => false);
+      if (assetsExist) {
+        // Ensure the target assets directory exists
+        await fs.mkdir(newAssetsPath, { recursive: true });
+
+        // Use fs.cp for recursive copying (available in Node 16.7+)
+        // Electron usually has a modern enough Node version for this.
+        if (typeof (fs as any).cp === 'function') {
+          await (fs as any).cp(oldAssetsPath, newAssetsPath, { recursive: true });
+        } else {
+          // Fallback logic could be added here if needed, 
+          // but Electron v15+ uses Node v16+, so cp should be available.
+          console.warn('fs.cp not available, assets might not have been copied recursively');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to copy assets during Save As:', err);
+    }
+  }
+
+  const now = new Date().toISOString();
+  const finalData: ProjectData = { ...data, updatedAt: now };
+  await fs.writeFile(filePath, JSON.stringify(finalData, null, 2), 'utf8');
+
+  currentProjectFile = filePath;
+  currentProjectFolder = newProjectFolder;
+
+  return { success: true, filePath, lastSavedAt: now };
 });
 
 ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => {

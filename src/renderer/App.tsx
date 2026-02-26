@@ -40,6 +40,10 @@ import { SparkOverlay } from "./sparks/SparkOverlay";
 import { BadgePanel } from "./sparks/BadgePanel";
 import { FinalBadgeOverlay } from "./sparks/FinalBadgeOverlay";
 
+import starPink from "./sparks/assets/star_pink.png";
+import starGold from "./sparks/assets/star_gold.png";
+import starBlue from "./sparks/assets/star_blue.png";
+
 // CLIP PLAYER COMPONENT
 function AudioClipPlayer({
   clip,
@@ -466,60 +470,69 @@ const BadgeTabBackground = ({ project, toMediaUrl }: { project: any, toMediaUrl:
   );
 };
 
-const PreviewShield = () => {
-  const { badgeConfig, totalSparks } = useSparks();
+const PreviewTrophies = () => {
+  const { badgeConfig, sparkCounts } = useSparks();
   const ps = badgeConfig.previewShield || {};
 
   if (!ps.visible) return null;
 
+  const trophySize = ps.size ?? 200;
   const spinDir = ps.spinDirection === 'ccw' ? -360 : 360;
-  // Intensity 100% = 10s period. 200% = 5s period.
-  const spinSpeed = ps.spinIntensity ? (1000 / ps.spinIntensity) * 10 : 10;
+  // Base period calculation similar to shield:
+  // 100% intensity = 2.2s base for mid trophy.
+  const baseSpeed = ps.spinIntensity ? (100 / ps.spinIntensity) * 2.2 : 2.2;
 
-  const style = {
-    left: `${ps.posX ?? 50}%`,
-    top: `${ps.posY ?? 50}%`,
-    transform: 'translate(-50%, -50%)',
-    width: ps.size ?? 200,
-    height: (ps.size ?? 200) * 1.2,
-    perspective: '1000px',
-    '--preview-spin-speed': `${spinSpeed}s`,
-    '--preview-spin-dir': `${spinDir}deg`,
+  const containerStyle = {
+    '--trophy-pos-x': `${ps.posX ?? 50}%`,
+    '--trophy-pos-y': `${ps.posY ?? 50}%`,
+    '--trophy-spin-speed': `${baseSpeed}s`,
+    '--trophy-spin-dir': `${spinDir}deg`,
   } as React.CSSProperties;
 
-  const showScore = badgeConfig.showFinalScore;
+  const Trophy = ({ variant }: { variant: 'pink' | 'blue' | 'gold' }) => {
+    const starImg = variant === 'pink' ? starPink : variant === 'blue' ? starBlue : starGold;
+    const count = sparkCounts[variant] ?? 0;
+    const showScore = badgeConfig.showFinalScore;
+
+    return (
+      <div className={`badge-trophy ${variant}`} style={{ width: trophySize, height: trophySize }}>
+        <div className="badge-trophy-svg-wrap">
+          <img
+            src={starImg}
+            className="trophy-star-img"
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            alt={variant}
+          />
+          <svg
+            viewBox="0 0 100 100"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'visible', pointerEvents: 'none' }}
+          >
+            <text
+              x="50"
+              y="55"
+              className="trophy-question-text"
+              fontSize={showScore ? "24" : "28"}
+            >
+              {showScore ? count : "?"}
+            </text>
+          </svg>
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="preview-shield-wrap" style={style}>
-      <svg
-        className="preview-shield-svg"
-        viewBox="0 0 100 120"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{
-          width: '100%',
-          height: '100%',
-          transformStyle: 'preserve-3d'
-        }}
-      >
-        <path
-          d="M50 5 L90 20 L90 60 C90 85 70 105 50 115 C30 105 10 85 10 60 L10 20 L50 5Z"
-          fill="#FFD700"
-          stroke="#B8860B"
-          strokeWidth="3"
-        />
-        <text
-          x="50"
-          y="75"
-          textAnchor="middle"
-          className="preview-question-mark"
-          fontSize={showScore ? "45" : "60"}
-        >
-          {showScore ? totalSparks : "?"}
-        </text>
-      </svg>
+    <div className="badge-trophies-layer">
+      <div className="badge-trophies" style={containerStyle}>
+        <Trophy variant="pink" />
+        <Trophy variant="blue" />
+        <Trophy variant="gold" />
+      </div>
     </div>
   );
 };
+
 
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
@@ -1413,6 +1426,13 @@ export function App() {
   const onSave = async () => {
     if (!ensureEditMode(appMode, "save")) return;
     if (!project) return;
+
+    // If we don't have a specific file path yet, treat Save as Save As
+    if (!project.projectPath) {
+      await onSaveAs();
+      return;
+    }
+
     try {
       const response = await window.appApi.saveProject(project.data);
       if (!response) return;
@@ -1426,6 +1446,29 @@ export function App() {
       });
       setIsDirty(false);
       showToast("Saved", "success", 2000);
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const onSaveAs = async () => {
+    if (!ensureEditMode(appMode, "save as")) return;
+    if (!project) return;
+    try {
+      const response = await window.appApi.saveProjectAs(project.data);
+      if (!response || !response.success || !response.filePath) return;
+
+      setProject({
+        ...project,
+        projectPath: response.filePath,
+        data: {
+          ...project.data,
+          updatedAt: response.lastSavedAt!,
+        },
+        lastSavedAt: response.lastSavedAt,
+      });
+      setIsDirty(false);
+      showToast("Saved As: " + response.filePath.split(/[\\\/]/).pop(), "success", 2000);
     } catch (err) {
       setError((err as Error).message);
     }
@@ -2063,6 +2106,9 @@ export function App() {
           <button onClick={onSave} disabled={!project}>
             Save
           </button>
+          <button onClick={onSaveAs} disabled={!project}>
+            Save As...
+          </button>
           {appMode === "edit" && <SparkLab />}
           {selectedSectionType === "break" && (
             <button
@@ -2690,9 +2736,7 @@ export function App() {
                     />
                   ) : null}
                 </div>
-                <div className="badge-shield-layer">
-                  <PreviewShield />
-                </div>
+                <PreviewTrophies />
               </div>
             ) : selectedSectionType === "break" && selectedSection ? (
               <>

@@ -8,6 +8,7 @@ const api = {
   importAudio: (): Promise<AssetItem[] | null> => ipcRenderer.invoke('project:import-audio'),
   importBubbleTemplate: (): Promise<AssetItem | null> => ipcRenderer.invoke('project:import-bubble-template'),
   saveProject: (data: ProjectData): Promise<{ lastSavedAt: string } | null> => ipcRenderer.invoke('project:save', data),
+  saveProjectAs: (data: ProjectData): Promise<{ success: boolean; filePath?: string; lastSavedAt?: string; cancelled?: boolean } | null> => ipcRenderer.invoke('project:save-as', data),
   forceClose: () => ipcRenderer.send('app:force-close'),
   onRequestClose: (callback: () => void) => {
     ipcRenderer.on('app:request-close', () => callback());

@@ -453,6 +453,26 @@ export function LanguageToolsPanel({
                                         Rounded Corners ({selectedLayout.styleDefaults?.borderRadius || 8}px)
                                         <input type="range" min="0" max="100" step="1" value={selectedLayout.styleDefaults?.borderRadius || 8} onChange={e => updateLayoutStyle(selectedLayout.id, { borderRadius: parseInt(e.target.value) })} />
                                     </label>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                        <label className="lang-label">
+                                            Border Width ({selectedLayout.styleDefaults?.borderWidth || 0}px)
+                                            <input type="range" min="0" max="20" step="1" value={selectedLayout.styleDefaults?.borderWidth || 0} onChange={e => updateLayoutStyle(selectedLayout.id, { borderWidth: parseInt(e.target.value) })} />
+                                        </label>
+                                        <label className="lang-label">
+                                            Border Color
+                                            <input type="color" value={selectedLayout.styleDefaults?.borderColor || "#000000"} onChange={e => updateLayoutStyle(selectedLayout.id, { borderColor: e.target.value })} />
+                                        </label>
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                        <label className="lang-label">
+                                            Shadow Blur ({selectedLayout.styleDefaults?.shadowBlur || 0}px)
+                                            <input type="range" min="0" max="50" step="1" value={selectedLayout.styleDefaults?.shadowBlur || 0} onChange={e => updateLayoutStyle(selectedLayout.id, { shadowBlur: parseInt(e.target.value) })} />
+                                        </label>
+                                        <label className="lang-label">
+                                            Shadow Opacity ({selectedLayout.styleDefaults?.shadowOpacity || 0})
+                                            <input type="range" min="0" max="1" step="0.1" value={selectedLayout.styleDefaults?.shadowOpacity || 0} onChange={e => updateLayoutStyle(selectedLayout.id, { shadowOpacity: parseFloat(e.target.value) })} />
+                                        </label>
+                                    </div>
                                     <hr style={{ width: "100%", border: "0.5px solid #444", margin: "4px 0" }} />
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                                         <label className="lang-label">

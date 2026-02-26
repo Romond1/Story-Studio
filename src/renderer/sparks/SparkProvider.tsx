@@ -61,8 +61,15 @@ export const DEFAULT_BADGE_CONFIG: BadgeConfig = {
     }
 };
 
+export interface SparkCounts {
+    gold: number;
+    blue: number;
+    pink: number;
+}
+
 interface SparkContextType {
     totalSparks: number;
+    sparkCounts: SparkCounts;
     activeBursts: BurstInfo[];
     triggerSpark: (variant: SparkVariant) => void;
     showFinalSparkBadge: () => void;
@@ -97,7 +104,11 @@ interface SparkProviderProps {
 }
 
 export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, onConfigChange, badgeConfig, onBadgeConfigChange }) => {
-    const [totalSparks, setTotalSparks] = useState(0);
+    const [sparkCounts, setSparkCounts] = useState<SparkCounts>({
+        gold: 0,
+        blue: 0,
+        pink: 0
+    });
     const [activeBursts, setActiveBursts] = useState<BurstInfo[]>([]);
     const [isBadgeVisible, setIsBadgeVisible] = useState(false);
     const [localSparkConfig, setLocalSparkConfig] = useState<SparkConfig>(DEFAULT_SPARK_CONFIG);
@@ -107,6 +118,8 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, 
 
     const currentConfig = config || localSparkConfig;
     const currentBadgeConfig = badgeConfig || localBadgeConfig;
+
+    const totalSparks = sparkCounts.gold + sparkCounts.blue + sparkCounts.pink;
 
     const setSparkConfig = useCallback((updates: Partial<SparkConfig>) => {
         if (onConfigChange) {
@@ -137,7 +150,10 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, 
 
         // Add burst
         setActiveBursts((prev) => [...prev, { id, variant }]);
-        setTotalSparks((prev) => prev + 1);
+        setSparkCounts(prev => ({
+            ...prev,
+            [variant]: prev[variant] + 1
+        }));
 
         // Auto cleanup burst after animation duration (+ some buffer)
         setTimeout(() => {
@@ -154,7 +170,7 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, 
     }, []);
 
     const resetSparks = useCallback(() => {
-        setTotalSparks(0);
+        setSparkCounts({ gold: 0, blue: 0, pink: 0 });
         setActiveBursts([]);
     }, []);
 
@@ -162,6 +178,7 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, 
         <SparkContext.Provider
             value={{
                 totalSparks,
+                sparkCounts,
                 activeBursts,
                 triggerSpark,
                 showFinalSparkBadge,

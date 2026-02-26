@@ -6,12 +6,10 @@ import './sparkStyles.css';
 export const SparkOverlay: React.FC = () => {
     const { activeBursts, totalSparks, sparkConfig } = useSparks();
     const [showCounter, setShowCounter] = useState(false);
-    const [lastTotal, setLastTotal] = useState(0);
 
     useEffect(() => {
         if (totalSparks > 0) {
             setShowCounter(false); // Reset animation
-            setLastTotal(totalSparks);
             // Brief delay to restart CSS animation properly
             const timer = setTimeout(() => setShowCounter(true), 10);
             return () => clearTimeout(timer);
@@ -24,9 +22,10 @@ export const SparkOverlay: React.FC = () => {
             const timer = setTimeout(() => setShowCounter(false), sparkConfig.counterVisibleMs);
             return () => clearTimeout(timer);
         }
-    }, [showCounter, totalSparks, sparkConfig.counterVisibleMs]);
+    }, [showCounter, sparkConfig.counterVisibleMs]);
 
     const latestVariant = activeBursts.length > 0 ? activeBursts[activeBursts.length - 1].variant : 'gold';
+
 
     const COLORS_RGB = {
         gold: '255, 215, 0',
@@ -58,7 +57,7 @@ export const SparkOverlay: React.FC = () => {
                             '--spark-counter-size': `${sparkConfig.counterSize}rem`,
                         } as any}
                     >
-                        {lastTotal}
+                        +1
                     </div>
                 )}
             </div>

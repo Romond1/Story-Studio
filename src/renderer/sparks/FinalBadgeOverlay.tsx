@@ -10,7 +10,11 @@ interface FinalBadgeOverlayProps {
 }
 
 export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [], getMediaUrl = (s) => s }) => {
-    const { isBadgeVisible, hideFinalSparkBadge, totalSparks, badgeChildName, badgeConfig } = useSparks();
+    const { isBadgeVisible, hideFinalSparkBadge, sparkCounts, badgeChildName, badgeConfig } = useSparks();
+    const pinkCount = sparkCounts?.pink || 0;
+    const blueCount = sparkCounts?.blue || 0;
+    const goldCount = sparkCounts?.gold || 0;
+    const total = pinkCount + blueCount + goldCount;
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,7 +48,7 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
         color: ['#FFD700', '#00BFFF', '#FF69B4', '#FFFFFF'][Math.floor(Math.random() * 4)],
     }));
 
-    const congratsText = (badgeConfig.congratsText || "Today you generated {n} Sparks").replace('{n}', String(totalSparks));
+    const congratsText = (badgeConfig.congratsText || "Today you generated {n} Sparks").replace('{n}', String(total));
 
     // Background config
     const bg = badgeConfig.background || {};
@@ -69,6 +73,24 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
         '--badge-bg-posY': `${bg.posY ?? 50}%`,
     } as React.CSSProperties;
 
+    const SparkIcon = ({ variant }: { variant: 'pink' | 'blue' | 'gold' }) => {
+        const colors = {
+            pink: '#FF69B4',
+            blue: '#00BFFF',
+            gold: '#FFD700'
+        };
+        return (
+            <svg
+                className={`badge-spark-icon spark-${variant}`}
+                viewBox="0 0 24 24"
+                fill={colors[variant]}
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+            </svg>
+        );
+    };
+
     return (
         <div className="final-badge-backdrop" style={overlayStyle}>
             {bgUrl && (
@@ -92,47 +114,34 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
                     ))}
                 </div>
 
-                <div className={`badge-shield-container anim-${motionType}`}>
-                    <div className="badge-shield-wrapper">
-                        <svg
-                            className="badge-shield-svg"
-                            viewBox="0 0 100 120"
-                            xmlns="http://www.w3.org/2000/svg"
-                        >
-                            <path
-                                d="M50 5 L90 20 L90 60 C90 85 70 105 50 115 C30 105 10 85 10 60 L10 20 L50 5Z"
-                                fill="#FFD700"
-                                stroke="#B8860B"
-                                strokeWidth="3"
-                            />
-                            <path
-                                d="M50 15 L80 27 L80 60 C80 80 65 95 50 103 C35 95 20 80 20 60 L20 27 L50 15Z"
-                                fill="#FFF"
-                                opacity="0.2"
-                            />
-                            <text
-                                x="50"
-                                y="75"
-                                textAnchor="middle"
-                                fill="#5a3e00"
-                                fontSize="30"
-                                fontWeight="900"
-                                fontFamily="Outfit"
-                            >
-                                {totalSparks}
-                            </text>
-                            <text
-                                x="50"
-                                y="45"
-                                textAnchor="middle"
-                                fill="#5a3e00"
-                                fontSize="8"
-                                fontWeight="bold"
-                                fontFamily="Outfit"
-                            >
-                                SPARKS
-                            </text>
-                        </svg>
+                <div className={`badge-ceremony-container anim-${motionType}`}>
+                    {/* Subtle shield background */}
+                    <svg className="badge-subtle-shield" viewBox="0 0 100 120">
+                        <path
+                            d="M50 5 L90 20 L90 60 C90 85 70 105 50 115 C30 105 10 85 10 60 L10 20 L50 5Z"
+                            fill="#FFD700"
+                            opacity="0.05"
+                        />
+                    </svg>
+
+                    <div className="badge-spark-rows">
+                        <div className="badge-spark-row pink">
+                            <SparkIcon variant="pink" />
+                            <span className="badge-count">x {pinkCount}</span>
+                        </div>
+                        <div className="badge-spark-row blue">
+                            <SparkIcon variant="blue" />
+                            <span className="badge-count">x {blueCount}</span>
+                        </div>
+                        <div className="badge-spark-row gold">
+                            <SparkIcon variant="gold" />
+                            <span className="badge-count">x {goldCount}</span>
+                        </div>
+                    </div>
+
+                    <div className="badge-total-box">
+                        <div className="badge-total-label">TOTAL</div>
+                        <div className="badge-total-value">{total}</div>
                     </div>
 
                     <div className="badge-text-content">
