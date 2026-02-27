@@ -679,6 +679,16 @@ export function App() {
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, items?: MenuItem[] } | null>(null);
   const [editingSlideTitleId, setEditingSlideTitleId] = useState<string | null>(null);
   const [draftSlideTitle, setDraftSlideTitle] = useState("");
+  const [breakMediaInteraction, setBreakMediaInteraction] = useState<{
+    type: 'drag' | 'resize';
+    sectionId: string;
+    mediaId: string;
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+    initialScale: number;
+  } | null>(null);
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     tool: "highlighter",
     drawMode: false,
@@ -710,6 +720,8 @@ export function App() {
     const interval = setInterval(() => setTimerNow(Date.now()), 100);
     return () => clearInterval(interval);
   }, [timerState.isRunning]);
+
+
 
   const toggleTimer = () => {
     if (timerState.isRunning) {
@@ -1411,6 +1423,9 @@ export function App() {
   };
 
   const handleFileDrop = async (e: React.DragEvent) => {
+    const isFileDrag = e.dataTransfer?.types?.includes("Files") || (e.dataTransfer?.files && e.dataTransfer.files.length > 0);
+    if (!isFileDrag) return;
+
     e.preventDefault();
     setIsDragging(false);
 
@@ -1440,6 +1455,9 @@ export function App() {
   };
 
   const handleDragOver = (e: React.DragEvent) => {
+    const isFileDrag = e.dataTransfer?.types?.includes("Files") || (e.dataTransfer?.files && e.dataTransfer.files.length > 0);
+    if (!isFileDrag) return;
+
     e.preventDefault();
     if (appMode === 'edit') {
       e.dataTransfer.dropEffect = 'copy';
@@ -1617,6 +1635,49 @@ export function App() {
     setIsDirty(true);
   };
 
+  useEffect(() => {
+    if (!breakMediaInteraction) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const { sectionId, mediaId, type, startX, startY, initialX, initialY, initialScale } = breakMediaInteraction;
+      const currentZoom = selectedSection?.breakViewport?.zoom || 1;
+
+      const deltaX = (e.clientX - startX) / currentZoom;
+      const deltaY = (e.clientY - startY) / currentZoom;
+
+      if (type === 'drag') {
+        const nextX = initialX + deltaX;
+        const nextY = initialY + deltaY;
+
+        updateSection(sectionId, {
+          breakMedia: (selectedSection?.breakMedia || []).map(m =>
+            m.id === mediaId ? { ...m, x: nextX, y: nextY } : m
+          )
+        });
+      } else {
+        // Resize by dragging bottom-right corner
+        const nextScale = initialScale + (deltaX + deltaY) / 400;
+
+        updateSection(sectionId, {
+          breakMedia: (selectedSection?.breakMedia || []).map(m =>
+            m.id === mediaId ? { ...m, scale: Math.max(0.1, nextScale) } : m
+          )
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setBreakMediaInteraction(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [breakMediaInteraction, selectedSection?.breakMedia, selectedSection?.breakViewport?.zoom]);
+
   const onAddSection = () => {
     if (!ensureEditMode(appMode, "add section")) return;
     if (!project) return;
@@ -1667,6 +1728,61 @@ export function App() {
     });
     setSelectedSectionId(nextBreak.id);
     setIsDirty(true);
+  };
+
+  const onDuplicateBreak = () => {
+    if (!ensureEditMode(appMode, "duplicate break")) return;
+    if (!project || !selectedSection || selectedSection.type !== 'break') return;
+
+    const newSectionId = crypto.randomUUID();
+    const slidesToDuplicate = project.data.slides.filter(s => s.sectionId === selectedSection.id);
+
+    // Map of old slide IDs to new slide IDs
+    const slideIdMap = new Map<string, string>();
+    const newSlides = slidesToDuplicate.map(s => {
+      const newId = crypto.randomUUID();
+      slideIdMap.set(s.id, newId);
+      return {
+        ...s,
+        id: newId,
+        sectionId: newSectionId,
+        // Also clone overlays/dialogue/sfx/bgm if they have IDs? 
+        // Slides and overlays seem to use simple objects, but overlays might have IDs.
+        overlays: (s.overlays || []).map(o => ({ ...o, id: crypto.randomUUID() })),
+      };
+    });
+
+    const nextSections = [...project.data.sections];
+    const originalIndex = nextSections.findIndex(s => s.id === selectedSection.id);
+
+    const nextBreak: Section = {
+      ...selectedSection,
+      id: newSectionId,
+      name: `${selectedSection.name} (Copy)`,
+      breakMedia: (selectedSection.breakMedia || []).map(m => {
+        const newSlideId = slideIdMap.get(m.slideId) || m.slideId;
+        return { ...m, id: `img-${Date.now()}-${Math.random()}`, slideId: newSlideId };
+      }),
+    };
+
+    // Insert after the original break
+    if (originalIndex !== -1) {
+      nextSections.splice(originalIndex + 1, 0, nextBreak);
+    } else {
+      nextSections.push(nextBreak);
+    }
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        sections: nextSections,
+        slides: [...project.data.slides, ...newSlides],
+      },
+    });
+    setSelectedSectionId(nextBreak.id);
+    setIsDirty(true);
+    showToast("Break duplicated", "success");
   };
 
   const getNextBubbleId = () => {
@@ -2545,36 +2661,54 @@ export function App() {
                                   const slide = project!.data.slides[slideIndex];
                                   const asset = assetsById.get(slide.assetId);
                                   const isDragging = draggedSlideIndex === slideIndex;
-                                  const isDragOver =
-                                    dragOverSlideIndex === slideIndex;
                                   const isSlideSelected = selectedSlideIds.has(
                                     slide.id,
                                   );
                                   const isCurrent = slideIndex === currentIndex;
+                                  const sectionSlidesCount = sectionSlideIndices.get(section.id)?.length || 0;
 
                                   return (
                                     <li
                                       key={slide.id}
-                                      className={
-                                        isDragOver
-                                          ? "slide-row drag-over"
-                                          : "slide-row"
-                                      }
+                                      className="slide-row"
+                                      style={{ position: 'relative' }}
                                       onDragOver={(event) => {
+                                        const isFileDrag = event.dataTransfer?.types?.includes("Files") || (event.dataTransfer?.files && event.dataTransfer.files.length > 0);
+                                        if (isFileDrag) return;
+
                                         event.preventDefault();
                                         if (draggedSlideIndex !== null) {
-                                          setDragOverSlideIndex(slideIndex);
+                                          const rect = event.currentTarget.getBoundingClientRect();
+                                          const isAfter = (event.clientY - rect.top) > rect.height / 2;
+                                          setDragOverSlideIndex(isAfter ? slideIndex + 1 : slideIndex);
                                         }
                                       }}
                                       onDrop={(event) => {
+                                        const isFileDrag = event.dataTransfer?.types?.includes("Files") || (event.dataTransfer?.files && event.dataTransfer.files.length > 0);
+                                        if (isFileDrag) return;
+
                                         event.preventDefault();
+                                        setDragOverSlideIndex(null);
                                         if (draggedSlideIndex === null) return;
-                                        reorderSlidesWithinSection(
-                                          draggedSlideIndex,
-                                          slideIndex,
-                                        );
+
+                                        const rect = event.currentTarget.getBoundingClientRect();
+                                        const isAfter = (event.clientY - rect.top) > rect.height / 2;
+                                        const targetIndex = isAfter ? slideIndex + 1 : slideIndex;
+
+                                        if (targetIndex !== draggedSlideIndex && targetIndex !== draggedSlideIndex + 1) {
+                                          reorderSlidesWithinSection(
+                                            draggedSlideIndex,
+                                            targetIndex,
+                                          );
+                                        }
                                       }}
                                     >
+                                      {dragOverSlideIndex === slideIndex && (
+                                        <div className="drop-indicator" style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 2, background: '#4488ff', boxShadow: '0 0 4px #4488ff', zIndex: 10, pointerEvents: 'none' }} />
+                                      )}
+                                      {dragOverSlideIndex === slideIndex + 1 && slideIndex === sectionSlidesCount - 1 && (
+                                        <div className="drop-indicator" style={{ position: 'absolute', bottom: -1, left: 0, right: 0, height: 2, background: '#4488ff', boxShadow: '0 0 4px #4488ff', zIndex: 10, pointerEvents: 'none' }} />
+                                      )}
                                       <button
                                         draggable
                                         className={`slide-btn ${isSlideSelected ? "selected" : ""} ${isCurrent && topMode === 'story' ? "current-slide" : ""}`}
@@ -2949,7 +3083,24 @@ export function App() {
                   <div style={{ position: "absolute", top: 10, right: 10, width: "300px", maxHeight: "calc(100% - 20px)", height: "auto", backgroundColor: "rgba(30,30,35,0.98)", border: "1px solid #444", borderRadius: "8px", zIndex: 60, padding: "12px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", color: "#ddd", boxShadow: "-2px 0 10px rgba(0,0,0,0.5)", boxSizing: "border-box" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #444", paddingBottom: "8px", margin: 0 }}>
                       <h3 style={{ margin: 0, color: "#fff" }}>Break Editor</h3>
-                      <button onClick={() => setShowBreakEditor(false)} style={{ background: "transparent", border: "none", color: "#aaa", cursor: "pointer", fontSize: "16px", padding: "0 4px" }}>✕</button>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button
+                          onClick={onDuplicateBreak}
+                          style={{
+                            background: "#444",
+                            color: "#fff",
+                            border: "1px solid #666",
+                            borderRadius: 4,
+                            padding: "4px 8px",
+                            cursor: "pointer",
+                            fontSize: "0.75rem",
+                            fontWeight: "normal"
+                          }}
+                        >
+                          Duplicate
+                        </button>
+                        <button onClick={() => setShowBreakEditor(false)} style={{ background: "transparent", border: "none", color: "#aaa", cursor: "pointer", fontSize: "16px", padding: "0 4px" }}>✕</button>
+                      </div>
                     </div>
 
                     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -3349,18 +3500,84 @@ export function App() {
                         const asset = slide ? assetsById.get(slide.assetId) : null;
                         if (!asset) return null;
                         const src = toMediaUrl(asset.relativePath);
+                        const isInteracting = breakMediaInteraction?.mediaId === m.id;
                         return (
-                          <img
+                          <div
                             key={m.id}
-                            src={src}
-                            className="break-stage-thumb"
                             style={{
-                              objectFit: m.fit,
+                              position: 'absolute',
+                              left: 0,
+                              top: 0,
+                              transform: `translate(${m.x ?? 0}px, ${m.y ?? 0}px) scale(${m.scale ?? 1})`,
+                              transformOrigin: 'top left',
+                              cursor: appMode === 'edit' ? 'move' : 'default',
                               width: selectedSection.thumbnailSize ?? 200,
                               height: (selectedSection.thumbnailSize ?? 200) * 0.5625,
-                              transform: `translate(${m.x ?? 0}px, ${m.y ?? 0}px) scale(${m.scale ?? 1})`,
+                              zIndex: isInteracting ? 50 : 10,
+                              borderRadius: 8,
+                              border: (appMode === 'edit' && isInteracting) ? '2px solid #4488ff' : 'none',
+                              boxSizing: 'border-box'
                             }}
-                          />
+                            onMouseDown={(e) => {
+                              if (appMode !== 'edit' || e.button !== 0) return;
+                              e.stopPropagation();
+                              setBreakMediaInteraction({
+                                type: 'drag',
+                                sectionId: selectedSection.id,
+                                mediaId: m.id,
+                                startX: e.clientX,
+                                startY: e.clientY,
+                                initialX: m.x ?? 0,
+                                initialY: m.y ?? 0,
+                                initialScale: m.scale ?? 1,
+                              });
+                            }}
+                          >
+                            <img
+                              src={src}
+                              className="break-stage-thumb"
+                              style={{
+                                objectFit: m.fit,
+                                width: '100%',
+                                height: '100%',
+                                pointerEvents: 'none',
+                                display: 'block',
+                                margin: 0,
+                                padding: 0,
+                                boxShadow: isInteracting ? '0 8px 24px rgba(0,0,0,0.5)' : undefined
+                              }}
+                            />
+                            {appMode === 'edit' && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  right: -6,
+                                  bottom: -6,
+                                  width: 12,
+                                  height: 12,
+                                  background: '#4488ff',
+                                  border: '2px solid #fff',
+                                  cursor: 'nwse-resize',
+                                  borderRadius: '50%',
+                                  zIndex: 100,
+                                }}
+                                onMouseDown={(e) => {
+                                  if (appMode !== 'edit' || e.button !== 0) return;
+                                  e.stopPropagation();
+                                  setBreakMediaInteraction({
+                                    type: 'resize',
+                                    sectionId: selectedSection.id,
+                                    mediaId: m.id,
+                                    startX: e.clientX,
+                                    startY: e.clientY,
+                                    initialX: m.x ?? 0,
+                                    initialY: m.y ?? 0,
+                                    initialScale: m.scale ?? 1,
+                                  });
+                                }}
+                              />
+                            )}
+                          </div>
                         );
                       })}
                     </div>
