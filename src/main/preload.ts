@@ -1,15 +1,17 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { AssetItem, ImportResult, ProjectData, ProjectState } from '../shared/types';
 
 const api = {
   createProject: (): Promise<ProjectState | null> => ipcRenderer.invoke('project:create'),
   openProject: (): Promise<ProjectState | null> => ipcRenderer.invoke('project:open'),
   importMedia: (): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-media'),
+  importFiles: (paths: string[]): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-files', paths),
   importAudio: (): Promise<AssetItem[] | null> => ipcRenderer.invoke('project:import-audio'),
   importBubbleTemplate: (): Promise<AssetItem | null> => ipcRenderer.invoke('project:import-bubble-template'),
   saveProject: (data: ProjectData): Promise<{ lastSavedAt: string } | null> => ipcRenderer.invoke('project:save', data),
   saveProjectAs: (data: ProjectData): Promise<{ success: boolean; filePath?: string; lastSavedAt?: string; cancelled?: boolean } | null> => ipcRenderer.invoke('project:save-as', data),
   forceClose: () => ipcRenderer.send('app:force-close'),
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
   onRequestClose: (callback: () => void) => {
     ipcRenderer.on('app:request-close', () => callback());
     return () => {

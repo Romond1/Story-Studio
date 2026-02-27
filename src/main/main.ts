@@ -465,8 +465,89 @@ ipcMain.handle('project:open', async () => {
   return loadProject(filePath);
 });
 
+async function importFilesFromPaths(filePaths: string[]): Promise<ImportResult | null> {
+  console.log('[main] importFilesFromPaths starting for:', filePaths);
+  if (!currentProjectFolder) {
+    console.error('[main] No project folder open');
+    throw new Error('Create or open a project first');
+  }
+  if (filePaths.length === 0) return null;
+
+  const parsedFiles = filePaths.map(sourcePath => {
+    const originalName = path.basename(sourcePath);
+    const ext = path.extname(sourcePath).toLowerCase();
+    let title = path.basename(sourcePath, ext);
+
+    const prefixMatch = title.match(/^(\d+)_/);
+    let prefix = 999999;
+    if (prefixMatch) {
+      prefix = parseInt(prefixMatch[1], 10);
+      title = title.substring(prefixMatch[0].length);
+    }
+
+    title = title.replace(/[_-]/g, ' ');
+    if (title.length > 0) {
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+    }
+
+    return { sourcePath, originalName, ext, title, prefix };
+  });
+
+  parsedFiles.sort((a, b) => a.prefix - b.prefix || a.originalName.localeCompare(b.originalName));
+
+  const importedAssets: AssetItem[] = [];
+  const createdSlides: Slide[] = [];
+
+  for (const { sourcePath, originalName, ext, title } of parsedFiles) {
+    try {
+      const mediaType = detectMediaType(ext);
+      if (!mediaType) {
+        console.warn(`[main] Unsupported media type for: ${sourcePath}`);
+        continue;
+      }
+
+      const id = randomUUID();
+      const filename = `${id}${ext}`;
+      const targetPath = path.join(currentProjectFolder, ASSETS_DIR, filename);
+
+      const stat = await fs.stat(sourcePath);
+      await fs.copyFile(sourcePath, targetPath);
+
+      console.log(`[main] Imported ${sourcePath} to ${targetPath}`);
+
+      importedAssets.push({
+        id,
+        relativePath: path.join(ASSETS_DIR, filename).replaceAll('\\', '/'),
+        filename,
+        originalName,
+        mediaType,
+        sizeBytes: stat.size,
+        importedAt: new Date().toISOString()
+      });
+
+      createdSlides.push({
+        id: randomUUID(),
+        assetId: id,
+        sectionId: '', // Placeholder, renderer will assign correctly
+        transition: 'fade',
+        title,
+        languageBoard: {
+          background: { color: "#eeeeee" },
+          items: [],
+          nextItemSeq: 1,
+        }
+      });
+    } catch (err) {
+      console.error(`[main] Failed to import ${sourcePath}:`, err);
+    }
+  }
+
+  console.log(`[main] Import complete. Created ${createdSlides.length} slides.`);
+  return { importedAssets, createdSlides };
+}
+
 ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> => {
-  if (!currentProjectFolder) throw new Error('Create or open a project first');
+  if (!getWindow()) return null;
 
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
     title: 'Import Media',
@@ -477,46 +558,11 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
   });
   if (canceled || filePaths.length === 0) return null;
 
-  const importedAssets: AssetItem[] = [];
-  const createdSlides: Slide[] = [];
-  if (!currentProjectFile) throw new Error('No project file path tracked');
-  const defaultSectionId = (await loadProject(currentProjectFile)).data.sections[0]?.id ?? randomUUID();
+  return importFilesFromPaths(filePaths);
+});
 
-  for (const sourcePath of filePaths) {
-    const ext = path.extname(sourcePath).toLowerCase();
-    const mediaType = detectMediaType(ext);
-    if (!mediaType) continue;
-
-    const id = randomUUID();
-    const filename = `${id}${ext}`;
-    const targetPath = path.join(currentProjectFolder, ASSETS_DIR, filename);
-    const stat = await fs.stat(sourcePath);
-    await fs.copyFile(sourcePath, targetPath);
-
-    importedAssets.push({
-      id,
-      relativePath: path.join(ASSETS_DIR, filename).replaceAll('\\', '/'),
-      filename,
-      originalName: path.basename(sourcePath),
-      mediaType,
-      sizeBytes: stat.size,
-      importedAt: new Date().toISOString()
-    });
-
-    createdSlides.push({
-      id: randomUUID(),
-      assetId: id,
-      sectionId: defaultSectionId,
-      transition: 'fade',
-      languageBoard: {
-        background: { color: "#eeeeee" },
-        items: [],
-        nextItemSeq: 1,
-      }
-    });
-  }
-
-  return { importedAssets, createdSlides };
+ipcMain.handle('project:import-files', async (_, filePaths: string[]): Promise<ImportResult | null> => {
+  return importFilesFromPaths(filePaths);
 });
 
 ipcMain.handle('project:save', async (_, data: ProjectData) => {

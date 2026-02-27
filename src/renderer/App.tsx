@@ -3,6 +3,7 @@ import {
   type MouseEvent,
   type WheelEvent,
   useEffect,
+  useLayoutEffect,
   useCallback,
   useMemo,
   useRef,
@@ -24,7 +25,8 @@ import {
   SequenceItem,
   SlideRefItem,
   BreakRefItem,
-  SparkConfig
+  SparkConfig,
+  ImportResult
 } from "../shared/types";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
@@ -33,6 +35,7 @@ import { LanguageToolsPanel } from "./language/LanguageToolsPanel";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
 import { audioManager } from "./audio/AudioManager";
+import { getSectionSlideLabel } from "../shared/slideUtils";
 import { audioRouting } from "./audio/AudioRouting";
 import { micInput } from "./audio/MicrophoneInput";
 import { SparkProvider, useSparks, DEFAULT_SPARK_CONFIG } from "./sparks/SparkProvider";
@@ -534,6 +537,23 @@ const PreviewTrophies = () => {
 };
 
 
+function formatSlideLabel(project: ProjectState, slideId: string, appMode: string, fallbackName?: string) {
+  if (!project) return fallbackName || "Unknown";
+  const labelInfo = getSectionSlideLabel(project.data.sections, project.data.slides, slideId);
+  const titleStr = labelInfo.title || fallbackName || "Unknown asset";
+
+  if (labelInfo.sectionNumber === 0 || labelInfo.slideNumber === 0) {
+    return titleStr;
+  }
+
+  if (appMode === "edit") {
+    const secNum = String(labelInfo.sectionNumber).padStart(2, '0');
+    const sldNum = String(labelInfo.slideNumber).padStart(2, '0');
+    return `S${secNum}-E${sldNum}  ${titleStr}`;
+  }
+  return titleStr;
+}
+
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
   // Track viewport of ACTIVE slide without triggering re-renders
@@ -584,6 +604,57 @@ export function App() {
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(
     null,
   );
+  // UI Layout State
+  const [isDragging, setIsDragging] = useState(false);
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem("storystudio.ui.leftSidebarWidth");
+    return saved ? parseInt(saved, 10) : 320;
+  });
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(() => {
+    const saved = localStorage.getItem("storystudio.ui.rightSidebarWidth");
+    return saved ? parseInt(saved, 10) : 320;
+  });
+  const [resizingSide, setResizingSide] = useState<"left" | "right" | null>(null);
+  const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
+
+  const handleResizeStart = (side: "left" | "right", e: React.PointerEvent) => {
+    e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setResizingSide(side);
+    resizeStartRef.current = {
+      x: e.clientX,
+      width: side === "left" ? leftSidebarWidth : rightSidebarWidth,
+    };
+    document.body.style.userSelect = "none";
+  };
+
+  const handleResizeMove = (e: React.PointerEvent) => {
+    if (!resizingSide || !resizeStartRef.current) return;
+
+    const delta = resizingSide === "left" ? (e.clientX - resizeStartRef.current.x) : (resizeStartRef.current.x - e.clientX);
+    const newWidth = Math.max(220, Math.min(520, resizeStartRef.current.width + delta));
+
+    if (resizingSide === "left") {
+      setLeftSidebarWidth(newWidth);
+    } else {
+      setRightSidebarWidth(newWidth);
+    }
+  };
+
+  const handleResizeEnd = (e: React.PointerEvent) => {
+    if (!resizingSide) return;
+
+    if (resizingSide === "left") {
+      localStorage.setItem("storystudio.ui.leftSidebarWidth", String(leftSidebarWidth));
+    } else {
+      localStorage.setItem("storystudio.ui.rightSidebarWidth", String(rightSidebarWidth));
+    }
+
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    setResizingSide(null);
+    resizeStartRef.current = null;
+    document.body.style.userSelect = "";
+  };
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<string>>(
     new Set(),
   );
@@ -605,7 +676,9 @@ export function App() {
   } | null>(null);
 
   const [activeOverlayId, setActiveOverlayId] = useState<string | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, items?: MenuItem[] } | null>(null);
+  const [editingSlideTitleId, setEditingSlideTitleId] = useState<string | null>(null);
+  const [draftSlideTitle, setDraftSlideTitle] = useState("");
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
     tool: "highlighter",
     drawMode: false,
@@ -1297,38 +1370,80 @@ export function App() {
     }
   };
 
+  const applyImportResult = (result: ImportResult) => {
+    if (!project) return;
+    const targetSectionId = selectedSectionId ?? project.data.sections[0]?.id;
+    const createdSlides = targetSectionId
+      ? result.createdSlides.map((slide: Slide) => ({
+        ...slide,
+        sectionId: targetSectionId,
+      }))
+      : result.createdSlides;
+
+    const nextSlides = [...project.data.slides, ...createdSlides];
+    const nextAssets = [...project.data.assets, ...result.importedAssets];
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: nextSlides,
+        assets: nextAssets,
+      },
+    });
+    setIsDirty(true);
+    if (nextSlides.length > 0 && project.data.slides.length === 0) {
+      setCurrentIndex(0);
+    }
+  };
+
   const onImportMedia = async () => {
     if (!ensureEditMode(appMode, "import media")) return;
     if (!project) return;
     try {
       const result = await window.appApi.importMedia();
       if (!result) return;
-      const targetSectionId = selectedSectionId ?? project.data.sections[0]?.id;
-      const createdSlides = targetSectionId
-        ? result.createdSlides.map((slide) => ({
-          ...slide,
-          sectionId: targetSectionId,
-        }))
-        : result.createdSlides;
-
-      const nextSlides = [...project.data.slides, ...createdSlides];
-      const nextAssets = [...project.data.assets, ...result.importedAssets];
-      setProject({
-        ...project,
-        data: {
-          ...project.data,
-          slides: nextSlides,
-          assets: nextAssets,
-        },
-      });
-      setIsDirty(true);
-      if (nextSlides.length > 0 && project.data.slides.length === 0) {
-        setCurrentIndex(0);
-      }
+      applyImportResult(result);
     } catch (err) {
       console.error(err);
       alert("Failed to import media: " + (err as Error).message);
       setError((err as Error).message);
+    }
+  };
+
+  const handleFileDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (!ensureEditMode(appMode, "import files")) return;
+    if (!project) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    console.log('[renderer] Drop payload:', files.length, 'files');
+    const validExts = ['.png', '.jpg', '.jpeg', '.jfif', '.webp', '.bmp', '.gif', '.mp4', '.mov', '.webm', '.mkv', '.avi'];
+    const paths = files
+      .map(f => {
+        const p = window.appApi.getPathForFile(f);
+        console.log('[renderer] Path for file:', f.name, '->', p);
+        return p;
+      })
+      .filter(p => p && validExts.some(ext => p.toLowerCase().endsWith(ext)));
+
+    if (paths.length === 0) return;
+
+    try {
+      const result = await window.appApi.importFiles(paths);
+      if (result) applyImportResult(result);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to drop files: " + (err as Error).message);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (appMode === 'edit') {
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDragging(true);
     }
   };
 
@@ -2203,7 +2318,7 @@ export function App() {
                       }
                       setShowSlideSelector(false);
                     }} style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer" }}>
-                      {idx + 1}. {asset?.originalName || "Unknown"}
+                      {formatSlideLabel(project!, s.id, appMode, asset?.originalName)}
                     </button>
                   );
                 })}
@@ -2284,11 +2399,23 @@ export function App() {
           </div>
         )}
 
-        <div className={`content ${topMode === 'badge' ? 'is-badge-mode' : ''}`}>
+        <div
+          className={`content ${topMode === 'badge' ? 'is-badge-mode' : ''}`}
+          style={{
+            display: 'flex',
+            gridTemplateColumns: 'none', // Override grid if still in CSS
+          }}
+        >
           {topMode === 'badge' && (
             <BadgeTabBackground project={project} toMediaUrl={toMediaUrl} />
           )}
-          <aside className="sidebar">
+          <aside
+            className="sidebar"
+            style={{ width: leftSidebarWidth, flexShrink: 0 }}
+            onDragOver={handleDragOver}
+            onDrop={handleFileDrop}
+            onDragLeave={() => setIsDragging(false)}
+          >
             {topMode === 'badge' ? (
               <BadgePanel
                 isEditMode={appMode === "edit"}
@@ -2455,6 +2582,24 @@ export function App() {
                                         onClick={(e) =>
                                           onSlideWrapperClick(slideIndex, e)
                                         }
+                                        onContextMenu={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          if (appMode !== 'edit') return;
+                                          setContextMenu({
+                                            x: e.clientX,
+                                            y: e.clientY,
+                                            items: [
+                                              {
+                                                label: "Edit slide description",
+                                                onClick: () => {
+                                                  setEditingSlideTitleId(slide.id);
+                                                  setDraftSlideTitle(slide.title || assetsById.get(slide.assetId)?.originalName || "");
+                                                }
+                                              }
+                                            ]
+                                          });
+                                        }}
                                         onDragStart={(event) => {
                                           event.stopPropagation();
                                           event.dataTransfer.effectAllowed = "move";
@@ -2470,10 +2615,54 @@ export function App() {
                                           setDragOverSlideIndex(null);
                                         }}
                                       >
-                                        <span>{slideIndex + 1}.</span>{" "}
-                                        {asset?.originalName ?? "Unknown asset"}
+                                        {editingSlideTitleId === slide.id ? (
+                                          <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, paddingRight: 20 }}>
+                                            {(() => {
+                                              const lInfo = getSectionSlideLabel(project!.data.sections, project!.data.slides, slide.id);
+                                              if (lInfo.sectionNumber > 0 && lInfo.slideNumber > 0 && appMode === 'edit') {
+                                                return <span style={{ marginRight: 6 }}>{`S${String(lInfo.sectionNumber).padStart(2, '0')}-E${String(lInfo.slideNumber).padStart(2, '0')}`}</span>;
+                                              }
+                                              return null;
+                                            })()}
+                                            <input
+                                              autoFocus
+                                              value={draftSlideTitle}
+                                              onChange={(e) => setDraftSlideTitle(e.target.value)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                  e.preventDefault();
+                                                  const trimmed = draftSlideTitle.trim();
+                                                  if (trimmed) {
+                                                    const nextSlides = project!.data.slides.map(s => s.id === slide.id ? { ...s, title: trimmed } : s);
+                                                    setProject({ ...project!, data: { ...project!.data, slides: nextSlides } });
+                                                    setIsDirty(true);
+                                                  }
+                                                  setEditingSlideTitleId(null);
+                                                } else if (e.key === 'Escape') {
+                                                  e.preventDefault();
+                                                  setEditingSlideTitleId(null);
+                                                }
+                                              }}
+                                              onBlur={() => {
+                                                const trimmed = draftSlideTitle.trim();
+                                                if (trimmed) {
+                                                  const nextSlides = project!.data.slides.map(s => s.id === slide.id ? { ...s, title: trimmed } : s);
+                                                  setProject({ ...project!, data: { ...project!.data, slides: nextSlides } });
+                                                  setIsDirty(true);
+                                                }
+                                                setEditingSlideTitleId(null);
+                                              }}
+                                              style={{ background: '#222', color: '#fff', border: '1px solid #44f', outline: 'none', padding: '2px 4px', borderRadius: 4, width: '100%', fontSize: '0.8rem' }}
+                                              onClick={e => e.stopPropagation()}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <>
+                                            {formatSlideLabel(project!, slide.id, appMode, asset?.originalName)}
+                                          </>
+                                        )}
                                         {isDragging && <small> (Dragging)</small>}
-                                        {appMode === "edit" && (
+                                        {appMode === "edit" && !editingSlideTitleId && (
                                           <div
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -2575,7 +2764,7 @@ export function App() {
                             return `${o.bubbleId} - ${tName}`;
                           }).filter(Boolean).join(', ');
                           const bStr = bIds ? ` [${bIds}]` : '';
-                          title = `Slide: ${asset?.originalName || slideRef.slideId}${bStr}`;
+                          title = `${formatSlideLabel(project!, slideRef.slideId, appMode, asset?.originalName)}${bStr}`;
                         }
 
                         return (
@@ -2720,7 +2909,15 @@ export function App() {
             )}
           </aside>
 
-          <main className="stage-wrap" style={{ position: "relative" }}>
+          <div
+            className={`splitter ${resizingSide === 'left' ? 'resizing' : ''}`}
+            onPointerDown={(e) => handleResizeStart('left', e)}
+            onPointerMove={handleResizeMove}
+            onPointerUp={handleResizeEnd}
+            onPointerCancel={handleResizeEnd}
+          />
+
+          <main className="stage-wrap" style={{ position: "relative", flex: 1, minWidth: 0 }}>
             <SparkOverlay />
             <FinalBadgeOverlay
               assets={project?.data.assets}
@@ -3536,12 +3733,23 @@ export function App() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, gap: topMode === 'boost' && boostTab === 'language' && languageViewMode === 'split' ? 12 : 0 }}>
+                <div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden', background: '#0a0a0a' }}>
                   {!(topMode === 'boost' && boostTab === 'language' && languageViewMode === 'board') && (
                     <div
                       className="stage"
                       onContextMenu={handleStageContextMenu}
-                      style={{ flex: (topMode === 'boost' && boostTab === 'language' && languageViewMode === 'split') ? '0 0 auto' : 1, height: (topMode === 'boost' && boostTab === 'language' && languageViewMode === 'split') ? '40%' : '100%', minHeight: 0 }}
+                      onDragOver={handleDragOver}
+                      onDrop={handleFileDrop}
+                      onDragLeave={() => setIsDragging(false)}
+                      style={{
+                        position: 'absolute',
+                        top: 0, left: 0,
+                        width: '100%',
+                        height: '100%',
+                        transform: (topMode === 'boost' && boostTab === 'language' && languageViewMode === 'split') ? 'scale(0.4)' : 'none',
+                        transformOrigin: 'top center',
+                        zIndex: 1,
+                      }}
                     >
                       {!currentAsset && (
                         <div className="placeholder">
@@ -3636,33 +3844,45 @@ export function App() {
                     </div>
                   )}
                   {topMode === 'boost' && boostTab === 'language' && (
-                    <LanguageBoardView
-                      slide={currentSlide}
-                      template={project?.data.languageBoardTemplate || null}
-                      onUpdateSlide={updateCurrentSlide}
-                      onUpdateTemplate={(updates) => {
-                        setProject((prev) => {
-                          if (!prev) return null;
-                          return {
-                            ...prev,
-                            data: {
-                              ...prev.data,
-                              languageBoardTemplate: {
-                                ...prev.data.languageBoardTemplate!,
-                                ...updates,
+                    <div style={{
+                      position: 'absolute',
+                      top: languageViewMode === 'split' ? '40%' : '0%',
+                      left: 0,
+                      width: '100%',
+                      height: languageViewMode === 'split' ? '60%' : '100%',
+                      zIndex: 2,
+                      visibility: languageViewMode === 'slide' ? 'hidden' : 'visible',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      <LanguageBoardView
+                        slide={currentSlide}
+                        template={project?.data.languageBoardTemplate || null}
+                        onUpdateSlide={updateCurrentSlide}
+                        onUpdateTemplate={(updates) => {
+                          setProject((prev) => {
+                            if (!prev) return null;
+                            return {
+                              ...prev,
+                              data: {
+                                ...prev.data,
+                                languageBoardTemplate: {
+                                  ...prev.data.languageBoardTemplate!,
+                                  ...updates,
+                                },
                               },
-                            },
-                          };
-                        });
-                        setIsDirty(true);
-                      }}
-                      isEditMode={appMode === "edit"}
-                      isTemplateMode={languageTemplateMode}
-                      selectedItemId={selectedLanguageItemId}
-                      onSelectItemId={setSelectedLanguageItemId}
-                      viewMode={languageViewMode}
-                      toMediaUrl={toMediaUrl}
-                    />
+                            };
+                          });
+                          setIsDirty(true);
+                        }}
+                        isEditMode={appMode === "edit"}
+                        isTemplateMode={languageTemplateMode}
+                        selectedItemId={selectedLanguageItemId}
+                        onSelectItemId={setSelectedLanguageItemId}
+                        viewMode={languageViewMode}
+                        toMediaUrl={toMediaUrl}
+                      />
+                    </div>
                   )}
 
                 </div>
@@ -3670,7 +3890,15 @@ export function App() {
             )}
           </main>
 
-          <aside className="audio-sidebar">
+          <div
+            className={`splitter ${resizingSide === 'right' ? 'resizing' : ''}`}
+            onPointerDown={(e) => handleResizeStart('right', e)}
+            onPointerMove={handleResizeMove}
+            onPointerUp={handleResizeEnd}
+            onPointerCancel={handleResizeEnd}
+          />
+
+          <aside className="audio-sidebar" style={{ width: rightSidebarWidth, flexShrink: 0 }}>
             {topMode === 'story' ? (
               <>
                 {(() => {
@@ -4232,7 +4460,10 @@ export function App() {
                                   style={{ padding: '6px', background: activeItem.slideId === s.id ? '#556' : '#222', border: activeItem.slideId === s.id ? '1px solid #77f' : '1px solid #444', color: '#ddd', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: '0.8rem' }}
                                   onClick={() => updateSequenceItem(activeItem.id, { slideId: s.id })}
                                 >
-                                  {idx + 1}. {name.length > 30 ? name.slice(0, 30) + '...' : name}
+                                  {(() => {
+                                    const formatted = formatSlideLabel(project!, s.id, appMode, asset?.originalName);
+                                    return formatted.length > 30 ? formatted.slice(0, 30) + '...' : formatted;
+                                  })()}
                                 </button>
                               );
                             })}
@@ -4274,147 +4505,151 @@ export function App() {
             )}
           </aside>
         </div>
-        {
-          contextMenu && (
-            <ContextMenu
-              x={contextMenu.x}
-              y={contextMenu.y}
-              onClose={() => setContextMenu(null)}
-              items={(() => {
-                if (appMode === 'teach') {
-                  return [
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+            items={
+              contextMenu.items || (appMode === 'teach' ? [
+                {
+                  label: "Draw",
+                  submenu: [
                     {
-                      label: "Draw",
-                      submenu: [
-                        {
-                          label: drawSettings.drawMode ? "Disable Drawing" : "Enable Drawing",
-                          onClick: () => setDrawSettings(prev => ({ ...prev, drawMode: !prev.drawMode }))
-                        },
-                        {
-                          label: "Clear Drawing",
-                          onClick: clearCurrentSlideDrawings
-                        }
-                      ]
+                      label: drawSettings.drawMode ? "Disable Drawing" : "Enable Drawing",
+                      onClick: () => setDrawSettings(prev => ({ ...prev, drawMode: !prev.drawMode }))
                     },
                     {
-                      label: "Next Slide",
-                      onClick: goToNextSlide,
-                      disabled: !project || (currentIndex >= project.data.slides.length - 1 && selectedSection?.type !== 'break')
-                    },
-                    {
-                      label: "Prev Slide",
-                      onClick: goToPrevSlide,
-                      disabled: !project || (currentIndex <= 0 && selectedSection?.type !== 'break')
-                    },
-                    {
-                      label: "Next Break",
-                      onClick: goToNextBreak
-                    },
-                    {
-                      label: "Prev Break",
-                      onClick: goToPrevBreak
+                      label: "Clear Drawing",
+                      onClick: clearCurrentSlideDrawings
                     }
-                  ];
+                  ]
+                },
+                {
+                  label: "Next Slide",
+                  onClick: goToNextSlide,
+                  disabled: !project || (currentIndex >= project.data.slides.length - 1 && selectedSection?.type !== 'break')
+                },
+                {
+                  label: "Prev Slide",
+                  onClick: goToPrevSlide,
+                  disabled: !project || (currentIndex <= 0 && selectedSection?.type !== 'break')
+                },
+                {
+                  label: "Next Break",
+                  onClick: goToNextBreak
+                },
+                {
+                  label: "Prev Break",
+                  onClick: goToPrevBreak
                 }
-
-                // Edit Mode
-                const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
-                const isSlideFirst = currentIndex === 0;
-                const isSlideLast = project ? currentIndex === project.data.slides.length - 1 : true;
-
-                const sectionIndex = project ? project.data.sections.findIndex(s => s.id === selectedSectionId) : -1;
-                const isSectionFirst = sectionIndex === 0;
-                const isSectionLast = project ? sectionIndex === (project.data.sections?.length || 0) - 1 : true;
-
-                return [
-                  {
-                    label: "Slide",
-                    submenu: [
-                      { label: "Add Slide", onClick: onImportMedia },
-                      { label: "Delete Slide", onClick: () => currentSlide && onDeleteSlide(currentSlide.id) },
-                      { isDivider: true },
-                      { label: "Move Slide Up", disabled: isSlideFirst, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex - 1) },
-                      { label: "Move Slide Down", disabled: isSlideLast, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex + 1) },
-                    ]
-                  },
-                  {
-                    label: "Break",
-                    submenu: [
-                      { label: "Add Break", onClick: onAddBreak },
-                      { label: "Delete Break", onClick: deleteCurrentSection, disabled: !selectedSectionId },
-                      { isDivider: true },
-                      { label: "Move Break Up", disabled: isSectionFirst, onClick: () => selectedSectionId && moveSection(selectedSectionId, "up") },
-                      { label: "Move Break Down", disabled: isSectionLast, onClick: () => selectedSectionId && moveSection(selectedSectionId, "down") },
-                    ]
-                  },
-                  {
-                    label: "Audio",
-                    submenu: [
-                      { label: "Add Dialogue", onClick: () => onImportAudio('dialogue') },
-                      { label: "Add SFX", onClick: () => onImportAudio('sfx') },
-                      { label: "Add Background", onClick: () => onImportAudio('bgm') },
-                      { label: "Add Section Background Sound", onClick: () => onImportAudio('section-bgm') }
-                    ]
-                  },
-                  {
-                    label: "Bubbles",
-                    submenu: [
-                      { label: "Add Bubble", onClick: onAddBubble },
-                      { label: "Delete Bubble", disabled: !activeOverlay, onClick: onDeleteBubble },
-                      { label: "Duplicate Bubble", disabled: !activeOverlay, onClick: () => activeOverlay && onDuplicateBubble(activeOverlay) },
-                      {
-                        label: "Remove Bubble Template",
-                        disabled: !activeOverlay || !activeOverlay.bubbleDefId?.startsWith('BD_CUSTOM_'),
-                        onClick: () => {
-                          if (activeOverlay?.bubbleDefId?.startsWith('BD_CUSTOM_')) {
-                            onDeleteBubbleTemplate(activeOverlay.bubbleDefId.replace('BD_CUSTOM_', ''));
-                          }
+              ] : [
+                {
+                  label: "Slide",
+                  submenu: [
+                    { label: "Add Slide", onClick: onImportMedia },
+                    { label: "Delete Slide", onClick: () => currentSlide && onDeleteSlide(currentSlide.id) },
+                    { isDivider: true },
+                    { label: "Move Slide Up", disabled: currentIndex === 0, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex - 1) },
+                    { label: "Move Slide Down", disabled: project ? currentIndex === project.data.slides.length - 1 : true, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex + 1) },
+                  ]
+                },
+                {
+                  label: "Break",
+                  submenu: [
+                    { label: "Add Break", onClick: onAddBreak },
+                    { label: "Delete Break", onClick: deleteCurrentSection, disabled: !selectedSectionId },
+                    { isDivider: true },
+                    { label: "Move Break Up", disabled: (project?.data.sections.findIndex(s => s.id === selectedSectionId) ?? 0) === 0, onClick: () => selectedSectionId && moveSection(selectedSectionId, "up") },
+                    { label: "Move Break Down", disabled: (project?.data.sections.findIndex(s => s.id === selectedSectionId) ?? -1) === (project?.data.sections.length ?? 0) - 1, onClick: () => selectedSectionId && moveSection(selectedSectionId, "down") },
+                  ]
+                },
+                {
+                  label: "Audio",
+                  submenu: [
+                    { label: "Add Dialogue", onClick: () => onImportAudio('dialogue') },
+                    { label: "Add SFX", onClick: () => onImportAudio('sfx') },
+                    { label: "Add Background", onClick: () => onImportAudio('bgm') },
+                    { label: "Add Section Background Sound", onClick: () => onImportAudio('section-bgm') }
+                  ]
+                },
+                {
+                  label: "Bubbles",
+                  submenu: [
+                    { label: "Add Bubble", onClick: onAddBubble },
+                    { label: "Delete Bubble", disabled: !currentSlide?.overlays?.some(o => o.id === activeOverlayId), onClick: onDeleteBubble },
+                    {
+                      label: "Duplicate Bubble", disabled: !activeOverlayId, onClick: () => {
+                        const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
+                        if (activeOverlay) onDuplicateBubble(activeOverlay);
+                      }
+                    },
+                    {
+                      label: "Remove Bubble Template",
+                      disabled: !currentSlide?.overlays?.find(o => o.id === activeOverlayId)?.bubbleDefId?.startsWith('BD_CUSTOM_'),
+                      onClick: () => {
+                        const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
+                        if (activeOverlay?.bubbleDefId?.startsWith('BD_CUSTOM_')) {
+                          onDeleteBubbleTemplate(activeOverlay.bubbleDefId.replace('BD_CUSTOM_', ''));
                         }
                       }
-                    ]
-                  },
-                  {
-                    label: "Transition",
-                    submenu: [
-                      {
-                        label: "Apply to Slide",
-                        submenu: (['fade', 'crossfade', 'fade-black', 'cinematic', 'pixel', 'blur', 'card-slide'] as TransitionType[]).map(t => ({
-                          label: t,
-                          onClick: () => {
-                            if (!currentSlide) return;
-                            updateCurrentSlide({
-                              transition: t,
-                              transitionDuration: stagedDuration,
-                              transitionDirection: stagedDirection,
-                            });
-                            showToast(`Applied ${t}`, "success", 1000);
-                          }
-                        }))
-                      },
-                      {
-                        label: "Apply to Section",
-                        submenu: (['fade', 'crossfade', 'fade-black', 'cinematic', 'pixel', 'blur', 'card-slide'] as TransitionType[]).map(t => ({
-                          label: t,
-                          onClick: () => {
-                            if (!currentSlide || !project) return;
-                            const newSlides = project.data.slides.map((s) => {
-                              if (s.sectionId === currentSlide.sectionId) {
-                                return { ...s, transition: t, transitionDuration: stagedDuration, transitionDirection: stagedDirection };
-                              }
-                              return s;
-                            });
-                            setProject({ ...project, data: { ...project.data, slides: newSlides } });
-                            setIsDirty(true);
-                            showToast(`Applied ${t} to Section`, "success", 1000);
-                          }
-                        }))
-                      }
-                    ]
-                  }
-                ];
-              })()}
-            />
-          )}
+                    }
+                  ]
+                },
+                {
+                  label: "Transition",
+                  submenu: [
+                    {
+                      label: "Apply to Slide",
+                      submenu: (['fade', 'crossfade', 'fade-black', 'cinematic', 'pixel', 'blur', 'card-slide'] as TransitionType[]).map(t => ({
+                        label: t,
+                        onClick: () => {
+                          if (!currentSlide) return;
+                          updateCurrentSlide({
+                            transition: t,
+                            transitionDuration: stagedDuration,
+                            transitionDirection: stagedDirection,
+                          });
+                          showToast(`Applied ${t}`, "success", 1000);
+                        }
+                      }))
+                    },
+                    {
+                      label: "Apply to Section",
+                      submenu: (['fade', 'crossfade', 'fade-black', 'cinematic', 'pixel', 'blur', 'card-slide'] as TransitionType[]).map(t => ({
+                        label: t,
+                        onClick: () => {
+                          if (!currentSlide || !project) return;
+                          const newSlides = project.data.slides.map((s) => {
+                            if (s.sectionId === currentSlide.sectionId) {
+                              return { ...s, transition: t, transitionDuration: stagedDuration, transitionDirection: stagedDirection };
+                            }
+                            return s;
+                          });
+                          setProject({ ...project, data: { ...project.data, slides: newSlides } });
+                          setIsDirty(true);
+                          showToast(`Applied ${t} to Section`, "success", 1000);
+                        }
+                      }))
+                    }
+                  ]
+                }
+              ]
+              )}
+          />
+        )}
+        {isDragging && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 9999,
+            background: 'rgba(0,100,255,0.15)', backdropFilter: 'blur(4px)',
+            border: '2px dashed #3399ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'none'
+          }}>
+            <div style={{ background: '#3399ff', color: '#fff', padding: '12px 24px', borderRadius: 8, fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+              Drop files to import as slides
+            </div>
+          </div>
+        )}
       </div>
     </SparkProvider>
   );
@@ -4868,6 +5103,28 @@ function ZoomPanWrapper({
   );
 }
 
+const BubbleTextarea = ({ value, onChange, onPointerDown, style, rows }: { value: string, onChange: (v: string) => void, onPointerDown: (e: any) => void, style: CSSProperties, rows: number }) => {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = '0px';
+      ref.current.style.height = `${ref.current.scrollHeight}px`;
+    }
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onPointerDown={onPointerDown}
+      rows={rows}
+      style={style}
+    />
+  );
+};
+
 function MediaView({
   asset,
   overlays,
@@ -4920,7 +5177,7 @@ function MediaView({
 
   // Dragging state for overlays
   const draggingOverlayRef = useRef<string | null>(null);
-  const dragStartRef = useRef<{ ox: number; oy: number; cx: number; cy: number; ow: number; oh: number; handle?: string } | null>(null);
+  const dragStartRef = useRef<{ ox: number; oy: number; cx: number; cy: number; ow: number; oh: number; fs: number; handle?: string } | null>(null);
 
   useEffect(() => {
     // If we have an initial time and we are paused (outgoing), snap to that frame.
@@ -5374,11 +5631,18 @@ function MediaView({
                 newH = Math.max(30, oh + dy);
               }
 
+              // Font Scaling logic: use average scaling of width and height
+              const scaleX = newW / ow;
+              const scaleY = newH / oh;
+              const scaleFactor = (scaleX + scaleY) / 2;
+              const newFontSize = Math.max(8, Math.round(dragStartRef.current.fs * scaleFactor));
+
               onOverlayChange(draggingOverlayRef.current, {
                 x: newX,
                 y: newY,
                 width: newW,
                 height: newH,
+                fontSize: newFontSize,
               });
             } else {
               // Move
@@ -5442,7 +5706,7 @@ function MediaView({
                 if (onOverlaySelect) onOverlaySelect(overlay.id);
                 if (!overlay.locked) {
                   draggingOverlayRef.current = overlay.id;
-                  dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY };
+                  dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, fs: bTextSize as number, cx: e.clientX, cy: e.clientY };
                 }
               }}
               style={{
@@ -5499,16 +5763,18 @@ function MediaView({
                 zIndex: 2,
               }}>
                 {isActive && isEditMode ? (
-                  <textarea
+                  <BubbleTextarea
                     value={overlay.text}
-                    onChange={(e) => {
-                      if (onOverlayChange) onOverlayChange(overlay.id, { text: e.target.value });
+                    onChange={(val) => {
+                      if (onOverlayChange) onOverlayChange(overlay.id, { text: val });
                     }}
                     onPointerDown={(e) => e.stopPropagation()} // Stop dragging when clicking in text box
                     rows={overlay.text.split('\n').length || 1}
                     style={{
                       width: "100%",
                       height: "auto",
+                      display: "block",
+                      whiteSpace: "pre-wrap",
                       background: "transparent",
                       border: "none",
                       resize: "none",
@@ -5526,7 +5792,7 @@ function MediaView({
                     }}
                   />
                 ) : (
-                  <div style={{ width: "100%", height: "auto", whiteSpace: "pre-wrap", margin: 0, padding: 0, fontWeight: "inherit", fontStyle: "inherit", textAlign: "inherit", lineHeight: "inherit" }}>
+                  <div style={{ width: "100%", height: "auto", display: "block", whiteSpace: "pre-wrap", margin: 0, padding: 0, fontWeight: "inherit", fontStyle: "inherit", textAlign: "inherit", lineHeight: "inherit" }}>
                     {overlay.text}
                   </div>
                 )}
@@ -5535,19 +5801,19 @@ function MediaView({
               {isActive && !overlay.locked && (
                 <>
                   <div
-                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'top-left' }; draggingOverlayRef.current = overlay.id; }}
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, fs: bTextSize as number, cx: e.clientX, cy: e.clientY, handle: 'top-left' }; draggingOverlayRef.current = overlay.id; }}
                     style={{ position: "absolute", top: -4, left: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nwse-resize", borderRadius: "50%", zIndex: 10 }}
                   />
                   <div
-                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'top-right' }; draggingOverlayRef.current = overlay.id; }}
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, fs: bTextSize as number, cx: e.clientX, cy: e.clientY, handle: 'top-right' }; draggingOverlayRef.current = overlay.id; }}
                     style={{ position: "absolute", top: -4, right: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nesw-resize", borderRadius: "50%", zIndex: 10 }}
                   />
                   <div
-                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'bottom-left' }; draggingOverlayRef.current = overlay.id; }}
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, fs: bTextSize as number, cx: e.clientX, cy: e.clientY, handle: 'bottom-left' }; draggingOverlayRef.current = overlay.id; }}
                     style={{ position: "absolute", bottom: -4, left: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nesw-resize", borderRadius: "50%", zIndex: 10 }}
                   />
                   <div
-                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, cx: e.clientX, cy: e.clientY, handle: 'bottom-right' }; draggingOverlayRef.current = overlay.id; }}
+                    onPointerDown={(e) => { e.stopPropagation(); dragStartRef.current = { ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height, fs: bTextSize as number, cx: e.clientX, cy: e.clientY, handle: 'bottom-right' }; draggingOverlayRef.current = overlay.id; }}
                     style={{ position: "absolute", bottom: -4, right: -4, width: 8, height: 8, background: "#fff", border: "1px solid #55f", cursor: "nwse-resize", borderRadius: "50%", zIndex: 10 }}
                   />
                 </>

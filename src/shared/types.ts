@@ -168,6 +168,7 @@ export interface Slide {
   audioCues?: AudioCue[];
   languageBoard?: any; // kept for legacy migration only
   languageContent?: SlideLanguageContent;
+  title?: string;
 }
 
 export type ProjectSchemaVersion = 1 | 2 | 3;

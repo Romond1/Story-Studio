@@ -48,10 +48,10 @@ input {
 }
 
 .content {
-  display: grid;
-  grid-template-columns: 280px 1fr 280px;
+  display: flex;
   min-height: 0;
   position: relative;
+  overflow: hidden;
 }
 
 .content.is-badge-mode .sidebar,
@@ -69,12 +69,14 @@ input {
   border-right: 1px solid #2a2a2a;
   padding: 12px;
   overflow: auto;
+  flex-shrink: 0;
 }
 
 .audio-sidebar {
   border-left: 1px solid #2a2a2a;
   padding: 12px;
   overflow: auto;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -94,6 +96,7 @@ input {
   color: #ffb86c;
   font-size: 0.9rem;
 }
+
 
 .audio-item {
   display: flex;
@@ -233,6 +236,8 @@ input {
   grid-template-rows: auto 1fr;
   gap: 10px;
   min-height: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .stage-controls {
@@ -838,4 +843,36 @@ input {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.splitter {
+  width: 8px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 1000;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.splitter:hover,
+.splitter.resizing {
+  background: rgba(85, 85, 255, 0.4);
+}
+
+.splitter::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #333;
+  transform: translateX(-50%);
+}
+
+.splitter:hover::after,
+.splitter.resizing::after {
+  background: #55f;
+  width: 2px;
 }
