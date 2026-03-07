@@ -1,0 +1,134 @@
+.acard-stage-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1a1a1a;
+}
+
+.acard-stage-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+    transition: filter 0.3s ease;
+}
+
+.acard-stage-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* BCard Instance Container (Handles Position and 3D Perspective) */
+.bcard-instance-wrap {
+    position: absolute;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    transition: transform 0.2s ease, filter 0.3s ease, z-index 0s linear;
+    /* Origin centered for easier scaling/zooming if needed */
+    transform-origin: center center;
+}
+
+/* The actual flippable body */
+.bcard-body {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.bcard-body.flipped {
+    transform: rotateY(180deg);
+}
+
+/* Faces */
+.bcard-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background-color: #2a2a35;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #445;
+}
+
+.bcard-face-front {
+    transform: rotateY(0deg);
+}
+
+.bcard-face-back {
+    transform: rotateY(180deg);
+}
+
+/* Inner content of a face */
+.bcard-face-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.bcard-face-text {
+    position: relative;
+    z-index: 1;
+    padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+    /* Text alignment and color will be injected inline */
+}
+
+/* Modifiers */
+.bcard-instance-wrap.is-blurred {
+    filter: blur(8px) brightness(0.6);
+}
+
+.bcard-instance-wrap.is-zoomed {
+    transform: scale(1.4);
+    z-index: 1000 !important;
+    /* Bring to front when zoomed */
+}
+
+.bcard-solid-cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #111;
+    z-index: 10;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #555;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.bcard-instance-wrap.is-covered .bcard-solid-cover {
+    opacity: 1;
+    pointer-events: auto;
+}

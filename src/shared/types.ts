@@ -187,7 +187,19 @@ export interface MiniGameItem {
   config?: Record<string, unknown>;
 }
 
-export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem;
+export interface ACardRefItem {
+  id: string;
+  type: 'aCardRef';
+  aCardId: string;
+}
+
+export interface BCardRefItem {
+  id: string;
+  type: 'bCardRef';
+  bCardId: string;
+}
+
+export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem | ACardRefItem | BCardRefItem;
 
 export interface BoostPack {
   activationSequence: SequenceItem[];
@@ -263,6 +275,8 @@ export interface ProjectData {
   sparkConfig?: SparkConfig;
   badgeConfig?: BadgeConfig;
   badgeImageAssetId?: string;
+  aCardLibrary?: ACardLibrary;
+  bCardLibrary?: BCardLibrary;
 }
 
 export interface ProjectState {
@@ -274,4 +288,72 @@ export interface ProjectState {
 export interface ImportResult {
   importedAssets: AssetItem[];
   createdSlides: Slide[];
+}
+
+// --- NEW SYSTEM (Phase 1): ACards and BCards ---
+
+// --- GLOBAL LIBRARIES ---
+export interface ACardLibrary {
+  [aCardId: string]: ACard;
+}
+
+export interface BCardLibrary {
+  [bCardId: string]: BCard;
+}
+
+// --- ACARD (The Stage) ---
+export interface ACard {
+  id: string;
+  name: string;
+  stageMode: 'half' | 'full';
+  background: {
+    imageId?: string;
+    offsetX: number;
+    offsetY: number;
+    scale: number;
+    blur: number;
+  };
+  bCardInstances: BCardInstance[];
+}
+
+export interface BCardInstance {
+  id: string;
+  bCardId: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  zIndex: number;
+  flags?: Record<string, boolean>; // Local overrides for future phases
+}
+
+// --- BCARD (The Content) ---
+export interface BCard {
+  id: string;
+  name: string;
+  front: BCardSideConfig;
+  back: BCardSideConfig;
+  audioRefId?: string | null;
+  animationPreset?: string | null;
+}
+
+export interface BCardSideConfig {
+  imageId?: string | null;
+  text?: string;
+  backgroundColor?: string;
+  textStyle?: {
+    fontFamily: string;
+    fontSize: number;
+    color: string;
+    textAlign: 'left' | 'center' | 'right';
+    verticalAlign: 'top' | 'middle' | 'bottom';
+  };
+  emoji?: string | null;
+}
+
+// --- VOLATILE TEACH STATE ---
+// (Not saved to project files, resets continuously)
+export interface BCardTeachState {
+  isFlipped: boolean;
+  isBlurred: boolean;
+  isCovered: boolean;
+  isZoomed: boolean;
 }
