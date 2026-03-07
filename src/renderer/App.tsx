@@ -26,7 +26,12 @@ import {
   BreakRefItem,
   PromptCardItem,
   MiniGameItem,
-  SparkConfig
+  SparkConfig,
+  StoryReferenceItem,
+  ACardRefItem,
+  BCardRefItem,
+  ProjectData,
+  BCardTeachState,
 } from "../shared/types";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
@@ -43,7 +48,8 @@ import { CardSystemProvider } from "./store/CardStore";
 import { ACardSystem } from "./acards/ACardSystem";
 import { ACardSidebar } from "./acards/ACardSidebar";
 import { BoardEmptyState } from "./acards/BoardEmptyState";
-import { Rnd } from "react-rnd";
+import { ACardStageRenderer } from "./acards/ACardStageRenderer";
+import { BCardOverlayStack, type BCardOverlayClickAction } from "./acards/BCardOverlayStack";
 
 // CLIP PLAYER COMPONENT
 function AudioClipPlayer({
@@ -275,6 +281,13 @@ interface HighlighterStroke {
   sparkle: boolean;
 }
 
+const DEFAULT_BCARD_TEACH_STATE: BCardTeachState = {
+  isFlipped: false,
+  isBlurred: false,
+  isCovered: false,
+  isZoomed: false,
+};
+
 function toMediaUrl(relativePath: string): string {
   if (!relativePath || typeof relativePath !== 'string') return "";
   const normalizedRelative = relativePath
@@ -304,6 +317,110 @@ function ensureSections(project: ProjectState): ProjectState {
       })),
     },
   };
+}
+
+function normalizeStoryRefs(items: StoryReferenceItem[] | undefined): StoryReferenceItem[] {
+  const refs = Array.isArray(items) ? items : [];
+  return refs
+    .filter((item): item is StoryReferenceItem => item?.type === "aCardRef" || item?.type === "bCardRef")
+    .map((item) =>
+      item.type === "bCardRef"
+        ? {
+            ...item,
+            stageMode: item.stageMode === "board" ? "board" : "overlay",
+            position:
+              item.position && Number.isFinite(item.position.x) && Number.isFinite(item.position.y)
+                ? { x: item.position.x, y: item.position.y }
+                : undefined,
+          }
+        : item,
+    );
+}
+
+function sanitizeProjectCardReferences(
+  data: ProjectData,
+  aCardIds: Set<string>,
+  bCardIds: Set<string>,
+): { data: ProjectData; changed: boolean } {
+  let changed = false;
+
+  const sanitizeSequence = (seq: SequenceItem[]) => {
+    const next: SequenceItem[] = [];
+    for (const item of seq || []) {
+      if (item.type === "aCardRef") {
+        if (aCardIds.has(item.aCardId)) {
+          next.push(item);
+        } else {
+          changed = true;
+        }
+        continue;
+      }
+      if (item.type === "bCardRef") {
+        if (bCardIds.has(item.bCardId)) {
+          next.push({
+            ...item,
+            stageMode: item.stageMode === "board" ? "board" : "overlay",
+            position:
+              item.position && Number.isFinite(item.position.x) && Number.isFinite(item.position.y)
+                ? item.position
+                : undefined,
+          });
+        } else {
+          changed = true;
+        }
+        continue;
+      }
+      next.push(item);
+    }
+    return next;
+  };
+
+  const sanitizeStoryRefs = (refs: StoryReferenceItem[] | undefined): StoryReferenceItem[] | undefined => {
+    if (!refs) return undefined;
+    const normalized = normalizeStoryRefs(refs);
+    const next = normalized.filter((item) => {
+      if (item.type === "aCardRef") return aCardIds.has(item.aCardId);
+      return bCardIds.has(item.bCardId);
+    });
+
+    const sameLength = refs.length === next.length;
+    const sameItems =
+      sameLength &&
+      refs.every((item, index) => {
+        const other = next[index];
+        if (!other || item.type !== other.type || item.id !== other.id) return false;
+        if (item.type === "aCardRef") return item.aCardId === (other as ACardRefItem).aCardId;
+        return (
+          item.bCardId === (other as BCardRefItem).bCardId &&
+          (item.stageMode || "overlay") === ((other as BCardRefItem).stageMode || "overlay") &&
+          (item.position?.x ?? null) === ((other as BCardRefItem).position?.x ?? null) &&
+          (item.position?.y ?? null) === ((other as BCardRefItem).position?.y ?? null)
+        );
+      });
+
+    if (!sameItems) changed = true;
+    return sameItems ? refs : next;
+  };
+
+  const boostPack = data.boostPack
+    ? {
+        activationSequence: sanitizeSequence(data.boostPack.activationSequence || []),
+        languageSequence: sanitizeSequence(data.boostPack.languageSequence || []),
+        gamesSequence: sanitizeSequence(data.boostPack.gamesSequence || []),
+      }
+    : data.boostPack;
+
+  const slides = data.slides.map((slide) => {
+    const storyReferences = sanitizeStoryRefs(slide.storyReferences);
+    return { ...slide, storyReferences };
+  });
+
+  const sections = data.sections.map((section) => {
+    const storyReferences = sanitizeStoryRefs(section.storyReferences);
+    return { ...section, storyReferences };
+  });
+
+  return changed ? { data: { ...data, boostPack, slides, sections }, changed: true } : { data, changed: false };
 }
 
 function SparkLab() {
@@ -545,6 +662,12 @@ export function App() {
   const [boostTab, setBoostTab] = useState<'activation' | 'language' | 'games' | 'badge'>('activation');
   const [selectedBoostItemId, setSelectedBoostItemId] = useState<string | null>(null);
   const [boostSearchQuery, setBoostSearchQuery] = useState("");
+  const [selectedStoryRefId, setSelectedStoryRefId] = useState<string | null>(null);
+  const [overlayBCardTeachStates, setOverlayBCardTeachStates] = useState<Record<string, BCardTeachState>>({});
+  const [overlayBCardClickAction, setOverlayBCardClickAction] = useState<BCardOverlayClickAction>("none");
+  const [storyRefsCollapsed, setStoryRefsCollapsed] = useState(true);
+  const [storyBCardTeachCollapsed, setStoryBCardTeachCollapsed] = useState(true);
+  const [boostBCardTeachCollapsed, setBoostBCardTeachCollapsed] = useState(true);
 
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
@@ -693,11 +816,14 @@ export function App() {
   let _matchedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
 
   let activeItem: SequenceItem | null = null;
+  let activeBoostSequence: SequenceItem[] = [];
+  let activeBoostIndex = -1;
   if (topMode === 'boost') {
     _matchedSection = null;
     if (project?.data.boostPack) {
-      const activeSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
-      activeItem = activeSequence.find(i => i.id === selectedBoostItemId) ?? null;
+      activeBoostSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
+      activeBoostIndex = activeBoostSequence.findIndex((i) => i.id === selectedBoostItemId);
+      activeItem = activeBoostIndex >= 0 ? activeBoostSequence[activeBoostIndex] : null;
       if (activeItem?.type === 'breakRef') {
         const breakId = (activeItem as Extract<SequenceItem, { type: 'breakRef' }>).breakId;
         _matchedSection = sections.find(s => s.id === breakId) ?? null;
@@ -705,8 +831,33 @@ export function App() {
     }
   }
 
+  const boostBackdropContext = (() => {
+    if (topMode !== "boost" || !project || activeBoostIndex < 0) return null;
+    for (let i = activeBoostIndex; i >= 0; i -= 1) {
+      const item = activeBoostSequence[i];
+      if (!item) continue;
+      if (item.type === "slideRef") {
+        const slide = project.data.slides.find((s) => s.id === item.slideId) ?? null;
+        if (slide) return { kind: "slide" as const, slide };
+        continue;
+      }
+      if (item.type === "breakRef") {
+        const section = sections.find((s) => s.id === item.breakId) ?? null;
+        if (section) return { kind: "break" as const, section };
+      }
+    }
+    return null;
+  })();
+
+  if (topMode === "boost" && activeItem?.type === "bCardRef" && boostBackdropContext?.kind === "break") {
+    _matchedSection = boostBackdropContext.section;
+  }
+  if (topMode === "boost" && boostTab === "language" && activeItem?.type === "aCardRef" && boostBackdropContext?.kind === "break") {
+    _matchedSection = boostBackdropContext.section;
+  }
+
   const selectedSection = _matchedSection;
-  const selectedSectionType = topMode === 'boost' && activeItem && activeItem.type !== 'slideRef' && activeItem.type !== 'breakRef'
+  const selectedSectionType = topMode === 'boost' && activeItem && activeItem.type !== 'slideRef' && activeItem.type !== 'breakRef' && activeItem.type !== 'bCardRef'
     ? activeItem.type
     : selectedSection?.type;
 
@@ -745,11 +896,115 @@ export function App() {
       const activeSlide = project?.data.slides.find(s => s.id === activeItem.slideId) ?? null;
       currentSlide = activeSlide;
       currentAsset = activeSlide ? (assetsById.get(activeSlide.assetId) ?? null) : null;
+    } else if (activeItem.type === 'aCardRef' && boostTab === 'language') {
+      if (boostBackdropContext?.kind === "slide") {
+        currentSlide = boostBackdropContext.slide;
+        currentAsset = assetsById.get(boostBackdropContext.slide.assetId) ?? null;
+      } else {
+        currentSlide = null;
+        currentAsset = null;
+      }
+    } else if (activeItem.type === 'bCardRef') {
+      if (boostBackdropContext?.kind === "slide") {
+        currentSlide = boostBackdropContext.slide;
+        currentAsset = assetsById.get(boostBackdropContext.slide.assetId) ?? null;
+      } else {
+        currentSlide = null;
+        currentAsset = null;
+      }
     } else {
       currentSlide = null;
       currentAsset = null;
     }
   }
+
+  const storyRefContext = useMemo(() => {
+    if (topMode !== "story" || !project) return null;
+    if (selectedSection?.type === "break" && selectedSection) {
+      return {
+        target: "break" as const,
+        id: selectedSection.id,
+        refs: normalizeStoryRefs(selectedSection.storyReferences),
+      };
+    }
+    if (currentSlide) {
+      return {
+        target: "slide" as const,
+        id: currentSlide.id,
+        refs: normalizeStoryRefs(currentSlide.storyReferences),
+      };
+    }
+    return null;
+  }, [topMode, project, selectedSection, currentSlide]);
+
+  const storyACardRefs = (storyRefContext?.refs || []).filter((item): item is ACardRefItem => item.type === "aCardRef");
+  const storyBCardRefs = (storyRefContext?.refs || []).filter((item): item is BCardRefItem => item.type === "bCardRef");
+  const boostLanguageACardRefs: ACardRefItem[] =
+    topMode === "boost" && boostTab === "language" && activeItem?.type === "aCardRef"
+      ? [{ id: activeItem.id, type: "aCardRef", aCardId: (activeItem as ACardRefItem).aCardId }]
+      : [];
+  const stageHasHalfACardOverlay =
+    storyACardRefs.some((ref) => (project?.data.aCardLibrary || {})[ref.aCardId]?.stageMode === "half") ||
+    boostLanguageACardRefs.some((ref) => (project?.data.aCardLibrary || {})[ref.aCardId]?.stageMode === "half");
+  const canEditStoryRefs = topMode === "story" && (appMode === "edit" || appMode === "teach");
+  const boostBCardOverlayRefs: BCardRefItem[] =
+    topMode === "boost" && activeItem?.type === "bCardRef"
+      ? [{ ...(activeItem as BCardRefItem), stageMode: (activeItem as BCardRefItem).stageMode === "board" ? "board" : "overlay" }]
+      : [];
+  const activeOverlayBCardRefs = topMode === "story" ? storyBCardRefs : boostBCardOverlayRefs;
+  const selectedOverlayBCardRefId = topMode === "story"
+    ? (selectedStoryRefId && storyBCardRefs.some((item) => item.id === selectedStoryRefId) ? selectedStoryRefId : (storyBCardRefs[0]?.id || null))
+    : (boostBCardOverlayRefs[0]?.id || null);
+  const selectedOverlayBCardState = selectedOverlayBCardRefId
+    ? (overlayBCardTeachStates[selectedOverlayBCardRefId] || DEFAULT_BCARD_TEACH_STATE)
+    : null;
+
+  const setOverlayBCardState = (refId: string, next: BCardTeachState) => {
+    setOverlayBCardTeachStates((prev) => ({ ...prev, [refId]: next }));
+  };
+  const toggleSelectedOverlayBCardState = (property: keyof BCardTeachState) => {
+    if (!selectedOverlayBCardRefId || !selectedOverlayBCardState) return;
+    setOverlayBCardState(selectedOverlayBCardRefId, {
+      ...selectedOverlayBCardState,
+      [property]: !selectedOverlayBCardState[property],
+    });
+  };
+  const resetSelectedOverlayBCardState = () => {
+    if (!selectedOverlayBCardRefId) return;
+    setOverlayBCardState(selectedOverlayBCardRefId, DEFAULT_BCARD_TEACH_STATE);
+  };
+
+  useEffect(() => {
+    if (!storyRefContext) {
+      if (selectedStoryRefId) setSelectedStoryRefId(null);
+      return;
+    }
+    if (!selectedStoryRefId) return;
+    if (!storyRefContext.refs.some((item) => item.id === selectedStoryRefId)) {
+      setSelectedStoryRefId(storyRefContext.refs[0]?.id || null);
+    }
+  }, [storyRefContext, selectedStoryRefId]);
+
+  useEffect(() => {
+    const validIds = new Set(activeOverlayBCardRefs.map((item) => item.id));
+    setOverlayBCardTeachStates((prev) => {
+      const next: Record<string, BCardTeachState> = {};
+      for (const [id, state] of Object.entries(prev)) {
+        if (validIds.has(id)) next[id] = state;
+      }
+      return next;
+    });
+  }, [activeOverlayBCardRefs]);
+
+  useEffect(() => {
+    if (topMode === "story") {
+      setStoryRefsCollapsed(true);
+      setStoryBCardTeachCollapsed(true);
+    }
+    if (topMode === "boost") {
+      setBoostBCardTeachCollapsed(true);
+    }
+  }, [topMode]);
 
   const previousSlide =
     previousIndex !== null ? project?.data.slides[previousIndex] : null;
@@ -940,13 +1195,102 @@ export function App() {
     } else if (type === 'aCardRef') {
       newItem = { id, type, aCardId: Object.values(project.data.aCardLibrary || {})[0]?.id || '' } as any;
     } else if (type === 'bCardRef') {
-      newItem = { id, type, bCardId: Object.values(project.data.bCardLibrary || {})[0]?.id || '' } as any;
+      newItem = { id, type, bCardId: Object.values(project.data.bCardLibrary || {})[0]?.id || '', stageMode: 'overlay' } as any;
     } else {
       newItem = { id, type: 'miniGame', gameType: 'placeholder' } as MiniGameItem;
     }
     setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack, [prop]: [...seq, newItem] } } });
     setSelectedBoostItemId(id);
     setIsDirty(true);
+  };
+
+  const updateStoryReferences = (nextRefs: StoryReferenceItem[]) => {
+    if (!project || !storyRefContext) return;
+    const normalized = normalizeStoryRefs(nextRefs);
+
+    if (storyRefContext.target === "slide") {
+      setProject({
+        ...project,
+        data: {
+          ...project.data,
+          slides: project.data.slides.map((slide) =>
+            slide.id === storyRefContext.id ? { ...slide, storyReferences: normalized } : slide,
+          ),
+        },
+      });
+    } else {
+      setProject({
+        ...project,
+        data: {
+          ...project.data,
+          sections: project.data.sections.map((section) =>
+            section.id === storyRefContext.id ? { ...section, storyReferences: normalized } : section,
+          ),
+        },
+      });
+    }
+    setIsDirty(true);
+  };
+
+  const addStoryReference = (type: "aCardRef" | "bCardRef") => {
+    if (!(topMode === "story" && (appMode === "edit" || appMode === "teach"))) return;
+    if (!project || !storyRefContext) return;
+
+    const id = `story-ref-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const newRef: StoryReferenceItem =
+      type === "aCardRef"
+        ? {
+            id,
+            type,
+            aCardId: Object.values(project.data.aCardLibrary || {})[0]?.id || "",
+          }
+        : {
+            id,
+            type,
+            bCardId: Object.values(project.data.bCardLibrary || {})[0]?.id || "",
+            stageMode: "overlay",
+          };
+
+    updateStoryReferences([...(storyRefContext.refs || []), newRef]);
+    setSelectedStoryRefId(id);
+  };
+
+  const updateStoryReference = (refId: string, updates: Partial<StoryReferenceItem>) => {
+    if (!storyRefContext) return;
+    const next = (storyRefContext.refs || []).map((item) =>
+      item.id === refId ? ({ ...item, ...updates } as StoryReferenceItem) : item,
+    );
+    updateStoryReferences(next);
+  };
+
+  const removeStoryReference = (refId: string) => {
+    if (!(topMode === "story" && (appMode === "edit" || appMode === "teach"))) return;
+    if (!storyRefContext) return;
+    updateStoryReferences((storyRefContext.refs || []).filter((item) => item.id !== refId));
+    if (selectedStoryRefId === refId) setSelectedStoryRefId(null);
+  };
+
+  const moveStoryReference = (refId: string, direction: "up" | "down") => {
+    if (!(topMode === "story" && (appMode === "edit" || appMode === "teach"))) return;
+    if (!storyRefContext) return;
+    const refs = [...(storyRefContext.refs || [])];
+    const index = refs.findIndex((item) => item.id === refId);
+    if (index < 0) return;
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === refs.length - 1) return;
+    const swap = direction === "up" ? index - 1 : index + 1;
+    [refs[index], refs[swap]] = [refs[swap], refs[index]];
+    updateStoryReferences(refs);
+  };
+
+  const updateOverlayBCardPosition = (refId: string, position: { x: number; y: number }) => {
+    if (topMode === "story") {
+      updateStoryReference(refId, { position } as any);
+      return;
+    }
+    if (topMode === "boost" && activeItem?.type === "bCardRef") {
+      updateSequenceItem(activeItem.id, { position } as any);
+    }
   };
 
   const renderTagEditor = (slide: Slide | null) => {
@@ -1148,20 +1492,32 @@ export function App() {
       setError(null);
       setExpandedSectionId(null);
       setSelectedSlideIds(new Set());
+      setSelectedStoryRefId(null);
+      setOverlayBCardTeachStates({});
+      setOverlayBCardClickAction("none");
       return;
     }
 
     const normalized = ensureSections(next);
-    setProject(normalized);
-    setSelectedSectionId(normalized.data.sections[0]?.id ?? null);
-    setExpandedSectionId(normalized.data.sections[0]?.id ?? null);
-    if (normalized.data.slides[0]) {
-      setSelectedSlideIds(new Set([normalized.data.slides[0].id]));
+    const { data: sanitizedData } = sanitizeProjectCardReferences(
+      normalized.data,
+      new Set(Object.keys(normalized.data.aCardLibrary || {})),
+      new Set(Object.keys(normalized.data.bCardLibrary || {})),
+    );
+    const normalizedWithRefs = { ...normalized, data: sanitizedData };
+    setProject(normalizedWithRefs);
+    setSelectedSectionId(normalizedWithRefs.data.sections[0]?.id ?? null);
+    setExpandedSectionId(normalizedWithRefs.data.sections[0]?.id ?? null);
+    if (normalizedWithRefs.data.slides[0]) {
+      setSelectedSlideIds(new Set([normalizedWithRefs.data.slides[0].id]));
     }
     setCurrentIndex(0);
     setPreviousIndex(null);
     setError(null);
     setError(null);
+    setSelectedStoryRefId(null);
+    setOverlayBCardTeachStates({});
+    setOverlayBCardClickAction("none");
     setAppMode("teach");
     setIsDirty(false);
   };
@@ -2040,13 +2396,19 @@ export function App() {
         onChange={(aCardLibrary, bCardLibrary) => {
           setProject(prev => {
             if (!prev) return prev;
+            const mergedData: ProjectData = {
+              ...prev.data,
+              aCardLibrary,
+              bCardLibrary,
+            };
+            const { data: sanitizedData } = sanitizeProjectCardReferences(
+              mergedData,
+              new Set(Object.keys(aCardLibrary || {})),
+              new Set(Object.keys(bCardLibrary || {})),
+            );
             return {
               ...prev,
-              data: {
-                ...prev.data,
-                aCardLibrary,
-                bCardLibrary
-              }
+              data: sanitizedData,
             };
           });
           setIsDirty(true);
@@ -2689,7 +3051,7 @@ export function App() {
                     <BoardEmptyState onCreated={setSelectedACardId} />
                   )}
                 </div>
-              ) : topMode === 'boost' && activeItem?.type === 'aCardRef' && (activeItem as any).aCardId ? (
+              ) : topMode === 'boost' && boostTab !== 'language' && activeItem?.type === 'aCardRef' && (activeItem as any).aCardId ? (
                 <div style={{ position: 'absolute', inset: 0 }}>
                   <ACardSystem
                     aCardId={(activeItem as any).aCardId}
@@ -2701,37 +3063,6 @@ export function App() {
                       return asset ? toMediaUrl(asset.relativePath) : null;
                     }}
                   />
-                </div>
-              ) : topMode === 'boost' && activeItem?.type === 'bCardRef' && (activeItem as any).bCardId ? (
-                <div style={{ position: 'absolute', inset: 0, background: '#1a1a1a' }}>
-                  {(() => {
-                    const bCard = (project?.data.bCardLibrary || {})[(activeItem as any).bCardId];
-                    if (!bCard) return <div style={{ color: '#f88', fontSize: '1.2rem' }}>BCard not found</div>;
-                    const frontBg = bCard.front?.backgroundColor || '#2a2a35';
-                    const frontText = bCard.front?.text || '';
-                    const frontTs = bCard.front?.textStyle;
-                    const frontImgId = bCard.front?.imageId;
-                    const frontImgUrl = frontImgId ? (() => { const a = assetsById.get(frontImgId); return a ? toMediaUrl(a.relativePath) : null; })() : null;
-                    return (
-                      <Rnd
-                        bounds="parent"
-                        default={{ x: 380, y: 110, width: 280, height: 400 }}
-                        enableResizing={false}
-                        disableDragging={false}
-                        style={{ cursor: 'grab', zIndex: 5 }}
-                      >
-                        <div style={{ width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.6)', position: 'relative', backgroundColor: frontBg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px solid #445' }}>
-                          {frontImgUrl && <img src={frontImgUrl} alt="" draggable={false} onDragStart={(e) => e.preventDefault()} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
-                          {frontText && (
-                            <div style={{ position: 'relative', zIndex: 1, padding: 24, textAlign: (frontTs?.textAlign || 'center') as any, color: frontTs?.color || '#fff', fontSize: `${frontTs?.fontSize || 28}px`, fontFamily: frontTs?.fontFamily || 'Arial', textShadow: '1px 1px 4px rgba(0,0,0,0.8)', width: '100%', boxSizing: 'border-box' }}>
-                              {frontText}
-                            </div>
-                          )}
-                          <div style={{ position: 'absolute', bottom: 10, fontSize: '0.7rem', color: '#888' }}>{bCard.name}</div>
-                        </div>
-                      </Rnd>
-                    );
-                  })()}
                 </div>
               ) : topMode === 'badge' ? (
                 <div className="badge-stage">
@@ -3238,6 +3569,58 @@ export function App() {
                           </div>
                         )}
                       </div>
+
+                      {((topMode === "story" && storyACardRefs.length > 0) || (topMode === "boost" && boostTab === "language" && boostLanguageACardRefs.length > 0)) && (
+                        <div style={{ position: "absolute", inset: 0, zIndex: 34, pointerEvents: "none" }}>
+                          {(topMode === "story" ? storyACardRefs : boostLanguageACardRefs).map((ref) => (
+                            <ACardStageRenderer
+                              key={ref.id}
+                              aCardId={ref.aCardId}
+                              teachStates={{}}
+                              mode="teach"
+                              resolveImageUrl={(id) => {
+                                const asset = assetsById.get(id);
+                                return asset ? toMediaUrl(asset.relativePath) : null;
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {topMode === "story" && storyBCardRefs.length > 0 && (
+                        <BCardOverlayStack
+                          refs={storyBCardRefs}
+                          mode={appMode}
+                          interactive={appMode === "teach"}
+                          selectedRefId={selectedStoryRefId}
+                          onSelectRef={setSelectedStoryRefId}
+                          teachStates={overlayBCardTeachStates}
+                          clickAction={overlayBCardClickAction}
+                          onTeachStateChange={setOverlayBCardState}
+                          onRefPositionChange={updateOverlayBCardPosition}
+                          resolveImageUrl={(id) => {
+                            const asset = assetsById.get(id);
+                            return asset ? toMediaUrl(asset.relativePath) : null;
+                          }}
+                        />
+                      )}
+
+                      {topMode === "boost" && boostBCardOverlayRefs.length > 0 && (
+                        <BCardOverlayStack
+                          refs={boostBCardOverlayRefs}
+                          mode={appMode}
+                          interactive={appMode === "teach"}
+                          selectedRefId={selectedOverlayBCardRefId}
+                          teachStates={overlayBCardTeachStates}
+                          clickAction={overlayBCardClickAction}
+                          onTeachStateChange={setOverlayBCardState}
+                          onRefPositionChange={updateOverlayBCardPosition}
+                          resolveImageUrl={(id) => {
+                            const asset = assetsById.get(id);
+                            return asset ? toMediaUrl(asset.relativePath) : null;
+                          }}
+                        />
+                      )}
                     </div>
                   </ZoomPanWrapper>
                 </>
@@ -3553,7 +3936,14 @@ export function App() {
                       </div>
                     )}
                     {currentAsset && (
-                      <div className="media-layer">
+                      <div
+                        className="media-layer"
+                        style={
+                          stageHasHalfACardOverlay
+                            ? { position: "absolute", top: 0, left: 0, width: "100%", height: "50%" }
+                            : undefined
+                        }
+                      >
                         {/* Outgoing Slide */}
                         {isAnimating && previousAsset && (
                           <MediaView
@@ -3635,6 +4025,58 @@ export function App() {
                         />
                       </div>
                     )}
+
+                    {((topMode === "story" && storyACardRefs.length > 0) || (topMode === "boost" && boostTab === "language" && boostLanguageACardRefs.length > 0)) && (
+                      <div style={{ position: "absolute", inset: 0, zIndex: 34, pointerEvents: "none" }}>
+                        {(topMode === "story" ? storyACardRefs : boostLanguageACardRefs).map((ref) => (
+                          <ACardStageRenderer
+                            key={ref.id}
+                            aCardId={ref.aCardId}
+                            teachStates={{}}
+                            mode="teach"
+                            resolveImageUrl={(id) => {
+                              const asset = assetsById.get(id);
+                              return asset ? toMediaUrl(asset.relativePath) : null;
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {topMode === "story" && storyBCardRefs.length > 0 && (
+                      <BCardOverlayStack
+                        refs={storyBCardRefs}
+                        mode={appMode}
+                        interactive={appMode === "teach"}
+                        selectedRefId={selectedStoryRefId}
+                        onSelectRef={setSelectedStoryRefId}
+                        teachStates={overlayBCardTeachStates}
+                        clickAction={overlayBCardClickAction}
+                        onTeachStateChange={setOverlayBCardState}
+                        onRefPositionChange={updateOverlayBCardPosition}
+                        resolveImageUrl={(id) => {
+                          const asset = assetsById.get(id);
+                          return asset ? toMediaUrl(asset.relativePath) : null;
+                        }}
+                      />
+                    )}
+
+                    {topMode === "boost" && boostBCardOverlayRefs.length > 0 && (
+                      <BCardOverlayStack
+                        refs={boostBCardOverlayRefs}
+                        mode={appMode}
+                        interactive={appMode === "teach"}
+                        selectedRefId={selectedOverlayBCardRefId}
+                        teachStates={overlayBCardTeachStates}
+                        clickAction={overlayBCardClickAction}
+                        onTeachStateChange={setOverlayBCardState}
+                        onRefPositionChange={updateOverlayBCardPosition}
+                        resolveImageUrl={(id) => {
+                          const asset = assetsById.get(id);
+                          return asset ? toMediaUrl(asset.relativePath) : null;
+                        }}
+                      />
+                    )}
                   </div>
                 </>
               )}
@@ -3643,6 +4085,206 @@ export function App() {
             <aside className="audio-sidebar">
               {topMode === 'story' ? (
                 <>
+                  <div className="audio-block" style={{ border: '1px solid #3a475f', background: 'linear-gradient(180deg, #1a202b, #171b24)', order: 90 }}>
+                    <h4
+                      onClick={() => setStoryRefsCollapsed((v) => !v)}
+                      style={{ margin: "0", color: "#a9c7ff", fontSize: "0.9rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                    >
+                      Story BCard References
+                      <span>{storyRefsCollapsed ? ">" : "v"}</span>
+                    </h4>
+                    {!storyRefsCollapsed && (
+                      <>
+                        <p style={{ margin: "8px 0 8px 0", fontSize: "0.75rem", color: "#8896af" }}>
+                          {storyRefContext
+                            ? `Target: ${storyRefContext.target === "break" ? "Break" : "Slide"}`
+                            : "Select a slide or break to attach references."}
+                        </p>
+                    {canEditStoryRefs && (
+                      <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                        <button
+                          style={{ flex: 1, padding: "6px", fontSize: "0.75rem", background: "#233b2c", border: "1px solid #3f6f51", color: "#c6f3d0", borderRadius: 4 }}
+                          onClick={() => addStoryReference("aCardRef")}
+                          disabled={!storyRefContext}
+                        >
+                          + ACard Ref
+                        </button>
+                        <button
+                          style={{ flex: 1, padding: "6px", fontSize: "0.75rem", background: "#24343d", border: "1px solid #456576", color: "#c3ebff", borderRadius: 4 }}
+                          onClick={() => addStoryReference("bCardRef")}
+                          disabled={!storyRefContext}
+                        >
+                          + BCard Ref
+                        </button>
+                      </div>
+                    )}
+
+                    {(storyRefContext?.refs?.length || 0) > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {storyRefContext!.refs.map((ref, index, arr) => {
+                          const isSelected = selectedStoryRefId === ref.id;
+                          const title =
+                            ref.type === "aCardRef"
+                              ? `ACard: ${((project?.data.aCardLibrary || {})[ref.aCardId]?.name || ref.aCardId || "(missing)")}`
+                              : `BCard: ${((project?.data.bCardLibrary || {})[ref.bCardId]?.name || ref.bCardId || "(missing)")}`;
+                          return (
+                            <div
+                              key={ref.id}
+                              onClick={() => setSelectedStoryRefId(ref.id)}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                padding: "6px",
+                                background: isSelected ? "#28374f" : "#1a1f2a",
+                                border: isSelected ? "1px solid #78b3ff" : "1px solid #2f3a4e",
+                                borderRadius: 6,
+                                cursor: "pointer",
+                              }}
+                            >
+                              <span style={{ flex: 1, fontSize: "0.75rem", color: "#d9e2f3", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {index + 1}. {title}
+                              </span>
+                              {canEditStoryRefs && (
+                                <>
+                                  <button
+                                    style={{ padding: "2px 6px", fontSize: "0.72rem", background: "transparent", border: "none", color: "#8aa8d9", cursor: index === 0 ? "default" : "pointer" }}
+                                    disabled={index === 0}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      moveStoryReference(ref.id, "up");
+                                    }}
+                                  >
+                                    ^
+                                  </button>
+                                  <button
+                                    style={{ padding: "2px 6px", fontSize: "0.72rem", background: "transparent", border: "none", color: "#8aa8d9", cursor: index === arr.length - 1 ? "default" : "pointer" }}
+                                    disabled={index === arr.length - 1}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      moveStoryReference(ref.id, "down");
+                                    }}
+                                  >
+                                    v
+                                  </button>
+                                  <button
+                                    style={{ padding: "2px 6px", fontSize: "0.72rem", background: "transparent", border: "none", color: "#f88", cursor: "pointer" }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeStoryReference(ref.id);
+                                    }}
+                                  >
+                                    X
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: "0.75rem", color: "#6f7f9d", textAlign: "center", padding: "8px 0" }}>
+                        No Story references on this target.
+                      </div>
+                    )}
+
+                    {(() => {
+                      const selectedRef = storyRefContext?.refs.find((item) => item.id === selectedStoryRefId) || null;
+                      if (!selectedRef) return null;
+                      return (
+                        <div style={{ marginTop: 10, borderTop: "1px solid #2f3a4e", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                          {selectedRef.type === "aCardRef" ? (
+                            <>
+                              <h5 style={{ margin: 0, color: "#b9dbff", fontSize: "0.8rem" }}>Edit ACard Reference</h5>
+                              <select
+                                value={selectedRef.aCardId}
+                                onChange={(e) => updateStoryReference(selectedRef.id, { aCardId: e.target.value } as any)}
+                                style={{ background: "#18202c", color: "#fff", border: "1px solid #395170", borderRadius: 4, padding: "6px" }}
+                                disabled={!canEditStoryRefs}
+                              >
+                                <option value="">(Select an ACard)</option>
+                                {Object.values(project?.data.aCardLibrary || {}).map((ac) => (
+                                  <option key={ac.id} value={ac.id}>{ac.name}</option>
+                                ))}
+                              </select>
+                            </>
+                          ) : (
+                            <>
+                              <h5 style={{ margin: 0, color: "#b9dbff", fontSize: "0.8rem" }}>Edit BCard Reference</h5>
+                              <select
+                                value={selectedRef.bCardId}
+                                onChange={(e) => updateStoryReference(selectedRef.id, { bCardId: e.target.value } as any)}
+                                style={{ background: "#18202c", color: "#fff", border: "1px solid #395170", borderRadius: 4, padding: "6px" }}
+                                disabled={!canEditStoryRefs}
+                              >
+                                <option value="">(Select a BCard)</option>
+                                {Object.values(project?.data.bCardLibrary || {}).map((bc) => (
+                                  <option key={bc.id} value={bc.id}>{bc.name}</option>
+                                ))}
+                              </select>
+                              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.75rem", color: "#9bb2d7" }}>
+                                Stage Mode
+                                <select
+                                  value={selectedRef.stageMode || "overlay"}
+                                  onChange={(e) => updateStoryReference(selectedRef.id, { stageMode: e.target.value as "overlay" | "board" } as any)}
+                                  style={{ background: "#18202c", color: "#fff", border: "1px solid #395170", borderRadius: 4, padding: "6px" }}
+                                  disabled={!canEditStoryRefs}
+                                >
+                                  <option value="overlay">Transparent Overlay</option>
+                                  <option value="board">Board Backdrop</option>
+                                </select>
+                              </label>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+                      </>
+                    )}
+                  </div>
+
+                  {appMode === "teach" && activeOverlayBCardRefs.length > 0 && selectedOverlayBCardRefId && selectedOverlayBCardState && (
+                    <div className="audio-block" style={{ border: "1px solid #3f5968", background: "linear-gradient(180deg, #182129, #121920)", order: 91 }}>
+                      <h4
+                        onClick={() => setStoryBCardTeachCollapsed((v) => !v)}
+                        style={{ margin: 0, color: "#9ecbff", fontSize: "0.88rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                      >
+                        BCard Teach Actions
+                        <span>{storyBCardTeachCollapsed ? ">" : "v"}</span>
+                      </h4>
+                      {!storyBCardTeachCollapsed && (
+                        <>
+                          <p style={{ margin: "8px 0 8px 0", fontSize: "0.74rem", color: "#8098b0" }}>
+                            Controls are stage-safe and live only in this sidebar.
+                          </p>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                            <button onClick={() => toggleSelectedOverlayBCardState("isFlipped")} style={{ padding: "6px", background: selectedOverlayBCardState.isFlipped ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Flip</button>
+                            <button onClick={() => toggleSelectedOverlayBCardState("isBlurred")} style={{ padding: "6px", background: selectedOverlayBCardState.isBlurred ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Blur</button>
+                            <button onClick={() => toggleSelectedOverlayBCardState("isCovered")} style={{ padding: "6px", background: selectedOverlayBCardState.isCovered ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Cover</button>
+                            <button onClick={() => toggleSelectedOverlayBCardState("isZoomed")} style={{ padding: "6px", background: selectedOverlayBCardState.isZoomed ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Zoom</button>
+                          </div>
+                          <label style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8, fontSize: "0.75rem", color: "#99b5cd" }}>
+                            Card Click Action
+                            <select
+                              value={overlayBCardClickAction}
+                              onChange={(e) => setOverlayBCardClickAction(e.target.value as BCardOverlayClickAction)}
+                              style={{ background: "#1a2530", color: "#fff", border: "1px solid #486579", borderRadius: 4, padding: "6px" }}
+                            >
+                              <option value="none">None</option>
+                              <option value="flip">Flip</option>
+                              <option value="blur">Blur</option>
+                              <option value="cover">Cover</option>
+                              <option value="zoom">Zoom</option>
+                            </select>
+                          </label>
+                          <button onClick={resetSelectedOverlayBCardState} style={{ marginTop: 8, padding: "6px", background: "#372831", border: "1px solid #6f4c5e", color: "#ffd9ea", borderRadius: 4 }}>
+                            Reset Card State
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   {(() => {
                     const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
                     return activeOverlay && appMode === "edit" ? (
@@ -4246,8 +4888,57 @@ export function App() {
                               <option key={bc.id} value={bc.id}>{bc.name}</option>
                             ))}
                           </select>
+                          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#9fc5d6' }}>
+                            Stage Mode
+                            <select
+                              value={(activeItem as any).stageMode || 'overlay'}
+                              onChange={e => updateSequenceItem(activeItem.id, { stageMode: e.target.value as 'overlay' | 'board' } as any)}
+                              style={{ background: '#222', color: '#fff', padding: '6px', border: '1px solid #4a6a6a', borderRadius: 4, width: '100%' }}
+                            >
+                              <option value="overlay">Transparent Overlay</option>
+                              <option value="board">Board Backdrop</option>
+                            </select>
+                          </label>
                           {!(activeItem as any).bCardId && (
                             <p style={{ margin: 0, color: '#f88', fontSize: '0.75rem' }}>No BCards exist yet 窶・create one in the Boards tab.</p>
+                          )}
+                          {appMode === "teach" && selectedOverlayBCardRefId && selectedOverlayBCardState && (
+                            <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #2f3340", display: "flex", flexDirection: "column", gap: 8 }}>
+                              <h4
+                                onClick={() => setBoostBCardTeachCollapsed((v) => !v)}
+                                style={{ margin: 0, color: "#9ecbff", fontSize: "0.8rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                              >
+                                BCard Teach Actions
+                                <span>{boostBCardTeachCollapsed ? ">" : "v"}</span>
+                              </h4>
+                              {!boostBCardTeachCollapsed && (
+                                <>
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isFlipped")} style={{ padding: "6px", background: selectedOverlayBCardState.isFlipped ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Flip</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isBlurred")} style={{ padding: "6px", background: selectedOverlayBCardState.isBlurred ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Blur</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isCovered")} style={{ padding: "6px", background: selectedOverlayBCardState.isCovered ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Cover</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isZoomed")} style={{ padding: "6px", background: selectedOverlayBCardState.isZoomed ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Zoom</button>
+                                  </div>
+                                  <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.75rem", color: "#99b5cd" }}>
+                                    Card Click Action
+                                    <select
+                                      value={overlayBCardClickAction}
+                                      onChange={(e) => setOverlayBCardClickAction(e.target.value as BCardOverlayClickAction)}
+                                      style={{ background: "#1a2530", color: "#fff", border: "1px solid #486579", borderRadius: 4, padding: "6px" }}
+                                    >
+                                      <option value="none">None</option>
+                                      <option value="flip">Flip</option>
+                                      <option value="blur">Blur</option>
+                                      <option value="cover">Cover</option>
+                                      <option value="zoom">Zoom</option>
+                                    </select>
+                                  </label>
+                                  <button onClick={resetSelectedOverlayBCardState} style={{ padding: "6px", background: "#372831", border: "1px solid #6f4c5e", color: "#ffd9ea", borderRadius: 4 }}>
+                                    Reset Card State
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           )}
                         </>
                       )}
@@ -5563,5 +6254,3 @@ function MediaView({
     </div>
   );
 }
-
-

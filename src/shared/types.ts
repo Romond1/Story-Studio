@@ -73,6 +73,7 @@ export interface Section {
   titleFontSize?: number;
   timerSize?: number;
   tags?: string[];
+  storyReferences?: StoryReferenceItem[];
 }
 
 export interface Slide {
@@ -89,6 +90,7 @@ export interface Slide {
   tags?: string[];
   overlays?: OverlayItem[];
   audioCues?: AudioCue[];
+  storyReferences?: StoryReferenceItem[];
 }
 
 export type ProjectSchemaVersion = 1 | 2 | 3;
@@ -197,9 +199,12 @@ export interface BCardRefItem {
   id: string;
   type: 'bCardRef';
   bCardId: string;
+  stageMode?: 'overlay' | 'board';
+  position?: { x: number; y: number };
 }
 
 export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem | ACardRefItem | BCardRefItem;
+export type StoryReferenceItem = ACardRefItem | BCardRefItem;
 
 export interface BoostPack {
   activationSequence: SequenceItem[];

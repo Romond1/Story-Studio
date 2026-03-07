@@ -29,6 +29,25 @@
     z-index: 1;
 }
 
+.acard-stage-container.acard-mode-half {
+    background: transparent;
+}
+
+.acard-stage-container.acard-mode-half .acard-stage-bg {
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 50%;
+}
+
+.acard-stage-container.acard-mode-half .acard-stage-content {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 50%;
+}
+
 /* BCard Instance Container (Handles Position and 3D Perspective) */
 .bcard-instance-wrap {
     position: absolute;
@@ -131,4 +150,448 @@
 .bcard-instance-wrap.is-covered .bcard-solid-cover {
     opacity: 1;
     pointer-events: auto;
+}
+
+.acard-stage-container.is-transparent {
+    background-color: transparent;
+}
+
+.acard-stage-bg.is-hidden {
+    display: none;
+}
+
+.acard-editor-panel {
+    width: 330px;
+    max-width: 330px;
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+    padding: 10px;
+    padding-bottom: 18px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: #e8eaf0;
+    background:
+        linear-gradient(180deg, rgba(42, 46, 58, 0.9), rgba(20, 22, 30, 0.95)),
+        rgba(18, 20, 27, 0.92);
+    border-left: 1px solid rgba(130, 148, 176, 0.25);
+    backdrop-filter: blur(6px);
+}
+
+.acard-editor-panel * {
+    box-sizing: border-box;
+}
+
+.acard-editor-section {
+    border: 1px solid rgba(119, 137, 168, 0.35);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(34, 38, 50, 0.8), rgba(24, 26, 35, 0.9));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02), 0 5px 18px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+    flex: 0 0 auto;
+}
+
+.acard-editor-section[data-tone='library'] {
+    border-color: rgba(84, 145, 104, 0.45);
+    background: linear-gradient(180deg, rgba(27, 42, 34, 0.88), rgba(20, 31, 25, 0.92));
+}
+
+.acard-editor-section[data-tone='selection'] {
+    border-color: rgba(77, 158, 176, 0.45);
+    background: linear-gradient(180deg, rgba(22, 37, 45, 0.88), rgba(18, 29, 35, 0.92));
+}
+
+.acard-editor-section-toggle {
+    width: 100%;
+    border: none;
+    background: rgba(255, 255, 255, 0.02);
+    color: #d9e0ee;
+    padding: 7px 9px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(126, 141, 173, 0.3);
+}
+
+.acard-editor-section-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #bdc8dc;
+}
+
+.acard-editor-section-toggle .chevron {
+    font-size: 0.72rem;
+    color: #8ea2c7;
+}
+
+.acard-editor-section-body {
+    padding: 9px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.acard-editor-subsection {
+    border: 1px solid rgba(110, 131, 166, 0.35);
+    border-radius: 8px;
+    padding: 7px;
+    background: rgba(10, 12, 18, 0.3);
+    margin-top: 2px;
+}
+
+.acard-editor-subtitle {
+    margin: 0 0 6px 0;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9cb2d5;
+}
+
+.acard-editor-help {
+    margin: 0;
+    font-size: 0.7rem;
+    color: #f5c787;
+}
+
+.acard-editor-empty {
+    margin: 0;
+    font-size: 0.73rem;
+    color: #8f9ab1;
+    text-align: center;
+    padding: 6px 4px;
+}
+
+.acard-editor-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.acard-editor-grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 6px;
+}
+
+.acard-editor-label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.72rem;
+    color: #a9b5cd;
+}
+
+.acard-editor-label.inline {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.acard-editor-input,
+.acard-editor-select,
+.acard-editor-textarea {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid rgba(112, 128, 156, 0.55);
+    border-radius: 6px;
+    background: rgba(8, 10, 16, 0.78);
+    color: #eef3ff;
+    padding: 5px 7px;
+    font-size: 0.77rem;
+    line-height: 1.2;
+    outline: none;
+}
+
+.acard-editor-input:focus,
+.acard-editor-select:focus,
+.acard-editor-textarea:focus {
+    border-color: rgba(132, 196, 255, 0.8);
+    box-shadow: 0 0 0 2px rgba(111, 187, 255, 0.22);
+}
+
+.acard-editor-textarea {
+    min-height: 42px;
+    resize: vertical;
+}
+
+.acard-editor-range {
+    width: 100%;
+    margin: 0;
+}
+
+.acard-editor-color {
+    width: 34px;
+    height: 24px;
+    border: 1px solid rgba(130, 149, 184, 0.55);
+    border-radius: 4px;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.acard-editor-btn {
+    border: 1px solid rgba(106, 126, 161, 0.65);
+    border-radius: 6px;
+    padding: 4px 7px;
+    background: rgba(43, 52, 73, 0.9);
+    color: #e6ecff;
+    cursor: pointer;
+    font-size: 0.71rem;
+    line-height: 1.2;
+}
+
+.acard-editor-btn:hover {
+    background: rgba(52, 64, 89, 0.95);
+}
+
+.acard-editor-btn-primary {
+    background: rgba(42, 102, 67, 0.95);
+    border-color: rgba(104, 182, 129, 0.8);
+    color: #e3ffe8;
+}
+
+.acard-editor-btn-danger {
+    background: rgba(75, 36, 40, 0.9);
+    border-color: rgba(164, 91, 98, 0.8);
+    color: #ffd6d8;
+}
+
+.acard-editor-btn-ghost {
+    background: transparent;
+    border-color: rgba(112, 128, 156, 0.45);
+    color: #b5c0d7;
+}
+
+.acard-editor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.acard-editor-list-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 6px;
+    border: 1px solid rgba(96, 113, 138, 0.45);
+    border-radius: 7px;
+    background: rgba(8, 10, 16, 0.45);
+}
+
+.acard-editor-list-row.is-selected {
+    border-color: rgba(96, 228, 219, 0.85);
+    background: linear-gradient(180deg, rgba(21, 49, 57, 0.7), rgba(16, 34, 40, 0.72));
+    box-shadow: 0 0 0 1px rgba(72, 182, 176, 0.32);
+}
+
+.acard-editor-row-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.74rem;
+    color: #dde5f8;
+}
+
+.acard-editor-image-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    border: 1px solid rgba(95, 114, 145, 0.4);
+    border-radius: 7px;
+    padding: 6px;
+    background: rgba(8, 10, 16, 0.35);
+}
+
+.acard-editor-image-preview {
+    width: 100%;
+    max-height: 70px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid rgba(103, 121, 148, 0.45);
+}
+
+.acard-editor-image-name {
+    font-size: 0.67rem;
+    color: #93a2be;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.acard-editor-image-library {
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid rgba(97, 113, 138, 0.45);
+    border-radius: 6px;
+    padding: 4px;
+    background: rgba(8, 10, 16, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.acard-editor-image-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: #dde4f3;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.68rem;
+}
+
+.acard-editor-image-item.active {
+    border-color: rgba(95, 228, 206, 0.85);
+    background: rgba(28, 69, 64, 0.4);
+}
+
+.acard-editor-image-item img {
+    width: 22px;
+    height: 22px;
+    object-fit: cover;
+    border-radius: 3px;
+}
+
+.bcard-overlay-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 45;
+}
+
+.bcard-overlay-rnd-wrap {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.bcard-overlay-item-wrap {
+    position: absolute;
+    width: 270px;
+    height: 390px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.bcard-overlay-board-shell {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 340px;
+    height: 460px;
+    transform: translate(-50%, -50%);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(9, 12, 20, 0.9), rgba(20, 23, 31, 0.92));
+    border: 1px solid rgba(98, 112, 142, 0.42);
+    box-shadow: 0 14px 45px rgba(0, 0, 0, 0.55);
+}
+
+.bcard-overlay-item {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 270px;
+    height: 390px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(220, 230, 255, 0.2);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.52);
+    transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.bcard-overlay-item.is-selected {
+    border-color: rgba(95, 223, 212, 0.95);
+    box-shadow: 0 0 0 1px rgba(89, 220, 209, 0.3), 0 16px 40px rgba(0, 0, 0, 0.58);
+}
+
+.bcard-overlay-item.missing {
+    width: 280px;
+    height: auto;
+    min-height: 90px;
+    transform: translate(-50%, -50%);
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 129, 129, 0.7);
+    background: rgba(74, 26, 26, 0.84);
+    color: #ffd7d7;
+    padding: 16px;
+    text-align: center;
+    font-size: 0.82rem;
+}
+
+.bcard-overlay-item.is-covered .bcard-solid-cover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.bcard-overlay-toolbar {
+    position: absolute;
+    right: 16px;
+    top: 14px;
+    min-width: 220px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(92, 117, 154, 0.55);
+    background: linear-gradient(180deg, rgba(18, 24, 34, 0.94), rgba(10, 13, 20, 0.97));
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #e6eefc;
+}
+
+.bcard-overlay-toolbar-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9eb2d8;
+    font-weight: 700;
+}
+
+.bcard-overlay-toolbar-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.bcard-overlay-toolbar button,
+.bcard-overlay-toolbar select {
+    border: 1px solid rgba(104, 128, 166, 0.64);
+    border-radius: 6px;
+    background: rgba(36, 44, 61, 0.9);
+    color: #e7eefc;
+    font-size: 0.72rem;
+    padding: 4px 7px;
+}
+
+.bcard-overlay-toolbar button.active {
+    border-color: rgba(94, 230, 212, 0.85);
+    color: #8ef8e8;
+}
+
+.bcard-overlay-toolbar label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.71rem;
+    color: #9eb0ce;
 }

@@ -4,7 +4,7 @@ import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
-import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide } from '../shared/types';
+import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide, StoryReferenceItem } from '../shared/types';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -102,6 +102,34 @@ function generateBubbleId(data: ProjectData): string {
   return `B${maxId + 1}`;
 }
 
+function normalizeStoryReferences(input: unknown): StoryReferenceItem[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .map((item): StoryReferenceItem | null => {
+      if (!item || typeof item !== 'object') return null;
+      const raw = item as Record<string, unknown>;
+      const id = typeof raw.id === 'string' && raw.id ? raw.id : randomUUID();
+
+      if (raw.type === 'aCardRef') {
+        const aCardId = typeof raw.aCardId === 'string' ? raw.aCardId : '';
+        return { id, type: 'aCardRef', aCardId };
+      }
+
+      if (raw.type === 'bCardRef') {
+        const bCardId = typeof raw.bCardId === 'string' ? raw.bCardId : '';
+        const stageMode = raw.stageMode === 'board' ? 'board' : 'overlay';
+        const rawPos = raw.position as Record<string, unknown> | undefined;
+        const hasPos = rawPos && typeof rawPos.x === 'number' && typeof rawPos.y === 'number';
+        const position = hasPos ? { x: Number(rawPos.x), y: Number(rawPos.y) } : undefined;
+        return { id, type: 'bCardRef', bCardId, stageMode, position };
+      }
+
+      return null;
+    })
+    .filter((item): item is StoryReferenceItem => item !== null);
+}
+
 function normalizeProjectData(data: ProjectData): ProjectData {
   const isV1 = !data.version || data.version === 1;
   const isV2 = data.version === 2;
@@ -113,6 +141,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
     sections = sections.map((sec: any) => ({
       ...normalizeSectionMusic(sec),
       tags: Array.isArray(sec.tags) ? sec.tags : [],
+      storyReferences: normalizeStoryReferences(sec.storyReferences),
     }));
   }
 
@@ -154,6 +183,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
       tags: Array.isArray(slide.tags) ? slide.tags : [],
       overlays,
       audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
+      storyReferences: normalizeStoryReferences(slide.storyReferences),
     };
   });
 

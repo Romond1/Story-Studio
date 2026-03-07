@@ -156,7 +156,7 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
 
             {/* Edit Mode: single unified editor panel */}
             {mode === 'edit' && (
-                <div style={{ borderLeft: '1px solid #444', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ borderLeft: '1px solid #444', height: '100%', minHeight: 0, width: 330, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <ACardEditor
                         aCardId={aCardId}
                         selectedInstanceId={selectedInstanceId}

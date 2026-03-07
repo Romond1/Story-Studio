@@ -13,6 +13,7 @@ interface ACardStageRendererProps {
     mode?: 'teach' | 'edit'; // Added explicit mode passing for future editor logic boundaries
     onStageSizeChange?: (size: { w: number; h: number }) => void;
     movementAnimation?: { durationMs: number; easing: string; key: number } | null;
+    stageBackgroundMode?: 'cardBackground' | 'transparent';
 }
 
 export function ACardStageRenderer({
@@ -24,6 +25,7 @@ export function ACardStageRenderer({
     mode = 'teach',
     onStageSizeChange,
     movementAnimation = null,
+    stageBackgroundMode = 'cardBackground',
 }: ACardStageRendererProps) {
     const { aCardLibrary } = useCardSystem();
     const contentRef = useRef<HTMLDivElement | null>(null);
@@ -39,9 +41,14 @@ export function ACardStageRenderer({
     }
 
     // Calculate Background Styles
+    const showBackground = stageBackgroundMode !== 'transparent';
+    const stageMode = aCard.stageMode === 'half' ? 'half' : 'full';
+    const isHalfStage = stageMode === 'half';
+
     const bgStyle = useMemo(() => {
         const bgUrl = aCard.background?.imageId ? resolveImageUrl(aCard.background.imageId) : null;
         return {
+            backgroundColor: '#1a1a1a',
             backgroundImage: bgUrl ? `url("${bgUrl}")` : 'none',
             backgroundPosition: `${aCard.background.offsetX}% ${aCard.background.offsetY}%`,
             backgroundSize: `${aCard.background.scale * 100}%`,
@@ -71,12 +78,22 @@ export function ACardStageRenderer({
     }, [aCardId, mode, onStageSizeChange]);
 
     return (
-        <div className={`acard-stage-container acard-mode-${aCard.stageMode}`}>
+        <div
+            className={`acard-stage-container acard-mode-${stageMode} ${showBackground ? '' : 'is-transparent'}`}
+            style={isHalfStage ? { background: 'transparent' } : undefined}
+        >
             {/* Background Layer */}
-            <div className="acard-stage-bg" style={bgStyle} />
+            <div
+                className={`acard-stage-bg ${showBackground ? '' : 'is-hidden'}`}
+                style={isHalfStage ? { ...bgStyle, top: '50%', left: 0, width: '100%', height: '50%' } : bgStyle}
+            />
 
             {/* Interactive Content Layer */}
-            <div className="acard-stage-content" ref={contentRef}>
+            <div
+                className="acard-stage-content"
+                ref={contentRef}
+                style={isHalfStage ? { position: 'absolute', top: '50%', left: 0, width: '100%', height: '50%' } : undefined}
+            >
                 {aCard.bCardInstances.map(instance => (
                     <StageInteractable
                         key={instance.id}
