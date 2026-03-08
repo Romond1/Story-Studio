@@ -11,6 +11,7 @@
 } from "react";
 import {
   AssetItem,
+  BadgeStudentSprite,
   DrawPoint,
   MarkerStroke,
   ProjectState,
@@ -47,10 +48,11 @@ import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
 import { audioManager } from "./audio/AudioManager";
 import { audioRouting } from "./audio/AudioRouting";
 import { micInput } from "./audio/MicrophoneInput";
-import { SparkProvider, useSparks, DEFAULT_SPARK_CONFIG } from "./sparks/SparkProvider";
+import { SparkProvider, useSparks, DEFAULT_SPARK_CONFIG, getStudentSparkTotal } from "./sparks/SparkProvider";
 import { SparkOverlay } from "./sparks/SparkOverlay";
 import { BadgePanel } from "./sparks/BadgePanel";
 import { FinalBadgeOverlay } from "./sparks/FinalBadgeOverlay";
+import { Rnd } from "react-rnd";
 import { CardSystemProvider } from "./store/CardStore";
 import { ACardSystem } from "./acards/ACardSystem";
 import { ACardSidebar } from "./acards/ACardSidebar";
@@ -531,8 +533,14 @@ function SparkLab() {
   );
 }
 
-function SparkHotkeyHandler({ appMode }: { appMode: string }) {
-  const { triggerSpark } = useSparks();
+function SparkHotkeyHandler({
+  appMode,
+  onActiveStudentChangeFlash,
+}: {
+  appMode: string;
+  onActiveStudentChangeFlash?: (name: string) => void;
+}) {
+  const { triggerSpark, students, activeStudentId, setActiveStudentId } = useSparks();
 
   useEffect(() => {
     if (appMode !== 'teach') return;
@@ -555,12 +563,22 @@ function SparkHotkeyHandler({ appMode }: { appMode: string }) {
       } else if (e.key === '\\') {
         e.preventDefault();
         triggerSpark('pink');
+      } else if (e.key === 'Backspace') {
+        if (students.length === 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const currentIndex = students.findIndex((student) => student.id === activeStudentId);
+        const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % students.length : 0;
+        const nextStudent = students[nextIndex];
+        if (!nextStudent) return;
+        setActiveStudentId(nextStudent.id);
+        onActiveStudentChangeFlash?.(nextStudent.name || 'Student');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [appMode, triggerSpark]);
+  }, [appMode, triggerSpark, students, activeStudentId, setActiveStudentId, onActiveStudentChangeFlash]);
 
   return null;
 }
@@ -589,57 +607,126 @@ const BadgeTabBackground = ({ project, toMediaUrl }: { project: any, toMediaUrl:
   );
 };
 
-const PreviewShield = () => {
-  const { badgeConfig, totalSparks } = useSparks();
-  const ps = badgeConfig.previewShield || {};
+const BadgeStudentSprites = ({
+  assetsById,
+  getMediaUrl,
+  isEditMode,
+}: {
+  assetsById: Map<string, AssetItem>;
+  getMediaUrl: (path: string) => string;
+  isEditMode: boolean;
+}) => {
+  const { badgeConfig, setBadgeConfig, students, isFinalScoreRevealed } = useSparks();
+  const checkedStudents = students.filter((student) => student.badgeVisible !== false);
+  const sprites = badgeConfig.badgeSprites || [];
+  const motion = badgeConfig.badgeSpriteMotion || "spin";
+  const durationMs = badgeConfig.badgeSpriteAnimDurationMs ?? 3200;
+  const intensity = (badgeConfig.badgeSpriteAnimIntensity ?? 100) / 100;
+  const shouldShowScore = isFinalScoreRevealed && badgeConfig.showFinalScore;
 
-  if (!ps.visible) return null;
-
-  const spinDir = ps.spinDirection === 'ccw' ? -360 : 360;
-  // Intensity 100% = 10s period. 200% = 5s period.
-  const spinSpeed = ps.spinIntensity ? (1000 / ps.spinIntensity) * 10 : 10;
-
-  const style = {
-    left: `${ps.posX ?? 50}%`,
-    top: `${ps.posY ?? 50}%`,
-    transform: 'translate(-50%, -50%)',
-    width: ps.size ?? 200,
-    height: (ps.size ?? 200) * 1.2,
-    perspective: '1000px',
-    '--preview-spin-speed': `${spinSpeed}s`,
-    '--preview-spin-dir': `${spinDir}deg`,
-  } as React.CSSProperties;
-
-  const showScore = badgeConfig.showFinalScore;
+  const updateSprite = (spriteId: string, updates: Partial<BadgeStudentSprite>) => {
+    const nextSprites = sprites.map((sprite) =>
+      sprite.id === spriteId ? { ...sprite, ...updates } : sprite,
+    );
+    setBadgeConfig({ badgeSprites: nextSprites });
+  };
 
   return (
-    <div className="preview-shield-wrap" style={style}>
-      <svg
-        className="preview-shield-svg"
-        viewBox="0 0 100 120"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{
-          width: '100%',
-          height: '100%',
-          transformStyle: 'preserve-3d'
-        }}
-      >
-        <path
-          d="M50 5 L90 20 L90 60 C90 85 70 105 50 115 C30 105 10 85 10 60 L10 20 L50 5Z"
-          fill="#FFD700"
-          stroke="#B8860B"
-          strokeWidth="3"
-        />
-        <text
-          x="50"
-          y="75"
-          textAnchor="middle"
-          className="preview-question-mark"
-          fontSize={showScore ? "45" : "60"}
-        >
-          {showScore ? totalSparks : "?"}
-        </text>
-      </svg>
+    <div className={`badge-student-sprite-layer ${isEditMode ? "is-edit" : ""}`}>
+      {checkedStudents.flatMap((student) => {
+        const variants: Array<"gold" | "blue" | "pink"> = ["gold", "blue", "pink"];
+        return variants.map((variant) => {
+          const sprite = sprites.find(
+            (item) => item.studentId === student.id && (item.variant || "gold") === variant,
+          );
+          if (!sprite) return null;
+
+          const variantAssetId = badgeConfig.badgeSparkAssetIds?.[variant];
+          const fallbackAssetId =
+            badgeConfig.badgeSparkAssetIds?.gold ||
+            badgeConfig.badgeSparkAssetIds?.blue ||
+            badgeConfig.badgeSparkAssetIds?.pink ||
+            sprite.assetId;
+          const asset = assetsById.get(variantAssetId || fallbackAssetId || "");
+          if (!asset) return null;
+
+          const scoreText = shouldShowScore ? String(getStudentSparkTotal(student)) : "?";
+          const motionClass = `badge-sprite-motion-${motion}`;
+
+          return (
+            <Rnd
+              key={sprite.id}
+              bounds="parent"
+              disableDragging={!isEditMode}
+              enableResizing={isEditMode}
+              minWidth={60}
+              minHeight={60}
+              resizeHandleStyles={{
+                bottomRight: {
+                  width: 14,
+                  height: 14,
+                  borderRadius: 3,
+                  background: "rgba(255,255,255,0.9)",
+                  border: "1px solid rgba(20,20,20,0.9)",
+                },
+                bottomLeft: {
+                  width: 12,
+                  height: 12,
+                  borderRadius: 3,
+                  background: "rgba(255,255,255,0.75)",
+                },
+                topLeft: {
+                  width: 12,
+                  height: 12,
+                  borderRadius: 3,
+                  background: "rgba(255,255,255,0.75)",
+                },
+                topRight: {
+                  width: 12,
+                  height: 12,
+                  borderRadius: 3,
+                  background: "rgba(255,255,255,0.75)",
+                },
+              }}
+              size={{ width: sprite.width, height: sprite.height }}
+              position={{ x: sprite.x, y: sprite.y }}
+              onDragStop={(_, data) => {
+                updateSprite(sprite.id, { x: data.x, y: data.y });
+              }}
+              onResizeStop={(_, __, ref, ___, position) => {
+                updateSprite(sprite.id, {
+                  x: position.x,
+                  y: position.y,
+                  width: ref.offsetWidth,
+                  height: ref.offsetHeight,
+                });
+              }}
+              style={{
+                zIndex: sprite.zIndex ?? 20,
+                pointerEvents: isEditMode ? "auto" : "none",
+              }}
+            >
+              <div
+                className={`badge-sprite-frame ${motionClass}`}
+                style={{
+                  "--badge-sprite-dur": `${durationMs}ms`,
+                  "--badge-sprite-intensity": intensity,
+                } as React.CSSProperties}
+              >
+                <img
+                  src={getMediaUrl(asset.relativePath)}
+                  className="badge-student-sprite"
+                  alt={`${student.name || "student"} ${variant} badge`}
+                />
+                <div className="badge-sprite-score">
+                  <div className="badge-sprite-student-name">{student.name || "Student"}</div>
+                  <div className="badge-sprite-score-value">{scoreText}</div>
+                </div>
+              </div>
+            </Rnd>
+          );
+        });
+      })}
     </div>
   );
 };
@@ -1404,7 +1491,7 @@ export function App() {
       )
         return;
 
-      if (e.key === "Delete" || e.key === "Backspace") {
+      if (appMode === "edit" && (e.key === "Delete" || e.key === "Backspace")) {
         if (activeOverlayId && project) {
           const cSlide = project.data.slides[currentIndex];
           if (cSlide) {
@@ -1486,6 +1573,7 @@ export function App() {
   }, [
     goToVisibleOffset,
     project,
+    appMode,
     selectSection,
     selectedSectionId,
     expandedSectionId,
@@ -2529,6 +2617,34 @@ export function App() {
         });
         setIsDirty(true);
       }}
+      students={project?.data.sparkStudents}
+      activeStudentId={project?.data.activeStudentId}
+      onStudentsChange={(nextStudents) => {
+        setProject(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            data: {
+              ...prev.data,
+              sparkStudents: nextStudents,
+            }
+          };
+        });
+        setIsDirty(true);
+      }}
+      onActiveStudentChange={(nextActiveStudentId) => {
+        setProject(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            data: {
+              ...prev.data,
+              activeStudentId: nextActiveStudentId,
+            }
+          };
+        });
+        setIsDirty(true);
+      }}
     >
       <CardSystemProvider
         aCardLibrary={project?.data.aCardLibrary || {}}
@@ -2554,7 +2670,10 @@ export function App() {
           setIsDirty(true);
         }}
       >
-        <SparkHotkeyHandler appMode={appMode} />
+        <SparkHotkeyHandler
+          appMode={appMode}
+          onActiveStudentChangeFlash={(name) => showToast(`Active Student: ${name}`, "teach", 300)}
+        />
         <div className="app">
           <header
             className="topbar"
@@ -3380,8 +3499,12 @@ export function App() {
                       />
                     ) : null}
                   </div>
-                  <div className="badge-shield-layer">
-                    <PreviewShield />
+                  <div className={`badge-shield-layer ${appMode === "edit" ? "is-edit" : ""}`}>
+                    <BadgeStudentSprites
+                      assetsById={assetsById}
+                      getMediaUrl={toMediaUrl}
+                      isEditMode={appMode === "edit"}
+                    />
                   </div>
                 </div>
               ) : selectedSectionType === "break" && selectedSection ? (

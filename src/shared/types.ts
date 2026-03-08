@@ -259,6 +259,42 @@ export interface BadgeConfig {
     spinIntensity?: number;
     visible?: boolean;
   };
+  badgeSprites?: BadgeStudentSprite[];
+  badgeSparkAssetIds?: {
+    gold?: string;
+    blue?: string;
+    pink?: string;
+  };
+  badgeSpriteMotion?: 'spin' | 'breathe' | 'zoom';
+  badgeSpriteAnimDurationMs?: number;
+  badgeSpriteAnimIntensity?: number;
+}
+
+export type SparkAwardVariant = 'gold' | 'blue' | 'pink';
+
+export interface BadgeStudentSprite {
+  id: string;
+  studentId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zIndex?: number;
+  variant?: SparkAwardVariant;
+  assetId?: string; // legacy fallback
+}
+
+export type SparkShape = 'star' | 'diamond' | 'circle' | 'heart';
+
+export interface SparkStudent {
+  id: string;
+  name: string;
+  yellowSparks: number;
+  blueSparks: number;
+  pinkSparks: number;
+  stars: number;
+  badgeVisible: boolean;
+  badgeSparkVariant?: SparkAwardVariant;
 }
 
 export interface SparkConfig {
@@ -272,6 +308,11 @@ export interface SparkConfig {
   sparkSize: number;
   positionTop: number;
   positionRight: number;
+  shapeByVariant?: {
+    gold?: SparkShape;
+    blue?: SparkShape;
+    pink?: SparkShape;
+  };
 }
 
 export interface ProjectData {
@@ -286,6 +327,8 @@ export interface ProjectData {
   sparkConfig?: SparkConfig;
   badgeConfig?: BadgeConfig;
   badgeImageAssetId?: string;
+  sparkStudents?: SparkStudent[];
+  activeStudentId?: string;
   aCardLibrary?: ACardLibrary;
   bCardLibrary?: BCardLibrary;
 }

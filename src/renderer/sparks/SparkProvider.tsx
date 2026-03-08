@@ -1,13 +1,14 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { SparkConfig, BadgeConfig } from '../../shared/types';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
+import { SparkConfig, BadgeConfig, SparkStudent } from '../../shared/types';
 
 export type SparkVariant = 'gold' | 'blue' | 'pink';
 
 export interface BurstInfo {
     id: string;
     variant: SparkVariant;
+    studentName: string;
+    delta: number;
 }
-
 
 export const DEFAULT_SPARK_CONFIG: SparkConfig = {
     burstDurationMs: 800,
@@ -20,6 +21,11 @@ export const DEFAULT_SPARK_CONFIG: SparkConfig = {
     sparkSize: 50,
     positionTop: 120,
     positionRight: 40,
+    shapeByVariant: {
+        gold: 'star',
+        blue: 'star',
+        pink: 'star',
+    },
 };
 
 export const DEFAULT_BADGE_CONFIG: BadgeConfig = {
@@ -58,23 +64,60 @@ export const DEFAULT_BADGE_CONFIG: BadgeConfig = {
         spinDirection: 'cw',
         spinIntensity: 100,
         visible: true,
-    }
+    },
+    badgeSprites: [],
+    badgeSpriteMotion: 'spin',
+    badgeSpriteAnimDurationMs: 3200,
+    badgeSpriteAnimIntensity: 100,
+};
+
+const variantToField: Record<SparkVariant, 'yellowSparks' | 'blueSparks' | 'pinkSparks'> = {
+    gold: 'yellowSparks',
+    blue: 'blueSparks',
+    pink: 'pinkSparks',
+};
+
+const createStudent = (name: string): SparkStudent => ({
+    id: crypto.randomUUID(),
+    name,
+    yellowSparks: 0,
+    blueSparks: 0,
+    pinkSparks: 0,
+    stars: 0,
+    badgeVisible: true,
+    badgeSparkVariant: 'gold',
+});
+
+export const getStudentSparkTotal = (student: Pick<SparkStudent, 'yellowSparks' | 'blueSparks' | 'pinkSparks'> | null | undefined): number => {
+    if (!student) return 0;
+    return (student.yellowSparks || 0) + (student.blueSparks || 0) + (student.pinkSparks || 0);
 };
 
 interface SparkContextType {
     totalSparks: number;
+    activeSparkCounts: {
+        yellow: number;
+        blue: number;
+        pink: number;
+    };
+    students: SparkStudent[];
+    activeStudentId: string | null;
+    activeStudent: SparkStudent | null;
+    setActiveStudentId: (studentId: string) => void;
+    addStudent: (name?: string) => void;
+    updateStudent: (studentId: string, updates: Partial<Omit<SparkStudent, 'id'>>) => void;
+    removeStudent: (studentId: string) => void;
     activeBursts: BurstInfo[];
     triggerSpark: (variant: SparkVariant) => void;
     showFinalSparkBadge: () => void;
     hideFinalSparkBadge: () => void;
     isBadgeVisible: boolean;
+    isFinalScoreRevealed: boolean;
     sparkConfig: SparkConfig;
     setSparkConfig: (updates: Partial<SparkConfig>) => void;
     resetSparkConfig: () => void;
     badgeConfig: BadgeConfig;
     setBadgeConfig: (updates: Partial<BadgeConfig>) => void;
-    badgeChildName: string;
-    setBadgeChildName: (name: string) => void;
     resetSparks: () => void;
 }
 
@@ -94,19 +137,80 @@ interface SparkProviderProps {
     onConfigChange?: (updates: Partial<SparkConfig>) => void;
     badgeConfig?: BadgeConfig;
     onBadgeConfigChange?: (updates: Partial<BadgeConfig>) => void;
+    students?: SparkStudent[];
+    activeStudentId?: string;
+    onStudentsChange?: (students: SparkStudent[]) => void;
+    onActiveStudentChange?: (studentId: string) => void;
 }
 
-export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, onConfigChange, badgeConfig, onBadgeConfigChange }) => {
-    const [totalSparks, setTotalSparks] = useState(0);
+export const SparkProvider: React.FC<SparkProviderProps> = ({
+    children,
+    config,
+    onConfigChange,
+    badgeConfig,
+    onBadgeConfigChange,
+    students,
+    activeStudentId,
+    onStudentsChange,
+    onActiveStudentChange,
+}) => {
     const [activeBursts, setActiveBursts] = useState<BurstInfo[]>([]);
     const [isBadgeVisible, setIsBadgeVisible] = useState(false);
+    const [isFinalScoreRevealed, setIsFinalScoreRevealed] = useState(false);
     const [localSparkConfig, setLocalSparkConfig] = useState<SparkConfig>(DEFAULT_SPARK_CONFIG);
     const [localBadgeConfig, setLocalBadgeConfig] = useState<BadgeConfig>(DEFAULT_BADGE_CONFIG);
-    const badgeChildNameState = useState('Student');
-    const [badgeChildName, setBadgeChildName] = badgeChildNameState;
+    const [localStudents, setLocalStudents] = useState<SparkStudent[]>(() => {
+        const firstStudent = createStudent('Student 1');
+        return [firstStudent];
+    });
+    const [localActiveStudentId, setLocalActiveStudentId] = useState<string>(() => localStudents[0].id);
 
     const currentConfig = config || localSparkConfig;
     const currentBadgeConfig = badgeConfig || localBadgeConfig;
+    const currentStudents = students ?? localStudents;
+    const currentActiveStudentId = activeStudentId ?? localActiveStudentId;
+
+    const commitStudents = useCallback((nextStudents: SparkStudent[]) => {
+        if (onStudentsChange) {
+            onStudentsChange(nextStudents);
+        } else {
+            setLocalStudents(nextStudents);
+        }
+    }, [onStudentsChange]);
+
+    const commitActiveStudentId = useCallback((studentId: string) => {
+        if (onActiveStudentChange) {
+            onActiveStudentChange(studentId);
+        } else {
+            setLocalActiveStudentId(studentId);
+        }
+    }, [onActiveStudentChange]);
+
+    useEffect(() => {
+        if (currentStudents.length === 0) {
+            const firstStudent = createStudent('Student 1');
+            commitStudents([firstStudent]);
+            commitActiveStudentId(firstStudent.id);
+            return;
+        }
+
+        const hasActive = currentStudents.some((student) => student.id === currentActiveStudentId);
+        if (!hasActive) {
+            commitActiveStudentId(currentStudents[0].id);
+        }
+    }, [currentStudents, currentActiveStudentId, commitStudents, commitActiveStudentId]);
+
+    const activeStudent = useMemo(
+        () => currentStudents.find((student) => student.id === currentActiveStudentId) ?? null,
+        [currentStudents, currentActiveStudentId],
+    );
+
+    const totalSparks = getStudentSparkTotal(activeStudent);
+    const activeSparkCounts = {
+        yellow: activeStudent?.yellowSparks || 0,
+        blue: activeStudent?.blueSparks || 0,
+        pink: activeStudent?.pinkSparks || 0,
+    };
 
     const setSparkConfig = useCallback((updates: Partial<SparkConfig>) => {
         if (onConfigChange) {
@@ -132,21 +236,59 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, 
         }
     }, [onBadgeConfigChange]);
 
+    const addStudent = useCallback((name?: string) => {
+        const trimmed = name?.trim();
+        const nextName = trimmed || `Student ${currentStudents.length + 1}`;
+        const nextStudent = createStudent(nextName);
+        commitStudents([...currentStudents, nextStudent]);
+        commitActiveStudentId(nextStudent.id);
+    }, [currentStudents, commitStudents, commitActiveStudentId]);
+
+    const updateStudent = useCallback((studentId: string, updates: Partial<Omit<SparkStudent, 'id'>>) => {
+        commitStudents(currentStudents.map((student) => (
+            student.id === studentId ? { ...student, ...updates } : student
+        )));
+    }, [currentStudents, commitStudents]);
+
+    const removeStudent = useCallback((studentId: string) => {
+        if (currentStudents.length <= 1) return;
+        const nextStudents = currentStudents.filter((student) => student.id !== studentId);
+        commitStudents(nextStudents);
+        if (studentId === currentActiveStudentId && nextStudents.length > 0) {
+            commitActiveStudentId(nextStudents[0].id);
+        }
+    }, [currentStudents, currentActiveStudentId, commitStudents, commitActiveStudentId]);
+
     const triggerSpark = useCallback((variant: SparkVariant) => {
+        if (!activeStudent) return;
+
         const id = crypto.randomUUID();
+        const field = variantToField[variant];
+        const studentName = activeStudent.name?.trim() || 'Student';
 
-        // Add burst
-        setActiveBursts((prev) => [...prev, { id, variant }]);
-        setTotalSparks((prev) => prev + 1);
+        const nextStudents = currentStudents.map((student) => {
+            if (student.id !== activeStudent.id) return student;
+            const nextValue = (student[field] || 0) + 1;
+            const nextStudent = {
+                ...student,
+                [field]: nextValue,
+            };
+            return {
+                ...nextStudent,
+                stars: getStudentSparkTotal(nextStudent),
+            };
+        });
+        commitStudents(nextStudents);
 
-        // Auto cleanup burst after animation duration (+ some buffer)
+        setActiveBursts((prev) => [...prev, { id, variant, studentName, delta: 1 }]);
         setTimeout(() => {
             setActiveBursts((prev) => prev.filter((b) => b.id !== id));
         }, (currentConfig?.burstDurationMs ?? 800) + 200);
-    }, [currentConfig?.burstDurationMs]);
+    }, [activeStudent, currentStudents, commitStudents, currentConfig?.burstDurationMs]);
 
     const showFinalSparkBadge = useCallback(() => {
         setIsBadgeVisible(true);
+        setIsFinalScoreRevealed(true);
     }, []);
 
     const hideFinalSparkBadge = useCallback(() => {
@@ -154,26 +296,44 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({ children, config, 
     }, []);
 
     const resetSparks = useCallback(() => {
-        setTotalSparks(0);
+        if (!activeStudent) return;
+        const nextStudents = currentStudents.map((student) => {
+            if (student.id !== activeStudent.id) return student;
+            return {
+                ...student,
+                yellowSparks: 0,
+                blueSparks: 0,
+                pinkSparks: 0,
+                stars: 0,
+            };
+        });
+        commitStudents(nextStudents);
         setActiveBursts([]);
-    }, []);
+    }, [activeStudent, currentStudents, commitStudents]);
 
     return (
         <SparkContext.Provider
             value={{
                 totalSparks,
+                activeSparkCounts,
+                students: currentStudents,
+                activeStudentId: activeStudent?.id ?? null,
+                activeStudent,
+                setActiveStudentId: commitActiveStudentId,
+                addStudent,
+                updateStudent,
+                removeStudent,
                 activeBursts,
                 triggerSpark,
                 showFinalSparkBadge,
                 hideFinalSparkBadge,
                 isBadgeVisible,
+                isFinalScoreRevealed,
                 sparkConfig: currentConfig,
                 setSparkConfig,
                 resetSparkConfig,
                 badgeConfig: currentBadgeConfig,
                 setBadgeConfig,
-                badgeChildName,
-                setBadgeChildName,
                 resetSparks,
             }}
         >

@@ -6,17 +6,21 @@ import './sparkStyles.css';
 export const SparkOverlay: React.FC = () => {
     const { activeBursts, totalSparks, sparkConfig } = useSparks();
     const [showCounter, setShowCounter] = useState(false);
-    const [lastTotal, setLastTotal] = useState(0);
+    const [displayBurst, setDisplayBurst] = useState<(typeof activeBursts)[number] | null>(null);
 
     useEffect(() => {
         if (totalSparks > 0) {
             setShowCounter(false); // Reset animation
-            setLastTotal(totalSparks);
             // Brief delay to restart CSS animation properly
             const timer = setTimeout(() => setShowCounter(true), 10);
             return () => clearTimeout(timer);
         }
     }, [totalSparks]);
+
+    useEffect(() => {
+        if (activeBursts.length === 0) return;
+        setDisplayBurst(activeBursts[activeBursts.length - 1]);
+    }, [activeBursts]);
 
     // Handle counter cleanup based on config
     useEffect(() => {
@@ -26,7 +30,8 @@ export const SparkOverlay: React.FC = () => {
         }
     }, [showCounter, totalSparks, sparkConfig.counterVisibleMs]);
 
-    const latestVariant = activeBursts.length > 0 ? activeBursts[activeBursts.length - 1].variant : 'gold';
+    const latestBurst = displayBurst;
+    const latestVariant = latestBurst?.variant ?? 'gold';
 
     const COLORS_RGB = {
         gold: '255, 215, 0',
@@ -48,7 +53,7 @@ export const SparkOverlay: React.FC = () => {
                     <SparkBurst key={burst.id} variant={burst.variant} />
                 ))}
 
-                {showCounter && (
+                {showCounter && latestBurst && (
                     <div
                         className="spark-counter"
                         style={{
@@ -58,7 +63,8 @@ export const SparkOverlay: React.FC = () => {
                             '--spark-counter-size': `${sparkConfig.counterSize}rem`,
                         } as any}
                     >
-                        {lastTotal}
+                        <div className="spark-counter-main">{latestBurst.studentName}</div>
+                        <div className="spark-counter-plus">+{latestBurst.delta}</div>
                     </div>
                 )}
             </div>

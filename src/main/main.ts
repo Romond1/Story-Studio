@@ -4,7 +4,7 @@ import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
-import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide, StoryReferenceItem } from '../shared/types';
+import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide, SparkStudent, StoryReferenceItem } from '../shared/types';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -149,6 +149,49 @@ function normalizeStoryReferences(input: unknown): StoryReferenceItem[] {
     .filter((item): item is StoryReferenceItem => item !== null);
 }
 
+function createDefaultSparkStudent(name = 'Student 1'): SparkStudent {
+  return {
+    id: randomUUID(),
+    name,
+    yellowSparks: 0,
+    blueSparks: 0,
+    pinkSparks: 0,
+    stars: 0,
+    badgeVisible: true,
+    badgeSparkVariant: 'gold',
+  };
+}
+
+function normalizeSparkStudents(input: unknown): SparkStudent[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((item): SparkStudent | null => {
+      if (!item || typeof item !== 'object') return null;
+      const raw = item as Record<string, unknown>;
+      const id = typeof raw.id === 'string' && raw.id ? raw.id : randomUUID();
+      const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Student';
+      const yellowSparks = Number.isFinite(raw.yellowSparks) ? Math.max(0, Number(raw.yellowSparks)) : 0;
+      const blueSparks = Number.isFinite(raw.blueSparks) ? Math.max(0, Number(raw.blueSparks)) : 0;
+      const pinkSparks = Number.isFinite(raw.pinkSparks) ? Math.max(0, Number(raw.pinkSparks)) : 0;
+      const computedStars = yellowSparks + blueSparks + pinkSparks;
+      const stars = Number.isFinite(raw.stars) ? Math.max(0, Number(raw.stars)) : computedStars;
+      const badgeVisible = raw.badgeVisible !== false;
+      const badgeSparkVariant = raw.badgeSparkVariant === 'blue' || raw.badgeSparkVariant === 'pink' ? raw.badgeSparkVariant : 'gold';
+
+      return {
+        id,
+        name,
+        yellowSparks,
+        blueSparks,
+        pinkSparks,
+        stars,
+        badgeVisible,
+        badgeSparkVariant,
+      };
+    })
+    .filter((item): item is SparkStudent => item !== null);
+}
+
 function normalizeProjectData(data: ProjectData): ProjectData {
   const isV1 = !data.version || data.version === 1;
   const isV2 = data.version === 2;
@@ -211,12 +254,24 @@ function normalizeProjectData(data: ProjectData): ProjectData {
     ? data.boostPack
     : emptyBoostPack();
 
+  const sparkStudents = normalizeSparkStudents((data as ProjectData & { sparkStudents?: unknown }).sparkStudents);
+  if (sparkStudents.length === 0) {
+    sparkStudents.push(createDefaultSparkStudent());
+  }
+
+  const activeStudentIdRaw = (data as ProjectData & { activeStudentId?: unknown }).activeStudentId;
+  const activeStudentId = typeof activeStudentIdRaw === 'string' && sparkStudents.some((s) => s.id === activeStudentIdRaw)
+    ? activeStudentIdRaw
+    : sparkStudents[0].id;
+
   return {
     ...data,
     version: 3,
     sections,
     slides,
-    boostPack
+    boostPack,
+    sparkStudents,
+    activeStudentId,
   };
 }
 
@@ -394,14 +449,17 @@ ipcMain.handle('project:create', async () => {
   await ensureProjectFolder(folderPath);
 
   const now = new Date().toISOString();
+  const defaultSparkStudent = createDefaultSparkStudent();
   const data: ProjectData = {
-    version: 2,
+    version: 3,
     createdAt: now,
     updatedAt: now,
     slides: [],
     assets: [],
     sections: [{ id: randomUUID(), name: 'Section 1' }],
-    boostPack: emptyBoostPack()
+    boostPack: emptyBoostPack(),
+    sparkStudents: [defaultSparkStudent],
+    activeStudentId: defaultSparkStudent.id,
   };
 
   await writeProjectAtomic(folderPath, data);

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useSparks } from './SparkProvider';
+import { getStudentSparkTotal, useSparks } from './SparkProvider';
 import './sparkStyles.css';
 
 import { AssetItem } from '../../shared/types';
@@ -10,7 +10,7 @@ interface FinalBadgeOverlayProps {
 }
 
 export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [], getMediaUrl = (s) => s }) => {
-    const { isBadgeVisible, hideFinalSparkBadge, totalSparks, badgeChildName, badgeConfig } = useSparks();
+    const { isBadgeVisible, hideFinalSparkBadge, badgeConfig, students } = useSparks();
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -44,7 +44,14 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
         color: ['#FFD700', '#00BFFF', '#FF69B4', '#FFFFFF'][Math.floor(Math.random() * 4)],
     }));
 
-    const congratsText = (badgeConfig.congratsText || "Today you generated {n} Sparks").replace('{n}', String(totalSparks));
+    const classTotal = students.reduce((acc, student) => acc + getStudentSparkTotal(student), 0);
+    const sparkles = Array.from({ length: 22 }).map((_, i) => ({
+        id: i,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 1.8}s`,
+        duration: `${1.5 + Math.random() * 1.8}s`,
+    }));
 
     // Background config
     const bg = badgeConfig.background || {};
@@ -91,6 +98,20 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
                         />
                     ))}
                 </div>
+                <div className="badge-sparkle-layer">
+                    {sparkles.map((sparkle) => (
+                        <div
+                            key={sparkle.id}
+                            className="badge-sparkle-dot"
+                            style={{
+                                left: sparkle.left,
+                                top: sparkle.top,
+                                animationDelay: sparkle.delay,
+                                animationDuration: sparkle.duration,
+                            }}
+                        />
+                    ))}
+                </div>
 
                 <div className={`badge-shield-container anim-${motionType}`}>
                     <div className="badge-shield-wrapper">
@@ -119,7 +140,7 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
                                 fontWeight="900"
                                 fontFamily="Outfit"
                             >
-                                {totalSparks}
+                                {classTotal}
                             </text>
                             <text
                                 x="50"
@@ -130,18 +151,43 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
                                 fontWeight="bold"
                                 fontFamily="Outfit"
                             >
-                                SPARKS
+                                CLASS
                             </text>
                         </svg>
                     </div>
 
                     <div className="badge-text-content">
-                        {badgeConfig.showStudentName !== false && (
-                            <h2 className="badge-student-name">{badgeChildName || 'Student'}</h2>
-                        )}
                         <h1 className="badge-congrats" style={{ fontSize: `${badgeConfig.fontSize || 2.2}rem` }}>
-                            {congratsText}
+                            Class Spark Results
                         </h1>
+                    </div>
+
+                    <div className="badge-hero-total">
+                        <div className="badge-hero-total-label">CLASS TOTAL</div>
+                        <div className="badge-hero-total-value">{classTotal}</div>
+                    </div>
+
+                    <div className="badge-student-grid">
+                        {students.map((student) => {
+                            const total = getStudentSparkTotal(student);
+                            return (
+                                <div key={student.id} className="badge-student-card">
+                                    <h3 className="badge-student-card-name">{student.name || 'Student'}</h3>
+                                    <div className="badge-spark-row">
+                                        <span className="badge-spark-chip yellow">Yellow: {student.yellowSparks || 0}</span>
+                                        <span className="badge-spark-chip blue">Blue: {student.blueSparks || 0}</span>
+                                        <span className="badge-spark-chip pink">Pink: {student.pinkSparks || 0}</span>
+                                    </div>
+                                    <div className="badge-student-total-wrap">
+                                        <span className="badge-student-total-label">Total Sparks</span>
+                                        <span className="badge-student-total-value">{total}</span>
+                                    </div>
+                                    <div className="badge-student-card-meta">
+                                        <span>Stars: {student.stars ?? total}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
