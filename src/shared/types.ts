@@ -33,6 +33,12 @@ export interface AssetItem {
   relativePath: string;
   filename: string;
   originalName: string;
+  referenceCode?: string;
+  referenceDescription?: string;
+  canonicalLabel?: string;
+  referenceContext?: 'section' | 'break' | 'general';
+  referenceContextId?: string;
+  referenceOrdinal?: number;
   mediaType: MediaType;
   sizeBytes: number;
   importedAt: string;

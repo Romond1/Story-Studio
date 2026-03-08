@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCardSystem } from '../store/CardStore';
 import { AssetItem, BCardInstance, BCardSideConfig } from '../../shared/types';
+import { getAssetDisplayLabel } from '../../shared/mediaReferences';
 import './acard.css';
 
 interface ACardEditorProps {
@@ -78,7 +79,7 @@ function ImagePicker({
             <label className="acard-editor-label">{label}</label>
             {previewUrl && <img src={previewUrl} alt={`${label} preview`} className="acard-editor-image-preview" />}
             <div className="acard-editor-image-name">
-                {currentAsset ? currentAsset.originalName : (currentImageId || 'None')}
+                {currentAsset ? getAssetDisplayLabel(currentAsset, 'edit') : (currentImageId || 'None')}
             </div>
             <div className="acard-editor-grid-auto">
                 {imageAssets.length > 0 && (
@@ -110,7 +111,7 @@ function ImagePicker({
                                 }}
                             >
                                 {thumb && <img src={thumb} alt="" />}
-                                <span>{asset.originalName || asset.id}</span>
+                                <span>{getAssetDisplayLabel(asset, 'edit') || asset.id}</span>
                             </button>
                         );
                     })}
@@ -549,7 +550,7 @@ export function ACardEditor({ aCardId, onSelectInstance, selectedInstanceId, ass
                                     <option value="">None</option>
                                     {audioAssets.map((asset) => (
                                         <option key={asset.id} value={asset.id}>
-                                            {asset.originalName || asset.filename}
+                                            {getAssetDisplayLabel(asset, 'edit') || asset.filename}
                                         </option>
                                     ))}
                                     {!!selectedBCard.audioRefId && !audioAssets.some((asset) => asset.id === selectedBCard.audioRefId) && (

@@ -9,6 +9,7 @@ import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, Projec
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
 const ASSETS_DIR = 'assets';
+type SaveMode = 'save' | 'saveAs';
 
 
 protocol.registerSchemesAsPrivileged([
@@ -49,6 +50,24 @@ function projectPath(folder: string): string {
 
 async function ensureProjectFolder(folder: string): Promise<void> {
   await fs.mkdir(path.join(folder, ASSETS_DIR), { recursive: true });
+}
+
+async function ensureFolderIsEmpty(folder: string): Promise<void> {
+  const entries = await fs.readdir(folder);
+  if (entries.length > 0) {
+    throw new Error('Selected folder is not empty. Choose an empty folder for Save As.');
+  }
+}
+
+async function copyProjectFolder(sourceFolder: string, targetFolder: string): Promise<void> {
+  await fs.mkdir(targetFolder, { recursive: true });
+  const sourceEntries = await fs.readdir(sourceFolder, { withFileTypes: true });
+  for (const entry of sourceEntries) {
+    if (entry.name === TEMP_PROJECT_FILENAME) continue;
+    const sourcePath = path.join(sourceFolder, entry.name);
+    const targetPath = path.join(targetFolder, entry.name);
+    await fs.cp(sourcePath, targetPath, { recursive: true, errorOnExist: true, force: false });
+  }
 }
 
 async function writeProjectAtomic(folder: string, data: ProjectData): Promise<string> {
@@ -459,10 +478,33 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
   return { importedAssets, createdSlides };
 });
 
-ipcMain.handle('project:save', async (_, data: ProjectData) => {
+ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'save') => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
+
+  if (mode === 'saveAs') {
+    const sourceFolder = currentProjectFolder;
+    const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
+      title: 'Save Project As',
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (canceled || filePaths.length === 0) return null;
+
+    const targetFolder = filePaths[0];
+    const normalizedSource = path.resolve(sourceFolder);
+    const normalizedTarget = path.resolve(targetFolder);
+    if (normalizedSource === normalizedTarget) {
+      throw new Error('Please choose a different folder for Save As.');
+    }
+
+    await ensureFolderIsEmpty(targetFolder);
+    await copyProjectFolder(sourceFolder, targetFolder);
+    const lastSavedAt = await writeProjectAtomic(targetFolder, data);
+    currentProjectFolder = targetFolder;
+    return { lastSavedAt, folderPath: targetFolder };
+  }
+
   const lastSavedAt = await writeProjectAtomic(currentProjectFolder, data);
-  return { lastSavedAt };
+  return { lastSavedAt, folderPath: currentProjectFolder };
 });
 
 ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => {

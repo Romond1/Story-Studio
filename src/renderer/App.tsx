@@ -2,6 +2,7 @@
   type CSSProperties,
   type MouseEvent,
   type WheelEvent,
+  Fragment,
   useEffect,
   useCallback,
   useMemo,
@@ -34,6 +35,12 @@ import {
   BCardTeachState,
 } from "../shared/types";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
+import {
+  decorateImportedAssetsForContext,
+  getAssetDescription,
+  getAssetDisplayLabel,
+  withCanonicalAssetDefaults,
+} from "../shared/mediaReferences";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -683,7 +690,7 @@ export function App() {
   const [draggedSlideIndex, setDraggedSlideIndex] = useState<number | null>(
     null,
   );
-  const [dragOverSlideIndex, setDragOverSlideIndex] = useState<number | null>(
+  const [dragInsertIndex, setDragInsertIndex] = useState<number | null>(
     null,
   );
   const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(false);
@@ -698,7 +705,10 @@ export function App() {
   const [showBreakEditor, setShowBreakEditor] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
+  const [isSaveInProgress, setIsSaveInProgress] = useState(false);
   const [showSlideSelector, setShowSlideSelector] = useState(false);
+  const [showBreakBgLibrary, setShowBreakBgLibrary] = useState(false);
   const [pendingAction, setPendingAction] = useState<
     "create" | "open" | "close" | null
   >(null);
@@ -1504,7 +1514,10 @@ export function App() {
       new Set(Object.keys(normalized.data.aCardLibrary || {})),
       new Set(Object.keys(normalized.data.bCardLibrary || {})),
     );
-    const normalizedWithRefs = { ...normalized, data: sanitizedData };
+    const normalizedWithRefs = {
+      ...normalized,
+      data: withCanonicalAssetDefaults(sanitizedData),
+    };
     setProject(normalizedWithRefs);
     setSelectedSectionId(normalizedWithRefs.data.sections[0]?.id ?? null);
     setExpandedSectionId(normalizedWithRefs.data.sections[0]?.id ?? null);
@@ -1590,7 +1603,8 @@ export function App() {
 
   const handleConfirmSave = async () => {
     setShowConfirmModal(false);
-    await onSave();
+    const didSave = await performSave("save");
+    if (!didSave) return;
     if (pendingAction) {
       executePendingAction(pendingAction);
       setPendingAction(null);
@@ -1642,8 +1656,13 @@ export function App() {
         }))
         : result.createdSlides;
 
+      const importedAssets = decorateImportedAssetsForContext(
+        project.data,
+        result.importedAssets,
+        targetSectionId,
+      );
       const nextSlides = [...project.data.slides, ...createdSlides];
-      const nextAssets = [...project.data.assets, ...result.importedAssets];
+      const nextAssets = [...project.data.assets, ...importedAssets];
       setProject({
         ...project,
         data: {
@@ -1670,14 +1689,15 @@ export function App() {
       const importedAssets = await window.appApi.importAudio();
       if (!importedAssets || importedAssets.length === 0) return;
 
-      const nextAssets = [...project.data.assets, ...importedAssets];
+      const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, importedAssets);
+      const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
       let nextData = { ...project.data, assets: nextAssets };
 
       if (type === "section-bgm" && selectedSectionId) {
-        const clips = importedAssets.map((a) => ({
+        const clips = normalizedImportedAssets.map((a) => ({
           url: toMediaUrl(a.relativePath),
           volume: 1,
-          name: a.originalName,
+          name: getAssetDescription(a),
         }));
 
         nextData.sections = nextData.sections.map((s) =>
@@ -1692,10 +1712,10 @@ export function App() {
             : s,
         );
       } else if (currentSlide) {
-        const clips = importedAssets.map((a) => ({
+        const clips = normalizedImportedAssets.map((a) => ({
           url: toMediaUrl(a.relativePath),
           volume: 1,
-          name: a.originalName,
+          name: getAssetDescription(a),
         }));
         nextData.slides = nextData.slides.map((s) => {
           if (s.id !== currentSlide.id) return s;
@@ -1754,14 +1774,16 @@ export function App() {
     }
   };
 
-  const onSave = async () => {
+  const performSave = async (mode: "save" | "saveAs") => {
     if (!ensureEditMode(appMode, "save")) return;
     if (!project) return;
     try {
-      const response = await window.appApi.saveProject(project.data);
+      setIsSaveInProgress(true);
+      const response = await window.appApi.saveProject(project.data, mode);
       if (!response) return;
       setProject({
         ...project,
+        folderPath: response.folderPath,
         data: {
           ...project.data,
           updatedAt: response.lastSavedAt,
@@ -1769,10 +1791,20 @@ export function App() {
         lastSavedAt: response.lastSavedAt,
       });
       setIsDirty(false);
-      showToast("Saved", "success", 2000);
+      showToast(mode === "saveAs" ? "Saved as new project" : "Saved", "success", 2000);
+      return true;
     } catch (err) {
       setError((err as Error).message);
+      return false;
+    } finally {
+      setIsSaveInProgress(false);
     }
+  };
+
+  const onSave = () => {
+    if (!ensureEditMode(appMode, "save")) return;
+    if (!project) return;
+    setShowSaveChoiceModal(true);
   };
 
   const updateTransition = (transition: TransitionType) => {
@@ -2038,36 +2070,103 @@ export function App() {
 
   const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
 
-  const reorderSlidesWithinSection = (fromIndex: number, toIndex: number) => {
+  const renumberSectionAssetReferences = (data: ProjectData, sectionId: string): ProjectData => {
+    const section = data.sections.find((item) => item.id === sectionId);
+    if (!section || section.type === "break") return data;
+
+    let sectionOrdinal = 0;
+    for (const item of data.sections) {
+      if (item.type === "break") continue;
+      sectionOrdinal += 1;
+      if (item.id === sectionId) break;
+    }
+
+    const assetOrdinalById = new Map<string, number>();
+    let ordinal = 0;
+    for (const slide of data.slides) {
+      if (slide.sectionId !== sectionId) continue;
+      if (assetOrdinalById.has(slide.assetId)) continue;
+      ordinal += 1;
+      assetOrdinalById.set(slide.assetId, ordinal);
+    }
+    if (!assetOrdinalById.size) return data;
+
+    let changed = false;
+    const nextAssets = data.assets.map((asset) => {
+      const nextOrdinal = assetOrdinalById.get(asset.id);
+      if (!nextOrdinal) return asset;
+      const referenceCode = `${sectionOrdinal}.${nextOrdinal}`;
+      const referenceDescription = getAssetDescription(asset);
+      const canonicalLabel = `${referenceCode} ${referenceDescription}`.trim();
+
+      if (
+        asset.referenceCode === referenceCode &&
+        asset.referenceOrdinal === nextOrdinal &&
+        asset.referenceContext === "section" &&
+        asset.referenceContextId === sectionId &&
+        asset.referenceDescription === referenceDescription &&
+        asset.canonicalLabel === canonicalLabel
+      ) {
+        return asset;
+      }
+
+      changed = true;
+      return {
+        ...asset,
+        referenceCode,
+        referenceDescription,
+        canonicalLabel,
+        referenceContext: "section" as const,
+        referenceContextId: sectionId,
+        referenceOrdinal: nextOrdinal,
+      };
+    });
+
+    return changed ? { ...data, assets: nextAssets } : data;
+  };
+
+  const reorderSlidesWithinSection = (fromIndex: number, insertIndex: number) => {
     if (!ensureEditMode(appMode, "reorder slides")) return;
     if (!project) return;
-    if (fromIndex === toIndex) return;
+    if (fromIndex === insertIndex || fromIndex + 1 === insertIndex) return;
 
     const fromSlide = project.data.slides[fromIndex];
-    const toSlide = project.data.slides[toIndex];
-    if (!fromSlide || !toSlide || fromSlide.sectionId !== toSlide.sectionId) {
+    if (!fromSlide) {
       setDraggedSlideIndex(null);
-      setDragOverSlideIndex(null);
+      setDragInsertIndex(null);
+      return;
+    }
+
+    const sectionIndices = sectionSlideIndices.get(fromSlide.sectionId) ?? [];
+    if (!sectionIndices.length) return;
+    const firstIndex = sectionIndices[0];
+    const lastIndex = sectionIndices[sectionIndices.length - 1];
+    if (insertIndex < firstIndex || insertIndex > lastIndex + 1) {
+      setDraggedSlideIndex(null);
+      setDragInsertIndex(null);
       return;
     }
 
     const nextSlides = [...project.data.slides];
     const [movedSlide] = nextSlides.splice(fromIndex, 1);
-    const insertAt = fromIndex < toIndex ? toIndex - 1 : toIndex;
+    const insertAt = fromIndex < insertIndex ? insertIndex - 1 : insertIndex;
     nextSlides.splice(insertAt, 0, movedSlide);
+
+    let nextData: ProjectData = {
+      ...project.data,
+      slides: nextSlides,
+    };
+    nextData = renumberSectionAssetReferences(nextData, movedSlide.sectionId);
 
     setProject({
       ...project,
-      data: {
-        ...project.data,
-        slides: nextSlides,
-      },
+      data: nextData,
     });
     setIsDirty(true);
     setCurrentIndex(insertAt);
     setPreviousIndex(null);
     setDraggedSlideIndex(null);
-    setDragOverSlideIndex(null);
+    setDragInsertIndex(null);
   };
 
   const deleteSection = (sectionId: string) => {
@@ -2183,6 +2282,47 @@ export function App() {
       },
     });
     setIsDirty(true);
+  };
+
+  const duplicateBreak = (sectionId: string) => {
+    if (!ensureEditMode(appMode, "duplicate break")) return;
+    if (!project) return;
+
+    const sourceIndex = project.data.sections.findIndex((s) => s.id === sectionId);
+    if (sourceIndex === -1) return;
+    const source = project.data.sections[sourceIndex];
+    if (source.type !== "break") return;
+
+    const clonedBreakMedia = (source.breakMedia || []).map((item) => ({
+      ...item,
+      id: crypto.randomUUID(),
+    }));
+    const clonedStoryRefs = (source.storyReferences || []).map((item) => ({
+      ...item,
+      id: crypto.randomUUID(),
+    }));
+
+    const duplicated: Section = {
+      ...source,
+      id: crypto.randomUUID(),
+      name: `${source.name} Copy`,
+      breakMedia: clonedBreakMedia,
+      storyReferences: clonedStoryRefs,
+    };
+
+    const nextSections = [...project.data.sections];
+    nextSections.splice(sourceIndex + 1, 0, duplicated);
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        sections: nextSections,
+      },
+    });
+    setIsDirty(true);
+    setSelectedSectionId(duplicated.id);
+    setExpandedSectionId(duplicated.id);
   };
 
   const onDeleteBubble = () => {
@@ -2428,7 +2568,7 @@ export function App() {
             <button onClick={onImportMedia} disabled={!project}>
               Import Media
             </button>
-            <button onClick={onSave} disabled={!project}>
+            <button onClick={onSave} disabled={!project || isSaveInProgress}>
               Save
             </button>
             {appMode === "edit" && <SparkLab />}
@@ -2506,10 +2646,10 @@ export function App() {
 
           {showSlideSelector && (
             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}>
-              <div style={{ background: "#2a2a30", border: "1px solid #444", borderRadius: 8, padding: 24, width: 400, display: "flex", flexDirection: "column", gap: 16, maxHeight: "80vh" }}>
+              <div className="break-slide-picker-modal">
                 <h3 style={{ margin: 0, color: "#eee" }}>Select Slide</h3>
-                <div style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-                  {project?.data.slides.map((s, idx) => {
+                <div className="break-slide-picker-list">
+                  {project?.data.slides.map((s) => {
                     const asset = assetsById.get(s.assetId);
                     return (
                       <button key={s.id} onClick={() => {
@@ -2517,13 +2657,65 @@ export function App() {
                         const nextBreakMedia = [...(selectedSection?.breakMedia || []), ...newMedia];
                         if (selectedSection) updateSection(selectedSection.id, { breakMedia: nextBreakMedia });
                         setShowSlideSelector(false);
-                      }} style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer" }}>
-                        {idx + 1}. {asset?.originalName || "Unknown"}
+                      }} className="break-slide-picker-item">
+                        <span className="break-slide-picker-thumb">
+                          {asset ? (
+                            asset.mediaType === "video" ? (
+                              <video
+                                src={toMediaUrl(asset.relativePath)}
+                                muted
+                                preload="metadata"
+                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                              />
+                            ) : asset.mediaType === "image" ? (
+                              <img
+                                src={toMediaUrl(asset.relativePath)}
+                                alt=""
+                                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                              />
+                            ) : (
+                              <span style={{ fontSize: "0.6rem", color: "#8ea2c7" }}>A</span>
+                            )
+                          ) : (
+                            <span style={{ fontSize: "0.6rem", color: "#8ea2c7" }}>?</span>
+                          )}
+                        </span>
+                        <span className="break-slide-picker-label">
+                          {asset ? getAssetDisplayLabel(asset, "edit") : "Unknown"}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
-                <button onClick={() => setShowSlideSelector(false)} style={{ alignSelf: "flex-end", padding: "6px 12px" }}>Cancel</button>
+                <button onClick={() => setShowSlideSelector(false)} className="break-slide-picker-cancel">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {showBreakBgLibrary && selectedSection?.type === "break" && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2100 }}>
+              <div style={{ background: "#2a2a30", border: "1px solid #444", borderRadius: 8, padding: 18, width: 420, display: "flex", flexDirection: "column", gap: 12, maxHeight: "80vh" }}>
+                <h3 style={{ margin: 0, color: "#eee" }}>Select Break Background</h3>
+                <div style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                  {(project?.data.assets || [])
+                    .filter((a) => a.mediaType === "image")
+                    .map((asset) => (
+                      <button
+                        key={asset.id}
+                        onClick={() => {
+                          updateSection(selectedSection.id, { background: `url('${toMediaUrl(asset.relativePath)}')` });
+                          setShowBreakBgLibrary(false);
+                        }}
+                        style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer", borderRadius: 6 }}
+                      >
+                        {getAssetDisplayLabel(asset, "edit")}
+                      </button>
+                    ))}
+                  {!(project?.data.assets || []).some((a) => a.mediaType === "image") && (
+                    <div style={{ color: "#888", fontSize: "0.85rem" }}>No images in project library.</div>
+                  )}
+                </div>
+                <button onClick={() => setShowBreakBgLibrary(false)} style={{ alignSelf: "flex-end", padding: "6px 12px" }}>Close</button>
               </div>
             </div>
           )}
@@ -2593,6 +2785,77 @@ export function App() {
                     }}
                   >
                     Yes, Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showSaveChoiceModal && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.7)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2000,
+              }}
+            >
+              <div
+                style={{
+                  background: "#2a2a30",
+                  border: "1px solid #444",
+                  borderRadius: 8,
+                  padding: 20,
+                  width: 320,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#eee" }}>
+                  Save Project
+                </h3>
+                <p style={{ margin: 0, color: "#aaa", lineHeight: 1.4 }}>
+                  Choose how you want to save this project.
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    marginTop: 8,
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <button
+                    onClick={() => setShowSaveChoiceModal(false)}
+                    style={{ background: "transparent", border: "1px solid #555" }}
+                    disabled={isSaveInProgress}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowSaveChoiceModal(false);
+                      await performSave("save");
+                    }}
+                    style={{ background: "#2a5a2a", border: "1px solid #4a8a4a", color: "#fff" }}
+                    disabled={isSaveInProgress}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowSaveChoiceModal(false);
+                      await performSave("saveAs");
+                    }}
+                    style={{ background: "#2f4d7a", border: "1px solid #42679e", color: "#fff" }}
+                    disabled={isSaveInProgress}
+                  >
+                    Save As
                   </button>
                 </div>
               </div>
@@ -2700,7 +2963,7 @@ export function App() {
                                       moveSection(section.id, "up");
                                     }}
                                   >
-                                    笆ｲ
+                                    ↑
                                   </button>
                                   <button
                                     className="section-ctrl-btn"
@@ -2711,7 +2974,7 @@ export function App() {
                                       moveSection(section.id, "down");
                                     }}
                                   >
-                                    笆ｼ
+                                    ↓
                                   </button>
                                   <button
                                     className="section-delete-btn"
@@ -2729,90 +2992,133 @@ export function App() {
                             {!isBreak && isExpanded && (
                               <ul className="slide-list">
                                 {(sectionSlideIndices.get(section.id) ?? []).map(
-                                  (slideIndex) => {
+                                  (slideIndex, localIndex, sectionIndices) => {
                                     const slide = project!.data.slides[slideIndex];
                                     const asset = assetsById.get(slide.assetId);
                                     const isDragging = draggedSlideIndex === slideIndex;
-                                    const isDragOver =
-                                      dragOverSlideIndex === slideIndex;
                                     const isSlideSelected = selectedSlideIds.has(
                                       slide.id,
                                     );
                                     const isCurrent = slideIndex === currentIndex;
+                                    const endInsertTarget =
+                                      sectionIndices[sectionIndices.length - 1] + 1;
 
                                     return (
-                                      <li
-                                        key={slide.id}
-                                        className={
-                                          isDragOver
-                                            ? "slide-row drag-over"
-                                            : "slide-row"
-                                        }
-                                        onDragOver={(event) => {
-                                          event.preventDefault();
-                                          if (draggedSlideIndex !== null) {
-                                            setDragOverSlideIndex(slideIndex);
-                                          }
-                                        }}
-                                        onDrop={(event) => {
-                                          event.preventDefault();
-                                          if (draggedSlideIndex === null) return;
-                                          reorderSlidesWithinSection(
-                                            draggedSlideIndex,
-                                            slideIndex,
-                                          );
-                                        }}
-                                      >
-                                        <button
-                                          draggable
-                                          className={`slide-btn ${isSlideSelected ? "selected" : ""} ${isCurrent && topMode === 'story' ? "current-slide" : ""}`}
-                                          style={{ position: 'relative' }}
-                                          onClick={(e) =>
-                                            onSlideWrapperClick(slideIndex, e)
-                                          }
-                                          onDragStart={(event) => {
-                                            event.stopPropagation();
-                                            event.dataTransfer.effectAllowed = "move";
-                                            event.dataTransfer.setData(
-                                              "text/plain",
-                                              String(slideIndex),
-                                            );
-                                            setDraggedSlideIndex(slideIndex);
-                                            setDragOverSlideIndex(slideIndex);
-                                          }}
-                                          onDragEnd={() => {
-                                            setDraggedSlideIndex(null);
-                                            setDragOverSlideIndex(null);
-                                          }}
-                                        >
-                                          <span>{slideIndex + 1}.</span>{" "}
-                                          {asset?.originalName ?? "Unknown asset"}
-                                          {isDragging && <small> (Dragging)</small>}
-                                          {appMode === "edit" && (
-                                            <div
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                onDeleteSlide(slide.id);
-                                              }}
-                                              title="Delete Slide"
-                                              style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                right: 0,
-                                                padding: '2px 6px',
-                                                background: 'rgba(0, 0, 0, 0.3)',
-                                                color: '#fff',
-                                                fontSize: '0.75rem',
-                                                borderRadius: '0 0 0 4px',
-                                                cursor: 'pointer',
-                                                zIndex: 5
-                                              }}
-                                            >
-                                              X
-                                            </div>
-                                          )}
-                                        </button>
-                                      </li>
+                                      <Fragment key={slide.id}>
+                                        {appMode === "edit" && (
+                                          <li
+                                            className={`slide-drop-zone ${dragInsertIndex === slideIndex ? "active" : ""}`}
+                                            onDragOver={(event) => {
+                                              event.preventDefault();
+                                              if (draggedSlideIndex !== null) {
+                                                setDragInsertIndex(slideIndex);
+                                              }
+                                            }}
+                                            onDrop={(event) => {
+                                              event.preventDefault();
+                                              if (draggedSlideIndex === null) return;
+                                              reorderSlidesWithinSection(
+                                                draggedSlideIndex,
+                                                slideIndex,
+                                              );
+                                            }}
+                                          />
+                                        )}
+                                        <li className="slide-row">
+                                          <button
+                                            draggable={appMode === "edit"}
+                                            className={`slide-btn ${appMode === "edit" ? "slide-btn--edit" : "slide-btn--teach"} ${isSlideSelected ? "selected" : ""} ${isCurrent && topMode === 'story' ? "current-slide" : ""}`}
+                                            style={{ position: 'relative' }}
+                                            onClick={(e) =>
+                                              onSlideWrapperClick(slideIndex, e)
+                                            }
+                                            onDragStart={(event) => {
+                                              if (appMode !== "edit") return;
+                                              event.stopPropagation();
+                                              event.dataTransfer.effectAllowed = "move";
+                                              event.dataTransfer.setData(
+                                                "text/plain",
+                                                String(slideIndex),
+                                              );
+                                              setDraggedSlideIndex(slideIndex);
+                                              setDragInsertIndex(slideIndex);
+                                            }}
+                                            onDragEnd={() => {
+                                              setDraggedSlideIndex(null);
+                                              setDragInsertIndex(null);
+                                            }}
+                                          >
+                                            <span className={`slide-thumb ${appMode === "edit" ? "slide-thumb--edit" : "slide-thumb--teach"}`}>
+                                              {asset ? (
+                                                asset.mediaType === "video" ? (
+                                                  <video
+                                                    src={toMediaUrl(asset.relativePath)}
+                                                    muted
+                                                    preload="metadata"
+                                                    className="slide-thumb-media"
+                                                  />
+                                                ) : asset.mediaType === "image" ? (
+                                                  <img
+                                                    src={toMediaUrl(asset.relativePath)}
+                                                    alt={getAssetDescription(asset)}
+                                                    className="slide-thumb-media"
+                                                  />
+                                                ) : (
+                                                  <span className="slide-thumb-fallback">A</span>
+                                                )
+                                              ) : (
+                                                <span className="slide-thumb-fallback">?</span>
+                                              )}
+                                            </span>
+                                            <span className="slide-label-text">
+                                              {asset ? getAssetDisplayLabel(asset, appMode) : "Unknown asset"}
+                                            </span>
+                                            {isDragging && <small> (Dragging)</small>}
+                                            {appMode === "edit" && (
+                                              <div
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  onDeleteSlide(slide.id);
+                                                }}
+                                                title="Delete Slide"
+                                                style={{
+                                                  position: 'absolute',
+                                                  top: 0,
+                                                  right: 0,
+                                                  padding: '2px 6px',
+                                                  background: 'rgba(0, 0, 0, 0.3)',
+                                                  color: '#fff',
+                                                  fontSize: '0.75rem',
+                                                  borderRadius: '0 0 0 4px',
+                                                  cursor: 'pointer',
+                                                  zIndex: 5
+                                                }}
+                                              >
+                                                X
+                                              </div>
+                                            )}
+                                          </button>
+                                        </li>
+                                        {appMode === "edit" && localIndex === sectionIndices.length - 1 && (
+                                          <li
+                                            className={`slide-drop-zone ${dragInsertIndex === endInsertTarget ? "active" : ""}`}
+                                            onDragOver={(event) => {
+                                              event.preventDefault();
+                                              if (draggedSlideIndex !== null) {
+                                                setDragInsertIndex(endInsertTarget);
+                                              }
+                                            }}
+                                            onDrop={(event) => {
+                                              event.preventDefault();
+                                              if (draggedSlideIndex === null) return;
+                                              reorderSlidesWithinSection(
+                                                draggedSlideIndex,
+                                                endInsertTarget,
+                                              );
+                                            }}
+                                          />
+                                        )}
+                                      </Fragment>
                                     );
                                   },
                                 )}
@@ -2896,7 +3202,7 @@ export function App() {
                               return `${o.bubbleId} - ${tName}`;
                             }).filter(Boolean).join(', ');
                             const bStr = bIds ? ` [${bIds}]` : '';
-                            title = `Slide: ${asset?.originalName || slideRef.slideId}${bStr}`;
+                            title = `Slide: ${asset ? getAssetDisplayLabel(asset, appMode) : slideRef.slideId}${bStr}`;
                           } else if (item.type === 'aCardRef') {
                             const aCard = (project!.data.aCardLibrary || {})[(item as any).aCardId];
                             title = `雫 ACard: ${aCard?.name || (item as any).aCardId || '(none)'}`;
@@ -2919,7 +3225,7 @@ export function App() {
                                   setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [`${boostTab}Sequence`]: seq } } });
                                   setIsDirty(true);
                                 }}
-                              >笆ｲ</button>
+                              >↑</button>
                               <button
                                 style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#888', cursor: index === arr.length - 1 ? 'default' : 'pointer' }}
                                 disabled={index === arr.length - 1}
@@ -2931,7 +3237,7 @@ export function App() {
                                   setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [`${boostTab}Sequence`]: seq } } });
                                   setIsDirty(true);
                                 }}
-                              >笆ｼ</button>
+                              >↓</button>
                               <button
                                 style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#f66', cursor: 'pointer' }}
                                 onClick={(e) => {
@@ -3089,27 +3395,37 @@ export function App() {
                     </button>
                   )}
                   {appMode === "edit" && showBreakEditor && (
-                    <div style={{ position: "absolute", top: 10, right: 10, width: "300px", maxHeight: "calc(100% - 20px)", height: "auto", backgroundColor: "rgba(30,30,35,0.98)", border: "1px solid #444", borderRadius: "8px", zIndex: 60, padding: "12px", display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", color: "#ddd", boxShadow: "-2px 0 10px rgba(0,0,0,0.5)", boxSizing: "border-box" }}>
+                    <div className="break-editor-panel" style={{ position: "absolute", top: 10, right: 10, width: "330px", maxHeight: "calc(100% - 20px)", height: "auto", zIndex: 60 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #444", paddingBottom: "8px", margin: 0 }}>
                         <h3 style={{ margin: 0, color: "#fff" }}>Break Editor</h3>
-                        <button onClick={() => setShowBreakEditor(false)} style={{ background: "transparent", border: "none", color: "#aaa", cursor: "pointer", fontSize: "16px", padding: "0 4px" }}>X</button>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <button
+                            onClick={() => duplicateBreak(selectedSection.id)}
+                            style={{ border: "1px solid rgba(104, 182, 129, 0.8)", borderRadius: 6, padding: "4px 8px", background: "rgba(42, 102, 67, 0.95)", color: "#e3ffe8", cursor: "pointer", fontSize: "0.72rem" }}
+                          >
+                            Duplicate
+                          </button>
+                          <button onClick={() => setShowBreakEditor(false)} style={{ background: "transparent", border: "none", color: "#aaa", cursor: "pointer", fontSize: "16px", padding: "0 4px" }}>X</button>
+                        </div>
                       </div>
 
-                      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Title</span>
-                        <textarea
-                          value={selectedSection.name || ""}
-                          onChange={(e) => updateSection(selectedSection.id, { name: e.target.value })}
-                          style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "6px", borderRadius: 4, fontFamily: "inherit", minHeight: 40, resize: "vertical" }}
-                        />
-                      </label>
+                        <label className="break-editor-label">
+                          <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Title</span>
+                          <textarea
+                            value={selectedSection.name || ""}
+                            onChange={(e) => updateSection(selectedSection.id, { name: e.target.value })}
+                            className="break-editor-textarea"
+                            style={{ minHeight: 40 }}
+                          />
+                        </label>
 
-                      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <label className="break-editor-label">
                         <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Questions</span>
                         <textarea
                           value={selectedSection.questions || ""}
                           onChange={(e) => updateSection(selectedSection.id, { questions: e.target.value })}
-                          style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "6px", borderRadius: 4, minHeight: 100, fontFamily: "inherit", resize: "vertical" }}
+                          className="break-editor-textarea"
+                          style={{ minHeight: 100 }}
                         />
                       </label>
 
@@ -3162,62 +3478,94 @@ export function App() {
                           />
                         </label>
 
-                        <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div className="break-editor-section-block">
                           <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Background</span>
                           {(() => {
                             const bg = selectedSection.background || "#111111";
                             const isGrad = bg.startsWith("linear-gradient");
                             const isImg = bg.startsWith("url");
+                            const bgTransform = selectedSection.bgTransform || { x: 0, y: 0, scale: 1, blur: 0 };
+
                             return (
                               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                                  {!isImg && !isGrad ? (
-                                    <input type="color" value={bg} onChange={(e) => updateSection(selectedSection.id, { background: e.target.value })} style={{ background: "transparent", border: "none", width: 24, height: 24, cursor: "pointer", padding: 0 }} />
-                                  ) : null}
-                                  {isGrad ? (
-                                    <>
-                                      <input type="color" value={(bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"])[0]} onChange={(e) => { const c = bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"]; updateSection(selectedSection.id, { background: `linear-gradient(180deg, ${e.target.value}, ${c[1] || c[0]})` }) }} style={{ background: "transparent", border: "none", width: 24, height: 24, cursor: "pointer", padding: 0 }} />
-                                      <input type="color" value={(bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"])[1]} onChange={(e) => { const c = bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"]; updateSection(selectedSection.id, { background: `linear-gradient(180deg, ${c[0]}, ${e.target.value})` }) }} style={{ background: "transparent", border: "none", width: 24, height: 24, cursor: "pointer", padding: 0 }} />
-                                    </>
-                                  ) : null}
-                                  {isImg ? (
-                                    <span style={{ fontSize: "0.8rem", color: "#fff", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Image BG</span>
-                                  ) : null}
-                                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                                    <button onClick={() => updateSection(selectedSection.id, { background: "#111111" })} style={{ padding: "4px 8px", background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: "0.75rem" }}>Solid</button>
-                                    <button onClick={() => updateSection(selectedSection.id, { background: "linear-gradient(180deg, #111111, #333333)" })} style={{ padding: "4px 8px", background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: "0.75rem" }}>Gradient</button>
-                                    <button onClick={async () => {
-                                      if (!project) return;
-                                      const result = await window.appApi.importMedia();
-                                      if (result && result.importedAssets.length > 0) {
-                                        const nextAssets = [...project.data.assets, ...result.importedAssets];
-                                        setProject({
-                                          ...project,
-                                          data: { ...project.data, assets: nextAssets }
-                                        });
-                                        updateSection(selectedSection.id, { background: `url('${toMediaUrl(result.importedAssets[0].relativePath)}')` });
-                                      }
-                                    }} style={{ padding: "4px 8px", background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", fontSize: "0.75rem" }}>Image</button>
-                                  </div>
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                  <button onClick={() => updateSection(selectedSection.id, { background: "#111111" })} style={{ border: "1px solid rgba(106, 126, 161, 0.65)", borderRadius: 6, padding: "4px 8px", background: !isGrad && !isImg ? "rgba(52, 64, 89, 0.95)" : "rgba(43, 52, 73, 0.9)", color: "#e6ecff", cursor: "pointer", fontSize: "0.72rem" }}>Solid</button>
+                                  <button onClick={() => updateSection(selectedSection.id, { background: "linear-gradient(180deg, #111111, #333333)" })} style={{ border: "1px solid rgba(106, 126, 161, 0.65)", borderRadius: 6, padding: "4px 8px", background: isGrad ? "rgba(52, 64, 89, 0.95)" : "rgba(43, 52, 73, 0.9)", color: "#e6ecff", cursor: "pointer", fontSize: "0.72rem" }}>Gradient</button>
+                                  <button onClick={() => updateSection(selectedSection.id, { background: "url('')" })} style={{ border: "1px solid rgba(106, 126, 161, 0.65)", borderRadius: 6, padding: "4px 8px", background: isImg ? "rgba(52, 64, 89, 0.95)" : "rgba(43, 52, 73, 0.9)", color: "#e6ecff", cursor: "pointer", fontSize: "0.72rem" }}>Image</button>
                                 </div>
 
+                                {!isImg && !isGrad && (
+                                  <input
+                                    type="color"
+                                    value={bg}
+                                    onChange={(e) => updateSection(selectedSection.id, { background: e.target.value })}
+                                    style={{ background: "transparent", border: "1px solid rgba(130, 149, 184, 0.55)", width: 34, height: 24, borderRadius: 4, cursor: "pointer", padding: 0 }}
+                                  />
+                                )}
+                                {isGrad && (
+                                  <div style={{ display: "flex", gap: 6 }}>
+                                    <input type="color" value={(bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"])[0]} onChange={(e) => { const c = bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"]; updateSection(selectedSection.id, { background: `linear-gradient(180deg, ${e.target.value}, ${c[1] || c[0]})` }) }} style={{ background: "transparent", border: "1px solid rgba(130, 149, 184, 0.55)", width: 34, height: 24, borderRadius: 4, cursor: "pointer", padding: 0 }} />
+                                    <input type="color" value={(bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"])[1]} onChange={(e) => { const c = bg.match(/#[a-fA-F0-9]{3,6}|rgba?\(.*?\)/g) || ["#111", "#333"]; updateSection(selectedSection.id, { background: `linear-gradient(180deg, ${c[0]}, ${e.target.value})` }) }} style={{ background: "transparent", border: "1px solid rgba(130, 149, 184, 0.55)", width: 34, height: 24, borderRadius: 4, cursor: "pointer", padding: 0 }} />
+                                  </div>
+                                )}
+
                                 {isImg && (
-                                  <div style={{ display: "flex", gap: 4, flexDirection: "column", background: "rgba(0,0,0,0.2)", padding: 8, borderRadius: 4 }}>
-                                    <span style={{ fontSize: "0.75rem", color: "#aaa" }}>BG Transform & Blur</span>
-                                    <div style={{ display: "flex", gap: 4 }}>
-                                      <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>X <input type="text" value={selectedSection.bgTransform?.x ?? 0} onBlur={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { y: 0, scale: 1, blur: 0 }), x: Number(e.target.value) || 0 } })} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { y: 0, scale: 1, blur: 0 }), x: e.target.value as any } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
-                                      <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>Y <input type="text" value={selectedSection.bgTransform?.y ?? 0} onBlur={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, scale: 1, blur: 0 }), y: Number(e.target.value) || 0 } })} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, scale: 1, blur: 0 }), y: e.target.value as any } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
+                                  <div className="break-editor-image-card">
+                                    <div style={{ fontSize: "0.72rem", color: "#a9b5cd" }}>Image BG</div>
+                                    <div className="break-editor-grid-2">
+                                      <button
+                                        onClick={() => setShowBreakBgLibrary(true)}
+                                        className="break-editor-btn"
+                                      >
+                                        Project Library
+                                      </button>
+                                      <button
+                                        onClick={async () => {
+                                          if (!project) return;
+                                          const result = await window.appApi.importMedia();
+                                          if (result && result.importedAssets.length > 0) {
+                                            const normalizedImportedAssets = decorateImportedAssetsForContext(
+                                              project.data,
+                                              result.importedAssets,
+                                              selectedSection.id,
+                                            );
+                                            const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
+                                            setProject({
+                                              ...project,
+                                              data: { ...project.data, assets: nextAssets }
+                                            });
+                                            updateSection(selectedSection.id, { background: `url('${toMediaUrl(normalizedImportedAssets[0].relativePath)}')` });
+                                          }
+                                        }}
+                                        className="break-editor-btn"
+                                      >
+                                        Import File
+                                      </button>
                                     </div>
-                                    <div style={{ display: "flex", gap: 4 }}>
-                                      <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>Scale <input type="number" step="0.1" value={selectedSection.bgTransform?.scale ?? 1} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, y: 0, blur: 0 }), scale: Number(e.target.value) || 1 } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
-                                      <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column" }}>Blur <input type="number" min="0" step="1" value={selectedSection.bgTransform?.blur ?? 0} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...(selectedSection.bgTransform || { x: 0, y: 0, scale: 1 }), blur: Number(e.target.value) || 0 } })} style={{ background: "#111", border: "1px solid #333", color: "#fff", padding: "1px 2px", borderRadius: 2, fontSize: "0.65rem" }} /></label>
+                                    <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: "0.72rem", color: "#a9b5cd" }}>
+                                      Scale ({(bgTransform.scale ?? 1).toFixed(1)}x)
+                                      <input className="break-editor-range" type="range" min={0.5} max={3} step={0.1} value={bgTransform.scale ?? 1} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...bgTransform, scale: Number(e.target.value) } })} />
+                                    </label>
+                                    <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: "0.72rem", color: "#a9b5cd" }}>
+                                      Blur ({Math.round(bgTransform.blur ?? 0)}px)
+                                      <input className="break-editor-range" type="range" min={0} max={20} step={1} value={bgTransform.blur ?? 0} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...bgTransform, blur: Number(e.target.value) } })} />
+                                    </label>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: "0.72rem", color: "#a9b5cd" }}>
+                                        X ({Math.round(bgTransform.x ?? 0)})
+                                        <input className="break-editor-range" type="range" min={-100} max={100} step={1} value={bgTransform.x ?? 0} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...bgTransform, x: Number(e.target.value) } })} />
+                                      </label>
+                                      <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: "0.72rem", color: "#a9b5cd" }}>
+                                        Y ({Math.round(bgTransform.y ?? 0)})
+                                        <input className="break-editor-range" type="range" min={-100} max={100} step={1} value={bgTransform.y ?? 0} onChange={(e) => updateSection(selectedSection.id, { bgTransform: { ...bgTransform, y: Number(e.target.value) } })} />
+                                      </label>
                                     </div>
                                   </div>
                                 )}
                               </div>
                             );
                           })()}
-                        </label>
+                        </div>
                       </div>
 
                       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: "10px", borderTop: "1px solid #444", paddingTop: "10px" }}>
@@ -3230,7 +3578,12 @@ export function App() {
                                 const result = await window.appApi.importMedia();
                                 if (result && result.createdSlides && result.createdSlides.length > 0) {
                                   const newMedia = result.createdSlides.map((s, i) => ({ id: `img-${Date.now()}-${i}`, slideId: s.id, fit: "contain" as const }));
-                                  const nextAssets = [...project.data.assets, ...result.importedAssets];
+                                  const normalizedImportedAssets = decorateImportedAssetsForContext(
+                                    project.data,
+                                    result.importedAssets,
+                                    selectedSection.id,
+                                  );
+                                  const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
                                   const nextSlides = [...project.data.slides, ...result.createdSlides.map(s => ({ ...s, sectionId: selectedSection.id }))];
                                   const nextBreakMedia = [...(selectedSection.breakMedia || []), ...newMedia];
                                   setProject({
@@ -3264,7 +3617,7 @@ export function App() {
                             <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: 4, background: "#222", padding: "6px", borderRadius: 4 }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <span style={{ fontSize: "0.7rem", color: "#ccc", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", flex: 1, marginRight: 8 }}>
-                                  {asset?.originalName || `Image ${i + 1}`}
+                                  {asset ? getAssetDisplayLabel(asset, "edit") : `Image ${i + 1}`}
                                 </span>
                                 <button
                                   onClick={() => {
@@ -3384,14 +3737,15 @@ export function App() {
                                 const importedAssets = await window.appApi.importAudio();
                                 if (!importedAssets || importedAssets.length === 0) return;
 
-                                const newClips = importedAssets.map(a => ({
+                                const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, importedAssets);
+                                const newClips = normalizedImportedAssets.map(a => ({
                                   url: toMediaUrl(a.relativePath),
                                   volume: 1,
-                                  name: a.originalName,
+                                  name: getAssetDescription(a),
                                   fadeEnabled: true
                                 }));
 
-                                const nextAssets = [...project.data.assets, ...importedAssets];
+                                const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
                                 const nextBgm = [...(selectedSection.bgm || []), ...newClips];
 
                                 setProject({
@@ -3439,7 +3793,8 @@ export function App() {
                       <div style={{ flex: 1 }} />
                       <button
                         onClick={() => setShowBreakEditor(false)}
-                        style={{ background: "#3a3a4a", color: "#fff", border: "1px solid #556", padding: "10px", borderRadius: 4, cursor: "pointer", fontWeight: "bold", marginTop: 10 }}
+                        className="break-editor-btn"
+                        style={{ padding: "10px", marginTop: 10, fontWeight: "bold" }}
                       >
                         Done
                       </button>
@@ -3470,6 +3825,7 @@ export function App() {
                       style={{
                         backgroundColor: selectedSection.background && !selectedSection.background.startsWith("url") ? undefined : "#111",
                         background: selectedSection.bgTransform && selectedSection.bgTransform.blur ? "transparent" : (selectedSection.background || "#111"),
+                        backgroundRepeat: "no-repeat",
                         backgroundSize: selectedSection.bgTransform ? `${(selectedSection.bgTransform.scale ?? 1) * 100}%` : "cover",
                         backgroundPosition: selectedSection.bgTransform ? `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)` : "center",
                         width: 1920,
@@ -3480,7 +3836,7 @@ export function App() {
                       }}
                     >
                       {selectedSection.bgTransform && selectedSection.bgTransform.blur && selectedSection.background?.startsWith("url") ? (
-                        <div style={{ position: "absolute", zIndex: -1, inset: -100, pointerEvents: "none", background: selectedSection.background || "#111", backgroundSize: `${(selectedSection.bgTransform.scale ?? 1) * 100}%`, backgroundPosition: `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)`, filter: `blur(${selectedSection.bgTransform.blur}px)` }} />
+                        <div style={{ position: "absolute", zIndex: -1, inset: -100, pointerEvents: "none", background: selectedSection.background || "#111", backgroundRepeat: "no-repeat", backgroundSize: `${(selectedSection.bgTransform.scale ?? 1) * 100}%`, backgroundPosition: `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)`, filter: `blur(${selectedSection.bgTransform.blur}px)` }} />
                       ) : null}
                       {/* Thumbnails at Top */}
                       <div className="break-thumbnails-grid">
@@ -4807,8 +5163,9 @@ export function App() {
                             <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
                               {project?.data.slides.map((s, idx) => {
                                 const asset = assetsById.get(s.assetId);
-                                const name = asset?.originalName || s.id;
-                                const matches = name.toLowerCase().includes(boostSearchQuery.toLowerCase());
+                                const visibleLabel = asset ? getAssetDisplayLabel(asset, appMode) : s.id;
+                                const searchText = `${visibleLabel} ${asset ? getAssetDescription(asset) : ""}`.toLowerCase();
+                                const matches = searchText.includes(boostSearchQuery.toLowerCase());
                                 if (boostSearchQuery && !matches) return null;
                                 return (
                                   <button
@@ -4816,7 +5173,7 @@ export function App() {
                                     style={{ padding: '6px', background: activeItem.slideId === s.id ? '#556' : '#222', border: activeItem.slideId === s.id ? '1px solid #77f' : '1px solid #444', color: '#ddd', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: '0.8rem' }}
                                     onClick={() => updateSequenceItem(activeItem.id, { slideId: s.id })}
                                   >
-                                    {idx + 1}. {name.length > 30 ? name.slice(0, 30) + '...' : name}
+                                    {idx + 1}. {visibleLabel.length > 30 ? visibleLabel.slice(0, 30) + '...' : visibleLabel}
                                   </button>
                                 );
                               })}
@@ -5011,7 +5368,7 @@ export function App() {
                         { label: "Delete Slide", onClick: () => currentSlide && onDeleteSlide(currentSlide.id) },
                         { isDivider: true },
                         { label: "Move Slide Up", disabled: isSlideFirst, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex - 1) },
-                        { label: "Move Slide Down", disabled: isSlideLast, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex + 1) },
+                        { label: "Move Slide Down", disabled: isSlideLast, onClick: () => reorderSlidesWithinSection(currentIndex, currentIndex + 2) },
                       ]
                     },
                     {
@@ -5994,7 +6351,7 @@ function MediaView({
         <img
           src={src}
           className="media-content"
-          alt={asset.originalName}
+          alt={getAssetDescription(asset)}
           style={mediaStyle}
           draggable={false}
         />

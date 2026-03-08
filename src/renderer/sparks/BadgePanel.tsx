@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSparks } from './SparkProvider';
 import { ProjectState } from '../../shared/types';
+import { decorateImportedAssetsForContext } from '../../shared/mediaReferences';
 
 interface BadgePanelProps {
     isEditMode: boolean;
@@ -77,6 +78,10 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
                 onClick={async () => {
                     const res = await (window as any).appApi.importMedia();
                     if (res && res.importedAssets.length > 0) {
+                        const normalizedImportedAssets = decorateImportedAssetsForContext(
+                            project!.data,
+                            res.importedAssets,
+                        );
                         const newAssetId = res.importedAssets[0].id;
                         const nextBadgeConfig = {
                             ...badgeConfig,
@@ -94,7 +99,7 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
                             data: {
                                 ...project!.data,
                                 badgeConfig: nextBadgeConfig,
-                                assets: [...project!.data.assets, ...res.importedAssets]
+                                assets: [...project!.data.assets, ...normalizedImportedAssets]
                             }
                         });
                     }

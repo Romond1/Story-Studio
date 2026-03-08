@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { ImportResult, ProjectData, ProjectState } from '../shared/types';
+import type { AssetItem, ImportResult, ProjectData, ProjectState } from '../shared/types';
 
 declare global {
   interface Window {
@@ -9,7 +9,10 @@ declare global {
       openProject: () => Promise<ProjectState | null>;
       importMedia: () => Promise<ImportResult | null>;
       importAudio: () => Promise<AssetItem[] | null>;
-      saveProject: (data: ProjectData) => Promise<{ lastSavedAt: string } | null>;
+      saveProject: (
+        data: ProjectData,
+        mode?: 'save' | 'saveAs'
+      ) => Promise<{ lastSavedAt: string; folderPath: string } | null>;
       forceClose: () => void;
       onRequestClose: (callback: () => void) => () => void;
     };
