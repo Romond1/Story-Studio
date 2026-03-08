@@ -36,6 +36,18 @@ function getDefaultPosition(index: number) {
     };
 }
 
+function getSafePosition(
+    position: { x: number; y: number } | undefined,
+    index: number,
+): { x: number; y: number } {
+    const fallback = getDefaultPosition(index);
+    if (!position) return fallback;
+    const x = Number(position.x);
+    const y = Number(position.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return fallback;
+    return { x, y };
+}
+
 export function BCardOverlayStack({
     refs,
     mode,
@@ -79,7 +91,7 @@ export function BCardOverlayStack({
                 const state = getState(refItem.id);
                 const isSelected = selectedRefId === refItem.id;
                 const boardMode = (refItem.stageMode || 'overlay') === 'board';
-                const position = refItem.position || getDefaultPosition(index);
+                const position = getSafePosition(refItem.position, index);
 
                 if (!bCard) {
                     return (

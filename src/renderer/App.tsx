@@ -135,14 +135,14 @@ function AudioClipPlayer({
             }
             style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
-            {isPlaying ? "竢ｸ" : "笆ｶ"}
+            {isPlaying ? "||" : ">"}
           </button>
 
           <button
             onClick={() => onStop(clip.url, { fadeEnabled: clip.fadeEnabled || false })}
             style={{ width: 24, height: 24, padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
-            竢ｹ
+            []
           </button>
 
           {clip.shortcut ? (
@@ -158,14 +158,16 @@ function AudioClipPlayer({
             style={{ background: "transparent", border: "none", padding: 0 }}
             aria-label="Audio settings"
           >
-            笞呻ｸ・          </button>
+            SET
+          </button>
           {showRemove && onRemove && (
             <button
               onClick={onRemove}
               style={{ background: "transparent", border: "none", padding: 0, marginLeft: 4, color: "#ff6666" }}
               title="Remove audio"
             >
-              卵・・            </button>
+              DEL
+            </button>
           )}
         </div>
 
@@ -278,6 +280,17 @@ interface DrawSettings {
   rainbow: boolean;
   sparkle: boolean;
 }
+
+const DEFAULT_DRAW_SETTINGS: DrawSettings = {
+  tool: "highlighter",
+  drawMode: false,
+  size: 12,
+  opacity: 0.45,
+  fadeMs: 2000,
+  color: "#f7f06d",
+  rainbow: false,
+  sparkle: false,
+};
 
 interface HighlighterStroke {
   id: string;
@@ -457,13 +470,13 @@ function SparkLab() {
         onClick={() => setIsOpen(!isOpen)}
         style={{ marginLeft: 8, background: isOpen ? '#4a4a5c' : '#3a3a4c', borderColor: isOpen ? '#667' : '#556' }}
       >
-        笨ｨ Spark Lab
+        Spark Lab
       </button>
 
       {isOpen && (
         <div ref={menuRef} style={{ position: 'fixed', top: 60, left: 320, zIndex: 10000, background: '#1a1a24', border: '1px solid #445', borderRadius: 8, padding: 16, width: 280, maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', color: '#eee' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid #334', paddingBottom: 8 }}>
-            <h4 style={{ margin: 0, fontSize: '0.9rem' }}>笨ｨ Spark Lab</h4>
+            <h4 style={{ margin: 0, fontSize: '0.9rem' }}>Spark Lab</h4>
 	            <button onClick={() => setIsOpen(false)} style={{ background: 'transparent', border: 'none', color: '#888', cursor: 'pointer', padding: 0 }}>X</button>
           </div>
 
@@ -781,7 +794,7 @@ export function App() {
   const [dragInsertIndex, setDragInsertIndex] = useState<number | null>(
     null,
   );
-  const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(false);
+  const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(true);
   const [routingCollapsed, setRoutingCollapsed] = useState(false);
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(
     null,
@@ -811,14 +824,7 @@ export function App() {
   const [activeOverlayId, setActiveOverlayId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number } | null>(null);
   const [drawSettings, setDrawSettings] = useState<DrawSettings>({
-    tool: "highlighter",
-    drawMode: false,
-    size: 12,
-    opacity: 0.45,
-    fadeMs: 2000,
-    color: "#f7f06d",
-    rainbow: false,
-    sparkle: false,
+    ...DEFAULT_DRAW_SETTINGS,
   });
 
   const [timerState, setTimerState] = useState<{
@@ -1616,6 +1622,8 @@ export function App() {
       setSelectedStoryRefId(null);
       setOverlayBCardTeachStates({});
       setOverlayBCardClickAction("none");
+      setDrawPanelCollapsed(true);
+      setDrawSettings({ ...DEFAULT_DRAW_SETTINGS });
       return;
     }
 
@@ -1642,6 +1650,8 @@ export function App() {
     setSelectedStoryRefId(null);
     setOverlayBCardTeachStates({});
     setOverlayBCardClickAction("none");
+    setDrawPanelCollapsed(true);
+    setDrawSettings({ ...DEFAULT_DRAW_SETTINGS });
     setAppMode("teach");
     setIsDirty(false);
   };
@@ -3127,7 +3137,7 @@ export function App() {
                                       moveSection(section.id, "up");
                                     }}
                                   >
-                                    ↑
+                                    Up
                                   </button>
                                   <button
                                     className="section-ctrl-btn"
@@ -3138,7 +3148,7 @@ export function App() {
                                       moveSection(section.id, "down");
                                     }}
                                   >
-                                    ↓
+                                    Down
                                   </button>
                                   <button
                                     className="section-delete-btn"
@@ -3425,10 +3435,10 @@ export function App() {
                             title = `Slide: ${slide ? getSlideDisplayName(slide, appMode) : slideRef.slideId}${bStr}`;
                           } else if (item.type === 'aCardRef') {
                             const aCard = (project!.data.aCardLibrary || {})[(item as any).aCardId];
-                            title = `雫 ACard: ${aCard?.name || (item as any).aCardId || '(none)'}`;
+                            title = `ACard: ${aCard?.name || (item as any).aCardId || '(none)'}`;
                           } else if (item.type === 'bCardRef') {
                             const bCard = (project!.data.bCardLibrary || {})[(item as any).bCardId];
-                            title = `ワ BCard: ${bCard?.name || (item as any).bCardId || '(none)'}`;
+                            title = `BCard: ${bCard?.name || (item as any).bCardId || '(none)'}`;
                           }
 
                           return (
@@ -3445,7 +3455,7 @@ export function App() {
                                   setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [`${boostTab}Sequence`]: seq } } });
                                   setIsDirty(true);
                                 }}
-                              >↑</button>
+                              >Up</button>
                               <button
                                 style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#888', cursor: index === arr.length - 1 ? 'default' : 'pointer' }}
                                 disabled={index === arr.length - 1}
@@ -3457,7 +3467,7 @@ export function App() {
                                   setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack!, [`${boostTab}Sequence`]: seq } } });
                                   setIsDirty(true);
                                 }}
-                              >↓</button>
+                              >Down</button>
                               <button
                                 style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#f66', cursor: 'pointer' }}
                                 onClick={(e) => {
@@ -3851,7 +3861,8 @@ export function App() {
                                   title="Remove image"
                                   style={{ background: "transparent", border: "none", color: "#ff6666", cursor: "pointer", padding: 0 }}
                                 >
-                                  笨・                                </button>
+                                  X
+                                </button>
                               </div>
                               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "flex-end" }}>
                                 <label style={{ fontSize: "0.65rem", color: "#aaa", flex: 1, display: "flex", flexDirection: "column", minWidth: 60 }}>
@@ -4213,7 +4224,7 @@ export function App() {
               ) : activeItem?.type === 'miniGame' ? (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', color: '#fff', borderRadius: 8 }}>
                   <div style={{ textAlign: 'center', padding: 40, border: '2px dashed #444', borderRadius: 8 }}>
-                    <h2 style={{ fontSize: '2rem', marginBottom: 10 }}>式 Mini-Game</h2>
+                    <h2 style={{ fontSize: '2rem', marginBottom: 10 }}>Mini-Game</h2>
                     <p>Placeholder. Game logic not implemented.</p>
                   </div>
                 </div>
@@ -5444,7 +5455,7 @@ export function App() {
                             ))}
                           </select>
                           {!(activeItem as any).aCardId && (
-                            <p style={{ margin: 0, color: '#f88', fontSize: '0.75rem' }}>No ACards exist yet 窶・create one in the Boards tab.</p>
+                            <p style={{ margin: 0, color: '#f88', fontSize: '0.75rem' }}>No ACards exist yet - create one in the Boards tab.</p>
                           )}
                           {appMode === 'teach' && (
                             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #2f3340', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -5480,7 +5491,7 @@ export function App() {
                             </select>
                           </label>
                           {!(activeItem as any).bCardId && (
-                            <p style={{ margin: 0, color: '#f88', fontSize: '0.75rem' }}>No BCards exist yet 窶・create one in the Boards tab.</p>
+                            <p style={{ margin: 0, color: '#f88', fontSize: '0.75rem' }}>No BCards exist yet - create one in the Boards tab.</p>
                           )}
                           {appMode === "teach" && selectedOverlayBCardRefId && selectedOverlayBCardState && (
                             <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #2f3340", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -6071,12 +6082,20 @@ function ZoomPanWrapper({
         }
       };
 
-      // Filter out faded highlighters
-      setHighlighterStrokes((prev) =>
-        prev.filter(
-          (s) => !s.fadeMs || now - s.points[s.points.length - 1].t < s.fadeMs,
-        ),
-      );
+      // Filter out faded highlighters, but avoid a no-op state write every frame.
+      setHighlighterStrokes((prev) => {
+        let changed = false;
+        const next = prev.filter((s) => {
+          const lastPoint = s.points[s.points.length - 1];
+          const keep =
+            !s.fadeMs ||
+            !lastPoint ||
+            now - lastPoint.t < s.fadeMs;
+          if (!keep) changed = true;
+          return keep;
+        });
+        return changed ? next : prev;
+      });
 
       highlighterStrokes.forEach((s) => renderStroke(s, (idx) => 1));
       markerStrokes.forEach((s) => renderStroke(s, (idx) => 1));
@@ -6464,12 +6483,16 @@ function MediaView({
 
       ctx.restore();
 
-      setHighlighterStrokes((prev) =>
-        prev.filter((stroke) => {
+      setHighlighterStrokes((prev) => {
+        let changed = false;
+        const next = prev.filter((stroke) => {
           const lastPoint = stroke.points[stroke.points.length - 1];
-          return now - lastPoint.t < stroke.fadeMs;
-        }),
-      );
+          const keep = !lastPoint || now - lastPoint.t < stroke.fadeMs;
+          if (!keep) changed = true;
+          return keep;
+        });
+        return changed ? next : prev;
+      });
     };
 
     let raf = 0;
