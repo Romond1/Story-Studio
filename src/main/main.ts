@@ -4,7 +4,21 @@ import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
-import type { AssetItem, BoostPack, ImportResult, MediaType, ProjectData, ProjectState, Section, Slide, SparkStudent, StoryReferenceItem } from '../shared/types';
+import type {
+  ACardRefItem,
+  AssetItem,
+  BCardInstance,
+  BoostPack,
+  ImportResult,
+  MediaType,
+  ProjectData,
+  ProjectState,
+  Section,
+  SequenceItem,
+  Slide,
+  SparkStudent,
+  StoryReferenceItem,
+} from '../shared/types';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -106,6 +120,99 @@ function emptyBoostPack(): BoostPack {
   };
 }
 
+const DEFAULT_BCARD_SIZE = { width: 270, height: 390 };
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function coerceFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function defaultBCardCenter(index: number): { x: number; y: number } {
+  return {
+    x: clamp(48 + (index % 4) * 6, 12, 88),
+    y: clamp(34 + Math.floor(index / 4) * 8, 12, 88),
+  };
+}
+
+function legacyBCardRefToInstance(raw: Record<string, unknown>, index: number): BCardInstance | null {
+  const bCardId = typeof raw.bCardId === 'string' ? raw.bCardId : '';
+  if (!bCardId) return null;
+
+  const rawPos = raw.position as Record<string, unknown> | undefined;
+  const rawX = coerceFiniteNumber(rawPos?.x);
+  const rawY = coerceFiniteNumber(rawPos?.y);
+  const center = rawX === null || rawY === null
+    ? defaultBCardCenter(index)
+    : {
+        x: clamp(((rawX + DEFAULT_BCARD_SIZE.width / 2) / 1280) * 100, 8, 92),
+        y: clamp(((rawY + DEFAULT_BCARD_SIZE.height / 2) / 720) * 100, 8, 92),
+      };
+
+  return {
+    id: typeof raw.id === 'string' && raw.id ? raw.id : randomUUID(),
+    bCardId,
+    position: center,
+    size: { ...DEFAULT_BCARD_SIZE },
+    zIndex: index + 1,
+    displayMode: raw.stageMode === 'board' ? 'board' : 'overlay',
+  };
+}
+
+function normalizeBCardInstance(raw: unknown, index: number): BCardInstance | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const item = raw as Record<string, unknown>;
+
+  if (item.type === 'bCardRef') {
+    return legacyBCardRefToInstance(item, index);
+  }
+
+  const bCardId = typeof item.bCardId === 'string' ? item.bCardId : '';
+  if (!bCardId) return null;
+
+  const rawPosition = item.position as Record<string, unknown> | undefined;
+  const rawSize = item.size as Record<string, unknown> | undefined;
+  const x = coerceFiniteNumber(rawPosition?.x);
+  const y = coerceFiniteNumber(rawPosition?.y);
+  const width = coerceFiniteNumber(rawSize?.width);
+  const height = coerceFiniteNumber(rawSize?.height);
+  const zIndex = coerceFiniteNumber(item.zIndex);
+
+  return {
+    id: typeof item.id === 'string' && item.id ? item.id : randomUUID(),
+    bCardId,
+    position: x === null || y === null ? defaultBCardCenter(index) : { x: clamp(x, 0, 100), y: clamp(y, 0, 100) },
+    size: {
+      width: width === null ? DEFAULT_BCARD_SIZE.width : Math.max(40, width),
+      height: height === null ? DEFAULT_BCARD_SIZE.height : Math.max(40, height),
+    },
+    zIndex: zIndex === null ? index + 1 : Math.max(1, Math.round(zIndex)),
+    displayMode: item.displayMode === 'board' || item.stageMode === 'board' ? 'board' : 'overlay',
+    flags: item.flags && typeof item.flags === 'object' ? item.flags as Record<string, boolean> : undefined,
+  };
+}
+
+function normalizeBCardInstances(input: unknown): BCardInstance[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((item, index) => normalizeBCardInstance(item, index))
+    .filter((item): item is BCardInstance => item !== null);
+}
+
+function mergeBCardInstances(primary: BCardInstance[], fallback: BCardInstance[]): BCardInstance[] {
+  if (!fallback.length) return primary;
+  const existing = new Set(primary.map((item) => item.id));
+  const merged = [...primary];
+  for (const instance of fallback) {
+    if (existing.has(instance.id)) continue;
+    merged.push(instance);
+    existing.add(instance.id);
+  }
+  return merged;
+}
+
 function generateBubbleId(data: ProjectData): string {
   let maxId = 0;
   for (const slide of data.slides || []) {
@@ -135,18 +242,124 @@ function normalizeStoryReferences(input: unknown): StoryReferenceItem[] {
         return { id, type: 'aCardRef', aCardId };
       }
 
-      if (raw.type === 'bCardRef') {
-        const bCardId = typeof raw.bCardId === 'string' ? raw.bCardId : '';
-        const stageMode = raw.stageMode === 'board' ? 'board' : 'overlay';
-        const rawPos = raw.position as Record<string, unknown> | undefined;
-        const hasPos = rawPos && typeof rawPos.x === 'number' && typeof rawPos.y === 'number';
-        const position = hasPos ? { x: Number(rawPos.x), y: Number(rawPos.y) } : undefined;
-        return { id, type: 'bCardRef', bCardId, stageMode, position };
-      }
-
       return null;
     })
     .filter((item): item is StoryReferenceItem => item !== null);
+}
+
+function normalizeLegacyStoryBCardRefs(input: unknown): BCardInstance[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((item, index) => {
+      if (!item || typeof item !== 'object') return null;
+      const raw = item as Record<string, unknown>;
+      if (raw.type !== 'bCardRef') return null;
+      return legacyBCardRefToInstance(raw, index);
+    })
+    .filter((item): item is BCardInstance => item !== null);
+}
+
+function normalizeSequenceItem(raw: unknown): SequenceItem | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const item = raw as Record<string, unknown>;
+  const id = typeof item.id === 'string' && item.id ? item.id : randomUUID();
+  const bCardInstances = normalizeBCardInstances(item.bCardInstances);
+
+  if (item.type === 'slideRef') {
+    return {
+      id,
+      type: 'slideRef',
+      slideId: typeof item.slideId === 'string' ? item.slideId : '',
+      viewOverride: item.viewOverride && typeof item.viewOverride === 'object' ? item.viewOverride as { zoom?: number; panX?: number; panY?: number } : undefined,
+      bCardInstances,
+    };
+  }
+
+  if (item.type === 'breakRef') {
+    return {
+      id,
+      type: 'breakRef',
+      breakId: typeof item.breakId === 'string' ? item.breakId : '',
+      textOverride: typeof item.textOverride === 'string' ? item.textOverride : undefined,
+      bCardInstances,
+    };
+  }
+
+  if (item.type === 'promptCard') {
+    return {
+      id,
+      type: 'promptCard',
+      title: typeof item.title === 'string' ? item.title : undefined,
+      body: typeof item.body === 'string' ? item.body : '',
+      durationMs: coerceFiniteNumber(item.durationMs) ?? undefined,
+      bCardInstances,
+    };
+  }
+
+  if (item.type === 'miniGame') {
+    return {
+      id,
+      type: 'miniGame',
+      gameType: 'placeholder',
+      config: item.config && typeof item.config === 'object' ? item.config as Record<string, unknown> : undefined,
+      bCardInstances,
+    };
+  }
+
+  if (item.type === 'aCardRef') {
+    return {
+      id,
+      type: 'aCardRef',
+      aCardId: typeof item.aCardId === 'string' ? item.aCardId : '',
+      bCardInstances,
+    };
+  }
+
+  return null;
+}
+
+function normalizeBoostSequence(input: unknown): SequenceItem[] {
+  if (!Array.isArray(input)) return [];
+
+  const next: SequenceItem[] = [];
+  let pendingInstances: BCardInstance[] = [];
+
+  for (const raw of input) {
+    if (raw && typeof raw === 'object' && (raw as Record<string, unknown>).type === 'bCardRef') {
+      const migrated = legacyBCardRefToInstance(raw as Record<string, unknown>, pendingInstances.length);
+      if (migrated) {
+        pendingInstances = [...pendingInstances, migrated];
+      }
+      continue;
+    }
+
+    const normalized = normalizeSequenceItem(raw);
+    if (!normalized) continue;
+
+    if (pendingInstances.length > 0) {
+      normalized.bCardInstances = [...(normalized.bCardInstances || []), ...pendingInstances];
+      pendingInstances = [];
+    }
+
+    next.push(normalized);
+  }
+
+  if (pendingInstances.length > 0) {
+    if (next.length > 0) {
+      const last = next[next.length - 1];
+      last.bCardInstances = [...(last.bCardInstances || []), ...pendingInstances];
+    } else {
+      next.push({
+        id: randomUUID(),
+        type: 'promptCard',
+        title: 'Migrated BCards',
+        body: '',
+        bCardInstances: pendingInstances,
+      });
+    }
+  }
+
+  return next;
 }
 
 function createDefaultSparkStudent(name = 'Student 1'): SparkStudent {
@@ -195,6 +408,7 @@ function normalizeSparkStudents(input: unknown): SparkStudent[] {
 function normalizeProjectData(data: ProjectData): ProjectData {
   const isV1 = !data.version || data.version === 1;
   const isV2 = data.version === 2;
+  const isV3 = data.version === 3;
 
   let sections = Array.isArray((data as any).sections) ? (data as any).sections : [];
   if (sections.length === 0) {
@@ -204,6 +418,10 @@ function normalizeProjectData(data: ProjectData): ProjectData {
       ...normalizeSectionMusic(sec),
       tags: Array.isArray(sec.tags) ? sec.tags : [],
       storyReferences: normalizeStoryReferences(sec.storyReferences),
+      bCardInstances: mergeBCardInstances(
+        normalizeBCardInstances(sec.bCardInstances),
+        normalizeLegacyStoryBCardRefs(sec.storyReferences),
+      ),
     }));
   }
 
@@ -247,12 +465,19 @@ function normalizeProjectData(data: ProjectData): ProjectData {
       overlays,
       audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
       storyReferences: normalizeStoryReferences(slide.storyReferences),
+      bCardInstances: mergeBCardInstances(
+        normalizeBCardInstances(slide.bCardInstances),
+        normalizeLegacyStoryBCardRefs(slide.storyReferences),
+      ),
     };
   });
 
-  const boostPack = (data.boostPack && typeof data.boostPack === 'object' &&
-    Array.isArray((data.boostPack as any).activationSequence))
-    ? data.boostPack
+  const boostPack = data.boostPack && typeof data.boostPack === 'object'
+    ? {
+        activationSequence: normalizeBoostSequence((data.boostPack as any).activationSequence),
+        languageSequence: normalizeBoostSequence((data.boostPack as any).languageSequence),
+        gamesSequence: normalizeBoostSequence((data.boostPack as any).gamesSequence),
+      }
     : emptyBoostPack();
 
   const sparkStudents = normalizeSparkStudents((data as ProjectData & { sparkStudents?: unknown }).sparkStudents);
@@ -267,7 +492,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
 
   return {
     ...data,
-    version: 3,
+    version: 4,
     sections,
     slides,
     boostPack,
@@ -452,7 +677,7 @@ ipcMain.handle('project:create', async () => {
   const now = new Date().toISOString();
   const defaultSparkStudent = createDefaultSparkStudent();
   const data: ProjectData = {
-    version: 3,
+    version: 4,
     createdAt: now,
     updatedAt: now,
     slides: [],

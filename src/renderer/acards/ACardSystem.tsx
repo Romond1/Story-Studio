@@ -30,6 +30,16 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
     const { aCardLibrary, updateACard } = useCardSystem();
     const aCard = aCardLibrary[aCardId];
 
+    const updateInstance = (instanceId: string, updates: Partial<BCardInstance>) => {
+        if (!aCard) return;
+        updateACard({
+            ...aCard,
+            bCardInstances: aCard.bCardInstances.map((inst) =>
+                inst.id === instanceId ? { ...inst, ...updates } : inst,
+            ),
+        });
+    };
+
     const getEasingFromAcceleration = (acceleration: number) => {
         if (acceleration >= 0.6) return 'cubic-bezier(0.18, 0.84, 0.36, 1)';
         if (acceleration >= 0.2) return 'cubic-bezier(0.22, 0.68, 0.32, 1)';
@@ -151,6 +161,7 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
                     mode={mode}
                     onStageSizeChange={setStageSize}
                     movementAnimation={movementAnimation}
+                    onInstanceChange={updateInstance}
                 />
             </div>
 

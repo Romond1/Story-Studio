@@ -1,11 +1,10 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Rnd } from 'react-rnd';
 import { BCardInstance, BCardTeachState } from '../../shared/types';
 import { useCardSystem } from '../store/CardStore';
 import { BCardFace } from './BCardFace';
 
 interface StageInteractableProps {
-    aCardId: string;
     instance: BCardInstance;
     teachState?: BCardTeachState;
     resolveImageUrl: (imageId: string) => string | null;
@@ -14,10 +13,10 @@ interface StageInteractableProps {
     mode?: 'edit' | 'teach';
     stageSize: { w: number; h: number };
     movementAnimation?: { durationMs: number; easing: string; key: number } | null;
+    onInstanceChange?: (instanceId: string, updates: Partial<BCardInstance>) => void;
 }
 
 export function StageInteractable({
-    aCardId,
     instance,
     teachState,
     resolveImageUrl,
@@ -26,19 +25,17 @@ export function StageInteractable({
     mode = 'edit',
     stageSize,
     movementAnimation = null,
+    onInstanceChange,
 }: StageInteractableProps) {
-    const { aCardLibrary, updateACard, bCardLibrary } = useCardSystem();
-
-    const aCard = aCardLibrary[aCardId];
+    const DRAG_CLICK_SUPPRESS_PX = 3;
+    const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+    const suppressNextClickRef = useRef(false);
+    const { bCardLibrary } = useCardSystem();
     const bCard = bCardLibrary[instance.bCardId];
 
     const handleUpdate = useCallback((partialUpdate: Partial<BCardInstance>) => {
-        if (!aCard) return;
-        const newInstances = aCard.bCardInstances.map(inst =>
-            inst.id === instance.id ? { ...inst, ...partialUpdate } : inst
-        );
-        updateACard({ ...aCard, bCardInstances: newInstances });
-    }, [aCard, instance.id, updateACard]);
+        onInstanceChange?.(instance.id, partialUpdate);
+    }, [instance.id, onInstanceChange]);
 
     const { w: pw, h: ph } = stageSize;
     if (pw <= 0 || ph <= 0) return null;
@@ -85,7 +82,18 @@ export function StageInteractable({
                     x: clampedX,
                     y: clampedY,
                 }}
+                onDragStart={(_, data) => {
+                    dragStartRef.current = { x: data.x, y: data.y };
+                }}
                 onDragStop={(e, d) => {
+                    if (dragStartRef.current) {
+                        const movedX = Math.abs(d.x - dragStartRef.current.x);
+                        const movedY = Math.abs(d.y - dragStartRef.current.y);
+                        if (movedX > DRAG_CLICK_SUPPRESS_PX || movedY > DRAG_CLICK_SUPPRESS_PX) {
+                            suppressNextClickRef.current = true;
+                        }
+                    }
+                    dragStartRef.current = null;
                     const centerX = ((d.x + instance.size.width / 2) / pw) * 100;
                     const centerY = ((d.y + instance.size.height / 2) / ph) * 100;
                     handleUpdate({
@@ -114,25 +122,39 @@ export function StageInteractable({
                 minHeight={80}
             >
                 {bCard ? (
-                    <div
-                        className={wrapperClasses}
-                        style={{ width: '100%', height: '100%', position: 'relative', borderRadius: '12px', overflow: 'hidden' }}
-                        onClick={() => onClick && onClick(instance.id, instance.bCardId)}
-                    >
-                        {isTeach ? (
-                            <>
-                                <div className={`bcard-body ${isFlipped ? 'flipped' : ''}`}>
-                                    <BCardFace side="front" config={bCard.front} resolveImageUrl={resolveImageUrl} />
-                                    <BCardFace side="back" config={bCard.back} resolveImageUrl={resolveImageUrl} />
-                                </div>
-                                <div className="bcard-solid-cover">
-                                    <span>?</span>
-                                </div>
-                            </>
-                        ) : (
-                            <BCardFace side="front" config={bCard.front} resolveImageUrl={resolveImageUrl} />
+                    <>
+                        {instance.displayMode === 'board' && (
+                            <div
+                                className="bcard-overlay-board-shell"
+                                style={{ left: -35, top: -35, width: instance.size.width + 70, height: instance.size.height + 70, transform: 'none', zIndex: 0, pointerEvents: 'none' }}
+                            />
                         )}
-                    </div>
+                        <div
+                            className={wrapperClasses}
+                            style={{ width: '100%', height: '100%', position: 'relative', borderRadius: '12px', overflow: 'hidden' }}
+                            onClick={() => {
+                                if (suppressNextClickRef.current) {
+                                    suppressNextClickRef.current = false;
+                                    return;
+                                }
+                                onClick && onClick(instance.id, instance.bCardId);
+                            }}
+                        >
+                            {isTeach ? (
+                                <>
+                                    <div className={`bcard-body ${isFlipped ? 'flipped' : ''}`}>
+                                        <BCardFace side="front" config={bCard.front} resolveImageUrl={resolveImageUrl} />
+                                        <BCardFace side="back" config={bCard.back} resolveImageUrl={resolveImageUrl} />
+                                    </div>
+                                    <div className="bcard-solid-cover">
+                                        <span>?</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <BCardFace side="front" config={bCard.front} resolveImageUrl={resolveImageUrl} />
+                            )}
+                        </div>
+                    </>
                 ) : (
                     <div style={{
                         width: '100%', height: '100%',

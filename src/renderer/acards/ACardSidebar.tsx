@@ -2,31 +2,48 @@ import React from 'react';
 import { useCardSystem } from '../store/CardStore';
 
 interface ACardSidebarProps {
-    selectedId: string | null;
-    onSelect: (id: string) => void;
+    selectedACardId: string | null;
+    selectedBCardId: string | null;
+    onSelectACard: (id: string | null) => void;
+    onSelectBCard: (id: string | null) => void;
     appMode: 'teach' | 'edit';
 }
 
-export function ACardSidebar({ selectedId, onSelect, appMode }: ACardSidebarProps) {
-    const { aCardLibrary, createACard, deleteACard } = useCardSystem();
+export function ACardSidebar({ selectedACardId, selectedBCardId, onSelectACard, onSelectBCard, appMode }: ACardSidebarProps) {
+    const { aCardLibrary, bCardLibrary, createACard, createBCard, duplicateBCard, deleteACard, deleteBCard } = useCardSystem();
 
     const cards = Object.values(aCardLibrary);
+    const bCards = Object.values(bCardLibrary);
 
     // Auto-select first card if selection is invalid
     React.useEffect(() => {
         if (cards.length > 0) {
-            if (!selectedId || !aCardLibrary[selectedId]) {
-                onSelect(cards[0].id);
+            if (selectedACardId && aCardLibrary[selectedACardId]) {
+                return;
             }
-        } else if (selectedId) {
-            onSelect('');
+            if (!selectedBCardId) {
+                onSelectACard(cards[0].id);
+            }
+        } else if (selectedACardId) {
+            onSelectACard(null);
         }
-    }, [cards.length, selectedId, aCardLibrary]);
+    }, [cards.length, selectedACardId, selectedBCardId, aCardLibrary, onSelectACard]);
+
+    React.useEffect(() => {
+        if (selectedBCardId && !bCardLibrary[selectedBCardId]) {
+            onSelectBCard(bCards[0]?.id || null);
+            return;
+        }
+        if (!selectedACardId && !selectedBCardId && cards.length === 0 && bCards.length > 0) {
+            onSelectBCard(bCards[0].id);
+        }
+    }, [selectedACardId, selectedBCardId, bCardLibrary, bCards, cards.length, onSelectBCard]);
 
     const handleCreate = () => {
         const nextNum = cards.length + 1;
         const newCard = createACard(`ACard ${nextNum}`, 'full');
-        onSelect(newCard.id);
+        onSelectACard(newCard.id);
+        onSelectBCard(null);
     };
 
     const handleDelete = (cardId: string, cardName: string) => {
@@ -36,6 +53,13 @@ export function ACardSidebar({ selectedId, onSelect, appMode }: ACardSidebarProp
         }
     };
 
+    const handleCreateBCard = () => {
+        const nextNum = bCards.length + 1;
+        const newCard = createBCard(`BCard ${nextNum}`);
+        onSelectBCard(newCard.id);
+        onSelectACard(null);
+    };
+
     return (
         <>
             <h3 style={{ marginBottom: 12 }}>Stages (ACards)</h3>
@@ -43,7 +67,7 @@ export function ACardSidebar({ selectedId, onSelect, appMode }: ACardSidebarProp
             {cards.length > 0 ? (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {cards.map(card => {
-                        const isSelected = selectedId === card.id;
+                        const isSelected = selectedACardId === card.id;
                         return (
                             <li
                                 key={card.id}
@@ -56,7 +80,10 @@ export function ACardSidebar({ selectedId, onSelect, appMode }: ACardSidebarProp
                                     cursor: 'pointer',
                                     borderRadius: 4
                                 }}
-                                onClick={() => onSelect(card.id)}
+                                onClick={() => {
+                                    onSelectACard(card.id);
+                                    onSelectBCard(null);
+                                }}
                             >
                                 <span style={{ flex: 1, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                     {card.name}
@@ -88,6 +115,79 @@ export function ACardSidebar({ selectedId, onSelect, appMode }: ACardSidebarProp
                     onClick={handleCreate}
                 >
                     + New ACard
+                </button>
+            )}
+
+            <h3 style={{ margin: '18px 0 12px 0' }}>BCard Library</h3>
+
+            {bCards.length > 0 ? (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {bCards.map((card) => {
+                        const isSelected = selectedBCardId === card.id;
+                        return (
+                            <li
+                                key={card.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '6px 8px',
+                                    background: isSelected ? '#27404a' : '#222',
+                                    border: isSelected ? '1px solid #7be8df' : '1px solid #333',
+                                    cursor: 'pointer',
+                                    borderRadius: 4,
+                                    gap: 6,
+                                }}
+                                onClick={() => {
+                                    onSelectBCard(card.id);
+                                    onSelectACard(null);
+                                }}
+                            >
+                                <span style={{ flex: 1, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {card.name}
+                                </span>
+                                {appMode === 'edit' && (
+                                    <>
+                                        <button
+                                            style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#9fd8ff', cursor: 'pointer', fontSize: '0.8rem' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const duplicated = duplicateBCard(card.id);
+                                                if (duplicated) {
+                                                    onSelectBCard(duplicated.id);
+                                                    onSelectACard(null);
+                                                }
+                                            }}
+                                        >
+                                            Dup
+                                        </button>
+                                        <button
+                                            style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#f66', cursor: 'pointer', fontSize: '0.8rem' }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (window.confirm(`Delete BCard '${card.name}'?`)) {
+                                                    deleteBCard(card.id);
+                                                }
+                                            }}
+                                        >
+                                            Del
+                                        </button>
+                                    </>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            ) : (
+                <p style={{ color: '#666', fontSize: '0.85rem', textAlign: 'center' }}>No BCards yet.</p>
+            )}
+
+            {appMode === 'edit' && (
+                <button
+                    className="section-break-btn"
+                    style={{ width: '100%', marginTop: '12px' }}
+                    onClick={handleCreateBCard}
+                >
+                    + New BCard
                 </button>
             )}
         </>

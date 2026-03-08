@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { BCardTeachState } from '../../shared/types';
+import { BCardInstance, BCardTeachState } from '../../shared/types';
 import { useCardSystem } from '../store/CardStore';
 import { StageInteractable } from './StageInteractable';
 import './acard.css';
@@ -14,6 +14,7 @@ interface ACardStageRendererProps {
     onStageSizeChange?: (size: { w: number; h: number }) => void;
     movementAnimation?: { durationMs: number; easing: string; key: number } | null;
     stageBackgroundMode?: 'cardBackground' | 'transparent';
+    onInstanceChange?: (instanceId: string, updates: Partial<BCardInstance>) => void;
 }
 
 export function ACardStageRenderer({
@@ -26,6 +27,7 @@ export function ACardStageRenderer({
     onStageSizeChange,
     movementAnimation = null,
     stageBackgroundMode = 'cardBackground',
+    onInstanceChange,
 }: ACardStageRendererProps) {
     const { aCardLibrary } = useCardSystem();
     const contentRef = useRef<HTMLDivElement | null>(null);
@@ -97,7 +99,6 @@ export function ACardStageRenderer({
                 {aCard.bCardInstances.map(instance => (
                     <StageInteractable
                         key={instance.id}
-                        aCardId={aCardId}
                         instance={instance}
                         teachState={teachStates[instance.id]}
                         resolveImageUrl={resolveImageUrl}
@@ -106,6 +107,7 @@ export function ACardStageRenderer({
                         mode={mode}
                         stageSize={stageSize}
                         movementAnimation={movementAnimation}
+                        onInstanceChange={onInstanceChange}
                     />
                 ))}
             </div>

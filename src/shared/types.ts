@@ -79,6 +79,7 @@ export interface Section {
   titleFontSize?: number;
   timerSize?: number;
   tags?: string[];
+  bCardInstances?: BCardInstance[];
   storyReferences?: StoryReferenceItem[];
 }
 
@@ -97,10 +98,11 @@ export interface Slide {
   tags?: string[];
   overlays?: OverlayItem[];
   audioCues?: AudioCue[];
+  bCardInstances?: BCardInstance[];
   storyReferences?: StoryReferenceItem[];
 }
 
-export type ProjectSchemaVersion = 1 | 2 | 3;
+export type ProjectSchemaVersion = 1 | 2 | 3 | 4;
 
 export interface BubbleDef {
   bubbleDefId: string;
@@ -163,7 +165,11 @@ export interface AudioCue {
   tags?: string[];
 }
 
-export interface SlideRefItem {
+export interface BoostSceneItemBase {
+  bCardInstances?: BCardInstance[];
+}
+
+export interface SlideRefItem extends BoostSceneItemBase {
   id: string;
   type: 'slideRef';
   slideId: string;
@@ -174,14 +180,14 @@ export interface SlideRefItem {
   };
 }
 
-export interface BreakRefItem {
+export interface BreakRefItem extends BoostSceneItemBase {
   id: string;
   type: 'breakRef';
   breakId: string;
   textOverride?: string;
 }
 
-export interface PromptCardItem {
+export interface PromptCardItem extends BoostSceneItemBase {
   id: string;
   type: 'promptCard';
   title?: string;
@@ -189,29 +195,21 @@ export interface PromptCardItem {
   durationMs?: number;
 }
 
-export interface MiniGameItem {
+export interface MiniGameItem extends BoostSceneItemBase {
   id: string;
   type: 'miniGame';
   gameType: 'placeholder';
   config?: Record<string, unknown>;
 }
 
-export interface ACardRefItem {
+export interface ACardRefItem extends BoostSceneItemBase {
   id: string;
   type: 'aCardRef';
   aCardId: string;
 }
 
-export interface BCardRefItem {
-  id: string;
-  type: 'bCardRef';
-  bCardId: string;
-  stageMode?: 'overlay' | 'board';
-  position?: { x: number; y: number };
-}
-
-export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem | ACardRefItem | BCardRefItem;
-export type StoryReferenceItem = ACardRefItem | BCardRefItem;
+export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem | ACardRefItem;
+export type StoryReferenceItem = ACardRefItem;
 
 export interface BoostPack {
   activationSequence: SequenceItem[];
@@ -378,6 +376,7 @@ export interface BCardInstance {
   position: { x: number; y: number };
   size: { width: number; height: number };
   zIndex: number;
+  displayMode?: 'overlay' | 'board';
   flags?: Record<string, boolean>; // Local overrides for future phases
 }
 
