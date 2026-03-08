@@ -836,6 +836,16 @@ export function App() {
   const [isSaveInProgress, setIsSaveInProgress] = useState(false);
   const [showSlideSelector, setShowSlideSelector] = useState(false);
   const [showBreakBgLibrary, setShowBreakBgLibrary] = useState(false);
+  const [breakThumbDrag, setBreakThumbDrag] = useState<{
+    sectionId: string;
+    mediaId: string;
+    mode: "move" | "scale";
+    startClientX: number;
+    startClientY: number;
+    startX: number;
+    startY: number;
+    startScale: number;
+  } | null>(null);
   const [pendingAction, setPendingAction] = useState<
     "create" | "open" | "close" | null
   >(null);
@@ -1906,6 +1916,35 @@ export function App() {
     }
   };
 
+  useEffect(() => {
+    if (!breakThumbDrag) return;
+    const onMove = (event: globalThis.MouseEvent) => {
+      const dx = event.clientX - breakThumbDrag.startClientX;
+      const dy = event.clientY - breakThumbDrag.startClientY;
+      if (breakThumbDrag.mode === "move") {
+        updateBreakMediaItem(breakThumbDrag.sectionId, breakThumbDrag.mediaId, {
+          x: breakThumbDrag.startX + dx,
+          y: breakThumbDrag.startY + dy,
+        });
+      } else {
+        const nextScale = Math.max(
+          0.1,
+          Math.min(4, breakThumbDrag.startScale + dx / 200),
+        );
+        updateBreakMediaItem(breakThumbDrag.sectionId, breakThumbDrag.mediaId, {
+          scale: nextScale,
+        });
+      }
+    };
+    const onUp = () => setBreakThumbDrag(null);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [breakThumbDrag]);
+
   const onStartFreshSession = () => {
     window.localStorage.removeItem(LIVE_SESSION_STORAGE_KEY);
     setSavedLiveSession(null);
@@ -2163,6 +2202,30 @@ export function App() {
           section.id === sectionId ? { ...section, ...updates } : section,
         ),
       },
+    });
+    setIsDirty(true);
+  };
+
+  const updateBreakMediaItem = (
+    sectionId: string,
+    mediaId: string,
+    updates: Partial<{ x: number; y: number; scale: number }>,
+  ) => {
+    setProject((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          sections: prev.data.sections.map((section) => {
+            if (section.id !== sectionId) return section;
+            const breakMedia = (section.breakMedia || []).map((item) =>
+              item.id === mediaId ? { ...item, ...updates } : item,
+            );
+            return { ...section, breakMedia };
+          }),
+        },
+      };
     });
     setIsDirty(true);
   };
@@ -3137,18 +3200,30 @@ export function App() {
                 <div style={{ overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                   {(project?.data.assets || [])
                     .filter((a) => a.mediaType === "image")
-                    .map((asset) => (
+                    .map((asset) => {
+                      const linkedSlide = project?.data.slides.find((s) => s.assetId === asset.id);
+                      const label = linkedSlide
+                        ? getSlideDisplayName(linkedSlide, "edit")
+                        : getAssetDisplayLabel(asset, "edit");
+                      return (
                       <button
                         key={asset.id}
                         onClick={() => {
                           updateSection(selectedSection.id, { background: `url('${toMediaUrl(asset.relativePath)}')` });
                           setShowBreakBgLibrary(false);
                         }}
-                        style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer", borderRadius: 6 }}
+                        style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer", borderRadius: 6, display: "flex", alignItems: "center", gap: 8 }}
                       >
-                        {getAssetDisplayLabel(asset, "edit")}
+                        <img
+                          src={toMediaUrl(asset.relativePath)}
+                          alt=""
+                          style={{ width: 56, height: 34, objectFit: "cover", borderRadius: 4, border: "1px solid #30364d", flex: "0 0 auto" }}
+                        />
+                        <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {label}
+                        </span>
                       </button>
-                    ))}
+                    )})}
                   {!(project?.data.assets || []).some((a) => a.mediaType === "image") && (
                     <div style={{ color: "#888", fontSize: "0.85rem" }}>No images in project library.</div>
                   )}
@@ -4345,18 +4420,79 @@ export function App() {
                           const asset = slide ? assetsById.get(slide.assetId) : null;
                           if (!asset) return null;
                           const src = toMediaUrl(asset.relativePath);
+                          const baseWidth = selectedSection.thumbnailSize ?? 200;
+                          const baseHeight = baseWidth * 0.5625;
+                          const scale = m.scale ?? 1;
                           return (
-                            <img
+                            <div
                               key={m.id}
-                              src={src}
-                              className="break-stage-thumb"
                               style={{
-                                objectFit: m.fit,
-                                width: selectedSection.thumbnailSize ?? 200,
-                                height: (selectedSection.thumbnailSize ?? 200) * 0.5625,
-                                transform: `translate(${m.x ?? 0}px, ${m.y ?? 0}px) scale(${m.scale ?? 1})`,
+                                position: "relative",
+                                width: baseWidth * scale,
+                                height: baseHeight * scale,
+                                transform: `translate(${m.x ?? 0}px, ${m.y ?? 0}px)`,
+                                cursor: appMode === "edit" ? "move" : "default",
+                                outline:
+                                  breakThumbDrag?.mediaId === m.id
+                                    ? "2px solid rgba(123, 173, 255, 0.95)"
+                                    : "none",
+                                borderRadius: 8,
                               }}
-                            />
+                              onMouseDown={(event) => {
+                                if (appMode !== "edit") return;
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setBreakThumbDrag({
+                                  sectionId: selectedSection.id,
+                                  mediaId: m.id,
+                                  mode: "move",
+                                  startClientX: event.clientX,
+                                  startClientY: event.clientY,
+                                  startX: Number(m.x) || 0,
+                                  startY: Number(m.y) || 0,
+                                  startScale: Number(m.scale) || 1,
+                                });
+                              }}
+                            >
+                              <img
+                                src={src}
+                                className="break-stage-thumb"
+                                style={{
+                                  objectFit: m.fit,
+                                  width: "100%",
+                                  height: "100%",
+                                }}
+                              />
+                              {appMode === "edit" && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    width: 12,
+                                    height: 12,
+                                    right: -6,
+                                    bottom: -6,
+                                    borderRadius: "50%",
+                                    background: "#fff",
+                                    border: "2px solid #4f79d6",
+                                    cursor: "nwse-resize",
+                                  }}
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setBreakThumbDrag({
+                                      sectionId: selectedSection.id,
+                                      mediaId: m.id,
+                                      mode: "scale",
+                                      startClientX: event.clientX,
+                                      startClientY: event.clientY,
+                                      startX: Number(m.x) || 0,
+                                      startY: Number(m.y) || 0,
+                                      startScale: Number(m.scale) || 1,
+                                    });
+                                  }}
+                                />
+                              )}
+                            </div>
                           );
                         })}
                       </div>
