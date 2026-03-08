@@ -489,6 +489,23 @@ ipcMain.handle('project:open', async () => {
   return loadProject(folderPath);
 });
 
+ipcMain.handle('project:open-path', async (_, folderPathRaw: unknown) => {
+  if (typeof folderPathRaw !== 'string' || !folderPathRaw.trim()) {
+    throw new Error('Invalid project path');
+  }
+
+  const folderPath = path.resolve(folderPathRaw);
+  const pjPath = projectPath(folderPath);
+  try {
+    await fs.access(pjPath);
+  } catch {
+    throw new Error('project.json not found at saved project path');
+  }
+
+  currentProjectFolder = folderPath;
+  return loadProject(folderPath);
+});
+
 ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
 

@@ -141,6 +141,10 @@ interface SparkProviderProps {
     activeStudentId?: string;
     onStudentsChange?: (students: SparkStudent[]) => void;
     onActiveStudentChange?: (studentId: string) => void;
+    isBadgeVisible?: boolean;
+    isFinalScoreRevealed?: boolean;
+    onBadgeVisibilityChange?: (visible: boolean) => void;
+    onFinalScoreRevealedChange?: (revealed: boolean) => void;
 }
 
 export const SparkProvider: React.FC<SparkProviderProps> = ({
@@ -153,10 +157,14 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
     activeStudentId,
     onStudentsChange,
     onActiveStudentChange,
+    isBadgeVisible: controlledBadgeVisible,
+    isFinalScoreRevealed: controlledFinalScoreRevealed,
+    onBadgeVisibilityChange,
+    onFinalScoreRevealedChange,
 }) => {
     const [activeBursts, setActiveBursts] = useState<BurstInfo[]>([]);
-    const [isBadgeVisible, setIsBadgeVisible] = useState(false);
-    const [isFinalScoreRevealed, setIsFinalScoreRevealed] = useState(false);
+    const [localIsBadgeVisible, setLocalIsBadgeVisible] = useState(false);
+    const [localIsFinalScoreRevealed, setLocalIsFinalScoreRevealed] = useState(false);
     const [localSparkConfig, setLocalSparkConfig] = useState<SparkConfig>(DEFAULT_SPARK_CONFIG);
     const [localBadgeConfig, setLocalBadgeConfig] = useState<BadgeConfig>(DEFAULT_BADGE_CONFIG);
     const [localStudents, setLocalStudents] = useState<SparkStudent[]>(() => {
@@ -169,6 +177,8 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
     const currentBadgeConfig = badgeConfig || localBadgeConfig;
     const currentStudents = students ?? localStudents;
     const currentActiveStudentId = activeStudentId ?? localActiveStudentId;
+    const currentIsBadgeVisible = controlledBadgeVisible ?? localIsBadgeVisible;
+    const currentIsFinalScoreRevealed = controlledFinalScoreRevealed ?? localIsFinalScoreRevealed;
 
     const commitStudents = useCallback((nextStudents: SparkStudent[]) => {
         if (onStudentsChange) {
@@ -287,13 +297,25 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
     }, [activeStudent, currentStudents, commitStudents, currentConfig?.burstDurationMs]);
 
     const showFinalSparkBadge = useCallback(() => {
-        setIsBadgeVisible(true);
-        setIsFinalScoreRevealed(true);
-    }, []);
+        if (onBadgeVisibilityChange) {
+            onBadgeVisibilityChange(true);
+        } else {
+            setLocalIsBadgeVisible(true);
+        }
+        if (onFinalScoreRevealedChange) {
+            onFinalScoreRevealedChange(true);
+        } else {
+            setLocalIsFinalScoreRevealed(true);
+        }
+    }, [onBadgeVisibilityChange, onFinalScoreRevealedChange]);
 
     const hideFinalSparkBadge = useCallback(() => {
-        setIsBadgeVisible(false);
-    }, []);
+        if (onBadgeVisibilityChange) {
+            onBadgeVisibilityChange(false);
+        } else {
+            setLocalIsBadgeVisible(false);
+        }
+    }, [onBadgeVisibilityChange]);
 
     const resetSparks = useCallback(() => {
         if (!activeStudent) return;
@@ -327,8 +349,8 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
                 triggerSpark,
                 showFinalSparkBadge,
                 hideFinalSparkBadge,
-                isBadgeVisible,
-                isFinalScoreRevealed,
+                isBadgeVisible: currentIsBadgeVisible,
+                isFinalScoreRevealed: currentIsFinalScoreRevealed,
                 sparkConfig: currentConfig,
                 setSparkConfig,
                 resetSparkConfig,

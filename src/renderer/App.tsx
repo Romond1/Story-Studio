@@ -29,6 +29,7 @@ import {
   PromptCardItem,
   MiniGameItem,
   SparkConfig,
+  SparkStudent,
   StoryReferenceItem,
   ACardRefItem,
   BCardRefItem,
@@ -308,6 +309,29 @@ const DEFAULT_BCARD_TEACH_STATE: BCardTeachState = {
   isBlurred: false,
   isCovered: false,
   isZoomed: false,
+};
+
+const LIVE_SESSION_STORAGE_KEY = "story-studio.live-session.v1";
+const LIVE_SESSION_DEBOUNCE_MS = 500;
+
+type LiveSessionSnapshot = {
+  version: 1;
+  savedAt: string;
+  projectFolderPath: string;
+  projectCreatedAt: string;
+  appMode: AppMode;
+  topMode: "story" | "boost" | "badge" | "boards";
+  boostTab: "activation" | "language" | "games" | "badge";
+  currentIndex: number;
+  selectedSectionId: string | null;
+  selectedBoostItemId: string | null;
+  selectedStoryRefId: string | null;
+  selectedACardId: string | null;
+  overlayBCardClickAction: BCardOverlayClickAction;
+  sparkStudents: SparkStudent[];
+  activeStudentId: string | null;
+  badgeVisible: boolean;
+  finalScoreRevealed: boolean;
 };
 
 function toMediaUrl(relativePath: string): string {
@@ -772,6 +796,8 @@ export function App() {
   const [selectedStoryRefId, setSelectedStoryRefId] = useState<string | null>(null);
   const [overlayBCardTeachStates, setOverlayBCardTeachStates] = useState<Record<string, BCardTeachState>>({});
   const [overlayBCardClickAction, setOverlayBCardClickAction] = useState<BCardOverlayClickAction>("none");
+  const [badgeVisibleState, setBadgeVisibleState] = useState(false);
+  const [finalScoreRevealedState, setFinalScoreRevealedState] = useState(false);
   const [storyRefsCollapsed, setStoryRefsCollapsed] = useState(true);
   const [storyBCardTeachCollapsed, setStoryBCardTeachCollapsed] = useState(true);
   const [boostBCardTeachCollapsed, setBoostBCardTeachCollapsed] = useState(true);
@@ -841,6 +867,9 @@ export function App() {
   const [selectedMonitorOutput, setSelectedMonitorOutput] = useState<string>("default");
   const [selectedAudioInput, setSelectedAudioInput] = useState<string>("default");
   const [micEnabled, setMicEnabled] = useState(false);
+  const [showRestoreSessionPrompt, setShowRestoreSessionPrompt] = useState(false);
+  const [savedLiveSession, setSavedLiveSession] = useState<LiveSessionSnapshot | null>(null);
+  const [pendingRestoreSession, setPendingRestoreSession] = useState<LiveSessionSnapshot | null>(null);
 
   useEffect(() => {
     if (!timerState.isRunning) return;
@@ -909,6 +938,75 @@ export function App() {
     },
     [],
   );
+
+  const parseLiveSessionSnapshot = (
+    raw: string | null,
+  ): LiveSessionSnapshot | null => {
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as Partial<LiveSessionSnapshot>;
+      if (
+        parsed.version !== 1 ||
+        typeof parsed.projectFolderPath !== "string" ||
+        typeof parsed.projectCreatedAt !== "string" ||
+        !Array.isArray(parsed.sparkStudents)
+      ) {
+        return null;
+      }
+      return {
+        version: 1,
+        savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt : new Date().toISOString(),
+        projectFolderPath: parsed.projectFolderPath,
+        projectCreatedAt: parsed.projectCreatedAt,
+        appMode: parsed.appMode === "edit" ? "edit" : "teach",
+        topMode:
+          parsed.topMode === "boost" ||
+          parsed.topMode === "badge" ||
+          parsed.topMode === "boards"
+            ? parsed.topMode
+            : "story",
+        boostTab:
+          parsed.boostTab === "language" ||
+          parsed.boostTab === "games" ||
+          parsed.boostTab === "badge"
+            ? parsed.boostTab
+            : "activation",
+        currentIndex: Number.isFinite(parsed.currentIndex) ? Math.max(0, Number(parsed.currentIndex)) : 0,
+        selectedSectionId: typeof parsed.selectedSectionId === "string" ? parsed.selectedSectionId : null,
+        selectedBoostItemId: typeof parsed.selectedBoostItemId === "string" ? parsed.selectedBoostItemId : null,
+        selectedStoryRefId: typeof parsed.selectedStoryRefId === "string" ? parsed.selectedStoryRefId : null,
+        selectedACardId: typeof parsed.selectedACardId === "string" ? parsed.selectedACardId : null,
+        overlayBCardClickAction:
+          parsed.overlayBCardClickAction === "flip" ||
+          parsed.overlayBCardClickAction === "blur" ||
+          parsed.overlayBCardClickAction === "cover" ||
+          parsed.overlayBCardClickAction === "zoom"
+            ? parsed.overlayBCardClickAction
+            : "none",
+        sparkStudents: parsed.sparkStudents as SparkStudent[],
+        activeStudentId: typeof parsed.activeStudentId === "string" ? parsed.activeStudentId : null,
+        badgeVisible: Boolean(parsed.badgeVisible),
+        finalScoreRevealed: Boolean(parsed.finalScoreRevealed),
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const snapshot = parseLiveSessionSnapshot(
+      window.localStorage.getItem(LIVE_SESSION_STORAGE_KEY),
+    );
+    if (!snapshot) return;
+    setSavedLiveSession(snapshot);
+    setShowRestoreSessionPrompt(true);
+  }, []);
+
+  useEffect(() => {
+    if (project) {
+      setShowRestoreSessionPrompt(false);
+    }
+  }, [project]);
 
   const assetsById = useMemo(() => {
     const map = new Map<string, AssetItem>();
@@ -1610,7 +1708,10 @@ export function App() {
     currentIndex,
   ]);
 
-  const setProjectState = (next: ProjectState | null) => {
+  const setProjectState = (
+    next: ProjectState | null,
+    restoreSnapshot?: LiveSessionSnapshot | null,
+  ) => {
     if (!next) {
       setProject(null);
       setSelectedSectionId(null);
@@ -1622,6 +1723,8 @@ export function App() {
       setSelectedStoryRefId(null);
       setOverlayBCardTeachStates({});
       setOverlayBCardClickAction("none");
+      setBadgeVisibleState(false);
+      setFinalScoreRevealedState(false);
       setDrawPanelCollapsed(true);
       setDrawSettings({ ...DEFAULT_DRAW_SETTINGS });
       return;
@@ -1633,27 +1736,64 @@ export function App() {
       new Set(Object.keys(normalized.data.aCardLibrary || {})),
       new Set(Object.keys(normalized.data.bCardLibrary || {})),
     );
-    const normalizedWithRefs = {
+    let normalizedWithRefs = {
       ...normalized,
       data: withCanonicalAssetDefaults(sanitizedData),
     };
-    setProject(normalizedWithRefs);
-    setSelectedSectionId(normalizedWithRefs.data.sections[0]?.id ?? null);
-    setExpandedSectionId(normalizedWithRefs.data.sections[0]?.id ?? null);
-    if (normalizedWithRefs.data.slides[0]) {
-      setSelectedSlideIds(new Set([normalizedWithRefs.data.slides[0].id]));
+    const matchesRestore =
+      !!restoreSnapshot &&
+      (restoreSnapshot.projectFolderPath === normalizedWithRefs.folderPath ||
+        restoreSnapshot.projectCreatedAt === normalizedWithRefs.data.createdAt);
+
+    if (matchesRestore && restoreSnapshot) {
+      normalizedWithRefs = {
+        ...normalizedWithRefs,
+        data: {
+          ...normalizedWithRefs.data,
+          sparkStudents: restoreSnapshot.sparkStudents,
+          activeStudentId: restoreSnapshot.activeStudentId || normalizedWithRefs.data.activeStudentId,
+        },
+      };
     }
-    setCurrentIndex(0);
+    setProject(normalizedWithRefs);
+    const fallbackSectionId = normalizedWithRefs.data.sections[0]?.id ?? null;
+    const restoredSectionId =
+      matchesRestore && restoreSnapshot?.selectedSectionId &&
+      normalizedWithRefs.data.sections.some((s) => s.id === restoreSnapshot.selectedSectionId)
+        ? restoreSnapshot.selectedSectionId
+        : fallbackSectionId;
+    setSelectedSectionId(restoredSectionId);
+    setExpandedSectionId(restoredSectionId);
+    const restoredIndex =
+      matchesRestore && restoreSnapshot
+        ? Math.min(
+            Math.max(0, restoreSnapshot.currentIndex || 0),
+            Math.max(0, normalizedWithRefs.data.slides.length - 1),
+          )
+        : 0;
+    const restoredSlideId = normalizedWithRefs.data.slides[restoredIndex]?.id;
+    setSelectedSlideIds(restoredSlideId ? new Set([restoredSlideId]) : new Set());
+    setCurrentIndex(restoredIndex);
     setPreviousIndex(null);
     setError(null);
     setError(null);
-    setSelectedStoryRefId(null);
+    setSelectedStoryRefId(
+      matchesRestore ? (restoreSnapshot?.selectedStoryRefId || null) : null,
+    );
     setOverlayBCardTeachStates({});
-    setOverlayBCardClickAction("none");
+    setOverlayBCardClickAction(
+      matchesRestore ? (restoreSnapshot?.overlayBCardClickAction || "none") : "none",
+    );
+    setBadgeVisibleState(matchesRestore ? Boolean(restoreSnapshot?.badgeVisible) : false);
+    setFinalScoreRevealedState(matchesRestore ? Boolean(restoreSnapshot?.finalScoreRevealed) : false);
     setDrawPanelCollapsed(true);
     setDrawSettings({ ...DEFAULT_DRAW_SETTINGS });
-    setAppMode("teach");
-    setIsDirty(false);
+    setTopMode(matchesRestore ? (restoreSnapshot?.topMode || "story") : "story");
+    setBoostTab(matchesRestore ? (restoreSnapshot?.boostTab || "activation") : "activation");
+    setSelectedBoostItemId(matchesRestore ? (restoreSnapshot?.selectedBoostItemId || null) : null);
+    setSelectedACardId(matchesRestore ? (restoreSnapshot?.selectedACardId || null) : null);
+    setAppMode(matchesRestore ? (restoreSnapshot?.appMode || "teach") : "teach");
+    setIsDirty(matchesRestore);
   };
 
   useEffect(() => {
@@ -1716,7 +1856,10 @@ export function App() {
       } else {
         next = await window.appApi.openProject();
       }
-      if (next) setProjectState(next);
+      if (next) {
+        setProjectState(next, pendingRestoreSession);
+        setPendingRestoreSession(null);
+      }
     } catch (err) {
       setError((err as Error).message);
     }
@@ -1762,6 +1905,74 @@ export function App() {
       executePendingAction("open");
     }
   };
+
+  const onStartFreshSession = () => {
+    window.localStorage.removeItem(LIVE_SESSION_STORAGE_KEY);
+    setSavedLiveSession(null);
+    setPendingRestoreSession(null);
+    setShowRestoreSessionPrompt(false);
+    setBadgeVisibleState(false);
+    setFinalScoreRevealedState(false);
+  };
+
+  const onRestoreSession = async () => {
+    if (!savedLiveSession) return;
+    setPendingRestoreSession(savedLiveSession);
+    setShowRestoreSessionPrompt(false);
+    try {
+      const next = await window.appApi.openProjectByPath(savedLiveSession.projectFolderPath);
+      if (!next) return;
+      setProjectState(next, savedLiveSession);
+      setPendingRestoreSession(null);
+      showToast("Session restored", "success", 1500);
+    } catch (err) {
+      setError((err as Error).message);
+      showToast("Open the project manually to restore session", "edit", 2000);
+    }
+  };
+
+  useEffect(() => {
+    if (!project) return;
+    const snapshot: LiveSessionSnapshot = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      projectFolderPath: project.folderPath,
+      projectCreatedAt: project.data.createdAt,
+      appMode,
+      topMode,
+      boostTab,
+      currentIndex,
+      selectedSectionId,
+      selectedBoostItemId,
+      selectedStoryRefId,
+      selectedACardId,
+      overlayBCardClickAction,
+      sparkStudents: project.data.sparkStudents || [],
+      activeStudentId: project.data.activeStudentId || null,
+      badgeVisible: badgeVisibleState,
+      finalScoreRevealed: finalScoreRevealedState,
+    };
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(LIVE_SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+    }, LIVE_SESSION_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [
+    project?.folderPath,
+    project?.data.createdAt,
+    project?.data.sparkStudents,
+    project?.data.activeStudentId,
+    appMode,
+    topMode,
+    boostTab,
+    currentIndex,
+    selectedSectionId,
+    selectedBoostItemId,
+    selectedStoryRefId,
+    selectedACardId,
+    overlayBCardClickAction,
+    badgeVisibleState,
+    finalScoreRevealedState,
+  ]);
 
   const onImportMedia = async () => {
     if (!ensureEditMode(appMode, "import media")) return;
@@ -2700,6 +2911,10 @@ export function App() {
         });
         setIsDirty(true);
       }}
+      isBadgeVisible={badgeVisibleState}
+      isFinalScoreRevealed={finalScoreRevealedState}
+      onBadgeVisibilityChange={setBadgeVisibleState}
+      onFinalScoreRevealedChange={setFinalScoreRevealedState}
     >
       <CardSystemProvider
         aCardLibrary={project?.data.aCardLibrary || {}}
@@ -2798,6 +3013,55 @@ export function App() {
               Build {BUILD_VERSION}
             </span>
           </header>
+          {showRestoreSessionPrompt && savedLiveSession && !project && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.72)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2600,
+              }}
+            >
+              <div
+                style={{
+                  width: 480,
+                  maxWidth: "92vw",
+                  background: "#1f1f26",
+                  border: "1px solid #434357",
+                  borderRadius: 10,
+                  padding: 18,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}
+              >
+                <h3 style={{ margin: 0, color: "#fff" }}>Restore Lesson Session?</h3>
+                <div style={{ color: "#b8bfd6", fontSize: "0.9rem", lineHeight: 1.4 }}>
+                  A crash-recovery session was found from {new Date(savedLiveSession.savedAt).toLocaleString()}.
+                </div>
+                <div style={{ color: "#9199b2", fontSize: "0.8rem", wordBreak: "break-all" }}>
+                  Project: {savedLiveSession.projectFolderPath}
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+                  <button
+                    onClick={onStartFreshSession}
+                    style={{ background: "#3a3131", border: "1px solid #6a4444", color: "#ffd1d1" }}
+                  >
+                    Start Fresh
+                  </button>
+                  <button
+                    onClick={onRestoreSession}
+                    style={{ background: "#2c4a2c", border: "1px solid #4f7a4f", color: "#ddffdd" }}
+                  >
+                    Restore Session
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {toast && (
             <div
               className="toast-msg"

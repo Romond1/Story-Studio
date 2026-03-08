@@ -7,6 +7,7 @@ declare global {
     appApi: {
       createProject: () => Promise<ProjectState | null>;
       openProject: () => Promise<ProjectState | null>;
+      openProjectByPath: (folderPath: string) => Promise<ProjectState | null>;
       importMedia: () => Promise<ImportResult | null>;
       importAudio: () => Promise<AssetItem[] | null>;
       saveProject: (

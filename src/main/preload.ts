@@ -4,6 +4,7 @@ import type { AssetItem, ImportResult, ProjectData, ProjectState } from '../shar
 const api = {
   createProject: (): Promise<ProjectState | null> => ipcRenderer.invoke('project:create'),
   openProject: (): Promise<ProjectState | null> => ipcRenderer.invoke('project:open'),
+  openProjectByPath: (folderPath: string): Promise<ProjectState | null> => ipcRenderer.invoke('project:open-path', folderPath),
   importMedia: (): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-media'),
   importAudio: (): Promise<AssetItem[] | null> => ipcRenderer.invoke('project:import-audio'),
   importBubbleTemplate: (): Promise<AssetItem | null> => ipcRenderer.invoke('project:import-bubble-template'),
