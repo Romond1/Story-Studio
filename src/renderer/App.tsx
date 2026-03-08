@@ -769,6 +769,7 @@ export function App() {
   const [renamingSectionId, setRenamingSectionId] = useState<string | null>(
     null,
   );
+  const [renamingSlideId, setRenamingSlideId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [updateAudio, setUpdateAudio] = useState(0);
   const [previousIndex, setPreviousIndex] = useState<number | null>(null);
@@ -1014,6 +1015,28 @@ export function App() {
       currentAsset = null;
     }
   }
+
+  const stripReferencePrefix = (value: string, referenceCode?: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || !referenceCode) return trimmed;
+    const escapedCode = referenceCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return trimmed.replace(new RegExp(`^${escapedCode}\\s+`, "i"), "").trim();
+  };
+
+  const getSlideEditableDescription = (slide: Slide) => {
+    const asset = assetsById.get(slide.assetId);
+    const customName = slide.name?.trim();
+    if (customName) return stripReferencePrefix(customName, asset?.referenceCode);
+    return asset ? getAssetDescription(asset) : "Unknown asset";
+  };
+
+  const getSlideDisplayName = (slide: Slide, mode: "edit" | "teach" = appMode) => {
+    const asset = assetsById.get(slide.assetId);
+    const description = getSlideEditableDescription(slide);
+    if (mode === "teach") return description;
+    if (asset?.referenceCode) return `${asset.referenceCode} ${description}`.trim();
+    return asset ? getAssetDisplayLabel(asset, mode) : "Unknown asset";
+  };
 
   const storyRefContext = useMemo(() => {
     if (topMode !== "story" || !project) return null;
@@ -1923,6 +1946,28 @@ export function App() {
     setIsDirty(true);
   };
 
+  const updateSlide = (slideId: string, updates: Partial<Slide>) => {
+    if (!project) return;
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: project.data.slides.map((slide) =>
+          slide.id === slideId ? { ...slide, ...updates } : slide,
+        ),
+      },
+    });
+    setIsDirty(true);
+  };
+
+  const commitSlideName = (slideId: string, rawName: string) => {
+    const slide = project?.data.slides.find((s) => s.id === slideId);
+    const asset = slide ? assetsById.get(slide.assetId) : undefined;
+    const trimmed = stripReferencePrefix(rawName, asset?.referenceCode).trim();
+    updateSlide(slideId, { name: trimmed || undefined });
+    setRenamingSlideId(null);
+  };
+
   const onAddSection = () => {
     if (!ensureEditMode(appMode, "add section")) return;
     if (!project) return;
@@ -2800,7 +2845,7 @@ export function App() {
                           )}
                         </span>
                         <span className="break-slide-picker-label">
-                          {asset ? getAssetDisplayLabel(asset, "edit") : "Unknown"}
+                          {getSlideDisplayName(s, "edit")}
                         </span>
                       </button>
                     );
@@ -3145,14 +3190,22 @@ export function App() {
                                         )}
                                         <li className="slide-row">
                                           <button
-                                            draggable={appMode === "edit"}
+                                            draggable={
+                                              appMode === "edit" &&
+                                              renamingSlideId !== slide.id
+                                            }
                                             className={`slide-btn ${appMode === "edit" ? "slide-btn--edit" : "slide-btn--teach"} ${isSlideSelected ? "selected" : ""} ${isCurrent && topMode === 'story' ? "current-slide" : ""}`}
                                             style={{ position: 'relative' }}
                                             onClick={(e) =>
                                               onSlideWrapperClick(slideIndex, e)
                                             }
                                             onDragStart={(event) => {
-                                              if (appMode !== "edit") return;
+                                              if (
+                                                appMode !== "edit" ||
+                                                renamingSlideId === slide.id
+                                              ) {
+                                                return;
+                                              }
                                               event.stopPropagation();
                                               event.dataTransfer.effectAllowed = "move";
                                               event.dataTransfer.setData(
@@ -3189,9 +3242,58 @@ export function App() {
                                                 <span className="slide-thumb-fallback">?</span>
                                               )}
                                             </span>
-                                            <span className="slide-label-text">
-                                              {asset ? getAssetDisplayLabel(asset, appMode) : "Unknown asset"}
-                                            </span>
+                                            {renamingSlideId === slide.id ? (
+                                              <input
+                                                className="section-input slide-label-text"
+                                                defaultValue={getSlideEditableDescription(slide)}
+                                                autoFocus
+                                                onBlur={(event) =>
+                                                  commitSlideName(
+                                                    slide.id,
+                                                    event.target.value,
+                                                  )
+                                                }
+                                                onKeyDown={(event) => {
+                                                  event.stopPropagation();
+                                                  if (event.key === "Enter") {
+                                                    event.preventDefault();
+                                                    commitSlideName(
+                                                      slide.id,
+                                                      (
+                                                        event.target as HTMLInputElement
+                                                      ).value,
+                                                    );
+                                                  } else if (
+                                                    event.key === "Escape"
+                                                  ) {
+                                                    event.preventDefault();
+                                                    setRenamingSlideId(null);
+                                                  }
+                                                }}
+                                                onClick={(event) =>
+                                                  event.stopPropagation()
+                                                }
+                                                onDoubleClick={(event) =>
+                                                  event.stopPropagation()
+                                                }
+                                              />
+                                            ) : (
+                                              <span
+                                                className="slide-label-text"
+                                                title="Double-click to rename slide"
+                                                onDoubleClick={(event) => {
+                                                  event.stopPropagation();
+                                                  if (appMode !== "edit")
+                                                    return;
+                                                  setRenamingSlideId(slide.id);
+                                                }}
+                                              >
+                                                {getSlideDisplayName(
+                                                  slide,
+                                                  appMode,
+                                                )}
+                                              </span>
+                                            )}
                                             {isDragging && <small> (Dragging)</small>}
                                             {appMode === "edit" && (
                                               <div
@@ -3314,14 +3416,13 @@ export function App() {
                           if (item.type === 'slideRef') {
                             const slideRef = item as Extract<SequenceItem, { type: 'slideRef' }>;
                             const slide = project!.data.slides.find(s => s.id === slideRef.slideId);
-                            const asset = slide ? assetsById.get(slide.assetId) : null;
                             const bIds = slide?.overlays?.map(o => {
                               const d = BUBBLE_LIBRARY.find(lib => lib.bubbleDefId === o.bubbleDefId);
                               const tName = d?.templateName || d?.name || o.type;
                               return `${o.bubbleId} - ${tName}`;
                             }).filter(Boolean).join(', ');
                             const bStr = bIds ? ` [${bIds}]` : '';
-                            title = `Slide: ${asset ? getAssetDisplayLabel(asset, appMode) : slideRef.slideId}${bStr}`;
+                            title = `Slide: ${slide ? getSlideDisplayName(slide, appMode) : slideRef.slideId}${bStr}`;
                           } else if (item.type === 'aCardRef') {
                             const aCard = (project!.data.aCardLibrary || {})[(item as any).aCardId];
                             title = `雫 ACard: ${aCard?.name || (item as any).aCardId || '(none)'}`;
@@ -3438,7 +3539,7 @@ export function App() {
                                       <option value="">Copy to...</option>
                                       {project!.data.slides.map((s, idx) => (
                                         <option key={s.id} value={s.id} disabled={s.id === currentSlide.id}>
-                                          Slide {idx + 1}
+                                          Slide {idx + 1}: {getSlideDisplayName(s, "edit")}
                                         </option>
                                       ))}
                                     </select>
@@ -3735,12 +3836,11 @@ export function App() {
                         </div>
                         {selectedSection.breakMedia && selectedSection.breakMedia.map((m, i) => {
                           const slide = project?.data.slides.find((s) => s.id === m.slideId);
-                          const asset = slide ? project?.data.assets.find(a => a.id === slide.assetId) : null;
                           return (
                             <div key={m.id} style={{ display: "flex", flexDirection: "column", gap: 4, background: "#222", padding: "6px", borderRadius: 4 }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <span style={{ fontSize: "0.7rem", color: "#ccc", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", flex: 1, marginRight: 8 }}>
-                                  {asset ? getAssetDisplayLabel(asset, "edit") : `Image ${i + 1}`}
+                                  {slide ? getSlideDisplayName(slide, "edit") : `Image ${i + 1}`}
                                 </span>
                                 <button
                                   onClick={() => {
@@ -5286,7 +5386,7 @@ export function App() {
                             <div style={{ maxHeight: 200, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
                               {project?.data.slides.map((s, idx) => {
                                 const asset = assetsById.get(s.assetId);
-                                const visibleLabel = asset ? getAssetDisplayLabel(asset, appMode) : s.id;
+                                const visibleLabel = getSlideDisplayName(s, appMode);
                                 const searchText = `${visibleLabel} ${asset ? getAssetDescription(asset) : ""}`.toLowerCase();
                                 const matches = searchText.includes(boostSearchQuery.toLowerCase());
                                 if (boostSearchQuery && !matches) return null;

@@ -86,6 +86,7 @@ export interface Slide {
   id: string;
   assetId: string;
   sectionId: string;
+  name?: string;
   transition: TransitionType;
   transitionDuration?: number;
   transitionDirection?: 'left' | 'right' | 'up' | 'down';

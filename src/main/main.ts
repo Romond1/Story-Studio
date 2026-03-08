@@ -242,6 +242,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
     return {
       ...slide,
       sectionId: slide.sectionId || defaultSectionId,
+      name: typeof slide.name === 'string' ? slide.name : undefined,
       tags: Array.isArray(slide.tags) ? slide.tags : [],
       overlays,
       audioCues: Array.isArray(slide.audioCues) ? slide.audioCues : [],
