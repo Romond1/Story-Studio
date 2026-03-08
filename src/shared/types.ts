@@ -223,6 +223,7 @@ export interface BadgeConfig {
   congratsText?: string;
   showStudentName?: boolean;
   showFinalScore?: boolean;
+  alwaysDisplay?: boolean;
   fontSize?: number;
   celebrationDurationMs?: number;
   confettiCount?: number;

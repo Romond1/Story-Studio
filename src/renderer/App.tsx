@@ -660,6 +660,11 @@ const BadgeStudentSprites = ({
   const durationMs = badgeConfig.badgeSpriteAnimDurationMs ?? 3200;
   const intensity = (badgeConfig.badgeSpriteAnimIntensity ?? 100) / 100;
   const shouldShowScore = isFinalScoreRevealed && badgeConfig.showFinalScore;
+  const getVariantSparkCount = (student: SparkStudent, variant: "gold" | "blue" | "pink") => {
+    if (variant === "gold") return student.yellowSparks || 0;
+    if (variant === "blue") return student.blueSparks || 0;
+    return student.pinkSparks || 0;
+  };
 
   const updateSprite = (spriteId: string, updates: Partial<BadgeStudentSprite>) => {
     const nextSprites = sprites.map((sprite) =>
@@ -679,15 +684,10 @@ const BadgeStudentSprites = ({
           if (!sprite) return null;
 
           const variantAssetId = badgeConfig.badgeSparkAssetIds?.[variant];
-          const fallbackAssetId =
-            badgeConfig.badgeSparkAssetIds?.gold ||
-            badgeConfig.badgeSparkAssetIds?.blue ||
-            badgeConfig.badgeSparkAssetIds?.pink ||
-            sprite.assetId;
-          const asset = assetsById.get(variantAssetId || fallbackAssetId || "");
+          const asset = assetsById.get(variantAssetId || "");
           if (!asset) return null;
 
-          const scoreText = shouldShowScore ? String(getStudentSparkTotal(student)) : "?";
+          const scoreText = shouldShowScore ? String(getVariantSparkCount(student, variant)) : "?";
           const motionClass = `badge-sprite-motion-${motion}`;
 
           return (
@@ -695,34 +695,18 @@ const BadgeStudentSprites = ({
               key={sprite.id}
               bounds="parent"
               disableDragging={!isEditMode}
-              enableResizing={isEditMode}
+              enableResizing={isEditMode ? { bottomRight: true } : false}
               minWidth={60}
               minHeight={60}
               resizeHandleStyles={{
                 bottomRight: {
-                  width: 14,
-                  height: 14,
+                  width: 18,
+                  height: 18,
                   borderRadius: 3,
                   background: "rgba(255,255,255,0.9)",
                   border: "1px solid rgba(20,20,20,0.9)",
-                },
-                bottomLeft: {
-                  width: 12,
-                  height: 12,
-                  borderRadius: 3,
-                  background: "rgba(255,255,255,0.75)",
-                },
-                topLeft: {
-                  width: 12,
-                  height: 12,
-                  borderRadius: 3,
-                  background: "rgba(255,255,255,0.75)",
-                },
-                topRight: {
-                  width: 12,
-                  height: 12,
-                  borderRadius: 3,
-                  background: "rgba(255,255,255,0.75)",
+                  right: -9,
+                  bottom: -9,
                 },
               }}
               size={{ width: sprite.width, height: sprite.height }}
@@ -2910,6 +2894,11 @@ export function App() {
     });
   };
 
+  const activeSparkStudentName =
+    project?.data.sparkStudents?.find((student) => student.id === project?.data.activeStudentId)?.name ||
+    project?.data.sparkStudents?.[0]?.name ||
+    "No Student";
+
   return (
     <SparkProvider
       config={project?.data.sparkConfig}
@@ -3071,6 +3060,11 @@ export function App() {
             >
               {appMode === "edit" ? "Edit" : "Teach"}
             </button>
+
+            <div className="topbar-active-student-chip" title="Active spark student">
+              <span className="topbar-active-student-label">Active Student</span>
+              <span className="topbar-active-student-name">{activeSparkStudentName}</span>
+            </div>
 
             <span className="build-chip" title="Build marker">
               Build {BUILD_VERSION}

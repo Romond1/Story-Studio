@@ -32,6 +32,7 @@ export const DEFAULT_BADGE_CONFIG: BadgeConfig = {
     congratsText: "Today you generated {n} Sparks",
     showStudentName: true,
     showFinalScore: false,
+    alwaysDisplay: false,
     fontSize: 2.2,
     celebrationDurationMs: 5000,
     confettiCount: 30,

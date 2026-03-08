@@ -25,13 +25,13 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
     }, [isBadgeVisible, hideFinalSparkBadge]);
 
     useEffect(() => {
-        if (isBadgeVisible && badgeConfig.celebrationDurationMs) {
+        if (isBadgeVisible && !badgeConfig.alwaysDisplay && badgeConfig.celebrationDurationMs) {
             const timer = setTimeout(() => {
                 hideFinalSparkBadge();
             }, badgeConfig.celebrationDurationMs);
             return () => clearTimeout(timer);
         }
-    }, [isBadgeVisible, badgeConfig.celebrationDurationMs, hideFinalSparkBadge]);
+    }, [isBadgeVisible, badgeConfig.alwaysDisplay, badgeConfig.celebrationDurationMs, hideFinalSparkBadge]);
 
     if (!isBadgeVisible) return null;
 

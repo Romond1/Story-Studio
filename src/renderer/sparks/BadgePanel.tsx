@@ -505,7 +505,24 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
 
                         <label style={labelStyle}>
                             Duration ({(badgeConfig.celebrationDurationMs ?? 5000) / 1000}s)
-                            <input type="range" min={1000} max={15000} step={500} value={badgeConfig.celebrationDurationMs ?? 5000} onChange={e => setBadgeConfig({ celebrationDurationMs: Number(e.target.value) })} />
+                            <input
+                                type="range"
+                                min={1000}
+                                max={60000}
+                                step={500}
+                                value={badgeConfig.celebrationDurationMs ?? 5000}
+                                disabled={badgeConfig.alwaysDisplay === true}
+                                onChange={e => setBadgeConfig({ celebrationDurationMs: Number(e.target.value) })}
+                            />
+                        </label>
+
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#aaa', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={badgeConfig.alwaysDisplay === true}
+                                onChange={e => setBadgeConfig({ alwaysDisplay: e.target.checked })}
+                            />
+                            Always display (manual hide only)
                         </label>
 
                         <div style={{ borderTop: '1px solid #333', margin: '10px 0' }} />
@@ -627,7 +644,7 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
         <div className="badge-panel" style={{ color: '#fff', height: '100%', overflowY: 'auto' }}>
             <div style={{ padding: '4px', display: 'flex', gap: '20px', flexDirection: show === 'both' ? 'row' : 'column' }}>
                 {(show === 'content' || show === 'both') && renderContent()}
-                {(show === 'settings' || show === 'both') && isEditMode && renderSettings()}
+                {(show === 'settings' || show === 'both') && renderSettings()}
             </div>
         </div>
     );

@@ -1,25 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSparks } from './SparkProvider';
 import { SparkBurst } from './SparkBurst';
 import './sparkStyles.css';
 
 export const SparkOverlay: React.FC = () => {
-    const { activeBursts, totalSparks, sparkConfig } = useSparks();
+    const { activeBursts, sparkConfig } = useSparks();
     const [showCounter, setShowCounter] = useState(false);
     const [displayBurst, setDisplayBurst] = useState<(typeof activeBursts)[number] | null>(null);
+    const prevBurstCountRef = useRef(0);
 
     useEffect(() => {
-        if (totalSparks > 0) {
-            setShowCounter(false); // Reset animation
-            // Brief delay to restart CSS animation properly
-            const timer = setTimeout(() => setShowCounter(true), 10);
-            return () => clearTimeout(timer);
-        }
-    }, [totalSparks]);
-
-    useEffect(() => {
-        if (activeBursts.length === 0) return;
-        setDisplayBurst(activeBursts[activeBursts.length - 1]);
+        const currentCount = activeBursts.length;
+        const prevCount = prevBurstCountRef.current;
+        prevBurstCountRef.current = currentCount;
+        if (currentCount === 0 || currentCount <= prevCount) return;
+        const latest = activeBursts[currentCount - 1];
+        if (!latest) return;
+        setDisplayBurst(latest);
+        setShowCounter(false); // Reset animation
+        // Brief delay to restart CSS animation properly
+        const timer = setTimeout(() => setShowCounter(true), 10);
+        return () => clearTimeout(timer);
     }, [activeBursts]);
 
     // Handle counter cleanup based on config
@@ -28,7 +29,7 @@ export const SparkOverlay: React.FC = () => {
             const timer = setTimeout(() => setShowCounter(false), sparkConfig.counterVisibleMs);
             return () => clearTimeout(timer);
         }
-    }, [showCounter, totalSparks, sparkConfig.counterVisibleMs]);
+    }, [showCounter, sparkConfig.counterVisibleMs]);
 
     const latestBurst = displayBurst;
     const latestVariant = latestBurst?.variant ?? 'gold';
