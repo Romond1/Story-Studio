@@ -1,9 +1,11 @@
 // src/renderer/audio/AudioManager.ts
 import { audioRouting } from "./AudioRouting";
+import { AUDIO_ROUTE_CATEGORIES, getAudioRouteTargets, type AudioRouteCategory } from "../../shared/audioRoutingPlan";
 
 export class AudioManager {
   private buffers = new Map<string, AudioBuffer>();
-  private activeNodes = new Map<string, { source: AudioBufferSourceNode, gainNode: GainNode }>();
+  private activeNodes = new Map<string, { source: AudioBufferSourceNode, gainNode: GainNode, routeCategory: AudioRouteCategory }>();
+  private mediaElementNodes = new WeakMap<HTMLMediaElement, { source: MediaElementAudioSourceNode, gainNode: GainNode, routeCategory: AudioRouteCategory }>();
   private pauseTimes = new Map<string, number>();
   private startTimes = new Map<string, number>();
   private playRequestsPendingBuffer = new Set<string>();
@@ -17,18 +19,18 @@ export class AudioManager {
 
   // WebAudio Integration
   private ctx: AudioContext;
-  private masterGain: GainNode; // masterMusicBus splitter
   private monitorGain: GainNode;
   private cableGain: GainNode;
+  private routeBuses: Record<AudioRouteCategory, GainNode>;
   private destination: MediaStreamAudioDestinationNode;
   private monitorDestination: MediaStreamAudioDestinationNode;
   private keepAliveSource: ConstantSourceNode;
 
   constructor() {
     this.ctx = new AudioContext({ latencyHint: "interactive" });
-    this.masterGain = this.ctx.createGain();
     this.monitorGain = this.ctx.createGain();
     this.cableGain = this.ctx.createGain();
+    this.routeBuses = this.createRouteBuses();
 
     this.destination = this.ctx.createMediaStreamDestination();
     this.monitorDestination = this.ctx.createMediaStreamDestination();
@@ -48,22 +50,35 @@ export class AudioManager {
     const silentGain = this.ctx.createGain();
     silentGain.gain.value = 0;
     this.keepAliveSource.connect(silentGain);
-    silentGain.connect(this.masterGain);
+    silentGain.connect(this.routeBuses.unclassified);
     this.keepAliveSource.start();
   }
 
+  private createRouteBuses(): Record<AudioRouteCategory, GainNode> {
+    return Object.fromEntries(
+      AUDIO_ROUTE_CATEGORIES.map((category) => [category, this.ctx.createGain()]),
+    ) as Record<AudioRouteCategory, GainNode>;
+  }
+
   private initializeRouting() {
-    this.masterGain.disconnect();
     this.monitorGain.disconnect();
     this.cableGain.disconnect();
+    Object.values(this.routeBuses).forEach((bus) => bus.disconnect());
 
-    // Master splits into the two output routes
-    this.masterGain.connect(this.cableGain);
-    this.masterGain.connect(this.monitorGain);
-
-    // Each sub-bus goes to its respective sink
     this.cableGain.connect(this.destination);
     this.monitorGain.connect(this.monitorDestination);
+
+    AUDIO_ROUTE_CATEGORIES.forEach((category) => {
+      const bus = this.routeBuses[category];
+      const targets = getAudioRouteTargets(category);
+      if (targets.includes("cable")) {
+        bus.connect(this.cableGain);
+      }
+      if (targets.includes("monitor")) {
+        bus.connect(this.monitorGain);
+      }
+      console.log("[audio] route-bus-ready", { category, targets });
+    });
   }
 
   public subscribe(listener: () => void) {
@@ -137,10 +152,23 @@ export class AudioManager {
     this.activeNodes.delete(url);
   }
 
-  public playClip(url: string, volume: number = 1, loop: boolean = false, fadeOptions?: { fadeEnabled: boolean }) {
+  public playClip(
+    url: string,
+    volume: number = 1,
+    loop: boolean = false,
+    fadeOptions?: { fadeEnabled: boolean },
+    routeCategory: AudioRouteCategory = "unclassified",
+  ) {
     this.playClipCalls += 1;
     const wasPlaying = this.isPlaying(url);
-    console.log("[audio] playClip", { callCount: this.playClipCalls, url, wasPlaying, ctxState: this.ctx.state });
+    console.log("[audio] playClip", {
+      callCount: this.playClipCalls,
+      url,
+      wasPlaying,
+      ctxState: this.ctx.state,
+      routeCategory,
+      targets: getAudioRouteTargets(routeCategory),
+    });
 
     if (this.playClipInFlight.has(url)) {
       console.log("[audio] playClip skipped (already in-flight)", { url });
@@ -164,7 +192,9 @@ export class AudioManager {
       this.playRequestsPendingBuffer.add(url);
       this.preload(url).then(() => {
         this.playRequestsPendingBuffer.delete(url);
-        if (this.buffers.has(url)) this.playClip(url, volume, loop, fadeOptions);
+        if (this.buffers.has(url)) {
+          this.playClip(url, volume, loop, fadeOptions, routeCategory);
+        }
       });
       return;
     }
@@ -185,9 +215,8 @@ export class AudioManager {
       const gainNode = this.ctx.createGain();
       gainNode.gain.value = fadeOptions?.fadeEnabled ? 0 : Math.max(0, Math.min(1, volume));
 
-      // Connect to the master splitter, NOT multiple outputs directly
       source.connect(gainNode);
-      gainNode.connect(this.masterGain);
+      gainNode.connect(this.routeBuses[routeCategory]);
 
       const offset = this.pauseTimes.get(url) || 0;
       source.start(0, offset);
@@ -199,7 +228,7 @@ export class AudioManager {
       }
 
       this.startTimes.set(url, this.ctx.currentTime - offset);
-      this.activeNodes.set(url, { source, gainNode });
+      this.activeNodes.set(url, { source, gainNode, routeCategory });
 
       source.onended = () => {
         // onended fires if stopped manually or ended naturally.
@@ -264,12 +293,59 @@ export class AudioManager {
     }
   }
 
+  public attachMediaElement(
+    element: HTMLMediaElement,
+    volume: number = 1,
+    routeCategory: AudioRouteCategory = "unclassified",
+  ) {
+    let node = this.mediaElementNodes.get(element);
+    if (!node) {
+      const source = this.ctx.createMediaElementSource(element);
+      const gainNode = this.ctx.createGain();
+      source.connect(gainNode);
+      node = { source, gainNode, routeCategory };
+      this.mediaElementNodes.set(element, node);
+    }
+
+    node.routeCategory = routeCategory;
+
+    try {
+      node.gainNode.disconnect();
+    } catch {
+      // Reconnecting an already-disconnected gain node is fine.
+    }
+    node.gainNode.connect(this.routeBuses[node.routeCategory]);
+
+    node.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+    node.gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), this.ctx.currentTime);
+    if (this.ctx.state === "suspended") this.ctx.resume();
+  }
+
+  public setMediaElementVolume(element: HTMLMediaElement, volume: number) {
+    const node = this.mediaElementNodes.get(element);
+    if (!node) return;
+    node.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+    node.gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), this.ctx.currentTime);
+  }
+
+  public detachMediaElement(element: HTMLMediaElement) {
+    const node = this.mediaElementNodes.get(element);
+    if (!node) return;
+    try {
+      node.gainNode.disconnect();
+    } catch {
+      // Already disconnected.
+    }
+    node.gainNode.gain.cancelScheduledValues(this.ctx.currentTime);
+    node.gainNode.gain.setValueAtTime(0, this.ctx.currentTime);
+  }
+
   public playSectionMusic(url: string, volume: number = 1, fadeEnabled: boolean = false) {
     if (this.sectionMusicUrl && this.sectionMusicUrl !== url) {
       this.stopClip(this.sectionMusicUrl, { fadeEnabled });
     }
     this.sectionMusicUrl = url;
-    this.playClip(url, volume, true, { fadeEnabled });
+    this.playClip(url, volume, true, { fadeEnabled }, "section-bgm");
   }
 
   public stopSectionMusic(url?: string, fadeEnabled: boolean = false) {
@@ -296,8 +372,8 @@ export class AudioManager {
     this.sectionMusicUrl = null;
   }
 
-  public getMasterGain() {
-    return this.masterGain;
+  public getRouteBus(category: AudioRouteCategory) {
+    return this.routeBuses[category];
   }
 
   public getMonitorGain() {

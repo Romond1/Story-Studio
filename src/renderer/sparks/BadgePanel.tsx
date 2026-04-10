@@ -244,12 +244,36 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
             <section style={{ border: '1px solid #334', borderRadius: 8, padding: 10, background: '#181824' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                     <h3 style={{ margin: 0, fontSize: '1rem', color: '#ffd700' }}>Students</h3>
-                    <button
-                        onClick={() => addStudent()}
-                        style={{ padding: '6px 8px', background: '#2b4b2b', border: '1px solid #3f6f3f', color: '#fff', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' }}
-                    >
-                        + Add Student
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                            onClick={() => addStudent()}
+                            title="Add student"
+                            aria-label="Add student"
+                            style={{ width: 28, height: 28, background: '#2b4b2b', border: '1px solid #3f6f3f', color: '#fff', borderRadius: 4, cursor: 'pointer', fontSize: '1rem', fontWeight: 700, lineHeight: 1 }}
+                        >
+                            +
+                        </button>
+                        <button
+                            onClick={() => activeStudentId && removeStudent(activeStudentId)}
+                            title="Remove selected student"
+                            aria-label="Remove selected student"
+                            disabled={!isEditMode || students.length <= 1 || !activeStudentId}
+                            style={{
+                                width: 28,
+                                height: 28,
+                                background: !isEditMode || students.length <= 1 || !activeStudentId ? '#3a2424' : '#5b2323',
+                                border: '1px solid #7a3333',
+                                color: !isEditMode || students.length <= 1 || !activeStudentId ? '#c08f8f' : '#fff',
+                                borderRadius: 4,
+                                cursor: !isEditMode || students.length <= 1 || !activeStudentId ? 'not-allowed' : 'pointer',
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                lineHeight: 1,
+                            }}
+                        >
+                            -
+                        </button>
+                    </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -287,17 +311,6 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
                                         />
                                         Badge
                                     </label>
-                                    {isEditMode && students.length > 1 && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                removeStudent(student.id);
-                                            }}
-                                            style={{ background: '#442222', border: '1px solid #663333', color: '#ffb5b5', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', padding: '4px 6px' }}
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
                                 </div>
 
                                 <div style={{ display: 'flex', gap: 6, fontSize: '0.72rem', color: '#cfd5ff', flexWrap: 'wrap' }}>

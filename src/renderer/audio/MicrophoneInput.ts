@@ -23,9 +23,9 @@ export class MicrophoneInput {
             this.gainNode = ctx.createGain();
             this.gainNode.gain.value = 1.0;
 
-            // Prevent local echo by ONLY sending this to the cable/broadcast bus
+            // Prevent local echo by routing mic only to the dedicated mic bus.
             this.sourceNode.connect(this.gainNode);
-            this.gainNode.connect(audioManager.getCableGain());
+            this.gainNode.connect(audioManager.getRouteBus("mic"));
 
             console.log("[Mic] Enabled and routed to cable/broadcast path");
         } catch (e) {

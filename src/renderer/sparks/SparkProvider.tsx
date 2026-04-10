@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
 import { SparkConfig, BadgeConfig, SparkStudent } from '../../shared/types';
+import { removeBadgeStudent } from '../../shared/badgeStudents';
 
 export type SparkVariant = 'gold' | 'blue' | 'pink';
 
@@ -262,13 +263,21 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
     }, [currentStudents, commitStudents]);
 
     const removeStudent = useCallback((studentId: string) => {
-        if (currentStudents.length <= 1) return;
-        const nextStudents = currentStudents.filter((student) => student.id !== studentId);
-        commitStudents(nextStudents);
-        if (studentId === currentActiveStudentId && nextStudents.length > 0) {
-            commitActiveStudentId(nextStudents[0].id);
+        const result = removeBadgeStudent({
+            students: currentStudents,
+            activeStudentId: currentActiveStudentId,
+            studentIdToRemove: studentId,
+            badgeConfig: currentBadgeConfig,
+        });
+        if (result.students === currentStudents) return;
+        commitStudents(result.students);
+        if (result.badgeConfig) {
+            setBadgeConfig(result.badgeConfig);
         }
-    }, [currentStudents, currentActiveStudentId, commitStudents, commitActiveStudentId]);
+        if (result.activeStudentId && result.activeStudentId !== currentActiveStudentId) {
+            commitActiveStudentId(result.activeStudentId);
+        }
+    }, [currentStudents, currentActiveStudentId, currentBadgeConfig, commitStudents, commitActiveStudentId, setBadgeConfig]);
 
     const triggerSpark = useCallback((variant: SparkVariant) => {
         if (!activeStudent) return;

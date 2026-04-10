@@ -19,6 +19,7 @@ import type {
   SparkStudent,
   StoryReferenceItem,
 } from '../shared/types';
+import { normalizeSlideVideoAudio } from '../shared/videoAudio';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -428,6 +429,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
   const defaultSectionId = sections[0].id;
 
   let slides = Array.isArray(data.slides) ? data.slides : [];
+  const assetMediaTypes = new Map((Array.isArray(data.assets) ? data.assets : []).map((asset) => [asset.id, asset.mediaType] as const));
 
   // We need to pass the whole data object to generate sequential IDs if missing
   // But we want to mutate our local copy of overlays.
@@ -457,7 +459,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
       };
     }) : [];
 
-    return {
+    return normalizeSlideVideoAudio({
       ...slide,
       sectionId: slide.sectionId || defaultSectionId,
       name: typeof slide.name === 'string' ? slide.name : undefined,
@@ -469,7 +471,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
         normalizeBCardInstances(slide.bCardInstances),
         normalizeLegacyStoryBCardRefs(slide.storyReferences),
       ),
-    };
+    }, assetMediaTypes.get(slide.assetId));
   });
 
   const boostPack = data.boostPack && typeof data.boostPack === 'object'
@@ -772,7 +774,8 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
       id: randomUUID(),
       assetId: id,
       sectionId: defaultSectionId,
-      transition: 'fade'
+      transition: 'fade',
+      ...(mediaType === 'video' ? { videoAudio: { enabled: true, volume: 1 } } : {}),
     });
   }
 

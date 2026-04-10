@@ -12,6 +12,11 @@ export interface AudioClip {
   tags?: string[];
 }
 
+export interface VideoAudioSettings {
+  enabled: boolean;
+  volume: number;
+}
+
 export interface DrawPoint {
   x: number;
   y: number;
@@ -95,6 +100,7 @@ export interface Slide {
   dialogue?: AudioClip[];
   sfx?: AudioClip[];
   bgm?: AudioClip;
+  videoAudio?: VideoAudioSettings;
   tags?: string[];
   overlays?: OverlayItem[];
   audioCues?: AudioCue[];

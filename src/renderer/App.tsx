@@ -43,6 +43,14 @@ import {
   getAssetDisplayLabel,
   withCanonicalAssetDefaults,
 } from "../shared/mediaReferences";
+import {
+  appendAssetsAndUpdateSection,
+  deleteSectionInProjectData,
+  duplicateBreakSectionInProjectData,
+  moveSectionInProjectData,
+  updateSectionInProjectData,
+} from "../shared/sectionMutations";
+import { resolveVideoAudioSettings } from "../shared/videoAudio";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -658,7 +666,7 @@ const BadgeStudentSprites = ({
   getMediaUrl: (path: string) => string;
   isEditMode: boolean;
 }) => {
-  const { badgeConfig, setBadgeConfig, students, isFinalScoreRevealed } = useSparks();
+  const { badgeConfig, setBadgeConfig, students, isFinalScoreRevealed, removeStudent } = useSparks();
   const checkedStudents = students.filter((student) => student.badgeVisible !== false);
   const sprites = badgeConfig.badgeSprites || [];
   const motion = badgeConfig.badgeSpriteMotion || "spin";
@@ -819,6 +827,11 @@ export function App() {
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<string>>(
     new Set(),
   );
+  const [breakEditorDraft, setBreakEditorDraft] = useState<{
+    sectionId: string;
+    name: string;
+    questions: string;
+  } | null>(null);
   const [drawClearSignal, setDrawClearSignal] = useState(0);
   const [showBreakEditor, setShowBreakEditor] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -1062,12 +1075,31 @@ export function App() {
     : selectedSection?.type;
 
   useEffect(() => {
-    if (selectedSection?.type === "break" && appMode === "edit" && topMode === 'story') {
-      setShowBreakEditor(true);
-    } else {
-      setShowBreakEditor(false);
+    const nextShowBreakEditor =
+      selectedSection?.type === "break" && appMode === "edit" && topMode === "story";
+    setShowBreakEditor((prev) => (prev === nextShowBreakEditor ? prev : nextShowBreakEditor));
+  }, [selectedSection?.id, selectedSection?.type, appMode, topMode]);
+
+  useEffect(() => {
+    if (selectedSection?.type !== "break") {
+      setBreakEditorDraft((prev) => (prev === null ? prev : null));
+      return;
     }
-  }, [selectedSection, appMode, topMode]);
+    setBreakEditorDraft((prev) => {
+      if (
+        prev?.sectionId === selectedSection.id &&
+        prev.name === (selectedSection.name || "") &&
+        prev.questions === (selectedSection.questions || "")
+      ) {
+        return prev;
+      }
+      return {
+        sectionId: selectedSection.id,
+        name: selectedSection.name || "",
+        questions: selectedSection.questions || "",
+      };
+    });
+  }, [selectedSection?.id, selectedSection?.type]);
 
   const sectionSlideIndices = useMemo(() => {
     if (!project) return new Map<string, number[]>();
@@ -1109,6 +1141,10 @@ export function App() {
       currentAsset = null;
     }
   }
+
+  const currentVideoAudioSettings = currentSlide
+    ? resolveVideoAudioSettings(currentSlide.videoAudio)
+    : resolveVideoAudioSettings(undefined);
 
   const stripReferencePrefix = (value: string, referenceCode?: string) => {
     const trimmed = value.trim();
@@ -1230,6 +1266,18 @@ export function App() {
       const next: Record<string, BCardTeachState> = {};
       for (const [id, state] of Object.entries(prev)) {
         if (validIds.has(id)) next[id] = state;
+      }
+      const prevKeys = Object.keys(prev);
+      const nextKeys = Object.keys(next);
+      if (prevKeys.length === nextKeys.length) {
+        let changed = false;
+        for (const key of prevKeys) {
+          if (!(key in next) || next[key] !== prev[key]) {
+            changed = true;
+            break;
+          }
+        }
+        if (!changed) return prev;
       }
       return next;
     });
@@ -2276,15 +2324,12 @@ export function App() {
   };
 
   const updateSection = (sectionId: string, updates: Partial<Section>) => {
-    if (!project) return;
-    setProject({
-      ...project,
-      data: {
-        ...project.data,
-        sections: project.data.sections.map((section) =>
-          section.id === sectionId ? { ...section, ...updates } : section,
-        ),
-      },
+    setProject((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        data: updateSectionInProjectData(prev.data, sectionId, updates),
+      };
     });
     setIsDirty(true);
   };
@@ -2337,8 +2382,7 @@ export function App() {
 
   const onAddSection = () => {
     if (!ensureEditMode(appMode, "add section")) return;
-    if (!project) return;
-    const count = project.data.sections.filter(
+    const count = (project?.data.sections || []).filter(
       (s) => s.type !== "break",
     ).length;
     const nextSection: Section = {
@@ -2346,12 +2390,15 @@ export function App() {
       name: `Section ${count + 1}`,
       type: "section",
     };
-    setProject({
-      ...project,
-      data: {
-        ...project.data,
-        sections: [...project.data.sections, nextSection],
-      },
+    setProject((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          sections: [...prev.data.sections, nextSection],
+        },
+      };
     });
     setSelectedSectionId(nextSection.id);
     setExpandedSectionId(nextSection.id);
@@ -2360,8 +2407,7 @@ export function App() {
 
   const onAddBreak = () => {
     if (!ensureEditMode(appMode, "add break")) return;
-    if (!project) return;
-    const count = project.data.sections.filter(
+    const count = (project?.data.sections || []).filter(
       (s) => s.type === "break",
     ).length;
     const nextBreak: Section = {
@@ -2376,14 +2422,18 @@ export function App() {
       align: "center",
       position: "center",
     };
-    setProject({
-      ...project,
-      data: {
-        ...project.data,
-        sections: [...project.data.sections, nextBreak],
-      },
+    setProject((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          sections: [...prev.data.sections, nextBreak],
+        },
+      };
     });
     setSelectedSectionId(nextBreak.id);
+    setExpandedSectionId(nextBreak.id);
     setIsDirty(true);
   };
 
@@ -2682,54 +2732,26 @@ export function App() {
     const confirmMsg = `Delete ${section.type === "break" ? "Break" : "Section"} '${section.name}'? This will also delete all slides in this section.`;
     if (!window.confirm(confirmMsg)) return;
 
-    const deletedSlideIds = new Set(project.data.slides.filter(s => s.sectionId === sectionId).map(s => s.id));
-    const newSlides = project.data.slides.filter((s) => s.sectionId !== sectionId);
-
-    // Remove references to deleted slides/sections in boostPack
-    let newBoostPack = project.data.boostPack;
-    if (newBoostPack) {
-      const cleanSeq = (seq: SequenceItem[]) => (seq || []).filter(item => {
-        if (item.type === 'slideRef') return !deletedSlideIds.has((item as SlideRefItem).slideId);
-        if (item.type === 'breakRef') return (item as BreakRefItem).breakId !== sectionId;
-        return true;
-      });
-      newBoostPack = {
-        activationSequence: cleanSeq(newBoostPack.activationSequence),
-        languageSequence: cleanSeq(newBoostPack.languageSequence),
-        gamesSequence: cleanSeq(newBoostPack.gamesSequence),
-      };
-    }
-
-    // Filter out the section and clean up any remaining sections (e.g. breakMedia referencing deleted slides)
-    const newSections = project.data.sections
-      .filter((s) => s.id !== sectionId)
-      .map(s => {
-        if (s.breakMedia) {
-          return {
-            ...s,
-            breakMedia: s.breakMedia.filter(bm => !deletedSlideIds.has(bm.slideId))
-          };
-        }
-        return s;
-      });
-
+    const previewDeletion = deleteSectionInProjectData(project.data, sectionId);
+    if (!previewDeletion) return;
     const currentSlideId = project.data.slides[currentIndex]?.id;
-
-    setProject({
-      ...project,
-      data: {
-        ...project.data,
-        slides: newSlides,
-        sections: newSections,
-        boostPack: newBoostPack,
-      },
+    setProject((prev) => {
+      if (!prev) return prev;
+      const result = deleteSectionInProjectData(prev.data, sectionId);
+      if (!result) return prev;
+      return {
+        ...prev,
+        data: result.data,
+      };
     });
     setIsDirty(true);
 
+    const newSlides = previewDeletion.data.slides;
+    const newSections = previewDeletion.data.sections;
+
     if (selectedSectionId === sectionId) {
       // Fallback selection to nearest neighbor or null if none left
-      const fallbackId =
-        newSections[Math.max(0, sectionIndex - 1)]?.id ?? newSections[0]?.id;
+      const fallbackId = newSections[Math.max(0, previewDeletion.deletedSectionIndex - 1)]?.id ?? newSections[0]?.id;
 
       setSelectedSectionId(fallbackId ?? null);
 
@@ -2760,26 +2782,14 @@ export function App() {
 
   const moveSection = (sectionId: string, direction: "up" | "down") => {
     if (!ensureEditMode(appMode, "reorder section")) return;
-    if (!project) return;
-    const index = project.data.sections.findIndex((s) => s.id === sectionId);
-    if (index === -1) return;
-    if (direction === "up" && index === 0) return;
-    if (direction === "down" && index === project.data.sections.length - 1)
-      return;
-
-    const newSections = [...project.data.sections];
-    const swapIndex = direction === "up" ? index - 1 : index + 1;
-    [newSections[index], newSections[swapIndex]] = [
-      newSections[swapIndex],
-      newSections[index],
-    ];
-
-    setProject({
-      ...project,
-      data: {
-        ...project.data,
-        sections: newSections,
-      },
+    setProject((prev) => {
+      if (!prev) return prev;
+      const nextData = moveSectionInProjectData(prev.data, sectionId, direction);
+      if (!nextData) return prev;
+      return {
+        ...prev,
+        data: nextData,
+      };
     });
     setIsDirty(true);
   };
@@ -2787,47 +2797,19 @@ export function App() {
   const duplicateBreak = (sectionId: string) => {
     if (!ensureEditMode(appMode, "duplicate break")) return;
     if (!project) return;
-
-    const sourceIndex = project.data.sections.findIndex((s) => s.id === sectionId);
-    if (sourceIndex === -1) return;
-    const source = project.data.sections[sourceIndex];
-    if (source.type !== "break") return;
-
-    const clonedBreakMedia = (source.breakMedia || []).map((item) => ({
-      ...item,
-      id: crypto.randomUUID(),
-    }));
-    const clonedStoryRefs = (source.storyReferences || []).map((item) => ({
-      ...item,
-      id: crypto.randomUUID(),
-    }));
-    const clonedBCardInstances = normalizeBCardInstances(source.bCardInstances).map((item) => ({
-      ...item,
-      id: crypto.randomUUID(),
-    }));
-
-    const duplicated: Section = {
-      ...source,
-      id: crypto.randomUUID(),
-      name: `${source.name} Copy`,
-      breakMedia: clonedBreakMedia,
-      storyReferences: clonedStoryRefs,
-      bCardInstances: clonedBCardInstances,
-    };
-
-    const nextSections = [...project.data.sections];
-    nextSections.splice(sourceIndex + 1, 0, duplicated);
-
+    const result = duplicateBreakSectionInProjectData(
+      project.data,
+      sectionId,
+      () => crypto.randomUUID(),
+    );
+    if (!result) return;
     setProject({
       ...project,
-      data: {
-        ...project.data,
-        sections: nextSections,
-      },
+      data: result.data,
     });
     setIsDirty(true);
-    setSelectedSectionId(duplicated.id);
-    setExpandedSectionId(duplicated.id);
+    setSelectedSectionId(result.duplicatedId);
+    setExpandedSectionId(result.duplicatedId);
   };
 
   const onDeleteBubble = () => {
@@ -4097,8 +4079,21 @@ export function App() {
                         <label className="break-editor-label">
                           <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Title</span>
                           <textarea
-                            value={selectedSection.name || ""}
-                            onChange={(e) => updateSection(selectedSection.id, { name: e.target.value })}
+                            value={breakEditorDraft?.sectionId === selectedSection.id ? breakEditorDraft.name : (selectedSection.name || "")}
+                            onChange={(e) => {
+                              const nextValue = e.target.value;
+                              setBreakEditorDraft((prev) =>
+                                prev?.sectionId === selectedSection.id
+                                  ? { ...prev, name: nextValue }
+                                  : { sectionId: selectedSection.id, name: nextValue, questions: selectedSection.questions || "" },
+                              );
+                              updateSection(selectedSection.id, { name: nextValue });
+                            }}
+                            onBlur={() => {
+                              if (breakEditorDraft?.sectionId === selectedSection.id) {
+                                updateSection(selectedSection.id, { name: breakEditorDraft.name });
+                              }
+                            }}
                             className="break-editor-textarea"
                             style={{ minHeight: 40 }}
                           />
@@ -4107,8 +4102,21 @@ export function App() {
                       <label className="break-editor-label">
                         <span style={{ fontSize: "0.85rem", color: "#aaa" }}>Questions</span>
                         <textarea
-                          value={selectedSection.questions || ""}
-                          onChange={(e) => updateSection(selectedSection.id, { questions: e.target.value })}
+                          value={breakEditorDraft?.sectionId === selectedSection.id ? breakEditorDraft.questions : (selectedSection.questions || "")}
+                          onChange={(e) => {
+                            const nextValue = e.target.value;
+                            setBreakEditorDraft((prev) =>
+                              prev?.sectionId === selectedSection.id
+                                ? { ...prev, questions: nextValue }
+                                : { sectionId: selectedSection.id, name: selectedSection.name || "", questions: nextValue },
+                            );
+                            updateSection(selectedSection.id, { questions: nextValue });
+                          }}
+                          onBlur={() => {
+                            if (breakEditorDraft?.sectionId === selectedSection.id) {
+                              updateSection(selectedSection.id, { questions: breakEditorDraft.questions });
+                            }
+                          }}
                           className="break-editor-textarea"
                           style={{ minHeight: 100 }}
                         />
@@ -4214,12 +4222,19 @@ export function App() {
                                               result.importedAssets,
                                               selectedSection.id,
                                             );
-                                            const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
-                                            setProject({
-                                              ...project,
-                                              data: { ...project.data, assets: nextAssets }
+                                            setProject((prev) => {
+                                              if (!prev) return prev;
+                                              return {
+                                                ...prev,
+                                                data: appendAssetsAndUpdateSection(
+                                                  prev.data,
+                                                  selectedSection.id,
+                                                  normalizedImportedAssets,
+                                                  { background: `url('${toMediaUrl(normalizedImportedAssets[0].relativePath)}')` },
+                                                ),
+                                              };
                                             });
-                                            updateSection(selectedSection.id, { background: `url('${toMediaUrl(normalizedImportedAssets[0].relativePath)}')` });
+                                            setIsDirty(true);
                                           }
                                         }}
                                         className="break-editor-btn"
@@ -4461,7 +4476,7 @@ export function App() {
                               bgm[idx] = { ...bgm[idx], ...updates };
                               updateSection(selectedSection.id, { bgm });
                             }}
-                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, { fadeEnabled: opts?.fadeEnabled || false })}
+                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, { fadeEnabled: opts?.fadeEnabled || false }, "section-bgm")}
                             onPause={(url) => audioManager.pauseClip(url)}
                             onStop={(url, opts) => audioManager.stopClip(url, { fadeEnabled: opts?.fadeEnabled || false })}
                             showRemove={true}
@@ -5034,6 +5049,7 @@ export function App() {
                             key={previousSlide?.id}
                             asset={previousAsset}
                             overlays={previousSlide?.overlays ?? []}
+                            videoAudio={previousSlide?.videoAudio}
                             className={`media ${currentSlide?.transition === "card-slide"
                               ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-out`
                               : `transition-${currentSlide?.transition ?? "fade"}-out`
@@ -5061,6 +5077,7 @@ export function App() {
                           key={currentSlide?.id}
                           asset={currentAsset}
                           overlays={currentSlide?.overlays ?? []}
+                          videoAudio={currentSlide?.videoAudio}
                           className={`media ${currentSlide?.transition === "card-slide"
                             ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-in`
                             : `transition-${currentSlide?.transition ?? "fade"}-in`
@@ -5637,6 +5654,53 @@ export function App() {
                     <h4>Slide Audio</h4>
                     {currentSlide && (
                       <>
+                        {currentAsset?.mediaType === "video" && (
+                          <div style={{ marginBottom: 12, padding: "8px", border: "1px solid #333", borderRadius: 6, background: "#181818" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginBottom: 8 }}>
+                              <span>Video Audio</span>
+                              <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#ddd" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={currentVideoAudioSettings.enabled}
+                                  onChange={(e) => {
+                                    if (!currentSlide) return;
+                                    updateCurrentSlide({
+                                      videoAudio: {
+                                        ...currentVideoAudioSettings,
+                                        enabled: e.target.checked,
+                                      },
+                                    });
+                                  }}
+                                />
+                                Sound On
+                              </label>
+                            </div>
+                            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.75rem", color: currentVideoAudioSettings.enabled ? "#ccc" : "#666" }}>
+                              <span style={{ minWidth: 42 }}>Volume</span>
+                              <input
+                                type="range"
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={currentVideoAudioSettings.volume}
+                                disabled={!currentVideoAudioSettings.enabled}
+                                onChange={(e) => {
+                                  if (!currentSlide) return;
+                                  updateCurrentSlide({
+                                    videoAudio: {
+                                      ...currentVideoAudioSettings,
+                                      volume: Number(e.target.value),
+                                    },
+                                  });
+                                }}
+                                style={{ flex: 1 }}
+                              />
+                              <span style={{ minWidth: 38, textAlign: "right" }}>
+                                {Math.round(currentVideoAudioSettings.volume * 100)}%
+                              </span>
+                            </label>
+                          </div>
+                        )}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.80rem", color: "#ffaaaa", marginBottom: 4 }}>
                           <span>Dialogue</span>
                           {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a" }} onClick={() => onImportAudio("dialogue")}>+</button>}
@@ -5647,7 +5711,7 @@ export function App() {
                             clip={clip}
                             label={`Dialogue ${idx + 1}`}
                             onUpdate={(upds) => updateSlideAudio("dialogue", idx, upds)}
-                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
+                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts, "dialogue")}
                             onPause={(url) => audioManager.pauseClip(url)}
                             onStop={(url, opts) => audioManager.stopClip(url, opts)}
                             showRemove={appMode === "edit"}
@@ -5664,7 +5728,7 @@ export function App() {
                             clip={clip}
                             label={`SFX ${idx + 1}`}
                             onUpdate={(upds) => updateSlideAudio("sfx", idx, upds)}
-                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts)}
+                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, false, opts, "sfx")}
                             onPause={(url) => audioManager.pauseClip(url)}
                             onStop={(url, opts) => audioManager.stopClip(url, opts)}
                             showRemove={appMode === "edit"}
@@ -5680,7 +5744,7 @@ export function App() {
                             clip={currentSlide.bgm}
                             label={"Slide BGM"}
                             onUpdate={(upds) => updateSlideAudio("bgm", null, upds)}
-                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, opts)}
+                            onPlay={(url, vol, opts) => audioManager.playClip(url, vol, true, opts, "slide-bgm")}
                             onPause={(url) => audioManager.pauseClip(url)}
                             onStop={(url, opts) => audioManager.stopClip(url, opts)}
                             showRemove={appMode === "edit"}
@@ -6691,6 +6755,7 @@ function MediaView({
   showOverlayIds = false,
   onOverlaySelect,
   onOverlayChange,
+  videoAudio,
 }: {
   asset: AssetItem;
   overlays: OverlayItem[];
@@ -6713,11 +6778,13 @@ function MediaView({
   showOverlayIds?: boolean;
   onOverlaySelect?: (id: string | null) => void;
   onOverlayChange?: (id: string, updates: Partial<OverlayItem>) => void;
+  videoAudio?: Slide["videoAudio"];
 }) {
   const src = toMediaUrl(asset.relativePath);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const resolvedVideoAudio = useMemo(() => resolveVideoAudioSettings(videoAudio), [videoAudio]);
 
   // Dragging state for overlays
   const draggingOverlayRef = useRef<string | null>(null);
@@ -6741,6 +6808,32 @@ function MediaView({
       videoRef.current.play().catch(() => { });
     }
   }, [paused]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || asset.mediaType !== "video") return;
+
+    video.volume = 1;
+    audioManager.attachMediaElement(
+      video,
+      resolvedVideoAudio.enabled ? resolvedVideoAudio.volume : 0,
+      "slide-bgm",
+    );
+
+    return () => {
+      audioManager.detachMediaElement(video);
+    };
+  }, [asset.id, asset.mediaType]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || asset.mediaType !== "video") return;
+
+    audioManager.setMediaElementVolume(
+      video,
+      resolvedVideoAudio.enabled ? resolvedVideoAudio.volume : 0,
+    );
+  }, [asset.id, asset.mediaType, resolvedVideoAudio.enabled, resolvedVideoAudio.volume]);
 
   const [zoom, setZoom] = useState(initialZoom ?? 1);
   const [pan, setPan] = useState(initialPan ?? { x: 0, y: 0 });
@@ -7133,7 +7226,6 @@ function MediaView({
           style={mediaStyle}
           controls={showControls}
           autoPlay={!paused}
-          muted
           onTimeUpdate={(e) =>
             onTimeUpdate?.((e.target as HTMLVideoElement).currentTime)
           }
