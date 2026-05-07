@@ -21,6 +21,10 @@
     "src/shared/badgeStudents.ts",
     "src/shared/badgeStudents.test.ts",
     "src/shared/videoAudio.ts",
-    "src/shared/videoAudio.test.ts"
+    "src/shared/videoAudio.test.ts",
+    "src/shared/videoTrim.ts",
+    "src/shared/videoTrim.test.ts",
+    "src/shared/counterGame.ts",
+    "src/shared/counterGame.test.ts"
   ]
 }

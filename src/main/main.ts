@@ -20,6 +20,7 @@ import type {
   StoryReferenceItem,
 } from '../shared/types';
 import { normalizeSlideVideoAudio } from '../shared/videoAudio';
+import { normalizeSlideVideoTrim } from '../shared/videoTrim';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -459,7 +460,8 @@ function normalizeProjectData(data: ProjectData): ProjectData {
       };
     }) : [];
 
-    return normalizeSlideVideoAudio({
+    const mediaType = assetMediaTypes.get(slide.assetId);
+    return normalizeSlideVideoTrim(normalizeSlideVideoAudio({
       ...slide,
       sectionId: slide.sectionId || defaultSectionId,
       name: typeof slide.name === 'string' ? slide.name : undefined,
@@ -471,7 +473,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
         normalizeBCardInstances(slide.bCardInstances),
         normalizeLegacyStoryBCardRefs(slide.storyReferences),
       ),
-    }, assetMediaTypes.get(slide.assetId));
+    }, mediaType), mediaType);
   });
 
   const boostPack = data.boostPack && typeof data.boostPack === 'object'

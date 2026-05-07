@@ -51,6 +51,12 @@ import {
   updateSectionInProjectData,
 } from "../shared/sectionMutations";
 import { resolveVideoAudioSettings } from "../shared/videoAudio";
+import {
+  clampVideoTimeToTrim,
+  getEffectiveVideoTrim,
+  normalizeVideoTrimSettings,
+  shouldStopAtTrimOut,
+} from "../shared/videoTrim";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -69,6 +75,13 @@ import { BoardEmptyState } from "./acards/BoardEmptyState";
 import { ACardStageRenderer } from "./acards/ACardStageRenderer";
 import { BCardInstanceLayer, type BCardOverlayClickAction } from "./acards/BCardInstanceLayer";
 import { BCardEditor } from "./acards/BCardEditor";
+
+function formatVideoTrimTime(seconds: number): string {
+  const safeSeconds = Number.isFinite(seconds) ? seconds : 0;
+  const m = Math.floor(Math.abs(safeSeconds) / 60);
+  const s = Math.floor(Math.abs(safeSeconds) % 60);
+  return `${safeSeconds < 0 ? "-" : ""}${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
 
 // CLIP PLAYER COMPONENT
 function AudioClipPlayer({
@@ -1145,7 +1158,6 @@ export function App() {
   const currentVideoAudioSettings = currentSlide
     ? resolveVideoAudioSettings(currentSlide.videoAudio)
     : resolveVideoAudioSettings(undefined);
-
   const stripReferencePrefix = (value: string, referenceCode?: string) => {
     const trimmed = value.trim();
     if (!trimmed || !referenceCode) return trimmed;
@@ -5122,6 +5134,20 @@ export function App() {
                             });
                             setIsDirty(true);
                           }}
+                          videoTrim={currentSlide?.videoTrim}
+                          onVideoTrimChange={(videoTrim) => {
+                            if (!project || !currentSlide) return;
+                            setProject({
+                              ...project,
+                              data: {
+                                ...project.data,
+                                slides: project.data.slides.map((s) =>
+                                  s.id === currentSlide.id ? { ...s, videoTrim } : s
+                                ),
+                              },
+                            });
+                            setIsDirty(true);
+                          }}
                           bubbleDefinitions={project?.data.bubbleDefinitions}
                         />
                       </div>
@@ -6756,6 +6782,8 @@ function MediaView({
   onOverlaySelect,
   onOverlayChange,
   videoAudio,
+  videoTrim,
+  onVideoTrimChange,
 }: {
   asset: AssetItem;
   overlays: OverlayItem[];
@@ -6779,12 +6807,21 @@ function MediaView({
   onOverlaySelect?: (id: string | null) => void;
   onOverlayChange?: (id: string, updates: Partial<OverlayItem>) => void;
   videoAudio?: Slide["videoAudio"];
+  videoTrim?: Slide["videoTrim"];
+  onVideoTrimChange?: (trim: Slide["videoTrim"]) => void;
 }) {
   const src = toMediaUrl(asset.relativePath);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const trimTrackRef = useRef<HTMLDivElement | null>(null);
   const resolvedVideoAudio = useMemo(() => resolveVideoAudioSettings(videoAudio), [videoAudio]);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [draggingTrimHandle, setDraggingTrimHandle] = useState<"in" | "out" | null>(null);
+  const effectiveVideoTrim = useMemo(
+    () => getEffectiveVideoTrim(videoTrim, videoDuration),
+    [videoDuration, videoTrim],
+  );
 
   // Dragging state for overlays
   const draggingOverlayRef = useRef<string | null>(null);
@@ -6808,6 +6845,15 @@ function MediaView({
       videoRef.current.play().catch(() => { });
     }
   }, [paused]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || asset.mediaType !== "video" || !videoDuration) return;
+    const nextTime = clampVideoTimeToTrim(video.currentTime, videoTrim, videoDuration);
+    if (Math.abs(nextTime - video.currentTime) > 0.02) {
+      video.currentTime = nextTime;
+    }
+  }, [asset.mediaType, videoDuration, videoTrim]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -6864,6 +6910,49 @@ function MediaView({
     transition: isPanning ? "none" : "transform 50ms linear",
     cursor: isPanning ? "grabbing" : zoom > 1 ? "grab" : "default",
   };
+
+  const getTrimTimeFromPointer = (clientX: number): number => {
+    const track = trimTrackRef.current;
+    if (!track || videoDuration <= 0) return 0;
+    const rect = track.getBoundingClientRect();
+    const ratio = rect.width ? (clientX - rect.left) / rect.width : 0;
+    return Math.max(0, Math.min(videoDuration, ratio * videoDuration));
+  };
+
+  const updateTrimHandle = (handle: "in" | "out", clientX: number) => {
+    if (!onVideoTrimChange || videoDuration <= 0) return;
+    const current = getEffectiveVideoTrim(videoTrim, videoDuration);
+    const time = getTrimTimeFromPointer(clientX);
+    const minGap = Math.min(0.1, Math.max(0.01, videoDuration / 100));
+    const nextTrim = handle === "in"
+      ? {
+          inSec: Math.min(time, Math.max(0, current.outSec - minGap)),
+          outSec: current.outSec,
+        }
+      : {
+          inSec: current.inSec,
+          outSec: Math.max(time, Math.min(videoDuration, current.inSec + minGap)),
+        };
+    onVideoTrimChange(normalizeVideoTrimSettings(nextTrim));
+  };
+
+  const handleTrimPointerMove = (event: globalThis.PointerEvent) => {
+    if (!draggingTrimHandle) return;
+    updateTrimHandle(draggingTrimHandle, event.clientX);
+  };
+
+  useEffect(() => {
+    if (!draggingTrimHandle) return;
+    window.addEventListener("pointermove", handleTrimPointerMove);
+    window.addEventListener("pointerup", () => setDraggingTrimHandle(null), { once: true });
+    return () => {
+      window.removeEventListener("pointermove", handleTrimPointerMove);
+    };
+  }, [draggingTrimHandle, videoDuration, videoTrim]);
+
+  const trimInPercent = videoDuration > 0 ? (effectiveVideoTrim.inSec / videoDuration) * 100 : 0;
+  const trimOutPercent = videoDuration > 0 ? (effectiveVideoTrim.outSec / videoDuration) * 100 : 100;
+  const showVideoTrimEditor = asset.mediaType === "video" && isEditMode && videoDuration > 0;
 
   const getContentPoint = (
     clientX: number,
@@ -7226,10 +7315,69 @@ function MediaView({
           style={mediaStyle}
           controls={showControls}
           autoPlay={!paused}
-          onTimeUpdate={(e) =>
-            onTimeUpdate?.((e.target as HTMLVideoElement).currentTime)
-          }
+          onLoadedMetadata={(e) => {
+            const video = e.target as HTMLVideoElement;
+            setVideoDuration(Number.isFinite(video.duration) ? video.duration : 0);
+            const nextTime = clampVideoTimeToTrim(video.currentTime, videoTrim, video.duration);
+            if (Math.abs(nextTime - video.currentTime) > 0.02) {
+              video.currentTime = nextTime;
+            }
+          }}
+          onPlay={(e) => {
+            const video = e.target as HTMLVideoElement;
+            const nextTime = clampVideoTimeToTrim(video.currentTime, videoTrim, video.duration);
+            if (Math.abs(nextTime - video.currentTime) > 0.02) {
+              video.currentTime = nextTime;
+            }
+          }}
+          onTimeUpdate={(e) => {
+            const video = e.target as HTMLVideoElement;
+            if (shouldStopAtTrimOut(video.currentTime, videoTrim, video.duration)) {
+              video.currentTime = getEffectiveVideoTrim(videoTrim, video.duration).outSec;
+              video.pause();
+            }
+            onTimeUpdate?.(video.currentTime);
+          }}
         />
+      )}
+
+      {showVideoTrimEditor && (
+        <div className="video-trim-editor" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="video-trim-times">
+            <span>{formatVideoTrimTime(effectiveVideoTrim.inSec)}</span>
+            <span>{formatVideoTrimTime(effectiveVideoTrim.outSec)}</span>
+          </div>
+          <div ref={trimTrackRef} className="video-trim-track">
+            <div
+              className="video-trim-selection"
+              style={{ left: `${trimInPercent}%`, width: `${Math.max(0, trimOutPercent - trimInPercent)}%` }}
+            />
+            <button
+              type="button"
+              className="video-trim-handle in"
+              style={{ left: `${trimInPercent}%` }}
+              aria-label="Video trim in point"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDraggingTrimHandle("in");
+                updateTrimHandle("in", e.clientX);
+              }}
+            />
+            <button
+              type="button"
+              className="video-trim-handle out"
+              style={{ left: `${trimOutPercent}%` }}
+              aria-label="Video trim out point"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setDraggingTrimHandle("out");
+                updateTrimHandle("out", e.clientX);
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Overlay Layer */}

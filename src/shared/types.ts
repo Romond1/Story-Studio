@@ -17,6 +17,11 @@ export interface VideoAudioSettings {
   volume: number;
 }
 
+export interface VideoTrimSettings {
+  inSec: number;
+  outSec?: number;
+}
+
 export interface DrawPoint {
   x: number;
   y: number;
@@ -101,6 +106,7 @@ export interface Slide {
   sfx?: AudioClip[];
   bgm?: AudioClip;
   videoAudio?: VideoAudioSettings;
+  videoTrim?: VideoTrimSettings;
   tags?: string[];
   overlays?: OverlayItem[];
   audioCues?: AudioCue[];
