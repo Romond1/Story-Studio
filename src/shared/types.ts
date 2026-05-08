@@ -22,6 +22,13 @@ export interface VideoTrimSettings {
   outSec?: number;
 }
 
+export interface ImageAdjustmentSettings {
+  flipX?: boolean;
+  brightness?: number;
+  contrast?: number;
+  saturate?: number;
+}
+
 export interface DrawPoint {
   x: number;
   y: number;
@@ -107,6 +114,7 @@ export interface Slide {
   bgm?: AudioClip;
   videoAudio?: VideoAudioSettings;
   videoTrim?: VideoTrimSettings;
+  imageAdjustments?: ImageAdjustmentSettings;
   tags?: string[];
   overlays?: OverlayItem[];
   audioCues?: AudioCue[];

@@ -57,6 +57,10 @@ import {
   normalizeVideoTrimSettings,
   shouldStopAtTrimOut,
 } from "../shared/videoTrim";
+import {
+  normalizeImageAdjustments,
+  resolveImageAdjustments,
+} from "../shared/imageAdjustments";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -5148,6 +5152,20 @@ export function App() {
                             });
                             setIsDirty(true);
                           }}
+                          imageAdjustments={currentSlide?.imageAdjustments}
+                          onImageAdjustmentsChange={(imageAdjustments) => {
+                            if (!project || !currentSlide) return;
+                            setProject({
+                              ...project,
+                              data: {
+                                ...project.data,
+                                slides: project.data.slides.map((s) =>
+                                  s.id === currentSlide.id ? { ...s, imageAdjustments } : s
+                                ),
+                              },
+                            });
+                            setIsDirty(true);
+                          }}
                           bubbleDefinitions={project?.data.bubbleDefinitions}
                         />
                       </div>
@@ -6784,6 +6802,8 @@ function MediaView({
   videoAudio,
   videoTrim,
   onVideoTrimChange,
+  imageAdjustments,
+  onImageAdjustmentsChange,
 }: {
   asset: AssetItem;
   overlays: OverlayItem[];
@@ -6809,6 +6829,8 @@ function MediaView({
   videoAudio?: Slide["videoAudio"];
   videoTrim?: Slide["videoTrim"];
   onVideoTrimChange?: (trim: Slide["videoTrim"]) => void;
+  imageAdjustments?: Slide["imageAdjustments"];
+  onImageAdjustmentsChange?: (settings: Slide["imageAdjustments"]) => void;
 }) {
   const src = toMediaUrl(asset.relativePath);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -6816,6 +6838,10 @@ function MediaView({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trimTrackRef = useRef<HTMLDivElement | null>(null);
   const resolvedVideoAudio = useMemo(() => resolveVideoAudioSettings(videoAudio), [videoAudio]);
+  const resolvedImageAdjustments = useMemo(
+    () => resolveImageAdjustments(imageAdjustments),
+    [imageAdjustments],
+  );
   const [videoDuration, setVideoDuration] = useState(0);
   const [draggingTrimHandle, setDraggingTrimHandle] = useState<"in" | "out" | null>(null);
   const effectiveVideoTrim = useMemo(
@@ -6904,11 +6930,22 @@ function MediaView({
     setHighlighterStrokes([]);
   }, [clearSignal]);
 
+  const transformParts = [
+    `translate(${pan.x}px, ${pan.y}px)`,
+    `scale(${zoom})`,
+    asset.mediaType === "image" && resolvedImageAdjustments.flipX ? "translateX(100%) scaleX(-1)" : "",
+  ].filter(Boolean);
+
   const mediaStyle: CSSProperties = {
     transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
     transformOrigin: "0 0",
     transition: isPanning ? "none" : "transform 50ms linear",
     cursor: isPanning ? "grabbing" : zoom > 1 ? "grab" : "default",
+  };
+  const imageMediaStyle: CSSProperties = {
+    ...mediaStyle,
+    transform: transformParts.join(" "),
+    filter: `brightness(${resolvedImageAdjustments.brightness}) contrast(${resolvedImageAdjustments.contrast}) saturate(${resolvedImageAdjustments.saturate})`,
   };
 
   const getTrimTimeFromPointer = (clientX: number): number => {
@@ -6953,6 +6990,15 @@ function MediaView({
   const trimInPercent = videoDuration > 0 ? (effectiveVideoTrim.inSec / videoDuration) * 100 : 0;
   const trimOutPercent = videoDuration > 0 ? (effectiveVideoTrim.outSec / videoDuration) * 100 : 100;
   const showVideoTrimEditor = asset.mediaType === "video" && isEditMode && videoDuration > 0;
+  const showImageAdjustmentEditor = asset.mediaType === "image" && isEditMode;
+
+  const updateImageAdjustments = (updates: Slide["imageAdjustments"]) => {
+    if (!onImageAdjustmentsChange) return;
+    onImageAdjustmentsChange(normalizeImageAdjustments({
+      ...resolvedImageAdjustments,
+      ...updates,
+    }));
+  };
 
   const getContentPoint = (
     clientX: number,
@@ -7304,7 +7350,7 @@ function MediaView({
           src={src}
           className="media-content"
           alt={getAssetDescription(asset)}
-          style={mediaStyle}
+          style={imageMediaStyle}
           draggable={false}
         />
       ) : (
@@ -7377,6 +7423,64 @@ function MediaView({
               }}
             />
           </div>
+        </div>
+      )}
+
+      {showImageAdjustmentEditor && (
+        <div className="image-adjustment-editor" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="image-adjustment-row">
+            <span>Image</span>
+            <button
+              type="button"
+              className={resolvedImageAdjustments.flipX ? "image-tool-toggle active" : "image-tool-toggle"}
+              onClick={() => updateImageAdjustments({ flipX: !resolvedImageAdjustments.flipX })}
+            >
+              Flip H
+            </button>
+            <button
+              type="button"
+              className="image-tool-reset"
+              onClick={() => onImageAdjustmentsChange?.(undefined)}
+            >
+              Reset
+            </button>
+          </div>
+          <label className="image-adjustment-slider">
+            <span>Bright</span>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.01}
+              value={resolvedImageAdjustments.brightness}
+              onChange={(e) => updateImageAdjustments({ brightness: Number(e.target.value) })}
+            />
+            <output>{Math.round(resolvedImageAdjustments.brightness * 100)}%</output>
+          </label>
+          <label className="image-adjustment-slider">
+            <span>Contrast</span>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.01}
+              value={resolvedImageAdjustments.contrast}
+              onChange={(e) => updateImageAdjustments({ contrast: Number(e.target.value) })}
+            />
+            <output>{Math.round(resolvedImageAdjustments.contrast * 100)}%</output>
+          </label>
+          <label className="image-adjustment-slider">
+            <span>Saturate</span>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.01}
+              value={resolvedImageAdjustments.saturate}
+              onChange={(e) => updateImageAdjustments({ saturate: Number(e.target.value) })}
+            />
+            <output>{Math.round(resolvedImageAdjustments.saturate * 100)}%</output>
+          </label>
         </div>
       )}
 

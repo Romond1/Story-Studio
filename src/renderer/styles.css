@@ -436,6 +436,70 @@ input {
   outline-offset: 2px;
 }
 
+.image-adjustment-editor {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  z-index: 18;
+  width: min(280px, calc(100% - 48px));
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  background: rgba(8, 10, 14, 0.84);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(5px);
+  color: #e6eef6;
+}
+
+.image-adjustment-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.78rem;
+}
+
+.image-tool-toggle,
+.image-tool-reset {
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid #3d4856;
+  border-radius: 4px;
+  background: #1d2630;
+  color: #e6eef6;
+  cursor: pointer;
+  font-size: 0.72rem;
+}
+
+.image-tool-toggle.active {
+  border-color: #d9fff6;
+  background: #257b6d;
+}
+
+.image-tool-reset {
+  background: #2b2b31;
+}
+
+.image-adjustment-slider {
+  display: grid;
+  grid-template-columns: 54px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+}
+
+.image-adjustment-slider input {
+  width: 100%;
+}
+
+.image-adjustment-slider output {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #b8c8d8;
+}
+
 .drawing-overlay {
   position: absolute;
   inset: 0;

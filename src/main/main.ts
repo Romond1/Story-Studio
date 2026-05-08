@@ -21,6 +21,7 @@ import type {
 } from '../shared/types';
 import { normalizeSlideVideoAudio } from '../shared/videoAudio';
 import { normalizeSlideVideoTrim } from '../shared/videoTrim';
+import { normalizeSlideImageAdjustments } from '../shared/imageAdjustments';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -461,7 +462,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
     }) : [];
 
     const mediaType = assetMediaTypes.get(slide.assetId);
-    return normalizeSlideVideoTrim(normalizeSlideVideoAudio({
+    return normalizeSlideImageAdjustments(normalizeSlideVideoTrim(normalizeSlideVideoAudio({
       ...slide,
       sectionId: slide.sectionId || defaultSectionId,
       name: typeof slide.name === 'string' ? slide.name : undefined,
@@ -473,7 +474,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
         normalizeBCardInstances(slide.bCardInstances),
         normalizeLegacyStoryBCardRefs(slide.storyReferences),
       ),
-    }, mediaType), mediaType);
+    }, mediaType), mediaType), mediaType);
   });
 
   const boostPack = data.boostPack && typeof data.boostPack === 'object'

@@ -24,6 +24,8 @@
     "src/shared/videoAudio.test.ts",
     "src/shared/videoTrim.ts",
     "src/shared/videoTrim.test.ts",
+    "src/shared/imageAdjustments.ts",
+    "src/shared/imageAdjustments.test.ts",
     "src/shared/counterGame.ts",
     "src/shared/counterGame.test.ts"
   ]
