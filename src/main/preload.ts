@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { AssetItem, ImportResult, ProjectData, ProjectState } from '../shared/types';
+import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
 
 const api = {
   createProject: (): Promise<ProjectState | null> => ipcRenderer.invoke('project:create'),
@@ -12,6 +12,9 @@ const api = {
     data: ProjectData,
     mode: 'save' | 'saveAs' = 'save'
   ): Promise<{ lastSavedAt: string; folderPath: string } | null> => ipcRenderer.invoke('project:save', data, mode),
+  getStudentRoster: (): Promise<StudentRosterSettings> => ipcRenderer.invoke('settings:get-student-roster'),
+  saveStudentRoster: (settings: StudentRosterSettings): Promise<StudentRosterSettings> =>
+    ipcRenderer.invoke('settings:save-student-roster', settings),
   forceClose: () => ipcRenderer.send('app:force-close'),
   onRequestClose: (callback: () => void) => {
     ipcRenderer.on('app:request-close', () => callback());

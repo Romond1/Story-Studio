@@ -35,6 +35,9 @@ import {
   BCardInstance,
   ProjectData,
   BCardTeachState,
+  RelicSystem,
+  StudentRosterEntry,
+  StudentRosterSettings,
 } from "../shared/types";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
 import {
@@ -61,6 +64,15 @@ import {
   normalizeImageAdjustments,
   resolveImageAdjustments,
 } from "../shared/imageAdjustments";
+import {
+  applyRelicProgressDelta,
+  clampRelicProgress,
+  ensureRelicProgressForRoster,
+  getActiveRelicStudentIds,
+  normalizeRelicSystem,
+  normalizeStudentRosterSettings,
+  setRelicProgressForStudents,
+} from "../shared/relics";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -79,6 +91,8 @@ import { BoardEmptyState } from "./acards/BoardEmptyState";
 import { ACardStageRenderer } from "./acards/ACardStageRenderer";
 import { BCardInstanceLayer, type BCardOverlayClickAction } from "./acards/BCardInstanceLayer";
 import { BCardEditor } from "./acards/BCardEditor";
+import { RelicsPanel } from "./relics/RelicsPanel";
+import { RelicStageWidget } from "./relics/RelicStageWidget";
 
 function formatVideoTrimTime(seconds: number): string {
   const safeSeconds = Number.isFinite(seconds) ? seconds : 0;
@@ -338,6 +352,7 @@ const DEFAULT_BCARD_TEACH_STATE: BCardTeachState = {
 };
 
 const LIVE_SESSION_STORAGE_KEY = "story-studio.live-session.v1";
+const STUDENT_ROSTER_FALLBACK_STORAGE_KEY = "story-studio.student-roster.v1";
 const LIVE_SESSION_DEBOUNCE_MS = 500;
 
 type LiveSessionSnapshot = {
@@ -346,7 +361,7 @@ type LiveSessionSnapshot = {
   projectFolderPath: string;
   projectCreatedAt: string;
   appMode: AppMode;
-  topMode: "story" | "boost" | "badge" | "boards";
+  topMode: "story" | "boost" | "badge" | "boards" | "relics";
   boostTab: "activation" | "language" | "games" | "badge";
   currentIndex: number;
   selectedSectionId: string | null;
@@ -802,7 +817,7 @@ export function App() {
   const [appMode, setAppMode] = useState<AppMode>(DEFAULT_MODE);
 
   const ENABLE_BOOST_MODE = true;
-  const [topMode, setTopMode] = useState<'story' | 'boost' | 'badge' | 'boards'>('story');
+  const [topMode, setTopMode] = useState<'story' | 'boost' | 'badge' | 'boards' | 'relics'>('story');
   const [selectedACardId, setSelectedACardId] = useState<string | null>(null);
   const [selectedLibraryBCardId, setSelectedLibraryBCardId] = useState<string | null>(null);
   const [boostTab, setBoostTab] = useState<'activation' | 'language' | 'games' | 'badge'>('activation');
@@ -901,6 +916,12 @@ export function App() {
   const [showRestoreSessionPrompt, setShowRestoreSessionPrompt] = useState(false);
   const [savedLiveSession, setSavedLiveSession] = useState<LiveSessionSnapshot | null>(null);
   const [pendingRestoreSession, setPendingRestoreSession] = useState<LiveSessionSnapshot | null>(null);
+  const [studentRoster, setStudentRoster] = useState<StudentRosterEntry[]>([]);
+  const [isRelicRewardCardVisible, setIsRelicRewardCardVisible] = useState(false);
+  const [relicAnimationSignal, setRelicAnimationSignal] = useState<{
+    kind: "progress" | "stage" | "complete";
+    nonce: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!timerState.isRunning) return;
@@ -993,7 +1014,8 @@ export function App() {
         topMode:
           parsed.topMode === "boost" ||
           parsed.topMode === "badge" ||
-          parsed.topMode === "boards"
+          parsed.topMode === "boards" ||
+          parsed.topMode === "relics"
             ? parsed.topMode
             : "story",
         boostTab:
@@ -1034,6 +1056,50 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    let fallbackRaw: unknown = null;
+    try {
+      fallbackRaw = JSON.parse(window.localStorage.getItem(STUDENT_ROSTER_FALLBACK_STORAGE_KEY) || "null");
+    } catch {
+      fallbackRaw = null;
+    }
+    const fallbackSettings = normalizeStudentRosterSettings(fallbackRaw);
+    const appApi = window.appApi as typeof window.appApi & {
+      getStudentRoster?: () => Promise<StudentRosterSettings>;
+      saveStudentRoster?: (settings: StudentRosterSettings) => Promise<StudentRosterSettings>;
+    };
+
+    if (!appApi.getStudentRoster) {
+      setStudentRoster(fallbackSettings.studentRoster);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    appApi.getStudentRoster()
+      .then((settings) => {
+        if (cancelled) return;
+        const normalized = normalizeStudentRosterSettings(settings);
+        if (normalized.studentRoster.length === 0 && fallbackSettings.studentRoster.length > 0) {
+          setStudentRoster(fallbackSettings.studentRoster);
+          void appApi.saveStudentRoster?.(fallbackSettings).catch((error) => console.error(error));
+        } else {
+          setStudentRoster(normalized.studentRoster);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        if (!cancelled) {
+          setStudentRoster(fallbackSettings.studentRoster);
+          showToast("Using local student roster fallback", "edit", 2000);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showToast]);
+
+  useEffect(() => {
     if (project) {
       setShowRestoreSessionPrompt(false);
     }
@@ -1044,6 +1110,281 @@ export function App() {
     project?.data?.assets?.forEach((asset) => map.set(asset.id, asset));
     return map;
   }, [project]);
+
+  const relicSystem = useMemo(
+    () => normalizeRelicSystem(project?.data.relicSystem),
+    [project?.data.relicSystem],
+  );
+
+  useEffect(() => {
+    if (!project) return;
+    const reconciled = ensureRelicProgressForRoster(normalizeRelicSystem(project.data.relicSystem), studentRoster);
+    if (JSON.stringify(reconciled.studentProgress) === JSON.stringify(project.data.relicSystem?.studentProgress ?? {})) {
+      return;
+    }
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        relicSystem: reconciled,
+      },
+    });
+  }, [project, studentRoster]);
+
+  const updateRelicSystem = useCallback((updater: (current: RelicSystem) => RelicSystem) => {
+    setProject((prev) => {
+      if (!prev) return prev;
+      const nextRelicSystem = normalizeRelicSystem(updater(normalizeRelicSystem(prev.data.relicSystem)));
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          relicSystem: nextRelicSystem,
+        },
+      };
+    });
+    setIsDirty(true);
+  }, [showToast]);
+
+  const patchRelicSystem = useCallback((updates: Partial<RelicSystem>) => {
+    updateRelicSystem((current) => ({ ...current, ...updates }));
+  }, [updateRelicSystem]);
+
+  const saveRoster = useCallback(async (nextRoster: StudentRosterEntry[]): Promise<StudentRosterEntry[]> => {
+    const settings = normalizeStudentRosterSettings({ version: 1, studentRoster: nextRoster });
+    window.localStorage.setItem(STUDENT_ROSTER_FALLBACK_STORAGE_KEY, JSON.stringify(settings));
+    setStudentRoster(settings.studentRoster);
+
+    const appApi = window.appApi as typeof window.appApi & {
+      saveStudentRoster?: (nextSettings: StudentRosterSettings) => Promise<StudentRosterSettings>;
+    };
+    if (!appApi.saveStudentRoster) {
+      showToast("Student roster saved locally. Restart Story Studio to enable global roster file storage.", "edit", 2600);
+      return settings.studentRoster;
+    }
+
+    try {
+      const saved = await appApi.saveStudentRoster(settings);
+      const normalized = normalizeStudentRosterSettings(saved);
+      window.localStorage.setItem(STUDENT_ROSTER_FALLBACK_STORAGE_KEY, JSON.stringify(normalized));
+      setStudentRoster(normalized.studentRoster);
+      return normalized.studentRoster;
+    } catch (error) {
+      console.error(error);
+      showToast("Student roster saved locally; global settings file was unavailable", "edit", 2600);
+      return settings.studentRoster;
+    }
+  }, []);
+
+  const addRosterStudent = useCallback(async (name: string): Promise<boolean> => {
+    if (!name.trim()) return false;
+    const now = new Date().toISOString();
+    const student: StudentRosterEntry = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    const nextRoster = [...studentRoster, student];
+    const savedRoster = await saveRoster(nextRoster);
+    updateRelicSystem((current) => {
+      const withRoster = ensureRelicProgressForRoster(current, savedRoster);
+      return {
+        ...withRoster,
+        studentProgress: {
+          ...withRoster.studentProgress,
+          [student.id]: {
+            ...(withRoster.studentProgress[student.id] ?? { progress: 0, active: false }),
+            active: true,
+          },
+        },
+      };
+    });
+    showToast(`Added ${student.name}`, "success", 1200);
+    return true;
+  }, [saveRoster, showToast, studentRoster, updateRelicSystem]);
+
+  const renameRosterStudent = useCallback(async (studentId: string, name: string): Promise<boolean> => {
+    const student = studentRoster.find((item) => item.id === studentId);
+    if (!student || !name.trim()) return false;
+    const nextRoster = studentRoster.map((item) =>
+      item.id === studentId ? { ...item, name: name.trim(), updatedAt: new Date().toISOString() } : item,
+    );
+    await saveRoster(nextRoster);
+    showToast("Student renamed", "success", 1200);
+    return true;
+  }, [saveRoster, showToast, studentRoster]);
+
+  const archiveRosterStudent = useCallback(async (studentId: string) => {
+    const student = studentRoster.find((item) => item.id === studentId);
+    if (!student) return;
+    if (!window.confirm(`Remove ${student.name} from the active roster? Existing lesson progress will be preserved.`)) return;
+    const nextRoster = studentRoster.map((item) =>
+      item.id === studentId ? { ...item, archived: true, updatedAt: new Date().toISOString() } : item,
+    );
+    await saveRoster(nextRoster);
+    showToast("Student removed from active roster", "success", 1400);
+  }, [saveRoster, showToast, studentRoster]);
+
+  const updateRelicStudentProgress = useCallback((
+    studentId: string,
+    updates: { active?: boolean; progress?: number; notes?: string },
+  ) => {
+    updateRelicSystem((current) => ({
+      ...current,
+      studentProgress: {
+        ...current.studentProgress,
+        [studentId]: {
+          ...(current.studentProgress[studentId] ?? { progress: 0, active: false }),
+          ...updates,
+          ...(updates.progress !== undefined ? { progress: clampRelicProgress(updates.progress) } : {}),
+        },
+      },
+    }));
+  }, [updateRelicSystem]);
+
+  const runRelicProgressAction = useCallback((action: "increase" | "decrease" | "reset" | "complete") => {
+    const activeStudentIds = getActiveRelicStudentIds(relicSystem, studentRoster);
+    if (activeStudentIds.length === 0) {
+      showToast("No active student selected", "edit", 1200);
+      return;
+    }
+    const beforeProgress = activeStudentIds.map((studentId) => relicSystem.studentProgress[studentId]?.progress ?? 0);
+    const afterProgress = beforeProgress.map((progress) => {
+      if (action === "increase") return clampRelicProgress(progress + 1);
+      if (action === "decrease") return clampRelicProgress(progress - 1);
+      if (action === "reset") return 0;
+      return 30;
+    });
+    const crossesStageBoundary = beforeProgress.some((progress, index) => {
+      const next = afterProgress[index] ?? progress;
+      return (
+        (progress === 0 && next >= 1) ||
+        (progress <= 10 && next >= 11) ||
+        (progress <= 20 && next >= 21) ||
+        (progress <= 29 && next >= 30)
+      );
+    });
+    const reachesComplete = beforeProgress.some((progress, index) => progress < 30 && (afterProgress[index] ?? progress) >= 30);
+    updateRelicSystem((current) => {
+      const visibleCurrent = { ...current, showOnStage: true };
+      if (action === "increase") return applyRelicProgressDelta(visibleCurrent, activeStudentIds, 1);
+      if (action === "decrease") return applyRelicProgressDelta(visibleCurrent, activeStudentIds, -1);
+      if (action === "reset") return setRelicProgressForStudents(visibleCurrent, activeStudentIds, 0);
+      return setRelicProgressForStudents(visibleCurrent, activeStudentIds, 30);
+    });
+    if (action === "complete") {
+      setIsRelicRewardCardVisible(true);
+    }
+    const kind = reachesComplete ? "complete" : crossesStageBoundary ? "stage" : "progress";
+    const shouldAnimate =
+      (kind === "complete" && relicSystem.animateOnComplete) ||
+      (kind === "stage" && relicSystem.animateOnStageChange) ||
+      (kind === "progress" && relicSystem.animateOnProgress);
+    if (shouldAnimate) {
+      setRelicAnimationSignal({ kind, nonce: Date.now() });
+    }
+  }, [relicSystem, showToast, studentRoster, updateRelicSystem]);
+
+  const toggleRelicWidgetVisibility = useCallback(() => {
+    updateRelicSystem((current) => ({ ...current, showOnStage: !current.showOnStage }));
+  }, [updateRelicSystem]);
+
+  const matchesRelicHotkey = useCallback((event: KeyboardEvent, hotkey: string): boolean => {
+    const parts = hotkey.split("+").map((part) => part.trim().toLowerCase()).filter(Boolean);
+    if (parts.length === 0) return false;
+    const key = parts[parts.length - 1];
+    const wantsCtrl = parts.includes("ctrl") || parts.includes("control");
+    const wantsAlt = parts.includes("alt") || parts.includes("option");
+    const wantsShift = parts.includes("shift");
+    const wantsMeta = parts.includes("meta") || parts.includes("cmd") || parts.includes("command");
+    const eventKey = event.key.toLowerCase();
+    const normalizedKey =
+      key === "up" ? "arrowup" :
+      key === "down" ? "arrowdown" :
+      key === "left" ? "arrowleft" :
+      key === "right" ? "arrowright" :
+      key;
+    return (
+      event.ctrlKey === wantsCtrl &&
+      event.altKey === wantsAlt &&
+      event.shiftKey === wantsShift &&
+      event.metaKey === wantsMeta &&
+      eventKey === normalizedKey
+    );
+  }, []);
+
+  const importRelicImage = useCallback(async (slot: "main" | "stage1" | "stage2" | "stage3") => {
+    if (!project) return;
+    const result = await window.appApi.importMedia();
+    if (!result || result.importedAssets.length === 0) return;
+    const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, result.importedAssets);
+    const imageAsset = normalizedImportedAssets.find((asset) => asset.mediaType === "image");
+    if (!imageAsset) {
+      showToast("Choose an image file for relic art", "edit", 1600);
+      return;
+    }
+    setProject((prev) => {
+      if (!prev) return prev;
+      const current = normalizeRelicSystem(prev.data.relicSystem);
+      const nextRelicSystem: RelicSystem = slot === "main"
+        ? { ...current, mainImageAssetId: imageAsset.id }
+        : {
+            ...current,
+            stageImageAssetIds: {
+              ...current.stageImageAssetIds,
+              [slot]: imageAsset.id,
+            },
+          };
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          assets: [...prev.data.assets, ...normalizedImportedAssets],
+          relicSystem: nextRelicSystem,
+        },
+      };
+    });
+    setIsDirty(true);
+  }, [project, showToast]);
+
+  useEffect(() => {
+    const handleRelicHotkeys = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+      if (matchesRelicHotkey(event, relicSystem.hotkeys.increaseProgress)) {
+        event.preventDefault();
+        runRelicProgressAction("increase");
+      } else if (matchesRelicHotkey(event, relicSystem.hotkeys.decreaseProgress)) {
+        event.preventDefault();
+        runRelicProgressAction("decrease");
+      } else if (matchesRelicHotkey(event, relicSystem.hotkeys.toggleWidget)) {
+        event.preventDefault();
+        toggleRelicWidgetVisibility();
+      } else if (!event.ctrlKey || !event.altKey || event.metaKey || event.shiftKey) {
+        return;
+      } else if (event.key === "r" || event.key === "R") {
+        event.preventDefault();
+        runRelicProgressAction("reset");
+      } else if (event.key === "c" || event.key === "C") {
+        event.preventDefault();
+        runRelicProgressAction("complete");
+      } else if (event.key === "k" || event.key === "K") {
+        event.preventDefault();
+        setIsRelicRewardCardVisible(true);
+      }
+    };
+    window.addEventListener("keydown", handleRelicHotkeys);
+    return () => window.removeEventListener("keydown", handleRelicHotkeys);
+  }, [matchesRelicHotkey, relicSystem.hotkeys, runRelicProgressAction, toggleRelicWidgetVisibility]);
 
   const sections = project?.data.sections ?? [];
   let _matchedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
@@ -3142,6 +3483,10 @@ export function App() {
                   onClick={() => setTopMode('badge')}
                 >Badge</button>
                 <button
+                  style={{ background: topMode === 'relics' ? '#444' : 'transparent', color: topMode === 'relics' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
+                  onClick={() => setTopMode('relics')}
+                >Relics</button>
+                <button
                   style={{ background: topMode === 'boards' ? '#444' : 'transparent', color: topMode === 'boards' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
                   onClick={() => setTopMode('boards')}
                 >Boards</button>
@@ -3487,6 +3832,21 @@ export function App() {
                       setIsDirty(true);
                     }
                   }}
+                />
+              ) : topMode === 'relics' ? (
+                <RelicsPanel
+                  relicSystem={relicSystem}
+                  roster={studentRoster}
+                  assets={project?.data.assets || []}
+                  toMediaUrl={toMediaUrl}
+                  onRelicChange={patchRelicSystem}
+                  onStudentProgressChange={updateRelicStudentProgress}
+                  onAddStudent={addRosterStudent}
+                  onRenameStudent={renameRosterStudent}
+                  onArchiveStudent={archiveRosterStudent}
+                  onImportImage={importRelicImage}
+                  onProgressAction={runRelicProgressAction}
+                  onShowRewardCard={() => setIsRelicRewardCardVisible(true)}
                 />
               ) : topMode === 'story' ? (
                 <>
@@ -4008,6 +4368,16 @@ export function App() {
               <FinalBadgeOverlay
                 assets={project?.data.assets}
                 getMediaUrl={toMediaUrl}
+              />
+              <RelicStageWidget
+                relicSystem={relicSystem}
+                roster={studentRoster}
+                assetsById={assetsById}
+                toMediaUrl={toMediaUrl}
+                rewardVisible={isRelicRewardCardVisible}
+                onHideReward={() => setIsRelicRewardCardVisible(false)}
+                animationSignal={relicAnimationSignal}
+                onWidgetOffsetChange={(widgetOffset) => patchRelicSystem({ widgetOffset })}
               />
               {topMode === 'boards' ? (
                 <div style={{ position: 'absolute', inset: 0 }}>
@@ -5210,7 +5580,7 @@ export function App() {
             </main>
 
             <aside className="audio-sidebar">
-              {topMode === 'story' ? (
+              {topMode === 'story' || topMode === 'relics' ? (
                 <>
                   <div className="audio-block" style={{ border: '1px solid #3a475f', background: 'linear-gradient(180deg, #1a202b, #171b24)', order: 90 }}>
                     <h4

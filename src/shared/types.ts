@@ -349,6 +349,7 @@ export interface ProjectData {
   badgeImageAssetId?: string;
   sparkStudents?: SparkStudent[];
   activeStudentId?: string;
+  relicSystem?: RelicSystem;
   aCardLibrary?: ACardLibrary;
   bCardLibrary?: BCardLibrary;
 }
@@ -357,6 +358,79 @@ export interface ProjectState {
   folderPath: string;
   data: ProjectData;
   lastSavedAt?: string;
+}
+
+export interface StudentRosterEntry {
+  id: string;
+  name: string;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StudentRosterSettings {
+  version: 1;
+  studentRoster: StudentRosterEntry[];
+}
+
+export type RelicWidgetPosition =
+  | "topLeft"
+  | "topRight"
+  | "bottomLeft"
+  | "bottomRight"
+  | "centerBottom";
+
+export type RelicAnimationStyle =
+  | "none"
+  | "glowPulse"
+  | "sparkle"
+  | "stageUnlockBurst"
+  | "completeCeremony";
+
+export type RelicWidgetEntranceAnimation = "none" | "fade" | "pop" | "slideUp" | "zoom";
+
+export type RelicStage = "notStarted" | "stage1" | "stage2" | "stage3" | "complete";
+
+export interface RelicStudentProgress {
+  progress: number;
+  active: boolean;
+  notes?: string;
+}
+
+export interface RelicSystem {
+  enabled: boolean;
+  relicTitle: string;
+  relicDescription: string;
+  mainImageAssetId: string | null;
+  stageImageAssetIds: {
+    stage1: string | null;
+    stage2: string | null;
+    stage3: string | null;
+  };
+  stageTitles: {
+    stage1: string;
+    stage2: string;
+    stage3: string;
+  };
+  studentProgress: Record<string, RelicStudentProgress>;
+  showOnStage: boolean;
+  widgetPosition: RelicWidgetPosition;
+  widgetOffset: { x: number; y: number };
+  widgetScale: number;
+  widgetOpacity: number;
+  animationStyle: RelicAnimationStyle;
+  animationDurationMs: number;
+  animationIntensity: number;
+  rgbFlowEnabled: boolean;
+  widgetEntranceAnimation: RelicWidgetEntranceAnimation;
+  hotkeys: {
+    toggleWidget: string;
+    increaseProgress: string;
+    decreaseProgress: string;
+  };
+  animateOnProgress: boolean;
+  animateOnStageChange: boolean;
+  animateOnComplete: boolean;
 }
 
 export interface ImportResult {

@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { AssetItem, ImportResult, ProjectData, ProjectState } from '../shared/types';
+import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
 
 declare global {
   interface Window {
@@ -14,6 +14,8 @@ declare global {
         data: ProjectData,
         mode?: 'save' | 'saveAs'
       ) => Promise<{ lastSavedAt: string; folderPath: string } | null>;
+      getStudentRoster: () => Promise<StudentRosterSettings>;
+      saveStudentRoster: (settings: StudentRosterSettings) => Promise<StudentRosterSettings>;
       forceClose: () => void;
       onRequestClose: (callback: () => void) => () => void;
     };

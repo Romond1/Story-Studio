@@ -18,10 +18,12 @@ import type {
   Slide,
   SparkStudent,
   StoryReferenceItem,
+  StudentRosterSettings,
 } from '../shared/types';
 import { normalizeSlideVideoAudio } from '../shared/videoAudio';
 import { normalizeSlideVideoTrim } from '../shared/videoTrim';
 import { normalizeSlideImageAdjustments } from '../shared/imageAdjustments';
+import { normalizeRelicSystem, normalizeStudentRosterSettings } from '../shared/relics';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -63,6 +65,33 @@ function getWindow(): BrowserWindow {
 
 function projectPath(folder: string): string {
   return path.join(folder, PROJECT_FILENAME);
+}
+
+function settingsPath(): string {
+  return path.join(app.getPath('userData'), 'story-studio-settings.json');
+}
+
+async function readStudentRosterSettings(): Promise<StudentRosterSettings> {
+  try {
+    const raw = await fs.readFile(settingsPath(), 'utf8');
+    return normalizeStudentRosterSettings(JSON.parse(raw));
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code;
+    if (code !== 'ENOENT') {
+      console.warn('[settings] Could not read student roster settings:', error);
+    }
+    return normalizeStudentRosterSettings(null);
+  }
+}
+
+async function writeStudentRosterSettings(settings: StudentRosterSettings): Promise<StudentRosterSettings> {
+  const normalized = normalizeStudentRosterSettings(settings);
+  const targetPath = settingsPath();
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  const tmpPath = `${targetPath}.tmp`;
+  await fs.writeFile(tmpPath, JSON.stringify(normalized, null, 2), 'utf8');
+  await fs.rename(tmpPath, targetPath);
+  return normalized;
 }
 
 async function ensureProjectFolder(folder: string): Promise<void> {
@@ -503,6 +532,7 @@ function normalizeProjectData(data: ProjectData): ProjectData {
     boostPack,
     sparkStudents,
     activeStudentId,
+    relicSystem: normalizeRelicSystem((data as ProjectData & { relicSystem?: unknown }).relicSystem),
   };
 }
 
@@ -691,6 +721,7 @@ ipcMain.handle('project:create', async () => {
     boostPack: emptyBoostPack(),
     sparkStudents: [defaultSparkStudent],
     activeStudentId: defaultSparkStudent.id,
+    relicSystem: normalizeRelicSystem(undefined),
   };
 
   await writeProjectAtomic(folderPath, data);
@@ -812,6 +843,14 @@ ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'sa
 
   const lastSavedAt = await writeProjectAtomic(currentProjectFolder, data);
   return { lastSavedAt, folderPath: currentProjectFolder };
+});
+
+ipcMain.handle('settings:get-student-roster', async (): Promise<StudentRosterSettings> => {
+  return readStudentRosterSettings();
+});
+
+ipcMain.handle('settings:save-student-roster', async (_, settings: StudentRosterSettings): Promise<StudentRosterSettings> => {
+  return writeStudentRosterSettings(settings);
 });
 
 ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => {
