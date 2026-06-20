@@ -59,11 +59,30 @@ export function CardSystemProvider({
             name,
             stageMode,
             background: {
+                mode: 'solid',
+                color: '#1a1a1a',
+                gradientStart: '#162238',
+                gradientEnd: '#301b3f',
+                gradientDirection: '135deg',
                 offsetX: 50,
                 offsetY: 50,
                 scale: 1,
                 blur: 0
             },
+            title: name,
+            questions: '',
+            font: 'Arial',
+            fontSize: 30,
+            titleFontSize: 44,
+            timerSize: 42,
+            textColor: '#ffffff',
+            isBold: false,
+            isItalic: false,
+            align: 'center',
+            position: 'center',
+            timer: false,
+            timerMode: 'countdown',
+            timerDuration: 300,
             bCardInstances: []
         };
         emit({ ...aRef.current, [newCard.id]: newCard }, bRef.current);
@@ -88,8 +107,12 @@ export function CardSystemProvider({
             ...existing,
             id: generateId(),
             name: `${existing.name} (Copy)`,
+            background: { ...existing.background },
             bCardInstances: existing.bCardInstances.map(inst => ({
                 ...inst,
+                position: { ...inst.position },
+                size: { ...inst.size },
+                flags: inst.flags ? { ...inst.flags } : undefined,
                 id: generateId()
             }))
         };

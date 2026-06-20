@@ -91,6 +91,7 @@ import { CardSystemProvider } from "./store/CardStore";
 import { ACardSystem } from "./acards/ACardSystem";
 import { ACardSidebar } from "./acards/ACardSidebar";
 import { BoardEmptyState } from "./acards/BoardEmptyState";
+import { ACardEditor } from "./acards/ACardEditor";
 import { ACardStageRenderer } from "./acards/ACardStageRenderer";
 import { BCardInstanceLayer, type BCardOverlayClickAction } from "./acards/BCardInstanceLayer";
 import { BCardEditor } from "./acards/BCardEditor";
@@ -1999,6 +2000,45 @@ export function App() {
       return;
     }
     updateBoostBCardInstances(next);
+  };
+
+  const updateACardBCardInstance = (aCardId: string, instanceId: string, updates: Partial<BCardInstance>) => {
+    if (!project) return;
+    const aCard = (project.data.aCardLibrary || {})[aCardId];
+    if (!aCard) return;
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        aCardLibrary: {
+          ...(project.data.aCardLibrary || {}),
+          [aCardId]: {
+            ...aCard,
+            bCardInstances: aCard.bCardInstances.map((instance) =>
+              instance.id === instanceId ? { ...instance, ...updates } : instance,
+            ),
+          },
+        },
+      },
+    });
+    setIsDirty(true);
+  };
+
+  const handlePlacedACardInstanceClick = (instanceId: string) => {
+    setSelectedPlacedBCardId(instanceId);
+    if (overlayBCardClickAction === "none") return;
+    const mapping = {
+      flip: "isFlipped",
+      blur: "isBlurred",
+      cover: "isCovered",
+      zoom: "isZoomed",
+    } as const;
+    const property = mapping[overlayBCardClickAction];
+    const current = overlayBCardTeachStates[instanceId] || DEFAULT_BCARD_TEACH_STATE;
+    setOverlayBCardState(instanceId, {
+      ...current,
+      [property]: !current[property],
+    });
   };
 
   const removePlacedBCardInstance = (instanceId: string) => {
@@ -5304,8 +5344,11 @@ export function App() {
                             <ACardStageRenderer
                               key={ref.id}
                               aCardId={ref.aCardId}
-                              teachStates={{}}
-                              mode="teach"
+                              teachStates={overlayBCardTeachStates}
+                              mode={appMode}
+                              selectedInstanceId={selectedPlacedBCardId}
+                              onInstanceClick={(instanceId) => handlePlacedACardInstanceClick(instanceId)}
+                              onInstanceChange={appMode === "edit" ? (instanceId, updates) => updateACardBCardInstance(ref.aCardId, instanceId, updates) : undefined}
                               resolveImageUrl={(id) => {
                                 const asset = assetsById.get(id);
                                 return asset ? toMediaUrl(asset.relativePath) : null;
@@ -5823,8 +5866,11 @@ export function App() {
                           <ACardStageRenderer
                             key={ref.id}
                             aCardId={ref.aCardId}
-                            teachStates={{}}
-                            mode="teach"
+                            teachStates={overlayBCardTeachStates}
+                            mode={appMode}
+                            selectedInstanceId={selectedPlacedBCardId}
+                            onInstanceClick={(instanceId) => handlePlacedACardInstanceClick(instanceId)}
+                            onInstanceChange={appMode === "edit" ? (instanceId, updates) => updateACardBCardInstance(ref.aCardId, instanceId, updates) : undefined}
                             resolveImageUrl={(id) => {
                               const asset = assetsById.get(id);
                               return asset ? toMediaUrl(asset.relativePath) : null;
@@ -5989,6 +6035,20 @@ export function App() {
                                   <option key={ac.id} value={ac.id}>{ac.name}</option>
                                 ))}
                               </select>
+                              {canEditStoryRefs && selectedRef.aCardId && (
+                                <div style={{ minHeight: 360, overflow: "hidden", border: "1px solid #2f3a4e", borderRadius: 8 }}>
+                                  <ACardEditor
+                                    aCardId={selectedRef.aCardId}
+                                    selectedInstanceId={selectedPlacedBCardId}
+                                    onSelectInstance={(id) => setSelectedPlacedBCardId(id || null)}
+                                    assets={project?.data.assets || []}
+                                    resolveImageUrl={(id) => {
+                                      const asset = assetsById.get(id);
+                                      return asset ? toMediaUrl(asset.relativePath) : null;
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
                           );
                         })()}

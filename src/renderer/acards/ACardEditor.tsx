@@ -130,13 +130,14 @@ export function ACardEditor({ aCardId, onSelectInstance, selectedInstanceId, ass
     const selectedInstance = aCard.bCardInstances.find((i) => i.id === selectedInstanceId);
     const selectedBCard = selectedInstance ? bCardLibrary[selectedInstance.bCardId] : null;
     const audioAssets = (assets || []).filter((asset) => asset.mediaType === 'audio');
+    const background = aCard.background || { offsetX: 50, offsetY: 50, scale: 1, blur: 0 };
 
     const handleUpdate = (updates: Partial<typeof aCard>) => {
         updateACard({ ...aCard, ...updates });
     };
 
     const handleBgUpdate = (bgUpdates: Partial<typeof aCard.background>) => {
-        handleUpdate({ background: { ...aCard.background, ...bgUpdates } });
+        handleUpdate({ background: { ...background, ...bgUpdates } });
     };
 
     const handleAddInstance = (bCardId: string) => {
@@ -335,38 +336,268 @@ export function ACardEditor({ aCardId, onSelectInstance, selectedInstanceId, ass
                 </p>
             </Section>
 
+            <Section title="Title / Questions" defaultOpen={false}>
+                <label className="acard-editor-label">
+                    Title
+                    <input
+                        type="text"
+                        value={aCard.title || ''}
+                        onChange={(e) => handleUpdate({ title: e.target.value })}
+                        className="acard-editor-input"
+                    />
+                </label>
+                <label className="acard-editor-label">
+                    Questions
+                    <textarea
+                        rows={4}
+                        value={aCard.questions || ''}
+                        onChange={(e) => handleUpdate({ questions: e.target.value })}
+                        className="acard-editor-textarea"
+                    />
+                </label>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label">
+                        Font
+                        <select
+                            value={aCard.font || 'Arial'}
+                            onChange={(e) => handleUpdate({ font: e.target.value })}
+                            className="acard-editor-select"
+                        >
+                            <option value="Arial">Arial</option>
+                            <option value="Inter">Inter</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Comic Sans MS">Comic Sans</option>
+                            <option value="Trebuchet MS">Trebuchet</option>
+                        </select>
+                    </label>
+                    <label className="acard-editor-label">
+                        Text Color
+                        <input
+                            type="color"
+                            value={aCard.textColor || '#ffffff'}
+                            onChange={(e) => handleUpdate({ textColor: e.target.value })}
+                            className="acard-editor-color"
+                        />
+                    </label>
+                </div>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label">
+                        Title Size
+                        <input
+                            type="number"
+                            min={12}
+                            max={160}
+                            value={aCard.titleFontSize || 44}
+                            onChange={(e) => handleUpdate({ titleFontSize: parseInt(e.target.value, 10) || 44 })}
+                            className="acard-editor-input"
+                        />
+                    </label>
+                    <label className="acard-editor-label">
+                        Question Size
+                        <input
+                            type="number"
+                            min={10}
+                            max={140}
+                            value={aCard.fontSize || 30}
+                            onChange={(e) => handleUpdate({ fontSize: parseInt(e.target.value, 10) || 30 })}
+                            className="acard-editor-input"
+                        />
+                    </label>
+                </div>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label">
+                        Align
+                        <select
+                            value={aCard.align || 'center'}
+                            onChange={(e) => handleUpdate({ align: e.target.value as any })}
+                            className="acard-editor-select"
+                        >
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </label>
+                    <label className="acard-editor-label">
+                        Position
+                        <select
+                            value={aCard.position || 'center'}
+                            onChange={(e) => handleUpdate({ position: e.target.value as any })}
+                            className="acard-editor-select"
+                        >
+                            <option value="top">Top</option>
+                            <option value="center">Center</option>
+                            <option value="bottom">Bottom</option>
+                        </select>
+                    </label>
+                </div>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label inline">
+                        Bold
+                        <input type="checkbox" checked={!!aCard.isBold} onChange={(e) => handleUpdate({ isBold: e.target.checked })} />
+                    </label>
+                    <label className="acard-editor-label inline">
+                        Italic
+                        <input type="checkbox" checked={!!aCard.isItalic} onChange={(e) => handleUpdate({ isItalic: e.target.checked })} />
+                    </label>
+                </div>
+            </Section>
+
+            <Section title="Timer / Counter" defaultOpen={false}>
+                <label className="acard-editor-label inline">
+                    Show Timer
+                    <input type="checkbox" checked={!!aCard.timer} onChange={(e) => handleUpdate({ timer: e.target.checked })} />
+                </label>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label">
+                        Mode
+                        <select
+                            value={aCard.timerMode || 'countdown'}
+                            onChange={(e) => handleUpdate({ timerMode: e.target.value as any })}
+                            className="acard-editor-select"
+                        >
+                            <option value="countdown">Countdown</option>
+                            <option value="countup">Count Up</option>
+                        </select>
+                    </label>
+                    <label className="acard-editor-label">
+                        Size
+                        <input
+                            type="number"
+                            min={12}
+                            max={160}
+                            value={aCard.timerSize || 42}
+                            onChange={(e) => handleUpdate({ timerSize: parseInt(e.target.value, 10) || 42 })}
+                            className="acard-editor-input"
+                        />
+                    </label>
+                </div>
+                <label className="acard-editor-label">
+                    Duration (seconds)
+                    <input
+                        type="number"
+                        min={1}
+                        value={aCard.timerDuration || 300}
+                        onChange={(e) => handleUpdate({ timerDuration: parseInt(e.target.value, 10) || 300 })}
+                        className="acard-editor-input"
+                    />
+                </label>
+            </Section>
+
             <Section title="Background" defaultOpen={false}>
+                <label className="acard-editor-label">
+                    Background Type
+                    <select
+                        value={background.mode || (background.imageId ? 'image' : 'solid')}
+                        onChange={(e) => handleBgUpdate({ mode: e.target.value as any })}
+                        className="acard-editor-select"
+                    >
+                        <option value="transparent">Transparent</option>
+                        <option value="solid">Solid</option>
+                        <option value="gradient">Gradient</option>
+                        <option value="image">Image</option>
+                    </select>
+                </label>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label">
+                        Solid Color
+                        <input
+                            type="color"
+                            value={background.color || '#1a1a1a'}
+                            onChange={(e) => handleBgUpdate({ color: e.target.value, mode: 'solid' })}
+                            className="acard-editor-color"
+                        />
+                    </label>
+                    <label className="acard-editor-label">
+                        Direction
+                        <select
+                            value={background.gradientDirection || '135deg'}
+                            onChange={(e) => handleBgUpdate({ gradientDirection: e.target.value, mode: 'gradient' })}
+                            className="acard-editor-select"
+                        >
+                            <option value="90deg">Left to Right</option>
+                            <option value="180deg">Top to Bottom</option>
+                            <option value="135deg">Diagonal</option>
+                            <option value="45deg">Reverse Diagonal</option>
+                        </select>
+                    </label>
+                </div>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label">
+                        Gradient Start
+                        <input
+                            type="color"
+                            value={background.gradientStart || '#162238'}
+                            onChange={(e) => handleBgUpdate({ gradientStart: e.target.value, mode: 'gradient' })}
+                            className="acard-editor-color"
+                        />
+                    </label>
+                    <label className="acard-editor-label">
+                        Gradient End
+                        <input
+                            type="color"
+                            value={background.gradientEnd || '#301b3f'}
+                            onChange={(e) => handleBgUpdate({ gradientEnd: e.target.value, mode: 'gradient' })}
+                            className="acard-editor-color"
+                        />
+                    </label>
+                </div>
                 <ImagePicker
                     label="Background Image"
-                    currentImageId={aCard.background.imageId}
+                    currentImageId={background.imageId}
                     assets={assets}
                     resolveImageUrl={resolveImageUrl}
-                    onChange={(id) => handleBgUpdate({ imageId: id || undefined })}
+                    onChange={(id) => handleBgUpdate({ imageId: id || undefined, mode: id ? 'image' : background.mode })}
                 />
                 <label className="acard-editor-label">
-                    Scale ({aCard.background.scale.toFixed(1)}x)
+                    Scale ({(background.scale ?? 1).toFixed(1)}x)
                     <input
                         type="range"
                         min="0.5"
                         max="3"
                         step="0.1"
-                        value={aCard.background.scale}
+                        value={background.scale ?? 1}
                         onChange={(e) => handleBgUpdate({ scale: parseFloat(e.target.value) })}
                         className="acard-editor-range"
                     />
                 </label>
                 <label className="acard-editor-label">
-                    Blur ({aCard.background.blur}px)
+                    Blur ({background.blur ?? 0}px)
                     <input
                         type="range"
                         min="0"
                         max="20"
                         step="1"
-                        value={aCard.background.blur}
+                        value={background.blur ?? 0}
                         onChange={(e) => handleBgUpdate({ blur: parseFloat(e.target.value) })}
                         className="acard-editor-range"
                     />
                 </label>
+                <div className="acard-editor-grid-2">
+                    <label className="acard-editor-label">
+                        Image X ({background.offsetX ?? 50}%)
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={background.offsetX ?? 50}
+                            onChange={(e) => handleBgUpdate({ offsetX: parseFloat(e.target.value) })}
+                            className="acard-editor-range"
+                        />
+                    </label>
+                    <label className="acard-editor-label">
+                        Image Y ({background.offsetY ?? 50}%)
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={background.offsetY ?? 50}
+                            onChange={(e) => handleBgUpdate({ offsetY: parseFloat(e.target.value) })}
+                            className="acard-editor-range"
+                        />
+                    </label>
+                </div>
             </Section>
 
             <Section title="BCard Library" defaultOpen={true} tone="library">

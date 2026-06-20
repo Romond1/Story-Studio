@@ -26,7 +26,48 @@
     position: relative;
     width: 100%;
     height: 100%;
+    z-index: 2;
+}
+
+.acard-stage-text-layer {
+    position: absolute;
+    left: 6%;
+    right: 6%;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    white-space: pre-wrap;
+    text-shadow: 0 2px 9px rgba(0, 0, 0, 0.72);
+}
+
+.acard-stage-text-layer.is-top {
+    top: 7%;
+}
+
+.acard-stage-text-layer.is-center {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.acard-stage-text-layer.is-bottom {
+    bottom: 7%;
+}
+
+.acard-stage-title {
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+}
+
+.acard-stage-questions {
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.acard-stage-timer {
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
 }
 
 .acard-stage-container.acard-mode-half {

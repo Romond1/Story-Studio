@@ -115,8 +115,8 @@ export function StageInteractable({
                         }
                     });
                 }}
-                disableDragging={false}
-                enableResizing={mode === 'edit'}
+                disableDragging={mode !== 'edit' || !onInstanceChange}
+                enableResizing={mode === 'edit' && !!onInstanceChange}
                 minWidth={60}
                 minHeight={80}
             >

@@ -455,12 +455,31 @@ export interface ACard {
   name: string;
   stageMode: 'half' | 'full';
   background: {
+    mode?: 'transparent' | 'solid' | 'gradient' | 'image';
+    color?: string;
+    gradientStart?: string;
+    gradientEnd?: string;
+    gradientDirection?: string;
     imageId?: string;
     offsetX: number;
     offsetY: number;
     scale: number;
     blur: number;
   };
+  title?: string;
+  questions?: string;
+  font?: string;
+  fontSize?: number;
+  titleFontSize?: number;
+  timerSize?: number;
+  textColor?: string;
+  isBold?: boolean;
+  isItalic?: boolean;
+  align?: 'left' | 'center' | 'right';
+  position?: 'top' | 'center' | 'bottom';
+  timer?: boolean;
+  timerMode?: 'countup' | 'countdown';
+  timerDuration?: number;
   bCardInstances: BCardInstance[];
 }
 
