@@ -871,6 +871,9 @@ export function App() {
   const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
   const [isSaveInProgress, setIsSaveInProgress] = useState(false);
   const [showSlideSelector, setShowSlideSelector] = useState(false);
+  const [bubblePanelOpen, setBubblePanelOpen] = useState(false);
+  const [copyBubbleOverlayId, setCopyBubbleOverlayId] = useState<string | null>(null);
+  const [copyBubbleTargetIds, setCopyBubbleTargetIds] = useState<string[]>([]);
   const [showBreakBgLibrary, setShowBreakBgLibrary] = useState(false);
   const [breakThumbDrag, setBreakThumbDrag] = useState<{
     sectionId: string;
@@ -2909,6 +2912,65 @@ export function App() {
     showToast(`Copied ${newBubble.bubbleId} to slide ${targetIndex + 1}`, "success");
   };
 
+  const openCopyBubblePicker = (ov: OverlayItem) => {
+    if (!ensureEditMode(appMode, "copy bubble")) return;
+    setActiveOverlayId(ov.id);
+    setCopyBubbleOverlayId(ov.id);
+    setCopyBubbleTargetIds([]);
+  };
+
+  const toggleCopyBubbleTarget = (slideId: string) => {
+    setCopyBubbleTargetIds((prev) =>
+      prev.includes(slideId)
+        ? prev.filter((id) => id !== slideId)
+        : [...prev, slideId],
+    );
+  };
+
+  const confirmCopyBubbleToSlides = () => {
+    if (!ensureEditMode(appMode, "copy bubble")) return;
+    if (!project || !copyBubbleOverlayId || copyBubbleTargetIds.length === 0) return;
+
+    const sourceBubble = project.data.slides
+      .flatMap((slide) => slide.overlays || [])
+      .find((overlay) => overlay.id === copyBubbleOverlayId);
+    if (!sourceBubble) return;
+
+    let maxBubbleNumber = 0;
+    project.data.slides.forEach((slide) => {
+      (slide.overlays || []).forEach((overlay) => {
+        if (overlay.bubbleId?.startsWith("B")) {
+          const num = parseInt(overlay.bubbleId.substring(1), 10);
+          if (!isNaN(num)) maxBubbleNumber = Math.max(maxBubbleNumber, num);
+        }
+      });
+    });
+
+    const targetIdSet = new Set(copyBubbleTargetIds);
+    const nextSlides = project.data.slides.map((slide) => {
+      if (!targetIdSet.has(slide.id)) return slide;
+      maxBubbleNumber += 1;
+      const copiedBubble: OverlayItem = {
+        ...sourceBubble,
+        id: crypto.randomUUID(),
+        bubbleId: `B${maxBubbleNumber.toString().padStart(4, "0")}`,
+      };
+      return { ...slide, overlays: [...(slide.overlays || []), copiedBubble] };
+    });
+
+    setProject({
+      ...project,
+      data: {
+        ...project.data,
+        slides: nextSlides,
+      },
+    });
+    setIsDirty(true);
+    showToast(`Copied ${sourceBubble.bubbleId || "bubble"} to ${copyBubbleTargetIds.length} slide${copyBubbleTargetIds.length === 1 ? "" : "s"}`, "success");
+    setCopyBubbleOverlayId(null);
+    setCopyBubbleTargetIds([]);
+  };
+
   const onDeleteSlide = (slideId: string) => {
     if (!ensureEditMode(appMode, "delete slide")) return;
     if (!project) return;
@@ -3634,6 +3696,75 @@ export function App() {
             </div>
           )}
 
+          {copyBubbleOverlayId && project && currentSlide && appMode === "edit" && (() => {
+            const sourceBubble = project.data.slides
+              .flatMap((slide) => slide.overlays || [])
+              .find((overlay) => overlay.id === copyBubbleOverlayId);
+            return (
+              <div className="bubble-copy-backdrop" onClick={() => setCopyBubbleOverlayId(null)}>
+                <div className="bubble-copy-modal" onClick={(event) => event.stopPropagation()}>
+                  <div className="bubble-copy-header">
+                    <div>
+                      <h3>Copy Bubble to Slides</h3>
+                      <p>{sourceBubble?.bubbleId || "Selected bubble"} can be copied to one or more slides.</p>
+                    </div>
+                    <button onClick={() => setCopyBubbleOverlayId(null)}>Close</button>
+                  </div>
+                  <div className="bubble-copy-grid">
+                    {project.data.slides.map((slide, idx) => {
+                      const asset = assetsById.get(slide.assetId);
+                      const isCurrent = slide.id === currentSlide.id;
+                      const isSelected = copyBubbleTargetIds.includes(slide.id);
+                      return (
+                        <button
+                          key={slide.id}
+                          className={isSelected ? "bubble-copy-card selected" : "bubble-copy-card"}
+                          onClick={() => !isCurrent && toggleCopyBubbleTarget(slide.id)}
+                          disabled={isCurrent}
+                          title={isCurrent ? "Current slide already has this bubble" : getSlideDisplayName(slide, "edit")}
+                        >
+                          <span className="bubble-copy-thumb">
+                            {asset ? (
+                              asset.mediaType === "video" ? (
+                                <video src={toMediaUrl(asset.relativePath)} muted preload="metadata" />
+                              ) : asset.mediaType === "image" ? (
+                                <img src={toMediaUrl(asset.relativePath)} alt="" />
+                              ) : (
+                                <span>Audio</span>
+                              )
+                            ) : (
+                              <span>No media</span>
+                            )}
+                          </span>
+                          <span className="bubble-copy-meta">
+                            <strong>Slide {idx + 1}</strong>
+                            <span>{getSlideDisplayName(slide, "edit")}</span>
+                          </span>
+                          <span className="bubble-copy-check">{isCurrent ? "Current" : isSelected ? "Selected" : "Select"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="bubble-copy-footer">
+                    <button onClick={() => setCopyBubbleTargetIds(project.data.slides.filter((slide) => slide.id !== currentSlide.id).map((slide) => slide.id))}>
+                      Select All
+                    </button>
+                    <button onClick={() => setCopyBubbleTargetIds([])}>
+                      Clear
+                    </button>
+                    <button
+                      className="bubble-copy-confirm"
+                      onClick={confirmCopyBubbleToSlides}
+                      disabled={copyBubbleTargetIds.length === 0}
+                    >
+                      Copy to {copyBubbleTargetIds.length || 0} Slide{copyBubbleTargetIds.length === 1 ? "" : "s"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {showBreakBgLibrary && selectedSection?.type === "break" && (
             <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2100 }}>
               <div style={{ background: "#2a2a30", border: "1px solid #444", borderRadius: 8, padding: 18, width: 420, display: "flex", flexDirection: "column", gap: 12, maxHeight: "80vh" }}>
@@ -4287,79 +4418,6 @@ export function App() {
                     </>
                   )}
                 </>
-              )}
-
-              {appMode === "edit" && topMode !== 'badge' && (
-                <div style={{ marginTop: "12px", borderTop: "1px solid #444", paddingTop: "12px" }}>
-                  <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-                    <button
-                      className="section-break-btn"
-                      style={{ flex: 1, marginTop: 0 }}
-                      onClick={onAddBubble}
-                      disabled={!project || !currentSlide}
-                    >
-                      + Bubble
-                    </button>
-                  </div>
-
-                  {currentSlide && (currentSlide.overlays || []).length > 0 && (
-                    <div className="bubble-list-container">
-                      <h4 style={{ fontSize: "0.8rem", color: "#888", marginBottom: "8px", textTransform: "uppercase" }}>Bubbles on Slide</h4>
-                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-                        {[...(currentSlide.overlays || [])]
-                          .sort((a, b) => (a.bubbleId || "").localeCompare(b.bubbleId || ""))
-                          .map((ov) => {
-                            const def = BUBBLE_LIBRARY.find(lib => lib.bubbleDefId === ov.bubbleDefId);
-                            const templateName = def?.name || def?.templateName || "";
-                            const shortName = ov.text && ov.text.length > 20 ? ov.text.substring(0, 17) + "..." : ov.text;
-                            const label = `${ov.bubbleId}${templateName ? ` (${templateName})` : ""}${shortName ? ` - ${shortName}` : ""}`;
-                            const isActive = activeOverlayId === ov.id;
-
-                            return (
-                              <li key={ov.id} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "6px", background: isActive ? "#334" : "#222", borderRadius: 4, border: isActive ? "1px solid #55a" : "1px solid #333" }}>
-                                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "4px" }} onClick={() => setActiveOverlayId(ov.id)}>
-                                  <span style={{ fontSize: "0.75rem", color: "#eee", cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "120px" }} title={label}>
-                                    {label}
-                                  </span>
-                                  {(ov.tags || []).map((tag, tIdx) => (
-                                    <span key={tIdx} style={{ fontSize: "0.6rem", background: "#444", color: "#ddd", padding: "1px 4px", borderRadius: "10px", border: "1px solid #555" }}>
-                                      {tag}
-                                    </span>
-                                  ))}
-                                </div>
-                                <div style={{ display: "flex", gap: "4px" }}>
-                                  <button
-                                    onClick={() => onDuplicateBubble(ov)}
-                                    style={{ fontSize: "0.7rem", padding: "2px 6px", background: "#444", border: "1px solid #555", color: "#fff", cursor: "pointer", borderRadius: 2 }}
-                                  >
-                                    Duplicate
-                                  </button>
-                                  <div style={{ position: "relative", flex: 1 }}>
-                                    <select
-                                      onChange={(e) => {
-                                        if (e.target.value) {
-                                          onCopyBubbleToSlide(ov, e.target.value);
-                                          e.target.value = "";
-                                        }
-                                      }}
-                                      style={{ width: "100%", fontSize: "0.7rem", padding: "2px", background: "#333", border: "1px solid #444", color: "#ccc", borderRadius: 2 }}
-                                    >
-                                      <option value="">Copy to...</option>
-                                      {project!.data.slides.map((s, idx) => (
-                                        <option key={s.id} value={s.id} disabled={s.id === currentSlide.id}>
-                                          Slide {idx + 1}: {getSlideDisplayName(s, "edit")}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </div>
-                              </li>
-                            );
-                          })}
-                      </ul>
-                    </div>
-                  )}
-                </div>
               )}
             </aside>
 
@@ -5410,6 +5468,57 @@ export function App() {
                         </div>
                       )}
                     </div>
+
+                    {appMode === "edit" && (
+                      <div className="bubble-toolbar-menu">
+                        <button
+                          onClick={() => setBubblePanelOpen((v) => !v)}
+                          disabled={!project || !currentSlide}
+                          style={{
+                            background: bubblePanelOpen ? "#465147" : undefined,
+                            fontSize: 10,
+                            padding: "4px 8px",
+                          }}
+                        >
+                          Bubbles
+                        </button>
+                        {bubblePanelOpen && (
+                          <div className="bubble-stage-panel">
+                            <div className="bubble-stage-panel-header">
+                              <strong>Bubbles on Slide</strong>
+                              <button onClick={onAddBubble} disabled={!project || !currentSlide}>+ Add</button>
+                            </div>
+                            {currentSlide && (currentSlide.overlays || []).length > 0 ? (
+                              <ul className="bubble-stage-list">
+                                {[...(currentSlide.overlays || [])]
+                                  .sort((a, b) => (a.bubbleId || "").localeCompare(b.bubbleId || ""))
+                                  .map((ov) => {
+                                    const def = BUBBLE_LIBRARY.find(lib => lib.bubbleDefId === ov.bubbleDefId);
+                                    const templateName = def?.name || def?.templateName || "";
+                                    const shortName = ov.text && ov.text.length > 28 ? ov.text.substring(0, 25) + "..." : ov.text;
+                                    const label = `${ov.bubbleId || "Bubble"}${templateName ? ` (${templateName})` : ""}`;
+                                    const isActive = activeOverlayId === ov.id;
+                                    return (
+                                      <li key={ov.id} className={isActive ? "bubble-stage-item active" : "bubble-stage-item"}>
+                                        <button className="bubble-stage-select" onClick={() => setActiveOverlayId(ov.id)} title={shortName || label}>
+                                          <span>{label}</span>
+                                          {shortName && <small>{shortName}</small>}
+                                        </button>
+                                        <div className="bubble-stage-actions">
+                                          <button onClick={() => onDuplicateBubble(ov)}>Duplicate</button>
+                                          <button onClick={() => openCopyBubblePicker(ov)}>Copy to</button>
+                                        </div>
+                                      </li>
+                                    );
+                                  })}
+                              </ul>
+                            ) : (
+                              <div className="bubble-stage-empty">No bubbles on this slide.</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="stage" onContextMenu={handleStageContextMenu}>
