@@ -24,7 +24,7 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
     const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
     const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
     const [shuffleConfig, setShuffleConfig] = useState<ShuffleConfig>({ durationMs: 900, acceleration: 0.3 });
-    const [clickAction, setClickAction] = useState<'none' | 'flip' | 'blur' | 'cover' | 'zoom'>('none');
+    const [clickAction, setClickAction] = useState<'none' | 'flip' | 'blur' | 'cover' | 'zoom'>('flip');
     const [movementAnimation, setMovementAnimation] = useState<{ durationMs: number; easing: string; key: number } | null>(null);
     const { states, toggleState, resetState } = useTeachState();
     const { aCardLibrary, updateACard } = useCardSystem();
@@ -49,7 +49,7 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
     };
 
     const handleInstanceClick = (instanceId: string) => {
-        if (mode === 'teach' && clickAction !== 'none') {
+        if (clickAction !== 'none') {
             const mapping = {
                 flip: 'isFlipped',
                 blur: 'isBlurred',
@@ -116,8 +116,7 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
         updateACard({ ...aCard, bCardInstances: nextInstances });
     };
 
-    const teachToolsContent = useMemo(() => {
-        if (mode !== 'teach') return null;
+    const bCardToolsContent = useMemo(() => {
         if (!selectedInstanceId) return null;
         const selectedState = states[selectedInstanceId] || {
             isFlipped: false,
@@ -139,7 +138,7 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
                 onClickActionChange={setClickAction}
             />
         );
-    }, [mode, selectedInstanceId, states, toggleState, resetState, handleShuffle, shuffleConfig, clickAction]);
+    }, [selectedInstanceId, states, toggleState, resetState, handleShuffle, shuffleConfig, clickAction]);
 
     return (
         <div style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}>
@@ -168,6 +167,11 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
             {/* Edit Mode: single unified editor panel */}
             {mode === 'edit' && (
                 <div style={{ borderLeft: '1px solid #444', height: '100%', minHeight: 0, width: 330, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    {bCardToolsContent && (
+                        <div style={{ padding: 10, borderBottom: '1px solid #334' }}>
+                            {bCardToolsContent}
+                        </div>
+                    )}
                     <ACardEditor
                         aCardId={aCardId}
                         selectedInstanceId={selectedInstanceId}
@@ -180,7 +184,7 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
                 </div>
             )}
 
-            {mode === 'teach' && teachPanelHost && teachToolsContent && createPortal(teachToolsContent, teachPanelHost)}
+            {mode === 'teach' && teachPanelHost && bCardToolsContent && createPortal(bCardToolsContent, teachPanelHost)}
         </div>
     );
 }

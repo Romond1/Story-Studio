@@ -33,7 +33,7 @@ export function BCardInstanceLayer({
     onSelectInstance,
     onInstanceChange,
     teachStates = {},
-    clickAction = 'none',
+    clickAction = 'flip',
     onTeachStateChange,
     zIndex = 45,
 }: BCardInstanceLayerProps) {
@@ -65,7 +65,7 @@ export function BCardInstanceLayer({
     const getState = (instanceId: string) => teachStates[instanceId] || DEFAULT_TEACH_STATE;
 
     const toggleTeachState = (instanceId: string) => {
-        if (mode !== 'teach' || clickAction === 'none' || !onTeachStateChange) return;
+        if (clickAction === 'none' || !onTeachStateChange) return;
 
         const current = getState(instanceId);
         const key =

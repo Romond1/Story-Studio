@@ -58,6 +58,50 @@ function detectMediaType(ext: string): MediaType | null {
   return null;
 }
 
+async function importMediaFiles(filePaths: string[]): Promise<ImportResult | null> {
+  if (!currentProjectFolder) throw new Error('Create or open a project first');
+  if (filePaths.length === 0) return null;
+
+  const importedAssets: AssetItem[] = [];
+  const createdSlides: Slide[] = [];
+  const defaultSectionId = (await loadProject(currentProjectFolder)).data.sections[0]?.id ?? randomUUID();
+  await fs.mkdir(path.join(currentProjectFolder, ASSETS_DIR), { recursive: true });
+
+  for (const sourcePath of filePaths) {
+    const ext = path.extname(sourcePath).toLowerCase();
+    const mediaType = detectMediaType(ext);
+    if (mediaType !== 'image' && mediaType !== 'video') continue;
+
+    const stat = await fs.stat(sourcePath);
+    if (!stat.isFile()) continue;
+
+    const id = randomUUID();
+    const filename = `${id}${ext}`;
+    const targetPath = path.join(currentProjectFolder, ASSETS_DIR, filename);
+    await fs.copyFile(sourcePath, targetPath);
+
+    importedAssets.push({
+      id,
+      relativePath: path.join(ASSETS_DIR, filename).replaceAll('\\', '/'),
+      filename,
+      originalName: path.basename(sourcePath),
+      mediaType,
+      sizeBytes: stat.size,
+      importedAt: new Date().toISOString()
+    });
+
+    createdSlides.push({
+      id: randomUUID(),
+      assetId: id,
+      sectionId: defaultSectionId,
+      transition: 'fade',
+      ...(mediaType === 'video' ? { videoAudio: { enabled: true, volume: 1 } } : {}),
+    });
+  }
+
+  return importedAssets.length > 0 ? { importedAssets, createdSlides } : null;
+}
+
 function getWindow(): BrowserWindow {
   if (!mainWindow) throw new Error('Main window is unavailable');
   return mainWindow;
@@ -680,6 +724,10 @@ ipcMain.on('app:force-close', () => {
   mainWindow?.close();
 });
 
+ipcMain.on('app:reload', () => {
+  mainWindow?.webContents.reloadIgnoringCache();
+});
+
 const isSingleInstance = app.requestSingleInstanceLock();
 if (!isSingleInstance) {
   console.log('[main] Quitting secondary instance');
@@ -779,41 +827,13 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
   });
   if (canceled || filePaths.length === 0) return null;
 
-  const importedAssets: AssetItem[] = [];
-  const createdSlides: Slide[] = [];
-  const defaultSectionId = (await loadProject(currentProjectFolder)).data.sections[0]?.id ?? randomUUID();
+  return importMediaFiles(filePaths);
+});
 
-  for (const sourcePath of filePaths) {
-    const ext = path.extname(sourcePath).toLowerCase();
-    const mediaType = detectMediaType(ext);
-    if (!mediaType) continue;
-
-    const id = randomUUID();
-    const filename = `${id}${ext}`;
-    const targetPath = path.join(currentProjectFolder, ASSETS_DIR, filename);
-    const stat = await fs.stat(sourcePath);
-    await fs.copyFile(sourcePath, targetPath);
-
-    importedAssets.push({
-      id,
-      relativePath: path.join(ASSETS_DIR, filename).replaceAll('\\', '/'),
-      filename,
-      originalName: path.basename(sourcePath),
-      mediaType,
-      sizeBytes: stat.size,
-      importedAt: new Date().toISOString()
-    });
-
-    createdSlides.push({
-      id: randomUUID(),
-      assetId: id,
-      sectionId: defaultSectionId,
-      transition: 'fade',
-      ...(mediaType === 'video' ? { videoAudio: { enabled: true, volume: 1 } } : {}),
-    });
-  }
-
-  return { importedAssets, createdSlides };
+ipcMain.handle('project:import-dropped-media', async (_, filePaths: string[]): Promise<ImportResult | null> => {
+  if (!currentProjectFolder) throw new Error('Create or open a project first');
+  if (!Array.isArray(filePaths)) return null;
+  return importMediaFiles(filePaths);
 });
 
 ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'save') => {

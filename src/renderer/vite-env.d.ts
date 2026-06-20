@@ -9,6 +9,9 @@ declare global {
       openProject: () => Promise<ProjectState | null>;
       openProjectByPath: (folderPath: string) => Promise<ProjectState | null>;
       importMedia: () => Promise<ImportResult | null>;
+      importDroppedMedia: (filePaths: string[]) => Promise<ImportResult | null>;
+      getPendingDroppedFilePaths: () => string[];
+      getPathForFile: (file: File) => string;
       importAudio: () => Promise<AssetItem[] | null>;
       saveProject: (
         data: ProjectData,
@@ -17,6 +20,7 @@ declare global {
       getStudentRoster: () => Promise<StudentRosterSettings>;
       saveStudentRoster: (settings: StudentRosterSettings) => Promise<StudentRosterSettings>;
       forceClose: () => void;
+      reloadApp: () => void;
       onRequestClose: (callback: () => void) => () => void;
     };
   }

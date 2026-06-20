@@ -48,7 +48,6 @@ export function StageInteractable({
     const clampedX = Math.max(0, Math.min(pxX, pw - instance.size.width));
     const clampedY = Math.max(0, Math.min(pxY, ph - instance.size.height));
 
-    const isTeach = mode === 'teach';
     const isFlipped = teachState?.isFlipped || false;
     const isBlurred = teachState?.isBlurred || false;
     const isCovered = teachState?.isCovered || false;
@@ -140,19 +139,13 @@ export function StageInteractable({
                                 onClick && onClick(instance.id, instance.bCardId);
                             }}
                         >
-                            {isTeach ? (
-                                <>
-                                    <div className={`bcard-body ${isFlipped ? 'flipped' : ''}`}>
-                                        <BCardFace side="front" config={bCard.front} resolveImageUrl={resolveImageUrl} />
-                                        <BCardFace side="back" config={bCard.back} resolveImageUrl={resolveImageUrl} />
-                                    </div>
-                                    <div className="bcard-solid-cover">
-                                        <span>?</span>
-                                    </div>
-                                </>
-                            ) : (
+                            <div className={`bcard-body ${isFlipped ? 'flipped' : ''}`}>
                                 <BCardFace side="front" config={bCard.front} resolveImageUrl={resolveImageUrl} />
-                            )}
+                                <BCardFace side="back" config={bCard.back} resolveImageUrl={resolveImageUrl} />
+                            </div>
+                            <div className="bcard-solid-cover">
+                                <span>?</span>
+                            </div>
                         </div>
                     </>
                 ) : (

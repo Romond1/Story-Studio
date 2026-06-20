@@ -164,16 +164,6 @@ export function ACardEditor({ aCardId, onSelectInstance, selectedInstanceId, ass
     };
 
     const handleDeleteFromLibrary = (bCardId: string) => {
-        const usedIn: string[] = [];
-        for (const ac of Object.values(aCardLibrary)) {
-            if (ac.bCardInstances.some((i) => i.bCardId === bCardId)) usedIn.push(ac.name);
-        }
-
-        if (usedIn.length > 0) {
-            const ok = window.confirm(`This BCard is used in: ${usedIn.join(', ')}.\n\nAll placed instances will be removed. Continue?`);
-            if (!ok) return;
-        }
-
         if (selectedInstance && selectedInstance.bCardId === bCardId) onSelectInstance('');
         deleteBCard(bCardId);
     };

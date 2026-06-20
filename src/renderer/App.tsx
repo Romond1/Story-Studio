@@ -1,5 +1,6 @@
 ﻿import {
   type CSSProperties,
+  type DragEvent,
   type MouseEvent,
   type WheelEvent,
   Fragment,
@@ -33,6 +34,7 @@ import {
   StoryReferenceItem,
   ACardRefItem,
   BCardInstance,
+  ImportResult,
   ProjectData,
   BCardTeachState,
   RelicSystem,
@@ -46,6 +48,7 @@ import {
   getAssetDisplayLabel,
   withCanonicalAssetDefaults,
 } from "../shared/mediaReferences";
+import { applyMediaImportToProjectData } from "../shared/mediaImport";
 import {
   appendAssetsAndUpdateSection,
   deleteSectionInProjectData,
@@ -352,6 +355,7 @@ const DEFAULT_BCARD_TEACH_STATE: BCardTeachState = {
 };
 
 const LIVE_SESSION_STORAGE_KEY = "story-studio.live-session.v1";
+const LIVE_SESSION_AUTO_RESTORE_KEY = "story-studio.live-session.auto-restore";
 const STUDENT_ROSTER_FALLBACK_STORAGE_KEY = "story-studio.student-roster.v1";
 const LIVE_SESSION_DEBOUNCE_MS = 500;
 
@@ -826,7 +830,7 @@ export function App() {
   const [selectedStoryRefId, setSelectedStoryRefId] = useState<string | null>(null);
   const [selectedPlacedBCardId, setSelectedPlacedBCardId] = useState<string | null>(null);
   const [overlayBCardTeachStates, setOverlayBCardTeachStates] = useState<Record<string, BCardTeachState>>({});
-  const [overlayBCardClickAction, setOverlayBCardClickAction] = useState<BCardOverlayClickAction>("none");
+  const [overlayBCardClickAction, setOverlayBCardClickAction] = useState<BCardOverlayClickAction>("flip");
   const [badgeVisibleState, setBadgeVisibleState] = useState(false);
   const [finalScoreRevealedState, setFinalScoreRevealedState] = useState(false);
   const [storyRefsCollapsed, setStoryRefsCollapsed] = useState(true);
@@ -845,6 +849,8 @@ export function App() {
   const [previousIndex, setPreviousIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDragImportActive, setIsDragImportActive] = useState(false);
+  const dragImportDepthRef = useRef(0);
   const [draggedSlideIndex, setDraggedSlideIndex] = useState<number | null>(
     null,
   );
@@ -888,6 +894,7 @@ export function App() {
   const [pendingAction, setPendingAction] = useState<
     "create" | "open" | "close" | null
   >(null);
+  const [pendingSectionDeleteId, setPendingSectionDeleteId] = useState<string | null>(null);
 
   const [toast, setToast] = useState<{
     message: string;
@@ -1038,7 +1045,7 @@ export function App() {
           parsed.overlayBCardClickAction === "cover" ||
           parsed.overlayBCardClickAction === "zoom"
             ? parsed.overlayBCardClickAction
-            : "none",
+            : "flip",
         sparkStudents: parsed.sparkStudents as SparkStudent[],
         activeStudentId: typeof parsed.activeStudentId === "string" ? parsed.activeStudentId : null,
         badgeVisible: Boolean(parsed.badgeVisible),
@@ -1222,7 +1229,6 @@ export function App() {
   const archiveRosterStudent = useCallback(async (studentId: string) => {
     const student = studentRoster.find((item) => item.id === studentId);
     if (!student) return;
-    if (!window.confirm(`Remove ${student.name} from the active roster? Existing lesson progress will be preserved.`)) return;
     const nextRoster = studentRoster.map((item) =>
       item.id === studentId ? { ...item, archived: true, updatedAt: new Date().toISOString() } : item,
     );
@@ -2283,7 +2289,7 @@ export function App() {
     );
     setOverlayBCardTeachStates({});
     setOverlayBCardClickAction(
-      matchesRestore ? (restoreSnapshot?.overlayBCardClickAction || "none") : "none",
+      matchesRestore ? (restoreSnapshot?.overlayBCardClickAction || "flip") : "flip",
     );
     setBadgeVisibleState(matchesRestore ? Boolean(restoreSnapshot?.badgeVisible) : false);
     setFinalScoreRevealedState(matchesRestore ? Boolean(restoreSnapshot?.finalScoreRevealed) : false);
@@ -2461,9 +2467,9 @@ export function App() {
     }
   };
 
-  useEffect(() => {
-    if (!project) return;
-    const snapshot: LiveSessionSnapshot = {
+  const createLiveSessionSnapshot = (): LiveSessionSnapshot | null => {
+    if (!project) return null;
+    return {
       version: 1,
       savedAt: new Date().toISOString(),
       projectFolderPath: project.folderPath,
@@ -2482,8 +2488,26 @@ export function App() {
       badgeVisible: badgeVisibleState,
       finalScoreRevealed: finalScoreRevealedState,
     };
+  };
+
+  const persistLiveSessionSnapshot = () => {
+    const snapshot = createLiveSessionSnapshot();
+    if (!snapshot) return null;
+    window.localStorage.setItem(LIVE_SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+    return snapshot;
+  };
+
+  useEffect(() => {
+    if (!savedLiveSession) return;
+    if (window.localStorage.getItem(LIVE_SESSION_AUTO_RESTORE_KEY) !== "1") return;
+    window.localStorage.removeItem(LIVE_SESSION_AUTO_RESTORE_KEY);
+    void onRestoreSession();
+  }, [savedLiveSession]);
+
+  useEffect(() => {
+    if (!project) return;
     const timer = window.setTimeout(() => {
-      window.localStorage.setItem(LIVE_SESSION_STORAGE_KEY, JSON.stringify(snapshot));
+      persistLiveSessionSnapshot();
     }, LIVE_SESSION_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [
@@ -2504,42 +2528,96 @@ export function App() {
     finalScoreRevealedState,
   ]);
 
+  const applyImportedMedia = (result: ImportResult, targetSectionId: string | null | undefined) => {
+    if (!project || result.importedAssets.length === 0 || result.createdSlides.length === 0) return;
+
+    const nextData = applyMediaImportToProjectData(project.data, result, targetSectionId);
+    setProject({
+      ...project,
+      data: nextData,
+    });
+    setIsDirty(true);
+
+    if (nextData.slides.length > 0 && project.data.slides.length === 0) {
+      setCurrentIndex(0);
+    }
+  };
+
   const onImportMedia = async () => {
     if (!ensureEditMode(appMode, "import media")) return;
     if (!project) return;
     try {
       const result = await window.appApi.importMedia();
       if (!result) return;
-      const targetSectionId = selectedSectionId ?? project.data.sections[0]?.id;
-      const createdSlides = targetSectionId
-        ? result.createdSlides.map((slide) => ({
-          ...slide,
-          sectionId: targetSectionId,
-        }))
-        : result.createdSlides;
-
-      const importedAssets = decorateImportedAssetsForContext(
-        project.data,
-        result.importedAssets,
-        targetSectionId,
-      );
-      const nextSlides = [...project.data.slides, ...createdSlides];
-      const nextAssets = [...project.data.assets, ...importedAssets];
-      setProject({
-        ...project,
-        data: {
-          ...project.data,
-          slides: nextSlides,
-          assets: nextAssets,
-        },
-      });
-      setIsDirty(true);
-      if (nextSlides.length > 0 && project.data.slides.length === 0) {
-        setCurrentIndex(0);
-      }
+      applyImportedMedia(result, selectedSectionId ?? project.data.sections[0]?.id);
     } catch (err) {
       console.error(err);
       alert("Failed to import media: " + (err as Error).message);
+      setError((err as Error).message);
+    }
+  };
+
+  const getDroppedFilePaths = (event: DragEvent<HTMLDivElement>) => {
+    const preloadPaths = window.appApi.getPendingDroppedFilePaths();
+    if (preloadPaths.length > 0) return preloadPaths;
+
+    return Array.from(event.dataTransfer.files)
+      .map((file) => window.appApi.getPathForFile(file))
+      .filter((path): path is string => typeof path === "string" && path.length > 0);
+  };
+
+  const handleAppDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+    event.preventDefault();
+    if (!project || appMode !== "edit") return;
+    dragImportDepthRef.current += 1;
+    setIsDragImportActive(true);
+  };
+
+  const handleAppDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+    event.preventDefault();
+    if (!project || appMode !== "edit") {
+      event.dataTransfer.dropEffect = "none";
+      return;
+    }
+    event.dataTransfer.dropEffect = "copy";
+    setIsDragImportActive(true);
+  };
+
+  const handleAppDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+    event.preventDefault();
+    dragImportDepthRef.current = Math.max(0, dragImportDepthRef.current - 1);
+    if (dragImportDepthRef.current === 0) {
+      setIsDragImportActive(false);
+    }
+  };
+
+  const handleAppDrop = async (event: DragEvent<HTMLDivElement>) => {
+    if (!Array.from(event.dataTransfer.types).includes("Files")) return;
+    event.preventDefault();
+    dragImportDepthRef.current = 0;
+    setIsDragImportActive(false);
+    if (!project || appMode !== "edit") return;
+
+    const filePaths = getDroppedFilePaths(event);
+    if (filePaths.length === 0) {
+      showToast("No readable media files found in that drop", "edit", 2200);
+      return;
+    }
+
+    try {
+      const result = await window.appApi.importDroppedMedia(filePaths);
+      if (!result) {
+        showToast("No supported image or video files found in that drop", "edit", 2200);
+        return;
+      }
+      applyImportedMedia(result, selectedSectionId ?? project.data.sections[0]?.id);
+      showToast(`Imported ${result.importedAssets.length} dropped file${result.importedAssets.length === 1 ? "" : "s"}`, "success");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to import dropped media: " + (err as Error).message);
       setError((err as Error).message);
     }
   };
@@ -2667,6 +2745,28 @@ export function App() {
     if (!ensureEditMode(appMode, "save")) return;
     if (!project) return;
     setShowSaveChoiceModal(true);
+  };
+
+  const onRefreshApp = async () => {
+    if (!ensureEditMode(appMode, "refresh app")) return;
+    if (!project) return;
+    setContextMenu(null);
+    setPendingSectionDeleteId(null);
+    persistLiveSessionSnapshot();
+    window.localStorage.setItem(LIVE_SESSION_AUTO_RESTORE_KEY, "1");
+    if (isDirty) {
+      const didSave = await performSave("save");
+      if (!didSave) {
+        showToast("Could not save before refresh", "edit", 2200);
+        return;
+      }
+      persistLiveSessionSnapshot();
+    }
+    if (window.appApi.reloadApp) {
+      window.appApi.reloadApp();
+    } else {
+      window.location.reload();
+    }
   };
 
   const updateTransition = (transition: TransitionType) => {
@@ -3142,18 +3242,43 @@ export function App() {
     if (!ensureEditMode(appMode, "delete section")) return;
     if (!project) return;
 
+    setPendingSectionDeleteId(sectionId);
+  };
+
+  const confirmDeleteSection = () => {
+    if (!ensureEditMode(appMode, "delete section")) return;
+    if (!project || !pendingSectionDeleteId) return;
+
+    const sectionId = pendingSectionDeleteId;
     const sectionIndex = project.data.sections.findIndex(
       (s) => s.id === sectionId,
     );
-    if (sectionIndex === -1) return;
-    const section = project.data.sections[sectionIndex];
-
-    const confirmMsg = `Delete ${section.type === "break" ? "Break" : "Section"} '${section.name}'? This will also delete all slides in this section.`;
-    if (!window.confirm(confirmMsg)) return;
+    if (sectionIndex === -1) {
+      setPendingSectionDeleteId(null);
+      return;
+    }
 
     const previewDeletion = deleteSectionInProjectData(project.data, sectionId);
-    if (!previewDeletion) return;
+    if (!previewDeletion) {
+      setPendingSectionDeleteId(null);
+      return;
+    }
     const currentSlideId = project.data.slides[currentIndex]?.id;
+
+    setPendingSectionDeleteId(null);
+    setContextMenu(null);
+    setRenamingSectionId(null);
+    setRenamingSlideId(null);
+    setActiveOverlayId(null);
+    setSelectedSlideIds(new Set());
+    setDraggedSlideIndex(null);
+    setDragInsertIndex(null);
+    setBreakEditorDraft(null);
+    setShowBreakEditor(false);
+    setDrawSettings((prev) => ({ ...prev, drawMode: false }));
+    dragImportDepthRef.current = 0;
+    setIsDragImportActive(false);
+
     setProject((prev) => {
       if (!prev) return prev;
       const result = deleteSectionInProjectData(prev.data, sectionId);
@@ -3197,6 +3322,10 @@ export function App() {
     if (expandedSectionId === sectionId) {
       setExpandedSectionId(null);
     }
+  };
+
+  const cancelDeleteSection = () => {
+    setPendingSectionDeleteId(null);
   };
 
   const moveSection = (sectionId: string, direction: "up" | "down") => {
@@ -3501,7 +3630,20 @@ export function App() {
           appMode={appMode}
           onActiveStudentChangeFlash={(name) => showToast(`Active Student: ${name}`, "teach", 300)}
         />
-        <div className="app">
+        <div
+          className={isDragImportActive ? "app drag-import-active" : "app"}
+          onDragEnter={handleAppDragEnter}
+          onDragOver={handleAppDragOver}
+          onDragLeave={handleAppDragLeave}
+          onDrop={handleAppDrop}
+        >
+          {isDragImportActive && (
+            <div className="drag-import-overlay">
+              <div className="drag-import-message">
+                Drop media into {selectedSection?.name || "the current section"}
+              </div>
+            </div>
+          )}
           <header
             className="topbar"
             style={{
@@ -3517,6 +3659,11 @@ export function App() {
             <button onClick={onSave} disabled={!project || isSaveInProgress}>
               Save
             </button>
+            {appMode === "edit" && (
+              <button onClick={onRefreshApp} disabled={!project || isSaveInProgress}>
+                Refresh App
+              </button>
+            )}
             {appMode === "edit" && <SparkLab />}
             {selectedSectionType === "break" && (
               <button
@@ -3804,6 +3951,26 @@ export function App() {
               </div>
             </div>
           )}
+
+          {pendingSectionDeleteId && (() => {
+            const section = project?.data.sections.find((item) => item.id === pendingSectionDeleteId);
+            if (!section) return null;
+            const sectionKind = section.type === "break" ? "Break" : "Section";
+            return (
+              <div className="app-modal-backdrop">
+                <div className="app-confirm-modal">
+                  <h3>Delete {sectionKind}</h3>
+                  <p>
+                    Delete {sectionKind.toLowerCase()} "{section.name}"? This will also delete all slides in this section.
+                  </p>
+                  <div className="app-confirm-actions">
+                    <button onClick={cancelDeleteSection}>Cancel</button>
+                    <button className="danger" onClick={confirmDeleteSection}>Delete</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {showConfirmModal && (
             <div
@@ -4506,7 +4673,7 @@ export function App() {
                     </button>
                   )}
                   {appMode === "edit" && showBreakEditor && (
-                    <div className="break-editor-panel" style={{ position: "absolute", top: 10, right: 10, width: "330px", maxHeight: "calc(100% - 20px)", height: "auto", zIndex: 60 }}>
+                    <div key={selectedSection.id} className="break-editor-panel" style={{ position: "absolute", top: 10, right: 10, width: "330px", maxHeight: "calc(100% - 20px)", height: "auto", zIndex: 60 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #444", paddingBottom: "8px", margin: 0 }}>
                         <h3 style={{ margin: 0, color: "#fff" }}>Break Editor</h3>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -5864,6 +6031,30 @@ export function App() {
                                   <option value="board">Board Shell</option>
                                 </select>
                               </label>
+                              {selectedOverlayBCardInstanceId === selectedInstance.id && selectedOverlayBCardState && (
+                                <div style={{ borderTop: "1px solid #2f3a4e", paddingTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                                  <h5 style={{ margin: 0, color: "#b9dbff", fontSize: "0.8rem" }}>Preview Actions</h5>
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isFlipped")} style={{ padding: "6px", background: selectedOverlayBCardState.isFlipped ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Flip</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isBlurred")} style={{ padding: "6px", background: selectedOverlayBCardState.isBlurred ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Blur</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isCovered")} style={{ padding: "6px", background: selectedOverlayBCardState.isCovered ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Cover</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isZoomed")} style={{ padding: "6px", background: selectedOverlayBCardState.isZoomed ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Zoom</button>
+                                  </div>
+                                  <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.75rem", color: "#99b5cd" }}>
+                                    Card Click Action
+                                    <select value={overlayBCardClickAction} onChange={(e) => setOverlayBCardClickAction(e.target.value as BCardOverlayClickAction)} style={{ background: "#1a2530", color: "#fff", border: "1px solid #486579", borderRadius: 4, padding: "6px" }}>
+                                      <option value="flip">Flip</option>
+                                      <option value="none">None</option>
+                                      <option value="blur">Blur</option>
+                                      <option value="cover">Cover</option>
+                                      <option value="zoom">Zoom</option>
+                                    </select>
+                                  </label>
+                                  <button onClick={resetSelectedOverlayBCardState} style={{ padding: "6px", background: "#372831", border: "1px solid #6f4c5e", color: "#ffd9ea", borderRadius: 4 }}>
+                                    Reset Preview State
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           );
                         })()}
@@ -6606,6 +6797,30 @@ export function App() {
                                   <option value="board">Board Shell</option>
                                 </select>
                               </label>
+                              {selectedOverlayBCardInstanceId === selectedInstance.id && selectedOverlayBCardState && (
+                                <div style={{ borderTop: '1px solid #2f3340', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  <h4 style={{ margin: 0, color: '#9ecbff', fontSize: '0.8rem' }}>Preview Actions</h4>
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isFlipped")} style={{ padding: "6px", background: selectedOverlayBCardState.isFlipped ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Flip</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isBlurred")} style={{ padding: "6px", background: selectedOverlayBCardState.isBlurred ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Blur</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isCovered")} style={{ padding: "6px", background: selectedOverlayBCardState.isCovered ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Cover</button>
+                                    <button onClick={() => toggleSelectedOverlayBCardState("isZoomed")} style={{ padding: "6px", background: selectedOverlayBCardState.isZoomed ? "#2e5461" : "#1c2a35", border: "1px solid #486579", color: "#e3f5ff", borderRadius: 4 }}>Zoom</button>
+                                  </div>
+                                  <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.75rem", color: "#99b5cd" }}>
+                                    Card Click Action
+                                    <select value={overlayBCardClickAction} onChange={(e) => setOverlayBCardClickAction(e.target.value as BCardOverlayClickAction)} style={{ background: "#1a2530", color: "#fff", border: "1px solid #486579", borderRadius: 4, padding: "6px" }}>
+                                      <option value="flip">Flip</option>
+                                      <option value="none">None</option>
+                                      <option value="blur">Blur</option>
+                                      <option value="cover">Cover</option>
+                                      <option value="zoom">Zoom</option>
+                                    </select>
+                                  </label>
+                                  <button onClick={resetSelectedOverlayBCardState} style={{ padding: "6px", background: "#372831", border: "1px solid #6f4c5e", color: "#ffd9ea", borderRadius: 4 }}>
+                                    Reset Preview State
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           );
                         })()}

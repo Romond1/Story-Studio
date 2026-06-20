@@ -47,10 +47,8 @@ export function ACardSidebar({ selectedACardId, selectedBCardId, onSelectACard, 
     };
 
     const handleDelete = (cardId: string, cardName: string) => {
-        if (window.confirm(`Delete board '${cardName}'?`)) {
-            deleteACard(cardId);
-            // Selection will auto-fix via the useEffect above
-        }
+        deleteACard(cardId);
+        // Selection will auto-fix via the useEffect above
     };
 
     const handleCreateBCard = () => {
@@ -164,9 +162,7 @@ export function ACardSidebar({ selectedACardId, selectedBCardId, onSelectACard, 
                                             style={{ padding: '2px 6px', background: 'transparent', border: 'none', color: '#f66', cursor: 'pointer', fontSize: '0.8rem' }}
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (window.confirm(`Delete BCard '${card.name}'?`)) {
-                                                    deleteBCard(card.id);
-                                                }
+                                                deleteBCard(card.id);
                                             }}
                                         >
                                             Del

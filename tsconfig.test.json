@@ -26,6 +26,8 @@
     "src/shared/videoTrim.test.ts",
     "src/shared/imageAdjustments.ts",
     "src/shared/imageAdjustments.test.ts",
+    "src/shared/mediaImport.ts",
+    "src/shared/mediaImport.test.ts",
     "src/shared/counterGame.ts",
     "src/shared/counterGame.test.ts",
     "src/shared/relics.ts",
