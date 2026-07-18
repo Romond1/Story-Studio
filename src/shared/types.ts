@@ -1,3 +1,5 @@
+import type { AudioSettingsV1 } from "./audioSettings";
+
 export type TransitionType = 'fade' | 'crossfade' | 'fade-black' | 'cinematic' | 'pixel' | 'blur' | 'card-slide';
 
 export type MediaType = 'image' | 'video' | 'audio';
@@ -371,6 +373,12 @@ export interface StudentRosterEntry {
 export interface StudentRosterSettings {
   version: 1;
   studentRoster: StudentRosterEntry[];
+}
+
+export interface StoryStudioSettings {
+  version: 1;
+  studentRoster: StudentRosterEntry[];
+  audio: AudioSettingsV1;
 }
 
 export type RelicWidgetPosition =
