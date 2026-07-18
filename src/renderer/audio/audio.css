@@ -194,14 +194,65 @@
 
 .audio-device-row:first-child { border-top: 0; }
 
-.audio-device-row label {
+.audio-device-picker {
+  position: relative;
   display: grid;
   gap: 6px;
 }
 
-.audio-device-row select {
+.audio-device-picker__trigger {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   background: #202025;
+  text-align: left;
+}
+
+.audio-device-picker__trigger span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audio-device-picker__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  width: min(520px, 78vw);
+  max-height: 280px;
+  overflow: auto;
+  padding: 5px;
+  border: 1px solid #53535f;
+  border-radius: 8px;
+  background: #202025;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.7);
+}
+
+.audio-device-picker__menu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+
+.audio-device-picker__menu button:hover,
+.audio-device-picker__menu button:focus-visible {
+  border-color: #565663;
+  background: #303038;
+}
+
+.audio-device-picker__menu button.is-selected {
+  color: #ffd29b;
+  background: #392f26;
 }
 
 .audio-device-row__label {

@@ -25,6 +25,8 @@
     "src/shared/audioDiagnostics.ts",
     "src/shared/audioDiagnostics.test.ts",
     "src/shared/audioCompatibility.test.ts",
+    "src/shared/audioDeviceMenu.ts",
+    "src/shared/audioDeviceMenu.test.ts",
     "src/shared/packaging.test.ts",
     "src/shared/badgeStudents.ts",
     "src/shared/badgeStudents.test.ts",

@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  buildAudioDeviceMenuOptions,
+  selectAudioDeviceMenuOption,
+} from "../../shared/audioDeviceMenu";
 import {
   AUDIO_STAGE_CONTROLS,
   type AudioBusName,
@@ -60,18 +64,6 @@ function Section({ title, description, children, className = "" }: {
   );
 }
 
-function selectedDevice(
-  devices: AudioDeviceState[],
-  selected: SavedAudioDevice,
-  kindLabel: string,
-) {
-  const exists = selected.deviceId === "default"
-    || devices.some((device) => device.deviceId === selected.deviceId);
-  return !exists ? (
-    <option value={selected.deviceId}>{selected.label} — Missing</option>
-  ) : null;
-}
-
 function DeviceSelect({
   label,
   devices,
@@ -89,29 +81,64 @@ function DeviceSelect({
   active?: boolean;
   flowing?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const labelId = useId();
+  const menuId = useId();
+  const options = buildAudioDeviceMenuOptions(devices, selected);
+  const selectedOption = options.find((option) => option.deviceId === selected.deviceId) ?? options[0];
   const selectedState = devices.find((device) => device.deviceId === selected.deviceId);
   return (
     <div className="audio-device-row">
-      <label>
-        <span className="audio-device-row__label">{label}</span>
-        <select
-          value={selected.deviceId}
+      <div
+        ref={pickerRef}
+        className="audio-device-picker"
+        onBlur={(event) => {
+          if (!pickerRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
+        }}
+      >
+        <span id={labelId} className="audio-device-row__label">{label}</span>
+        <button
+          type="button"
+          className="audio-device-picker__trigger"
+          aria-labelledby={labelId}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={open ? menuId : undefined}
           disabled={disabled}
-          onChange={(event) => {
-            const device = devices.find((item) => item.deviceId === event.target.value);
-            onChange({
-              deviceId: event.target.value,
-              label: device?.label || (event.target.value === "default" ? "System Default" : event.target.value),
-            });
+          onClick={() => setOpen((value) => !value)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setOpen(true);
+            }
           }}
         >
-          <option value="default">System Default</option>
-          {selectedDevice(devices, selected, label)}
-          {devices.filter((device) => device.deviceId !== "default").map((device) => (
-            <option key={device.deviceId} value={device.deviceId}>{device.label}</option>
-          ))}
-        </select>
-      </label>
+          <span>{selectedOption.label}</span>
+          <span aria-hidden="true">▾</span>
+        </button>
+        {open && (
+          <div id={menuId} className="audio-device-picker__menu" role="listbox" aria-labelledby={labelId}>
+            {options.map((option) => (
+              <button
+                key={option.deviceId}
+                type="button"
+                role="option"
+                aria-selected={option.deviceId === selected.deviceId}
+                className={option.deviceId === selected.deviceId ? "is-selected" : ""}
+                onClick={() => {
+                  const device = selectAudioDeviceMenuOption(options, option.deviceId);
+                  if (device) onChange(device);
+                  setOpen(false);
+                }}
+              >
+                <span>{option.label}</span>
+                {option.deviceId === selected.deviceId && <span aria-hidden="true">✓</span>}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="audio-device-row__meta">
         <span className={selectedState?.connected || selected.deviceId === "default" ? "is-good" : "is-error"}>
           {selectedState?.connected || selected.deviceId === "default" ? "Connected" : "Missing"}
