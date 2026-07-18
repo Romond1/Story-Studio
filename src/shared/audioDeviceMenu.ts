@@ -27,3 +27,10 @@ export function selectAudioDeviceMenuOption(
   const selected = options.find((option) => option.deviceId === deviceId);
   return selected ? { deviceId: selected.deviceId, label: selected.label.replace(/ — Missing$/, "") } : null;
 }
+
+export function getAudioDeviceSelectionLabel(
+  selected: SavedAudioDevice,
+  pending: SavedAudioDevice | null,
+): string {
+  return pending ? `Connecting: ${pending.label}` : selected.label;
+}

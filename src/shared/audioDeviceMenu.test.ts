@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildAudioDeviceMenuOptions,
+  getAudioDeviceSelectionLabel,
   selectAudioDeviceMenuOption,
 } from "./audioDeviceMenu";
 
@@ -28,4 +29,18 @@ test("a missing saved device remains selectable for clear recovery status", () =
     { deviceId: "default", label: "System Default" },
     { deviceId: "old-device", label: "Old Headphones — Missing", missing: true },
   ]);
+});
+
+test("a requested device is shown while its route is connecting", () => {
+  assert.equal(
+    getAudioDeviceSelectionLabel(
+      { deviceId: "default", label: "System Default" },
+      { deviceId: "cable", label: "CABLE Input" },
+    ),
+    "Connecting: CABLE Input",
+  );
+  assert.equal(
+    getAudioDeviceSelectionLabel({ deviceId: "default", label: "System Default" }, null),
+    "System Default",
+  );
 });

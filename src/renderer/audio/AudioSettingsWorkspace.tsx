@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   buildAudioDeviceMenuOptions,
+  getAudioDeviceSelectionLabel,
   selectAudioDeviceMenuOption,
 } from "../../shared/audioDeviceMenu";
 import {
@@ -76,12 +77,14 @@ function DeviceSelect({
   label: string;
   devices: AudioDeviceState[];
   selected: SavedAudioDevice;
-  onChange: (device: SavedAudioDevice) => void;
+  onChange: (device: SavedAudioDevice) => Promise<void>;
   disabled?: boolean;
   active?: boolean;
   flowing?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [pendingDevice, setPendingDevice] = useState<SavedAudioDevice | null>(null);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
   const menuId = useId();
@@ -105,7 +108,7 @@ function DeviceSelect({
           aria-haspopup="listbox"
           aria-expanded={open}
           aria-controls={open ? menuId : undefined}
-          disabled={disabled}
+          disabled={disabled || Boolean(pendingDevice)}
           onClick={() => setOpen((value) => !value)}
           onKeyDown={(event) => {
             if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
@@ -114,7 +117,7 @@ function DeviceSelect({
             }
           }}
         >
-          <span>{selectedOption.label}</span>
+          <span>{getAudioDeviceSelectionLabel(selectedOption, pendingDevice)}</span>
           <span aria-hidden="true">▾</span>
         </button>
         {open && (
@@ -128,8 +131,16 @@ function DeviceSelect({
                 className={option.deviceId === selected.deviceId ? "is-selected" : ""}
                 onClick={() => {
                   const device = selectAudioDeviceMenuOption(options, option.deviceId);
-                  if (device) onChange(device);
                   setOpen(false);
+                  if (!device) return;
+                  setPendingDevice(device);
+                  setSelectionError(null);
+                  void onChange(device)
+                    .catch((error: unknown) => {
+                      const detail = error instanceof Error ? error.message : String(error);
+                      setSelectionError(`Could not use ${device.label}: ${detail}`);
+                    })
+                    .finally(() => setPendingDevice(null));
                 }}
               >
                 <span>{option.label}</span>
@@ -138,6 +149,7 @@ function DeviceSelect({
             ))}
           </div>
         )}
+        {selectionError && <span className="audio-device-picker__error" role="alert">{selectionError}</span>}
       </div>
       <div className="audio-device-row__meta">
         <span className={selectedState?.connected || selected.deviceId === "default" ? "is-good" : "is-error"}>
@@ -265,7 +277,7 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
                 selected={snapshot.settings.devices.microphone}
                 active={snapshot.diagnostics.activeMicrophoneStreams === 1}
                 flowing={snapshot.meters.microphone.flowing}
-                onChange={(device) => void controller.enableMic(device.deviceId === "default" ? undefined : device.deviceId).catch(() => undefined)}
+                onChange={(device) => controller.enableMic(device.deviceId === "default" ? undefined : device.deviceId)}
               />
               <DeviceSelect
                 label="Monitor Output"
@@ -273,7 +285,7 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
                 selected={snapshot.settings.devices.monitor}
                 active={snapshot.diagnostics.activeMonitorStreams === 1}
                 flowing={snapshot.meters.monitor.flowing}
-                onChange={(device) => void controller.selectOutput("monitor", device).catch(() => undefined)}
+                onChange={(device) => controller.selectOutput("monitor", device)}
               />
               <DeviceSelect
                 label="Mix / Virtual Output"
@@ -281,7 +293,7 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
                 selected={snapshot.settings.devices.mix}
                 active={snapshot.diagnostics.activeMixStreams === 1}
                 flowing={snapshot.meters.mix.flowing}
-                onChange={(device) => void controller.selectOutput("mix", device).catch(() => undefined)}
+                onChange={(device) => controller.selectOutput("mix", device)}
               />
             </div>
             {sameSelectedOutput && (

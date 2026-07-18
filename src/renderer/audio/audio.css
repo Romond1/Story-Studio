@@ -255,6 +255,12 @@
   background: #392f26;
 }
 
+.audio-device-picker__error {
+  color: var(--audio-error);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
 .audio-device-row__label {
   font-size: 0.79rem;
   font-weight: 650;
