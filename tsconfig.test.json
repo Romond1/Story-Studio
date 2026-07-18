@@ -24,6 +24,7 @@
     "src/shared/audioLifecycle.test.ts",
     "src/shared/audioDiagnostics.ts",
     "src/shared/audioDiagnostics.test.ts",
+    "src/shared/audioCompatibility.test.ts",
     "src/shared/badgeStudents.ts",
     "src/shared/badgeStudents.test.ts",
     "src/shared/videoAudio.ts",
