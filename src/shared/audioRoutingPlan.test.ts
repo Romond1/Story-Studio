@@ -20,11 +20,12 @@ test("known categories stay explicit and stable", () => {
   assert.equal(isKnownAudioRouteCategory("unknown"), false);
 });
 
-test("music and effects routes reach both cable and monitor while mic stays cable-only", () => {
-  assert.deepEqual(getAudioRouteTargets("dialogue"), ["cable", "monitor"]);
-  assert.deepEqual(getAudioRouteTargets("sfx"), ["cable", "monitor"]);
-  assert.deepEqual(getAudioRouteTargets("slide-bgm"), ["cable", "monitor"]);
-  assert.deepEqual(getAudioRouteTargets("section-bgm"), ["cable", "monitor"]);
-  assert.deepEqual(getAudioRouteTargets("unclassified"), ["cable", "monitor"]);
-  assert.deepEqual(getAudioRouteTargets("mic"), ["cable"]);
+test("broadcast contains mic and media while monitor mic is opt-in", () => {
+  assert.deepEqual(getAudioRouteTargets("dialogue", false), ["broadcast", "monitor"]);
+  assert.deepEqual(getAudioRouteTargets("sfx", false), ["broadcast", "monitor"]);
+  assert.deepEqual(getAudioRouteTargets("slide-bgm", false), ["broadcast", "monitor"]);
+  assert.deepEqual(getAudioRouteTargets("section-bgm", false), ["broadcast", "monitor"]);
+  assert.deepEqual(getAudioRouteTargets("unclassified", false), ["broadcast", "monitor"]);
+  assert.deepEqual(getAudioRouteTargets("mic", false), ["broadcast"]);
+  assert.deepEqual(getAudioRouteTargets("mic", true), ["broadcast", "monitor"]);
 });

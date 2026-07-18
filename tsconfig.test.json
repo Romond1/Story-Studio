@@ -20,6 +20,8 @@
     "src/shared/audioRoutingPlan.test.ts",
     "src/shared/audioSettings.ts",
     "src/shared/audioSettings.test.ts",
+    "src/shared/audioLifecycle.ts",
+    "src/shared/audioLifecycle.test.ts",
     "src/shared/badgeStudents.ts",
     "src/shared/badgeStudents.test.ts",
     "src/shared/videoAudio.ts",

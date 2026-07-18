@@ -71,7 +71,7 @@ export class AudioManager {
     AUDIO_ROUTE_CATEGORIES.forEach((category) => {
       const bus = this.routeBuses[category];
       const targets = getAudioRouteTargets(category);
-      if (targets.includes("cable")) {
+      if (targets.includes("broadcast")) {
         bus.connect(this.cableGain);
       }
       if (targets.includes("monitor")) {
