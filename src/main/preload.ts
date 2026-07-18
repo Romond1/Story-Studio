@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
+import type { AudioSettingsV1 } from '../shared/audioSettings';
 
 let latestDroppedFilePaths: string[] = [];
 
@@ -30,6 +31,9 @@ const api = {
   getStudentRoster: (): Promise<StudentRosterSettings> => ipcRenderer.invoke('settings:get-student-roster'),
   saveStudentRoster: (settings: StudentRosterSettings): Promise<StudentRosterSettings> =>
     ipcRenderer.invoke('settings:save-student-roster', settings),
+  getAudioSettings: (): Promise<AudioSettingsV1> => ipcRenderer.invoke('settings:get-audio'),
+  saveAudioSettings: (settings: AudioSettingsV1): Promise<AudioSettingsV1> =>
+    ipcRenderer.invoke('settings:save-audio', settings),
   forceClose: () => ipcRenderer.send('app:force-close'),
   reloadApp: () => ipcRenderer.send('app:reload'),
   onRequestClose: (callback: () => void) => {

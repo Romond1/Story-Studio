@@ -17,9 +17,12 @@ import type {
   SequenceItem,
   Slide,
   SparkStudent,
+  StoryStudioSettings,
   StoryReferenceItem,
   StudentRosterSettings,
 } from '../shared/types';
+import type { AudioSettingsV1 } from '../shared/audioSettings';
+import { normalizeAudioSettings } from '../shared/audioSettings';
 import { normalizeSlideVideoAudio } from '../shared/videoAudio';
 import { normalizeSlideVideoTrim } from '../shared/videoTrim';
 import { normalizeSlideImageAdjustments } from '../shared/imageAdjustments';
@@ -115,21 +118,37 @@ function settingsPath(): string {
   return path.join(app.getPath('userData'), 'story-studio-settings.json');
 }
 
-async function readStudentRosterSettings(): Promise<StudentRosterSettings> {
+async function readStoryStudioSettings(): Promise<StoryStudioSettings> {
   try {
     const raw = await fs.readFile(settingsPath(), 'utf8');
-    return normalizeStudentRosterSettings(JSON.parse(raw));
+    const parsed = JSON.parse(raw);
+    return {
+      version: 1,
+      studentRoster: normalizeStudentRosterSettings(parsed).studentRoster,
+      audio: normalizeAudioSettings(parsed?.audio),
+    };
   } catch (error) {
     const code = (error as NodeJS.ErrnoException)?.code;
     if (code !== 'ENOENT') {
-      console.warn('[settings] Could not read student roster settings:', error);
+      console.warn('[settings] Could not read Story Studio settings:', error);
     }
-    return normalizeStudentRosterSettings(null);
+    return {
+      version: 1,
+      studentRoster: [],
+      audio: normalizeAudioSettings(undefined),
+    };
   }
 }
 
-async function writeStudentRosterSettings(settings: StudentRosterSettings): Promise<StudentRosterSettings> {
-  const normalized = normalizeStudentRosterSettings(settings);
+async function writeStoryStudioSettings(settings: StoryStudioSettings): Promise<StoryStudioSettings> {
+  const normalized: StoryStudioSettings = {
+    version: 1,
+    studentRoster: normalizeStudentRosterSettings({
+      version: 1,
+      studentRoster: settings.studentRoster,
+    }).studentRoster,
+    audio: normalizeAudioSettings(settings.audio),
+  };
   const targetPath = settingsPath();
   await fs.mkdir(path.dirname(targetPath), { recursive: true });
   const tmpPath = `${targetPath}.tmp`;
@@ -866,11 +885,30 @@ ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'sa
 });
 
 ipcMain.handle('settings:get-student-roster', async (): Promise<StudentRosterSettings> => {
-  return readStudentRosterSettings();
+  const settings = await readStoryStudioSettings();
+  return { version: 1, studentRoster: settings.studentRoster };
 });
 
 ipcMain.handle('settings:save-student-roster', async (_, settings: StudentRosterSettings): Promise<StudentRosterSettings> => {
-  return writeStudentRosterSettings(settings);
+  const current = await readStoryStudioSettings();
+  const roster = normalizeStudentRosterSettings(settings);
+  const saved = await writeStoryStudioSettings({
+    ...current,
+    studentRoster: roster.studentRoster,
+  });
+  return { version: 1, studentRoster: saved.studentRoster };
+});
+
+ipcMain.handle('settings:get-audio', async (): Promise<AudioSettingsV1> => {
+  return (await readStoryStudioSettings()).audio;
+});
+
+ipcMain.handle('settings:save-audio', async (_, settings: AudioSettingsV1): Promise<AudioSettingsV1> => {
+  const current = await readStoryStudioSettings();
+  return (await writeStoryStudioSettings({
+    ...current,
+    audio: normalizeAudioSettings(settings),
+  })).audio;
 });
 
 ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => {

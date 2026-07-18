@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
+import type { AudioSettingsV1 } from '../shared/audioSettings';
 
 declare global {
   interface Window {
@@ -19,6 +20,8 @@ declare global {
       ) => Promise<{ lastSavedAt: string; folderPath: string } | null>;
       getStudentRoster: () => Promise<StudentRosterSettings>;
       saveStudentRoster: (settings: StudentRosterSettings) => Promise<StudentRosterSettings>;
+      getAudioSettings: () => Promise<AudioSettingsV1>;
+      saveAudioSettings: (settings: AudioSettingsV1) => Promise<AudioSettingsV1>;
       forceClose: () => void;
       reloadApp: () => void;
       onRequestClose: (callback: () => void) => () => void;
