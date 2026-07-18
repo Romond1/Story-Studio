@@ -5,6 +5,21 @@ export type AudioWarning = {
   detail: string;
 };
 
+export type AudioEngineState = "stopped" | "starting" | "active" | "muted" | "warning" | "error" | "reconnecting";
+
+export function deriveAudioEngineState(input: {
+  reconnecting: boolean;
+  hasGraph: boolean;
+  masterMuted: boolean;
+  warnings: AudioWarning[];
+}): AudioEngineState {
+  if (input.reconnecting) return "reconnecting";
+  if (input.warnings.some((warning) => warning.severity === "error")) return "error";
+  if (input.warnings.length > 0) return "warning";
+  if (input.masterMuted) return "muted";
+  return input.hasGraph ? "active" : "stopped";
+}
+
 export type AudioHealthState = {
   selectedDevicesMissing: string[];
   masterFlowing: boolean;

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deriveAudioWarnings, type AudioHealthState } from "./audioDiagnostics";
+import {
+  deriveAudioEngineState,
+  deriveAudioWarnings,
+  type AudioHealthState,
+} from "./audioDiagnostics";
 
 function healthy(overrides: Partial<AudioHealthState> = {}): AudioHealthState {
   return {
@@ -61,4 +65,9 @@ test("warns about clipping, mismatches, missing devices, and restart state", () 
     new Set(warnings.map((warning) => warning.id)),
     new Set(["missing-device", "clipping", "sample-rate-mismatch", "channel-mismatch", "restart-required"]),
   );
+});
+
+test("reconnecting state ends when the final output replacement settles", () => {
+  assert.equal(deriveAudioEngineState({ reconnecting: true, hasGraph: true, masterMuted: false, warnings: [] }), "reconnecting");
+  assert.equal(deriveAudioEngineState({ reconnecting: false, hasGraph: true, masterMuted: false, warnings: [] }), "active");
 });

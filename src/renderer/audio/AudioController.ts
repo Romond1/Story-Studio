@@ -12,19 +12,14 @@ import {
   type RouteHandle,
 } from "../../shared/audioLifecycle";
 import {
+  deriveAudioEngineState,
   deriveAudioWarnings,
+  type AudioEngineState as SharedAudioEngineState,
   type AudioWarning,
 } from "../../shared/audioDiagnostics";
 import type { AudioRouteCategory } from "../../shared/audioRoutingPlan";
 
-export type AudioEngineState =
-  | "stopped"
-  | "starting"
-  | "active"
-  | "muted"
-  | "warning"
-  | "error"
-  | "reconnecting";
+export type AudioEngineState = SharedAudioEngineState;
 
 export type AudioMeterReading = {
   peak: number;
@@ -163,6 +158,7 @@ export class AudioController {
     monitor: null,
     mix: null,
   };
+  private pendingOutputChanges = 0;
   private testNodes = new Set<AudioScheduledSourceNode>();
 
   private buffers = new Map<string, AudioBuffer>();
@@ -270,17 +266,12 @@ export class AudioController {
       channelMismatch: false,
       restartRequired: this.snapshot.engineState === "error",
     });
-    const engineState: AudioEngineState = this.snapshot.engineState === "reconnecting"
-      ? "reconnecting"
-      : warnings.some((warning) => warning.severity === "error")
-        ? "error"
-        : warnings.length > 0
-          ? "warning"
-          : this.snapshot.settings.muted.master
-            ? "muted"
-            : this.graph
-              ? "active"
-              : "stopped";
+    const engineState = deriveAudioEngineState({
+      reconnecting: this.pendingOutputChanges > 0,
+      hasGraph: Boolean(this.graph),
+      masterMuted: this.snapshot.settings.muted.master,
+      warnings,
+    });
     this.snapshot = { ...this.snapshot, warnings, engineState };
     if (emit) this.emit();
   }
@@ -487,6 +478,7 @@ export class AudioController {
 
   async selectOutput(route: AudioOutputRoute, device: SavedAudioDevice): Promise<void> {
     this.ensureGraph();
+    this.pendingOutputChanges += 1;
     this.updateSnapshot({ engineState: "reconnecting" });
     try {
       await this.coordinator.replace(route, () => this.createSink(route, device.deviceId));
@@ -509,6 +501,7 @@ export class AudioController {
       this.recordError(`Failed to start ${route} output`, error);
       throw error;
     } finally {
+      this.pendingOutputChanges = Math.max(0, this.pendingOutputChanges - 1);
       this.refreshDiagnostics(false);
       this.refreshWarnings();
     }
