@@ -19,6 +19,13 @@ export class AudioRouteCoordinator {
     this.routes.set(route, handle);
   }
 
+  remove(route: AudioOutputRoute): void {
+    const current = this.routes.get(route);
+    if (!current) return;
+    this.routes.delete(route);
+    current.dispose();
+  }
+
   async replace(
     route: AudioOutputRoute,
     create: () => Promise<RouteHandle>,

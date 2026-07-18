@@ -70,3 +70,15 @@ test("restart invalidates stale replacements and disposes every live route once"
   assert.equal(staleRoute.disposeCalls, 1);
   assert.equal(coordinator.getActiveRouteCount(), 0);
 });
+
+test("removing a colliding route disposes it exactly once", () => {
+  const coordinator = new AudioRouteCoordinator();
+  const monitorRoute = handle("monitor");
+  coordinator.seed("monitor", monitorRoute);
+
+  coordinator.remove("monitor");
+  coordinator.remove("monitor");
+
+  assert.equal(coordinator.get("monitor"), undefined);
+  assert.equal(monitorRoute.disposeCalls, 1);
+});
