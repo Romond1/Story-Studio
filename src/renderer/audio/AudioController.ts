@@ -150,6 +150,7 @@ export class AudioController {
   private graph: AudioGraph | null = null;
   private settingsApi: AudioSettingsApi | null = null;
   private initializePromise: Promise<void> | null = null;
+  private persistQueue: Promise<void> = Promise.resolve();
   private listeners = new Set<() => void>();
   private coordinator = new AudioRouteCoordinator();
   private generation = 0;
@@ -656,12 +657,19 @@ export class AudioController {
 
   private async persistSettings(): Promise<void> {
     if (!this.settingsApi) return;
-    try {
-      const saved = await this.settingsApi.saveAudioSettings(this.snapshot.settings);
-      this.snapshot = { ...this.snapshot, settings: normalizeAudioSettings(saved) };
-    } catch (error) {
-      this.recordError("Could not save audio settings", error);
-    }
+    const requestedSettings = this.snapshot.settings;
+    const operation = this.persistQueue.then(async () => {
+      try {
+        const saved = await this.settingsApi!.saveAudioSettings(requestedSettings);
+        if (this.snapshot.settings === requestedSettings) {
+          this.snapshot = { ...this.snapshot, settings: normalizeAudioSettings(saved) };
+        }
+      } catch (error) {
+        this.recordError("Could not save audio settings", error);
+      }
+    });
+    this.persistQueue = operation.catch(() => undefined);
+    await operation;
   }
 
   private startMeterLoop(): void {
@@ -754,10 +762,11 @@ export class AudioController {
     }
   }
 
-  playGeneratedChime(): void {
+  playGeneratedChime(volume = 0.35): void {
     const graph = this.ensureGraph();
+    const chimeVolume = Math.max(0, Math.min(1, volume)) * 0.22;
     [659.25, 783.99, 987.77].forEach((frequency, index) => {
-      this.startOscillator(graph.mediaBus, frequency, 0.22, 0.12, index * 0.055);
+      this.startOscillator(graph.mediaBus, frequency, 0.22, chimeVolume, index * 0.055);
     });
   }
 

@@ -80,8 +80,9 @@ import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
 import { audioManager } from "./audio/AudioManager";
-import { audioRouting } from "./audio/AudioRouting";
-import { micInput } from "./audio/MicrophoneInput";
+import { AudioSettingsWorkspace } from "./audio/AudioSettingsWorkspace";
+import { CompactAudioPanel } from "./audio/CompactAudioPanel";
+import { AudioStatus } from "./audio/AudioStatus";
 import { SparkProvider, useSparks, DEFAULT_SPARK_CONFIG, getStudentSparkTotal } from "./sparks/SparkProvider";
 import { SparkOverlay } from "./sparks/SparkOverlay";
 import { BadgePanel } from "./sparks/BadgePanel";
@@ -859,7 +860,7 @@ export function App() {
     null,
   );
   const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(true);
-  const [routingCollapsed, setRoutingCollapsed] = useState(false);
+  const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(
     null,
   );
@@ -917,13 +918,6 @@ export function App() {
   }>({ isRunning: false, startTime: 0, accumulated: 0 });
   const [timerNow, setTimerNow] = useState(Date.now());
 
-  // Audio Routing State
-  const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
-  const [audioOutputDevices, setAudioOutputDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedAudioOutput, setSelectedAudioOutput] = useState<string>("default");
-  const [selectedMonitorOutput, setSelectedMonitorOutput] = useState<string>("default");
-  const [selectedAudioInput, setSelectedAudioInput] = useState<string>("default");
-  const [micEnabled, setMicEnabled] = useState(false);
   const [showRestoreSessionPrompt, setShowRestoreSessionPrompt] = useState(false);
   const [savedLiveSession, setSavedLiveSession] = useState<LiveSessionSnapshot | null>(null);
   const [pendingRestoreSession, setPendingRestoreSession] = useState<LiveSessionSnapshot | null>(null);
@@ -2343,53 +2337,6 @@ export function App() {
     setIsDirty(matchesRestore);
   };
 
-  useEffect(() => {
-    let mounted = true;
-    audioRouting.listDevices().then((devices) => {
-      if (mounted) {
-        setAudioInputDevices(devices.inputs);
-        setAudioOutputDevices(devices.outputs);
-      }
-    });
-    return () => { mounted = false; };
-  }, []);
-
-  const handleDeviceChange = async (deviceId: string) => {
-    try {
-      await audioRouting.setDevice(deviceId);
-      setSelectedAudioOutput(deviceId);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to set audio output device.");
-    }
-  };
-
-  const handleMonitorDeviceChange = async (deviceId: string) => {
-    try {
-      await audioRouting.setMonitorDevice(deviceId);
-      setSelectedMonitorOutput(deviceId);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to set monitor output device.");
-    }
-  };
-
-  const toggleMic = async () => {
-    try {
-      if (micEnabled) {
-        micInput.disableMic();
-        setMicEnabled(false);
-      } else {
-        await micInput.enableMic(selectedAudioInput !== "default" ? selectedAudioInput : undefined);
-        setMicEnabled(true);
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Failed to access microphone.");
-      setMicEnabled(false);
-    }
-  };
-
   const executePendingAction = async (action: "create" | "open" | "close") => {
     if (action === "close") {
       window.appApi.forceClose();
@@ -3743,9 +3690,18 @@ export function App() {
             )}
 
             <button
+              className="audio-toolbar-button"
+              style={{ marginLeft: "auto" }}
+              onClick={() => setAudioSettingsOpen(true)}
+            >
+              <span aria-hidden="true">♪</span>
+              <span>Audio</span>
+              <AudioStatus compact />
+            </button>
+
+            <button
               onClick={toggleMode}
               style={{
-                marginLeft: "auto",
                 marginRight: 10,
                 alignSelf: "center",
                 fontSize: "0.8rem",
@@ -3766,6 +3722,10 @@ export function App() {
               Build {BUILD_VERSION}
             </span>
           </header>
+          <AudioSettingsWorkspace
+            open={audioSettingsOpen}
+            onClose={() => setAudioSettingsOpen(false)}
+          />
           {showRestoreSessionPrompt && savedLiveSession && !project && (
             <div
               style={{
@@ -6575,119 +6535,7 @@ export function App() {
 
                   </div>
 
-                  <div className="audio-block" style={{ marginTop: 'auto', background: "#111112", border: '1px solid #222225', padding: '12px 16px' }}>
-                    <h4
-                      onClick={() => setRoutingCollapsed(!routingCollapsed)}
-                      style={{
-                        margin: 0,
-                        color: "#666",
-                        fontSize: "0.85rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "1px",
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        cursor: 'pointer',
-                        userSelect: 'none'
-                      }}
-                    >
-                      Audio Routing
-	                      <span>{routingCollapsed ? '+' : '-'}</span>
-                    </h4>
-
-                    {!routingCollapsed && (
-                      <div style={{ marginTop: 16 }}>
-                        <div style={{ marginBottom: 16 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                            <span style={{ fontSize: "0.75rem", color: "#888" }}>MIX OUTPUT DEVICE</span>
-                          </div>
-                          <select
-                            value={selectedAudioOutput}
-                            onChange={(e) => handleDeviceChange(e.target.value)}
-                            style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-                          >
-                            <option value="default">System Default</option>
-                            {audioOutputDevices.map(d => (
-                              <option key={d.deviceId} value={d.deviceId}>{d.label || `Output ${d.deviceId.slice(0, 5)}...`}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div style={{ marginBottom: 16 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                            <span style={{ fontSize: "0.75rem", color: "#888" }}>MONITOR DEVICE</span>
-                          </div>
-                          <select
-                            value={selectedMonitorOutput}
-                            onChange={(e) => handleMonitorDeviceChange(e.target.value)}
-                            style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-                          >
-                            <option value="default">System Default</option>
-                            {audioOutputDevices.map(d => (
-                              <option key={d.deviceId} value={d.deviceId}>{d.label || `Monitor ${d.deviceId.slice(0, 5)}...`}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                            <span style={{ fontSize: "0.75rem", color: "#888" }}>MICROPHONE INPUT</span>
-                            <button
-                              onClick={toggleMic}
-                              style={{
-                                padding: "2px 8px",
-                                fontSize: "0.7rem",
-                                fontWeight: "bold",
-                                background: micEnabled ? "#4a1a1a" : "#1a1a1c",
-                                border: `1px solid ${micEnabled ? "#8a3a3a" : "#333"}`,
-                                color: micEnabled ? "#ffaaaa" : "#666",
-                                borderRadius: "4px"
-                              }}
-                            >
-                              {micEnabled ? "LIVE" : "OFF"}
-                            </button>
-                          </div>
-                          <select
-                            value={selectedAudioInput}
-                            onChange={(e) => {
-                              setSelectedAudioInput(e.target.value);
-                              if (micEnabled) {
-                                // Force restart if live
-                                micInput.disableMic();
-                                micInput.enableMic(e.target.value !== "default" ? e.target.value : undefined).catch(err => {
-                                  console.error(err);
-                                  setMicEnabled(false);
-                                });
-                              }
-                            }}
-                            style={{ width: "100%", padding: "6px", background: "#1a1a1c", color: "#bbb", border: "1px solid #333", borderRadius: "4px", fontSize: "0.8rem", outline: "none" }}
-                          >
-                            <option value="default">Default Mic</option>
-                            {audioInputDevices.map(d => (
-                              <option key={d.deviceId} value={d.deviceId}>{d.label || `Mic ${d.deviceId.slice(0, 5)}...`}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <button
-                          onClick={() => audioManager.stopAll()}
-                          style={{
-                            width: "100%",
-                            marginTop: 24,
-                            padding: "8px",
-                            background: "#2a1515",
-                            color: "#ff8888",
-                            borderColor: "#4a2525",
-                            fontSize: "0.85rem",
-                            borderRadius: "4px",
-                            cursor: "pointer"
-                          }}
-                        >
-                          Stop All Audio
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <CompactAudioPanel onOpenSettings={() => setAudioSettingsOpen(true)} />
                 </>
               ) : topMode === 'badge' ? (
                 <div className="audio-block" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
