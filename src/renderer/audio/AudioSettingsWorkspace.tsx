@@ -78,12 +78,16 @@ function DeviceSelect({
   selected,
   onChange,
   disabled,
+  active,
+  flowing,
 }: {
   label: string;
   devices: AudioDeviceState[];
   selected: SavedAudioDevice;
   onChange: (device: SavedAudioDevice) => void;
   disabled?: boolean;
+  active?: boolean;
+  flowing?: boolean;
 }) {
   const selectedState = devices.find((device) => device.deviceId === selected.deviceId);
   return (
@@ -114,8 +118,8 @@ function DeviceSelect({
         </span>
         <span>{selectedState?.sampleRate ? `${selectedState.sampleRate} Hz` : "Rate unavailable"}</span>
         <span>{selectedState?.channelCount ? `${selectedState.channelCount} ch` : "Channels unavailable"}</span>
-        <span>{selectedState?.active ? "Stream active" : "Stream inactive"}</span>
-        <span>{selectedState?.flowing ? "Samples flowing" : "No samples detected"}</span>
+        <span>{(active ?? selectedState?.active) ? "Stream active" : "Stream inactive"}</span>
+        <span>{(flowing ?? selectedState?.flowing) ? "Samples flowing" : "No samples detected"}</span>
       </div>
     </div>
   );
@@ -232,18 +236,24 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
                 label="Microphone Input"
                 devices={snapshot.devices.inputs}
                 selected={snapshot.settings.devices.microphone}
+                active={snapshot.diagnostics.activeMicrophoneStreams === 1}
+                flowing={snapshot.meters.microphone.flowing}
                 onChange={(device) => void controller.enableMic(device.deviceId === "default" ? undefined : device.deviceId).catch(() => undefined)}
               />
               <DeviceSelect
                 label="Monitor Output"
                 devices={snapshot.devices.outputs}
                 selected={snapshot.settings.devices.monitor}
+                active={snapshot.diagnostics.activeMonitorStreams === 1}
+                flowing={snapshot.meters.monitor.flowing}
                 onChange={(device) => void controller.selectOutput("monitor", device).catch(() => undefined)}
               />
               <DeviceSelect
                 label="Mix / Virtual Output"
                 devices={snapshot.devices.outputs}
                 selected={snapshot.settings.devices.mix}
+                active={snapshot.diagnostics.activeMixStreams === 1}
+                flowing={snapshot.meters.mix.flowing}
                 onChange={(device) => void controller.selectOutput("mix", device).catch(() => undefined)}
               />
             </div>

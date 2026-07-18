@@ -1,5 +1,6 @@
 import {
   DEFAULT_AUDIO_SETTINGS,
+  muteAllAudioSettings,
   normalizeAudioSettings,
   type AudioBusName,
   type AudioSettingsV1,
@@ -843,7 +844,13 @@ export class AudioController {
 
   stopAll(): void {
     this.stopAllPlayback();
-    this.disableMic();
+    this.snapshot = {
+      ...this.snapshot,
+      settings: muteAllAudioSettings(this.snapshot.settings),
+    };
+    this.applySettingsToGraph();
+    void this.persistSettings();
+    this.refreshDiagnostics(false);
     this.updateSnapshot({ engineState: "stopped" });
   }
 

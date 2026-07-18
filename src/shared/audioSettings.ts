@@ -119,3 +119,16 @@ export function normalizeAudioSettings(value: unknown): AudioSettingsV1 {
     stageControls,
   };
 }
+
+export function muteAllAudioSettings(settings: AudioSettingsV1): AudioSettingsV1 {
+  return normalizeAudioSettings({
+    ...settings,
+    muted: {
+      microphone: true,
+      media: true,
+      master: true,
+      monitor: true,
+      mix: true,
+    },
+  });
+}

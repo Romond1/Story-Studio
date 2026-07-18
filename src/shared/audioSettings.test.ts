@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   DEFAULT_AUDIO_SETTINGS,
+  muteAllAudioSettings,
   normalizeAudioSettings,
 } from "./audioSettings";
 
@@ -40,4 +41,28 @@ test("malformed values clamp and unknown controls are removed", () => {
   assert.equal(settings.volumes.media, 0);
   assert.equal(settings.volumes.master, 1);
   assert.deepEqual(settings.stageControls, ["microphone-mute"]);
+});
+
+test("stop all mutes every bus without discarding devices or configured controls", () => {
+  const settings = normalizeAudioSettings({
+    ...DEFAULT_AUDIO_SETTINGS,
+    devices: {
+      microphone: { deviceId: "mic-1", label: "Teacher Mic" },
+      monitor: { deviceId: "headphones-1", label: "Headphones" },
+      mix: { deviceId: "cable-1", label: "CABLE Input" },
+    },
+    stageControls: ["microphone-mute", "stop-all"],
+  });
+
+  const stopped = muteAllAudioSettings(settings);
+
+  assert.deepEqual(stopped.devices, settings.devices);
+  assert.deepEqual(stopped.stageControls, settings.stageControls);
+  assert.deepEqual(stopped.muted, {
+    microphone: true,
+    media: true,
+    master: true,
+    monitor: true,
+    mix: true,
+  });
 });
