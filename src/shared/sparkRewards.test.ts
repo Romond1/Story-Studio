@@ -10,6 +10,7 @@ import {
   normalizeSparkStudents,
   resolveRewardAppearance,
   resetStudentRewards,
+  setRewardAssetId,
 } from "./sparkRewards";
 
 const legacyStudent = {
@@ -115,5 +116,20 @@ test("custom assets override shapes and missing assets fall back to the configur
   assert.deepEqual(resolveRewardAppearance("crown", config, badge, new Set()), {
     shape: "heart",
     assetId: undefined,
+  });
+});
+
+test("setting and removing one reward PNG preserves the other asset slots", () => {
+  const initial = { gold: "gold-image", blue: "blue-image" };
+  const withCrown = setRewardAssetId(initial, "crown", "crown-image");
+  assert.deepEqual(withCrown, {
+    gold: "gold-image",
+    blue: "blue-image",
+    crown: "crown-image",
+  });
+  assert.deepEqual(initial, { gold: "gold-image", blue: "blue-image" });
+  assert.deepEqual(setRewardAssetId(withCrown, "crown", undefined), {
+    gold: "gold-image",
+    blue: "blue-image",
   });
 });

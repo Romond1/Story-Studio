@@ -122,3 +122,14 @@ export function resolveRewardAppearance(
       : undefined,
   };
 }
+
+export function setRewardAssetId(
+  current: BadgeConfig["badgeSparkAssetIds"] | undefined,
+  variant: SparkAwardVariant,
+  assetId: string | undefined,
+): NonNullable<BadgeConfig["badgeSparkAssetIds"]> {
+  const next = { ...(current || {}) };
+  if (assetId) next[variant] = assetId;
+  else delete next[variant];
+  return next;
+}

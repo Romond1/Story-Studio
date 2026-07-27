@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import { useSparks } from './SparkProvider';
-import { ProjectState } from '../../shared/types';
+import { ProjectState, SparkAwardVariant, SparkShape } from '../../shared/types';
 import { decorateImportedAssetsForContext } from '../../shared/mediaReferences';
+import {
+    getRewardShapePath,
+    REWARD_DEFINITIONS,
+    REWARD_VARIANTS,
+    setRewardAssetId,
+} from '../../shared/sparkRewards';
 
 interface BadgePanelProps {
     isEditMode: boolean;
@@ -67,7 +73,7 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
         const existingSprites = badgeConfig.badgeSprites || [];
         const nextSprites = [...existingSprites];
 
-        const variants: Array<'gold' | 'blue' | 'pink'> = ['gold', 'blue', 'pink'];
+        const variants = REWARD_VARIANTS;
 
         checkedStudents.forEach((student, index) => {
             const baseX = 70 + (index * 420);
@@ -91,8 +97,8 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
                     x: baseX + (variantIndex * 130),
                     y: baseY + (variantIndex === 1 ? -28 : 18),
                     width: 140,
-                    height: 170,
-                    zIndex: 20 + (index * 3) + variantIndex,
+                    height: variant === 'crown' ? 140 : 170,
+                    zIndex: 20 + (index * variants.length) + variantIndex,
                     variant,
                 });
             });
@@ -101,7 +107,7 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
         return nextSprites;
     };
 
-    const importSparkPngForVariant = async (variant: 'gold' | 'blue' | 'pink') => {
+    const importSparkPngForVariant = async (variant: SparkAwardVariant) => {
         if (!project) return;
         const res = await (window as any).appApi.importMedia();
         if (!res || res.importedAssets.length === 0) return;
@@ -117,18 +123,12 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
         const nextBadgeConfig = {
             ...badgeConfig,
             badgeSprites: nextSprites,
-            badgeSparkAssetIds: {
-                ...(badgeConfig.badgeSparkAssetIds || {}),
-                [variant]: importedImage.id,
-            }
+            badgeSparkAssetIds: setRewardAssetId(badgeConfig.badgeSparkAssetIds, variant, importedImage.id),
         };
 
         setBadgeConfig({
             badgeSprites: nextSprites,
-            badgeSparkAssetIds: {
-                ...(badgeConfig.badgeSparkAssetIds || {}),
-                [variant]: importedImage.id,
-            }
+            badgeSparkAssetIds: setRewardAssetId(badgeConfig.badgeSparkAssetIds, variant, importedImage.id),
         });
 
         onUpdateProject({
@@ -138,6 +138,24 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
                 assets: [...project.data.assets, ...normalizedImportedAssets],
             }
         });
+    };
+
+    const removeSparkPngForVariant = (variant: SparkAwardVariant) => {
+        if (!project) return;
+        const nextAssetIds = setRewardAssetId(badgeConfig.badgeSparkAssetIds, variant, undefined);
+        const nextBadgeConfig = { ...badgeConfig, badgeSparkAssetIds: nextAssetIds };
+        setBadgeConfig({ badgeSparkAssetIds: nextAssetIds });
+        onUpdateProject({ data: { ...project.data, badgeConfig: nextBadgeConfig } });
+    };
+
+    const rewardAssetUrl = (relativePath: string) => {
+        const encoded = relativePath
+            .replace(/\\/g, '/')
+            .replace(/^\/+/, '')
+            .split('/')
+            .map((segment) => encodeURIComponent(segment))
+            .join('/');
+        return `media://${encoded}`;
     };
 
     const labelStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem', color: '#aaa' };
@@ -581,71 +599,68 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
                         </label>
 
                         <div style={{ borderTop: '1px solid #333', margin: '5px 0' }} />
-                        <div style={{ fontSize: '0.75rem', color: '#666' }}>Spark Shapes (saved for future renderer support)</div>
-
-                        <label style={labelStyle}>
-                            Yellow Shape
-                            <select
-                                value={sparkConfig.shapeByVariant?.gold ?? 'star'}
-                                onChange={(e) => setSparkConfig({
-                                    shapeByVariant: {
-                                        ...(sparkConfig.shapeByVariant || {}),
-                                        gold: e.target.value as 'star' | 'diamond' | 'circle' | 'heart',
-                                    }
-                                })}
-                                style={inputStyle}
-                            >
-                                <option value="star">Star (current)</option>
-                                <option value="diamond">Diamond (coming soon)</option>
-                                <option value="circle">Circle (coming soon)</option>
-                                <option value="heart">Heart (coming soon)</option>
-                            </select>
-                        </label>
-
-                        <label style={labelStyle}>
-                            Blue Shape
-                            <select
-                                value={sparkConfig.shapeByVariant?.blue ?? 'star'}
-                                onChange={(e) => setSparkConfig({
-                                    shapeByVariant: {
-                                        ...(sparkConfig.shapeByVariant || {}),
-                                        blue: e.target.value as 'star' | 'diamond' | 'circle' | 'heart',
-                                    }
-                                })}
-                                style={inputStyle}
-                            >
-                                <option value="star">Star (current)</option>
-                                <option value="diamond">Diamond (coming soon)</option>
-                                <option value="circle">Circle (coming soon)</option>
-                                <option value="heart">Heart (coming soon)</option>
-                            </select>
-                        </label>
-
-                        <label style={labelStyle}>
-                            Pink Shape
-                            <select
-                                value={sparkConfig.shapeByVariant?.pink ?? 'star'}
-                                onChange={(e) => setSparkConfig({
-                                    shapeByVariant: {
-                                        ...(sparkConfig.shapeByVariant || {}),
-                                        pink: e.target.value as 'star' | 'diamond' | 'circle' | 'heart',
-                                    }
-                                })}
-                                style={inputStyle}
-                            >
-                                <option value="star">Star (current)</option>
-                                <option value="diamond">Diamond (coming soon)</option>
-                                <option value="circle">Circle (coming soon)</option>
-                                <option value="heart">Heart (coming soon)</option>
-                            </select>
-                        </label>
+                        <div style={{ fontSize: '0.75rem', color: '#aaa' }}>Reward Appearance</div>
+                        <div className="reward-appearance-grid">
+                            {REWARD_VARIANTS.map((variant) => {
+                                const definition = REWARD_DEFINITIONS[variant];
+                                const selectedShape = sparkConfig.shapeByVariant?.[variant] ?? definition.defaultShape;
+                                const assetId = badgeConfig.badgeSparkAssetIds?.[variant];
+                                const asset = project?.data.assets.find((item) => item.id === assetId);
+                                return (
+                                    <div key={variant} className="reward-appearance-card">
+                                        <strong>{definition.label}</strong>
+                                        <div className="reward-appearance-preview">
+                                            {asset ? (
+                                                <img src={rewardAssetUrl(asset.relativePath)} alt={`${definition.label} reward`} />
+                                            ) : (
+                                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path d={getRewardShapePath(selectedShape)} />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <label style={labelStyle}>
+                                            Built-in shape
+                                            <select
+                                                value={selectedShape}
+                                                onChange={(event) => setSparkConfig({
+                                                    shapeByVariant: {
+                                                        ...(sparkConfig.shapeByVariant || {}),
+                                                        [variant]: event.target.value as SparkShape,
+                                                    },
+                                                })}
+                                                style={inputStyle}
+                                            >
+                                                <option value="star">Star</option>
+                                                <option value="diamond">Diamond</option>
+                                                <option value="circle">Circle</option>
+                                                <option value="heart">Heart</option>
+                                                <option value="crown">Crown</option>
+                                            </select>
+                                        </label>
+                                        <div className="reward-appearance-actions">
+                                            <button onClick={() => void importSparkPngForVariant(variant)}>
+                                                {asset ? 'Change PNG' : 'Upload PNG'}
+                                            </button>
+                                            {asset && (
+                                                <button className="danger" onClick={() => removeSparkPngForVariant(variant)}>
+                                                    Remove PNG
+                                                </button>
+                                            )}
+                                        </div>
+                                        <small>{asset ? 'Custom PNG active' : 'Built-in shape active'}</small>
+                                    </div>
+                                );
+                            })}
+                        </div>
 
                         <div style={{ borderTop: '1px solid #333', margin: '5px 0' }} />
                         <div style={{ fontSize: '0.7rem', color: '#666', textAlign: 'center' }}>Test Triggers</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '5px' }}>
-                            <button style={{ fontSize: '0.7rem', background: '#442', color: '#fff', border: 'none', borderRadius: 4, padding: 4 }} onClick={() => triggerSpark('gold')}>Yellow</button>
-                            <button style={{ fontSize: '0.7rem', background: '#244', color: '#fff', border: 'none', borderRadius: 4, padding: 4 }} onClick={() => triggerSpark('blue')}>Blue</button>
-                            <button style={{ fontSize: '0.7rem', background: '#424', color: '#fff', border: 'none', borderRadius: 4, padding: 4 }} onClick={() => triggerSpark('pink')}>Pink</button>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px' }}>
+                            {REWARD_VARIANTS.map((variant) => (
+                                <button key={variant} style={{ fontSize: '0.7rem', background: '#334', color: '#fff', border: 'none', borderRadius: 4, padding: 4 }} onClick={() => triggerSpark(variant)}>
+                                    {REWARD_DEFINITIONS[variant].label}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 )}

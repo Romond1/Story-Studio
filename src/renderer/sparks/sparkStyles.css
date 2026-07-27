@@ -8,6 +8,64 @@
     z-index: 9999;
 }
 
+.reward-appearance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.reward-appearance-card {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 9px;
+    border: 1px solid #3f4760;
+    border-radius: 8px;
+    background: rgba(18, 21, 32, 0.92);
+}
+
+.reward-appearance-preview {
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.reward-appearance-preview img,
+.reward-appearance-preview svg {
+    width: 62px;
+    height: 62px;
+    object-fit: contain;
+}
+
+.reward-appearance-preview svg {
+    fill: #ffd35a;
+}
+
+.reward-appearance-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.reward-appearance-actions button {
+    flex: 1;
+    min-width: 80px;
+    padding: 5px;
+    border: 1px solid #4a587a;
+    border-radius: 4px;
+    background: #2b3853;
+    color: #fff;
+    cursor: pointer;
+}
+
+.reward-appearance-actions button.danger {
+    border-color: #75434a;
+    background: #532b32;
+}
+
 .spark-anchor {
     position: absolute;
     top: 120px;
