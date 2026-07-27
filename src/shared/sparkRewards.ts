@@ -124,6 +124,19 @@ export function resolveRewardAppearance(
   };
 }
 
+export function resolveBadgeSpriteAssetId(
+  sprite: Pick<BadgeStudentSprite, "assetId">,
+  variant: SparkAwardVariant,
+  badgeConfig: Pick<BadgeConfig, "badgeSparkAssetIds">,
+  availableAssetIds: ReadonlySet<string>,
+): string | undefined {
+  if (sprite.assetId && availableAssetIds.has(sprite.assetId)) {
+    return sprite.assetId;
+  }
+  const sharedAssetId = badgeConfig.badgeSparkAssetIds?.[variant];
+  return sharedAssetId && availableAssetIds.has(sharedAssetId) ? sharedAssetId : undefined;
+}
+
 export function setRewardAssetId(
   current: BadgeConfig["badgeSparkAssetIds"] | undefined,
   variant: SparkAwardVariant,

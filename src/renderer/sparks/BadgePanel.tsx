@@ -85,6 +85,38 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({
         setBadgeConfig({ badgeSprites: nextSprites });
     };
 
+    const importPngForSelectedSprite = async () => {
+        if (!project || !selectedSprite) return;
+        const res = await (window as any).appApi.importMedia();
+        if (!res || res.importedAssets.length === 0) return;
+        const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, res.importedAssets);
+        const importedImage = normalizedImportedAssets.find((asset) => asset.mediaType === 'image');
+        if (!importedImage) return;
+
+        const nextSprites = (badgeConfig.badgeSprites || []).map((sprite) => (
+            sprite.id === selectedSprite.id ? { ...sprite, assetId: importedImage.id } : sprite
+        ));
+        const nextBadgeConfig = { ...badgeConfig, badgeSprites: nextSprites };
+        setBadgeConfig({ badgeSprites: nextSprites });
+        onUpdateProject({
+            data: {
+                ...project.data,
+                badgeConfig: nextBadgeConfig,
+                assets: [...project.data.assets, ...normalizedImportedAssets],
+            },
+        });
+    };
+
+    const removeSelectedSpritePng = () => {
+        if (!project || !selectedSprite) return;
+        const nextSprites = (badgeConfig.badgeSprites || []).map((sprite) => (
+            sprite.id === selectedSprite.id ? { ...sprite, assetId: undefined } : sprite
+        ));
+        const nextBadgeConfig = { ...badgeConfig, badgeSprites: nextSprites };
+        setBadgeConfig({ badgeSprites: nextSprites });
+        onUpdateProject({ data: { ...project.data, badgeConfig: nextBadgeConfig } });
+    };
+
     const ensureBadgeSpritesForCheckedStudents = () => {
         const existingSprites = badgeConfig.badgeSprites || [];
         const nextSprites = [...existingSprites];
@@ -381,6 +413,24 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({
                     </div>
                     {selectedSprite && (
                         <div className="badge-sprite-size-controls">
+                            <div className="badge-sprite-student-image">
+                                <strong>
+                                    {students.find((student) => student.id === selectedSprite.studentId)?.name || 'Student'}
+                                    {' · '}
+                                    {REWARD_DEFINITIONS[selectedSprite.variant || 'gold'].label} image
+                                </strong>
+                                <small>
+                                    This image applies only to this student. Without it, the shared reward image is used.
+                                </small>
+                                <div className="badge-sprite-layer-actions">
+                                    <button onClick={() => void importPngForSelectedSprite()}>
+                                        {selectedSprite.assetId ? 'Change Student PNG' : 'Upload Student PNG'}
+                                    </button>
+                                    {selectedSprite.assetId && (
+                                        <button onClick={removeSelectedSpritePng}>Use Shared Image</button>
+                                    )}
+                                </div>
+                            </div>
                             <label style={labelStyle}>
                                 Size ({Math.round(selectedSprite.width)} × {Math.round(selectedSprite.height)})
                                 <input

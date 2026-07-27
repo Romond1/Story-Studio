@@ -304,7 +304,7 @@ export interface BadgeStudentSprite {
   height: number;
   zIndex?: number;
   variant?: SparkAwardVariant;
-  assetId?: string; // legacy fallback
+  assetId?: string; // optional per-student reward image override
 }
 
 export type SparkShape = 'star' | 'diamond' | 'circle' | 'heart' | 'crown';

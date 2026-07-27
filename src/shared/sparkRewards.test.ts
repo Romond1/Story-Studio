@@ -11,6 +11,7 @@ import {
   normalizeSparkStudents,
   moveRewardSpriteLayer,
   resolveRewardAppearance,
+  resolveBadgeSpriteAssetId,
   resetStudentRewards,
   resizeRewardSprite,
   setRewardAssetId,
@@ -169,4 +170,32 @@ test("layer controls move only the selected sprite", () => {
   const next = moveRewardSpriteLayer(sprites, "a", "forward");
   assert.equal(next.find((sprite) => sprite.id === "a")?.zIndex, 22);
   assert.equal(next.find((sprite) => sprite.id === "b")?.zIndex, 21);
+});
+
+test("each student badge sprite can override the shared crown image independently", () => {
+  const firstStudentCrown = {
+    id: "crown-1",
+    studentId: "student-1",
+    variant: "crown" as const,
+    assetId: "ada-crown",
+    x: 0,
+    y: 0,
+    width: 140,
+    height: 140,
+  };
+  const secondStudentCrown = {
+    ...firstStudentCrown,
+    id: "crown-2",
+    studentId: "student-2",
+    assetId: "grace-crown",
+  };
+  const badgeConfig = { badgeSparkAssetIds: { crown: "shared-crown" } };
+  const available = new Set(["ada-crown", "grace-crown", "shared-crown"]);
+
+  assert.equal(resolveBadgeSpriteAssetId(firstStudentCrown, "crown", badgeConfig, available), "ada-crown");
+  assert.equal(resolveBadgeSpriteAssetId(secondStudentCrown, "crown", badgeConfig, available), "grace-crown");
+  assert.equal(
+    resolveBadgeSpriteAssetId({ ...secondStudentCrown, assetId: "missing" }, "crown", badgeConfig, available),
+    "shared-crown",
+  );
 });

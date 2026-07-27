@@ -91,6 +91,7 @@ import {
   normalizeSparkStudents,
   REWARD_DEFINITIONS,
   REWARD_VARIANTS,
+  resolveBadgeSpriteAssetId,
   resolveRewardAppearance,
 } from "../shared/sparkRewards";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
@@ -765,13 +766,20 @@ const BadgeStudentSprites = ({
           );
           if (!sprite) return null;
 
+          const availableAssetIds = new Set(assetsById.keys());
           const appearance = resolveRewardAppearance(
             variant,
             sparkConfig,
             badgeConfig,
-            new Set(assetsById.keys()),
+            availableAssetIds,
           );
-          const asset = appearance.assetId ? assetsById.get(appearance.assetId) : undefined;
+          const spriteAssetId = resolveBadgeSpriteAssetId(
+            sprite,
+            variant,
+            badgeConfig,
+            availableAssetIds,
+          );
+          const asset = spriteAssetId ? assetsById.get(spriteAssetId) : undefined;
 
           const scoreText = shouldShowScore ? String(getVariantSparkCount(student, variant)) : "?";
           const motionClass = `badge-sprite-motion-${motion}`;
