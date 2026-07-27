@@ -454,6 +454,7 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({
                         <span style={{ fontSize: '0.72rem', color: '#f5d86e' }}>Y {activeSparkCounts.yellow}</span>
                         <span style={{ fontSize: '0.72rem', color: '#7ac7ff' }}>B {activeSparkCounts.blue}</span>
                         <span style={{ fontSize: '0.72rem', color: '#ffa1c7' }}>P {activeSparkCounts.pink}</span>
+                        <span style={{ fontSize: '0.72rem', color: '#ffbd59' }}>C {activeSparkCounts.crown}</span>
                     </div>
                     <div style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '2px 0' }}>{totalSparks}</div>
                     <div style={{ fontSize: '0.7rem', color: '#ffd700' }}>TOTAL SPARKS</div>
@@ -504,11 +505,11 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({
                             }}
                             style={{ padding: '8px', background: '#2f4d7a', border: '1px solid #42679e', color: '#fff', borderRadius: 4, cursor: 'pointer' }}
                         >
-                            Place/Refresh Checked Student Stars
+                            Place/Refresh Checked Student Rewards
                         </button>
 
                         <div style={{ fontSize: '0.75rem', color: '#8ea3d1', lineHeight: 1.4 }}>
-                            Checked students: {checkedStudents.length} / {students.length}. Each checked student gets 3 stars (Yellow, Blue, Pink). Import one PNG per spark color below.
+                            Checked students: {checkedStudents.length} / {students.length}. Each checked student gets Yellow, Blue, Pink, and Crown rewards. Import one PNG per reward below.
                         </div>
 
                         <button
@@ -530,6 +531,12 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({
                             style={{ padding: '8px', background: '#603051', border: '1px solid #c060a0', color: '#fff', borderRadius: 4, cursor: 'pointer' }}
                         >
                             Import Pink Star PNG {badgeConfig.badgeSparkAssetIds?.pink ? '✓' : ''}
+                        </button>
+                        <button
+                            onClick={() => void importSparkPngForVariant('crown')}
+                            style={{ padding: '8px', background: '#5a3d22', border: '1px solid #8b6536', color: '#fff4cf', borderRadius: 4, cursor: 'pointer' }}
+                        >
+                            Import Crown PNG {badgeConfig.badgeSparkAssetIds?.crown ? '✓' : ''}
                         </button>
 
                         <label style={labelStyle}>
