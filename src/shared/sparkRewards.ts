@@ -1,5 +1,6 @@
 import type {
   BadgeConfig,
+  BadgeStudentSprite,
   SparkAwardVariant,
   SparkConfig,
   SparkShape,
@@ -132,4 +133,55 @@ export function setRewardAssetId(
   if (assetId) next[variant] = assetId;
   else delete next[variant];
   return next;
+}
+
+export function ensureRewardSprites(
+  sprites: BadgeStudentSprite[],
+  students: SparkStudent[],
+  createId: () => string,
+): BadgeStudentSprite[] {
+  const next = [...sprites];
+  for (const [studentIndex, student] of students.filter((item) => item.badgeVisible !== false).entries()) {
+    let nextX = next
+      .filter((sprite) => sprite.studentId === student.id)
+      .reduce((right, sprite) => Math.max(right, sprite.x + sprite.width + 18), 70 + studentIndex * 30);
+    for (const [variantIndex, variant] of REWARD_VARIANTS.entries()) {
+      if (next.some((sprite) => sprite.studentId === student.id && (sprite.variant || "gold") === variant)) continue;
+      const size = variant === "crown" ? { width: 140, height: 140 } : { width: 140, height: 170 };
+      next.push({
+        id: createId(),
+        studentId: student.id,
+        variant,
+        x: Math.min(nextX, 1500),
+        y: 100 + (studentIndex % 2) * 180 + (variantIndex % 2) * 18,
+        ...size,
+        zIndex: 20 + studentIndex * REWARD_VARIANTS.length + variantIndex,
+      });
+      nextX += size.width + 18;
+    }
+  }
+  return next;
+}
+
+export function resizeRewardSprite(
+  sprite: BadgeStudentSprite,
+  requestedWidth: number,
+  bounds: { min: number; max: number } = { min: 60, max: 420 },
+): Pick<BadgeStudentSprite, "width" | "height"> {
+  const width = Math.min(bounds.max, Math.max(bounds.min, Number.isFinite(requestedWidth) ? requestedWidth : sprite.width));
+  const ratio = sprite.width > 0 && sprite.height > 0 ? sprite.width / sprite.height : 1;
+  return { width: Math.round(width), height: Math.round(width / ratio) };
+}
+
+export function moveRewardSpriteLayer(
+  sprites: BadgeStudentSprite[],
+  spriteId: string,
+  direction: "forward" | "backward",
+): BadgeStudentSprite[] {
+  const values = sprites.map((sprite) => sprite.zIndex ?? 20);
+  if (!sprites.some((sprite) => sprite.id === spriteId) || values.length === 0) return sprites;
+  const zIndex = direction === "forward"
+    ? Math.min(9999, Math.max(...values) + 1)
+    : Math.max(-9999, Math.min(...values) - 1);
+  return sprites.map((sprite) => sprite.id === spriteId ? { ...sprite, zIndex } : sprite);
 }

@@ -3,13 +3,16 @@ import assert from "node:assert/strict";
 import {
   REWARD_VARIANTS,
   awardRewardToStudent,
+  ensureRewardSprites,
   getRewardShapePath,
   getRewardVariantForKey,
   getStudentRewardTotal,
   normalizeSparkStudent,
   normalizeSparkStudents,
+  moveRewardSpriteLayer,
   resolveRewardAppearance,
   resetStudentRewards,
+  resizeRewardSprite,
   setRewardAssetId,
 } from "./sparkRewards";
 
@@ -132,4 +135,38 @@ test("setting and removing one reward PNG preserves the other asset slots", () =
     gold: "gold-image",
     blue: "blue-image",
   });
+});
+
+test("adding missing reward sprites preserves every existing sprite record", () => {
+  const existing = [
+    { id: "gold-1", studentId: "student-1", variant: "gold" as const, x: 10, y: 20, width: 140, height: 170, zIndex: 20 },
+    { id: "blue-1", studentId: "student-1", variant: "blue" as const, x: 150, y: 20, width: 140, height: 170, zIndex: 21 },
+  ];
+  const student = normalizeSparkStudent(legacyStudent, () => "unused")!;
+  let nextId = 0;
+  const next = ensureRewardSprites(existing, [student], () => `new-${++nextId}`);
+  assert.equal(next[0], existing[0]);
+  assert.equal(next[1], existing[1]);
+  assert.ok(next.find((sprite) => sprite.variant === "pink"));
+  const crown = next.find((sprite) => sprite.variant === "crown");
+  assert.ok(crown);
+  assert.equal(crown.width, crown.height);
+});
+
+test("aspect locked resize clamps width and keeps the saved ratio", () => {
+  const sprite = { id: "s", studentId: "student-1", variant: "crown" as const, x: 0, y: 0, width: 200, height: 100 };
+  assert.deepEqual(resizeRewardSprite(sprite, 800, { min: 60, max: 420 }), {
+    width: 420,
+    height: 210,
+  });
+});
+
+test("layer controls move only the selected sprite", () => {
+  const sprites = [
+    { id: "a", studentId: "student-1", x: 0, y: 0, width: 100, height: 100, zIndex: 20 },
+    { id: "b", studentId: "student-1", x: 0, y: 0, width: 100, height: 100, zIndex: 21 },
+  ];
+  const next = moveRewardSpriteLayer(sprites, "a", "forward");
+  assert.equal(next.find((sprite) => sprite.id === "a")?.zIndex, 22);
+  assert.equal(next.find((sprite) => sprite.id === "b")?.zIndex, 21);
 });
