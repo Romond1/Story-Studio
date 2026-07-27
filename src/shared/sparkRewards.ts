@@ -97,3 +97,10 @@ export function getRewardVariantForKey(key: string): SparkAwardVariant | null {
   if (normalized === "p") return "crown";
   return null;
 }
+
+export function normalizeSparkStudents(input: unknown, createId: () => string): SparkStudent[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .map((item) => normalizeSparkStudent(item, createId))
+    .filter((item): item is SparkStudent => item !== null);
+}

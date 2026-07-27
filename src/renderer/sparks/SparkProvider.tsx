@@ -1,8 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react';
-import { SparkConfig, BadgeConfig, SparkStudent } from '../../shared/types';
+import { SparkConfig, BadgeConfig, SparkStudent, SparkAwardVariant } from '../../shared/types';
 import { removeBadgeStudent } from '../../shared/badgeStudents';
+import {
+    awardRewardToStudent,
+    getStudentRewardTotal,
+    resetStudentRewards,
+} from '../../shared/sparkRewards';
 
-export type SparkVariant = 'gold' | 'blue' | 'pink';
+export type SparkVariant = SparkAwardVariant;
 
 export interface BurstInfo {
     id: string;
@@ -26,6 +31,7 @@ export const DEFAULT_SPARK_CONFIG: SparkConfig = {
         gold: 'star',
         blue: 'star',
         pink: 'star',
+        crown: 'crown',
     },
 };
 
@@ -73,26 +79,21 @@ export const DEFAULT_BADGE_CONFIG: BadgeConfig = {
     badgeSpriteAnimIntensity: 100,
 };
 
-const variantToField: Record<SparkVariant, 'yellowSparks' | 'blueSparks' | 'pinkSparks'> = {
-    gold: 'yellowSparks',
-    blue: 'blueSparks',
-    pink: 'pinkSparks',
-};
-
 const createStudent = (name: string): SparkStudent => ({
     id: crypto.randomUUID(),
     name,
     yellowSparks: 0,
     blueSparks: 0,
     pinkSparks: 0,
+    crowns: 0,
     stars: 0,
     badgeVisible: true,
     badgeSparkVariant: 'gold',
 });
 
-export const getStudentSparkTotal = (student: Pick<SparkStudent, 'yellowSparks' | 'blueSparks' | 'pinkSparks'> | null | undefined): number => {
+export const getStudentSparkTotal = (student: (Pick<SparkStudent, 'yellowSparks' | 'blueSparks' | 'pinkSparks'> & Partial<Pick<SparkStudent, 'crowns'>>) | null | undefined): number => {
     if (!student) return 0;
-    return (student.yellowSparks || 0) + (student.blueSparks || 0) + (student.pinkSparks || 0);
+    return getStudentRewardTotal(student);
 };
 
 interface SparkContextType {
@@ -101,6 +102,7 @@ interface SparkContextType {
         yellow: number;
         blue: number;
         pink: number;
+        crown: number;
     };
     students: SparkStudent[];
     activeStudentId: string | null;
@@ -222,6 +224,7 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
         yellow: activeStudent?.yellowSparks || 0,
         blue: activeStudent?.blueSparks || 0,
         pink: activeStudent?.pinkSparks || 0,
+        crown: activeStudent?.crowns || 0,
     };
 
     const setSparkConfig = useCallback((updates: Partial<SparkConfig>) => {
@@ -283,21 +286,8 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
         if (!activeStudent) return;
 
         const id = crypto.randomUUID();
-        const field = variantToField[variant];
         const studentName = activeStudent.name?.trim() || 'Student';
-
-        const nextStudents = currentStudents.map((student) => {
-            if (student.id !== activeStudent.id) return student;
-            const nextValue = (student[field] || 0) + 1;
-            const nextStudent = {
-                ...student,
-                [field]: nextValue,
-            };
-            return {
-                ...nextStudent,
-                stars: getStudentSparkTotal(nextStudent),
-            };
-        });
+        const nextStudents = awardRewardToStudent(currentStudents, activeStudent.id, variant);
         commitStudents(nextStudents);
 
         setActiveBursts((prev) => [...prev, { id, variant, studentName, delta: 1 }]);
@@ -329,16 +319,7 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
 
     const resetSparks = useCallback(() => {
         if (!activeStudent) return;
-        const nextStudents = currentStudents.map((student) => {
-            if (student.id !== activeStudent.id) return student;
-            return {
-                ...student,
-                yellowSparks: 0,
-                blueSparks: 0,
-                pinkSparks: 0,
-                stars: 0,
-            };
-        });
+        const nextStudents = resetStudentRewards(currentStudents, activeStudent.id);
         commitStudents(nextStudents);
         setActiveBursts([]);
     }, [activeStudent, currentStudents, commitStudents]);

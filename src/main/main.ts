@@ -27,6 +27,7 @@ import { normalizeSlideVideoAudio } from '../shared/videoAudio';
 import { normalizeSlideVideoTrim } from '../shared/videoTrim';
 import { normalizeSlideImageAdjustments } from '../shared/imageAdjustments';
 import { normalizeRelicSystem, normalizeStudentRosterSettings } from '../shared/relics';
+import { normalizeSparkStudents } from '../shared/sparkRewards';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -466,40 +467,11 @@ function createDefaultSparkStudent(name = 'Student 1'): SparkStudent {
     yellowSparks: 0,
     blueSparks: 0,
     pinkSparks: 0,
+    crowns: 0,
     stars: 0,
     badgeVisible: true,
     badgeSparkVariant: 'gold',
   };
-}
-
-function normalizeSparkStudents(input: unknown): SparkStudent[] {
-  if (!Array.isArray(input)) return [];
-  return input
-    .map((item): SparkStudent | null => {
-      if (!item || typeof item !== 'object') return null;
-      const raw = item as Record<string, unknown>;
-      const id = typeof raw.id === 'string' && raw.id ? raw.id : randomUUID();
-      const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name : 'Student';
-      const yellowSparks = Number.isFinite(raw.yellowSparks) ? Math.max(0, Number(raw.yellowSparks)) : 0;
-      const blueSparks = Number.isFinite(raw.blueSparks) ? Math.max(0, Number(raw.blueSparks)) : 0;
-      const pinkSparks = Number.isFinite(raw.pinkSparks) ? Math.max(0, Number(raw.pinkSparks)) : 0;
-      const computedStars = yellowSparks + blueSparks + pinkSparks;
-      const stars = Number.isFinite(raw.stars) ? Math.max(0, Number(raw.stars)) : computedStars;
-      const badgeVisible = raw.badgeVisible !== false;
-      const badgeSparkVariant = raw.badgeSparkVariant === 'blue' || raw.badgeSparkVariant === 'pink' ? raw.badgeSparkVariant : 'gold';
-
-      return {
-        id,
-        name,
-        yellowSparks,
-        blueSparks,
-        pinkSparks,
-        stars,
-        badgeVisible,
-        badgeSparkVariant,
-      };
-    })
-    .filter((item): item is SparkStudent => item !== null);
 }
 
 function normalizeProjectData(data: ProjectData): ProjectData {
@@ -579,7 +551,10 @@ function normalizeProjectData(data: ProjectData): ProjectData {
       }
     : emptyBoostPack();
 
-  const sparkStudents = normalizeSparkStudents((data as ProjectData & { sparkStudents?: unknown }).sparkStudents);
+  const sparkStudents = normalizeSparkStudents(
+    (data as ProjectData & { sparkStudents?: unknown }).sparkStudents,
+    randomUUID,
+  );
   if (sparkStudents.length === 0) {
     sparkStudents.push(createDefaultSparkStudent());
   }
