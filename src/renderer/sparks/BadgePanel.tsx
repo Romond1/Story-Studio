@@ -351,7 +351,8 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({
                                     <span>Y: {student.yellowSparks || 0}</span>
                                     <span>B: {student.blueSparks || 0}</span>
                                     <span>P: {student.pinkSparks || 0}</span>
-                                    <span>Stars: {student.stars || 0}</span>
+                                    <span>C: {student.crowns || 0}</span>
+                                    <span>Total: {student.stars || 0}</span>
                                     {isActive && <span style={{ color: '#ffd700', marginLeft: 'auto' }}>ACTIVE</span>}
                                 </div>
                             </div>

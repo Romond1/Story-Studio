@@ -88,6 +88,7 @@ import {
   ensureRewardSprites,
   getRewardShapePath,
   getRewardVariantForKey,
+  normalizeSparkStudents,
   REWARD_DEFINITIONS,
   REWARD_VARIANTS,
   resolveRewardAppearance,
@@ -628,10 +629,11 @@ function SparkLab() {
               <input type="range" min={0} max={1000} step={10} value={sparkConfig?.positionRight ?? 40} onChange={e => setSparkConfig({ positionRight: Number(e.target.value) })} />
             </label>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginTop: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4, marginTop: 8 }}>
               <button style={{ fontSize: '0.7rem', background: '#442' }} onClick={() => triggerSpark('gold')}>Gold</button>
               <button style={{ fontSize: '0.7rem', background: '#244' }} onClick={() => triggerSpark('blue')}>Blue</button>
               <button style={{ fontSize: '0.7rem', background: '#424' }} onClick={() => triggerSpark('pink')}>Pink</button>
+              <button style={{ fontSize: '0.7rem', background: '#643' }} onClick={() => triggerSpark('crown')}>Crown</button>
             </div>
 
           </div>
@@ -662,16 +664,14 @@ function SparkHotkeyHandler({
         return;
       }
 
-      if (e.key === '[') {
+      const rewardVariant = getRewardVariantForKey(e.key);
+      if (rewardVariant) {
         e.preventDefault();
-        triggerSpark('gold');
-      } else if (e.key === ']') {
-        e.preventDefault();
-        triggerSpark('blue');
-      } else if (e.key === '\\') {
-        e.preventDefault();
-        triggerSpark('pink');
-      } else if (e.key === 'Backspace') {
+        triggerSpark(rewardVariant);
+        return;
+      }
+
+      if (e.key === 'Backspace') {
         if (students.length === 0) return;
         e.preventDefault();
         e.stopPropagation();
@@ -1096,7 +1096,7 @@ export function App() {
           parsed.overlayBCardClickAction === "zoom"
             ? parsed.overlayBCardClickAction
             : "flip",
-        sparkStudents: parsed.sparkStudents as SparkStudent[],
+        sparkStudents: normalizeSparkStudents(parsed.sparkStudents, () => crypto.randomUUID()),
         activeStudentId: typeof parsed.activeStudentId === "string" ? parsed.activeStudentId : null,
         badgeVisible: Boolean(parsed.badgeVisible),
         finalScoreRevealed: Boolean(parsed.finalScoreRevealed),

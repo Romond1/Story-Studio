@@ -587,6 +587,7 @@
 
 .badge-spark-row {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 8px;
     font-size: 1.1rem;
@@ -610,6 +611,12 @@
 
 .badge-spark-chip.pink {
     background: rgba(255, 105, 180, 0.2);
+}
+
+.badge-spark-chip.crown {
+    border-color: rgba(255, 173, 64, 0.58);
+    background: linear-gradient(180deg, rgba(255, 184, 48, 0.34), rgba(146, 74, 13, 0.28));
+    color: #fff1c6;
 }
 
 .badge-student-card-meta {

@@ -177,13 +177,14 @@ export const FinalBadgeOverlay: React.FC<FinalBadgeOverlayProps> = ({ assets = [
                                         <span className="badge-spark-chip yellow">Yellow: {student.yellowSparks || 0}</span>
                                         <span className="badge-spark-chip blue">Blue: {student.blueSparks || 0}</span>
                                         <span className="badge-spark-chip pink">Pink: {student.pinkSparks || 0}</span>
+                                        <span className="badge-spark-chip crown">Crowns: {student.crowns || 0}</span>
                                     </div>
                                     <div className="badge-student-total-wrap">
                                         <span className="badge-student-total-label">Total Sparks</span>
                                         <span className="badge-student-total-value">{total}</span>
                                     </div>
                                     <div className="badge-student-card-meta">
-                                        <span>Stars: {student.stars ?? total}</span>
+                                        <span>Total Rewards: {student.stars ?? total}</span>
                                     </div>
                                 </div>
                             );
