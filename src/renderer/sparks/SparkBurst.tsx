@@ -1,22 +1,18 @@
 import React, { useMemo } from 'react';
 import { SparkVariant, useSparks } from './SparkProvider';
+import { getRewardShapePath, REWARD_DEFINITIONS } from '../../shared/sparkRewards';
 
 interface SparkBurstProps {
     variant: SparkVariant;
+    customImageUrl?: string;
 }
 
-export const SparkBurst: React.FC<SparkBurstProps> = ({ variant }) => {
+export const SparkBurst: React.FC<SparkBurstProps> = ({ variant, customImageUrl }) => {
     const { sparkConfig } = useSparks();
-
-    const COLORS_RGB = {
-        gold: '255, 215, 0',
-        blue: '0, 191, 255',
-        pink: '255, 105, 180',
-    };
-
-    const mainColor = `rgba(${COLORS_RGB[variant]}, ${sparkConfig.colorIntensity / 100})`;
-    const glowColor = `rgba(${COLORS_RGB[variant]}, ${sparkConfig.glowIntensity / 100})`;
-    const selectedShape = sparkConfig.shapeByVariant?.[variant] || 'star';
+    const definition = REWARD_DEFINITIONS[variant];
+    const mainColor = `rgba(${definition.colorRgb}, ${sparkConfig.colorIntensity / 100})`;
+    const glowColor = `rgba(${definition.colorRgb}, ${sparkConfig.glowIntensity / 100})`;
+    const selectedShape = sparkConfig.shapeByVariant?.[variant] || definition.defaultShape;
 
     // Randomize particles on mount, but limited by sparkConfig.particleCount
     const particles = useMemo(() => {
@@ -43,16 +39,24 @@ export const SparkBurst: React.FC<SparkBurstProps> = ({ variant }) => {
                 '--spark-size': `${sparkConfig.sparkSize}px`,
             } as any}
         >
-            <svg
-                className="spark-svg-main"
-                viewBox="0 0 24 24"
-                fill={mainColor}
-                data-shape={selectedShape}
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                {/* TODO(phase-2): render alternative spark paths for non-star shapes. */}
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-            </svg>
+            {customImageUrl ? (
+                <img
+                    className={`spark-main-visual ${variant === 'crown' ? 'spark-main-visual--crown' : ''}`}
+                    src={customImageUrl}
+                    alt=""
+                />
+            ) : (
+                <svg
+                    className={`spark-main-visual ${variant === 'crown' ? 'spark-main-visual--crown' : ''}`}
+                    viewBox="0 0 24 24"
+                    fill={mainColor}
+                    data-shape={selectedShape}
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path d={getRewardShapePath(selectedShape)} />
+                </svg>
+            )}
 
             {particles.map((p) => (
                 <div

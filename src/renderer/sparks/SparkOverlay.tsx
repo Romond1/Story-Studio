@@ -1,10 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSparks } from './SparkProvider';
 import { SparkBurst } from './SparkBurst';
+import type { AssetItem } from '../../shared/types';
+import { REWARD_DEFINITIONS, resolveRewardAppearance } from '../../shared/sparkRewards';
 import './sparkStyles.css';
 
-export const SparkOverlay: React.FC = () => {
-    const { activeBursts, sparkConfig } = useSparks();
+interface SparkOverlayProps {
+    assets?: AssetItem[];
+    getMediaUrl?: (path: string) => string;
+}
+
+export const SparkOverlay: React.FC<SparkOverlayProps> = ({ assets = [], getMediaUrl = (path) => path }) => {
+    const { activeBursts, sparkConfig, badgeConfig } = useSparks();
     const [showCounter, setShowCounter] = useState(false);
     const [displayBurst, setDisplayBurst] = useState<(typeof activeBursts)[number] | null>(null);
     const prevBurstCountRef = useRef(0);
@@ -34,12 +41,9 @@ export const SparkOverlay: React.FC = () => {
     const latestBurst = displayBurst;
     const latestVariant = latestBurst?.variant ?? 'gold';
 
-    const COLORS_RGB = {
-        gold: '255, 215, 0',
-        blue: '0, 191, 255',
-        pink: '255, 105, 180',
-    };
-    const glowVar = `rgba(${COLORS_RGB[latestVariant]}, ${sparkConfig.glowIntensity / 100})`;
+    const assetIds = new Set(assets.map((asset) => asset.id));
+    const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+    const glowVar = `rgba(${REWARD_DEFINITIONS[latestVariant].colorRgb}, ${sparkConfig.glowIntensity / 100})`;
 
     return (
         <div className="spark-overlay">
@@ -50,9 +54,17 @@ export const SparkOverlay: React.FC = () => {
                     right: sparkConfig.positionRight,
                 }}
             >
-                {activeBursts.map((burst) => (
-                    <SparkBurst key={burst.id} variant={burst.variant} />
-                ))}
+                {activeBursts.map((burst) => {
+                    const appearance = resolveRewardAppearance(burst.variant, sparkConfig, badgeConfig, assetIds);
+                    const asset = appearance.assetId ? assetsById.get(appearance.assetId) : undefined;
+                    return (
+                        <SparkBurst
+                            key={burst.id}
+                            variant={burst.variant}
+                            customImageUrl={asset ? getMediaUrl(asset.relativePath) : undefined}
+                        />
+                    );
+                })}
 
                 {showCounter && latestBurst && (
                     <div

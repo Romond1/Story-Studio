@@ -4754,7 +4754,10 @@ export function App() {
             </aside>
 
             <main className="stage-wrap" style={{ position: "relative" }}>
-              <SparkOverlay />
+              <SparkOverlay
+                assets={project?.data.assets || []}
+                getMediaUrl={toMediaUrl}
+              />
               <FinalBadgeOverlay
                 assets={project?.data.assets}
                 getMediaUrl={toMediaUrl}

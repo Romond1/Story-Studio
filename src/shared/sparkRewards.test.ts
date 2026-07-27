@@ -8,6 +8,7 @@ import {
   getStudentRewardTotal,
   normalizeSparkStudent,
   normalizeSparkStudents,
+  resolveRewardAppearance,
   resetStudentRewards,
 } from "./sparkRewards";
 
@@ -102,4 +103,17 @@ test("normalization clamps invalid counts and preserves supported metadata", () 
   assert.equal(normalized.stars, 6);
   assert.equal(normalized.badgeVisible, false);
   assert.equal(normalized.badgeSparkVariant, "crown");
+});
+
+test("custom assets override shapes and missing assets fall back to the configured shape", () => {
+  const config = { shapeByVariant: { crown: "heart" as const } };
+  const badge = { badgeSparkAssetIds: { crown: "asset-crown" } };
+  assert.deepEqual(resolveRewardAppearance("crown", config, badge, new Set(["asset-crown"])), {
+    shape: "heart",
+    assetId: "asset-crown",
+  });
+  assert.deepEqual(resolveRewardAppearance("crown", config, badge, new Set()), {
+    shape: "heart",
+    assetId: undefined,
+  });
 });

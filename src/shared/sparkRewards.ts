@@ -1,5 +1,7 @@
 import type {
+  BadgeConfig,
   SparkAwardVariant,
+  SparkConfig,
   SparkShape,
   SparkStudent,
 } from "./types";
@@ -103,4 +105,20 @@ export function normalizeSparkStudents(input: unknown, createId: () => string): 
   return input
     .map((item) => normalizeSparkStudent(item, createId))
     .filter((item): item is SparkStudent => item !== null);
+}
+
+export function resolveRewardAppearance(
+  variant: SparkAwardVariant,
+  sparkConfig: Pick<SparkConfig, "shapeByVariant">,
+  badgeConfig: Pick<BadgeConfig, "badgeSparkAssetIds">,
+  availableAssetIds: ReadonlySet<string>,
+): { shape: SparkShape; assetId?: string } {
+  const shape = sparkConfig.shapeByVariant?.[variant] ?? REWARD_DEFINITIONS[variant].defaultShape;
+  const configuredAssetId = badgeConfig.badgeSparkAssetIds?.[variant];
+  return {
+    shape,
+    assetId: configuredAssetId && availableAssetIds.has(configuredAssetId)
+      ? configuredAssetId
+      : undefined,
+  };
 }
