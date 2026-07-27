@@ -121,7 +121,13 @@ function DeviceSelect({
           <span aria-hidden="true">▾</span>
         </button>
         {open && (
-          <div id={menuId} className="audio-device-picker__menu" role="listbox" aria-labelledby={labelId}>
+          <div
+            id={menuId}
+            className="audio-device-picker__menu"
+            role="listbox"
+            aria-labelledby={labelId}
+            onMouseDown={(event) => event.preventDefault()}
+          >
             {options.map((option) => (
               <button
                 key={option.deviceId}
@@ -204,8 +210,13 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
+    workspaceRef.current?.focus();
+    return () => previous?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const workspace = workspaceRef.current;
-    workspace?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -228,10 +239,7 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
       }
     };
     window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      previous?.focus();
-    };
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose, open]);
 
   if (!open) return null;

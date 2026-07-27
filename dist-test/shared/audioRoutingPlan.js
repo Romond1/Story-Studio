@@ -11,17 +11,12 @@ exports.AUDIO_ROUTE_CATEGORIES = [
     "mic",
     "unclassified",
 ];
-const audioRouteTargets = {
-    dialogue: ["cable", "monitor"],
-    sfx: ["cable", "monitor"],
-    "slide-bgm": ["cable", "monitor"],
-    "section-bgm": ["cable", "monitor"],
-    mic: ["cable"],
-    unclassified: ["cable", "monitor"],
-};
 function isKnownAudioRouteCategory(value) {
     return exports.AUDIO_ROUTE_CATEGORIES.includes(value);
 }
-function getAudioRouteTargets(category) {
-    return [...audioRouteTargets[category]];
+function getAudioRouteTargets(category, microphoneMonitorEnabled = false) {
+    if (category === "mic") {
+        return microphoneMonitorEnabled ? ["broadcast", "monitor"] : ["broadcast"];
+    }
+    return ["broadcast", "monitor"];
 }

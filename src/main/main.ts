@@ -73,7 +73,7 @@ async function importMediaFiles(filePaths: string[]): Promise<ImportResult | nul
   for (const sourcePath of filePaths) {
     const ext = path.extname(sourcePath).toLowerCase();
     const mediaType = detectMediaType(ext);
-    if (mediaType !== 'image' && mediaType !== 'video') continue;
+    if (mediaType !== 'image' && mediaType !== 'video' && mediaType !== 'audio') continue;
 
     const stat = await fs.stat(sourcePath);
     if (!stat.isFile()) continue;
@@ -93,13 +93,15 @@ async function importMediaFiles(filePaths: string[]): Promise<ImportResult | nul
       importedAt: new Date().toISOString()
     });
 
-    createdSlides.push({
-      id: randomUUID(),
-      assetId: id,
-      sectionId: defaultSectionId,
-      transition: 'fade',
-      ...(mediaType === 'video' ? { videoAudio: { enabled: true, volume: 1 } } : {}),
-    });
+    if (mediaType === 'image' || mediaType === 'video') {
+      createdSlides.push({
+        id: randomUUID(),
+        assetId: id,
+        sectionId: defaultSectionId,
+        transition: 'fade',
+        ...(mediaType === 'video' ? { videoAudio: { enabled: true, volume: 1 } } : {}),
+      });
+    }
   }
 
   return importedAssets.length > 0 ? { importedAssets, createdSlides } : null;
@@ -624,6 +626,7 @@ function resolveMediaPathFromUrl(rawUrl: string): { resolvedPath: string } | { s
 function getMimeType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === '.mp4') return 'video/mp4';
+  if (ext === '.avi') return 'video/x-msvideo';
   if (ext === '.webm') return 'video/webm';
   if (ext === '.ogg' || ext === '.ogv') return 'video/ogg';
   if (ext === '.mov') return 'video/quicktime';
@@ -841,7 +844,7 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
     title: 'Import Media',
     properties: ['openFile', 'multiSelections'],
     filters: [
-      { name: 'Media', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'mp4', 'mov', 'webm', 'mkv', 'avi'] }
+      { name: 'Media', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'mp4', 'mov', 'webm', 'mkv', 'avi', 'mp3', 'wav', 'ogg', 'aac', 'm4a'] }
     ]
   });
   if (canceled || filePaths.length === 0) return null;

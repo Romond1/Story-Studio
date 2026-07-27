@@ -38,6 +38,8 @@
     "src/shared/imageAdjustments.test.ts",
     "src/shared/mediaImport.ts",
     "src/shared/mediaImport.test.ts",
+    "src/shared/movement.ts",
+    "src/shared/movement.test.ts",
     "src/shared/counterGame.ts",
     "src/shared/counterGame.test.ts",
     "src/shared/relics.ts",

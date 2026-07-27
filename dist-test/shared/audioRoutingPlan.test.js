@@ -19,11 +19,12 @@ const audioRoutingPlan_1 = require("./audioRoutingPlan");
     strict_1.default.equal((0, audioRoutingPlan_1.isKnownAudioRouteCategory)("section-bgm"), true);
     strict_1.default.equal((0, audioRoutingPlan_1.isKnownAudioRouteCategory)("unknown"), false);
 });
-(0, node_test_1.default)("music and effects routes reach both cable and monitor while mic stays cable-only", () => {
-    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("dialogue"), ["cable", "monitor"]);
-    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("sfx"), ["cable", "monitor"]);
-    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("slide-bgm"), ["cable", "monitor"]);
-    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("section-bgm"), ["cable", "monitor"]);
-    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("unclassified"), ["cable", "monitor"]);
-    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("mic"), ["cable"]);
+(0, node_test_1.default)("broadcast contains mic and media while monitor mic is opt-in", () => {
+    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("dialogue", false), ["broadcast", "monitor"]);
+    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("sfx", false), ["broadcast", "monitor"]);
+    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("slide-bgm", false), ["broadcast", "monitor"]);
+    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("section-bgm", false), ["broadcast", "monitor"]);
+    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("unclassified", false), ["broadcast", "monitor"]);
+    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("mic", false), ["broadcast"]);
+    strict_1.default.deepEqual((0, audioRoutingPlan_1.getAudioRouteTargets)("mic", true), ["broadcast", "monitor"]);
 });

@@ -337,6 +337,42 @@ export interface SparkConfig {
   };
 }
 
+export type MovementAnimationStyle =
+  | "color-burst"
+  | "runner"
+  | "hero-flash"
+  | "head-bounce"
+  | "nose-bounce";
+
+export interface MovementEventConfig {
+  id: string;
+  name: string;
+  instruction: string;
+  enabled: boolean;
+  shortcut: string;
+  durationSeconds: number;
+  animation: MovementAnimationStyle;
+  gifRelativePath?: string | null;
+  overlayOpacity?: number;
+  ringSpeedSeconds?: number;
+  intensity?: number;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  gifScale?: number;
+  soundId?: string | null;
+}
+
+export interface MovementConfig {
+  randomEnabled: boolean;
+  randomShortcut?: string;
+  jingleEnabled?: boolean;
+  jingleVolume?: number;
+  jingleRelativePath?: string | null;
+  events: MovementEventConfig[];
+  deletedEventIds?: string[];
+}
+
 export interface ProjectData {
   version: ProjectSchemaVersion;
   createdAt: string;
@@ -352,6 +388,7 @@ export interface ProjectData {
   sparkStudents?: SparkStudent[];
   activeStudentId?: string;
   relicSystem?: RelicSystem;
+  movement?: MovementConfig;
   aCardLibrary?: ACardLibrary;
   bCardLibrary?: BCardLibrary;
 }

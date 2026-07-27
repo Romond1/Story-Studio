@@ -40,6 +40,8 @@ import {
   RelicSystem,
   StudentRosterEntry,
   StudentRosterSettings,
+  MovementConfig,
+  MovementEventConfig,
 } from "../shared/types";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
 import {
@@ -76,6 +78,12 @@ import {
   normalizeStudentRosterSettings,
   setRelicProgressForStudents,
 } from "../shared/relics";
+import {
+  getMovementEventByShortcut,
+  isEditableKeyTarget,
+  normalizeMovementConfig,
+  pickRandomMovementEvent,
+} from "../shared/movement";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -98,6 +106,8 @@ import { BCardInstanceLayer, type BCardOverlayClickAction } from "./acards/BCard
 import { BCardEditor } from "./acards/BCardEditor";
 import { RelicsPanel } from "./relics/RelicsPanel";
 import { RelicStageWidget } from "./relics/RelicStageWidget";
+import { MovementPanel } from "./movement/MovementPanel";
+import { MovementOverlay } from "./movement/MovementOverlay";
 
 function formatVideoTrimTime(seconds: number): string {
   const safeSeconds = Number.isFinite(seconds) ? seconds : 0;
@@ -361,13 +371,15 @@ const LIVE_SESSION_AUTO_RESTORE_KEY = "story-studio.live-session.auto-restore";
 const STUDENT_ROSTER_FALLBACK_STORAGE_KEY = "story-studio.student-roster.v1";
 const LIVE_SESSION_DEBOUNCE_MS = 500;
 
+type TopMode = "story" | "boost" | "badge" | "boards" | "relics" | "movement";
+
 type LiveSessionSnapshot = {
   version: 1;
   savedAt: string;
   projectFolderPath: string;
   projectCreatedAt: string;
   appMode: AppMode;
-  topMode: "story" | "boost" | "badge" | "boards" | "relics";
+  topMode: TopMode;
   boostTab: "activation" | "language" | "games" | "badge";
   currentIndex: number;
   selectedSectionId: string | null;
@@ -823,7 +835,7 @@ export function App() {
   const [appMode, setAppMode] = useState<AppMode>(DEFAULT_MODE);
 
   const ENABLE_BOOST_MODE = true;
-  const [topMode, setTopMode] = useState<'story' | 'boost' | 'badge' | 'boards' | 'relics'>('story');
+  const [topMode, setTopMode] = useState<TopMode>('story');
   const [selectedACardId, setSelectedACardId] = useState<string | null>(null);
   const [selectedLibraryBCardId, setSelectedLibraryBCardId] = useState<string | null>(null);
   const [boostTab, setBoostTab] = useState<'activation' | 'language' | 'games' | 'badge'>('activation');
@@ -838,6 +850,7 @@ export function App() {
   const [storyRefsCollapsed, setStoryRefsCollapsed] = useState(true);
   const [storyBCardTeachCollapsed, setStoryBCardTeachCollapsed] = useState(true);
   const [boostBCardTeachCollapsed, setBoostBCardTeachCollapsed] = useState(true);
+  const [activeMovementEvent, setActiveMovementEvent] = useState<{ event: MovementEventConfig; signal: number } | null>(null);
 
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
@@ -861,6 +874,7 @@ export function App() {
   );
   const [drawPanelCollapsed, setDrawPanelCollapsed] = useState(true);
   const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
+  const closeAudioSettings = useCallback(() => setAudioSettingsOpen(false), []);
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>(
     null,
   );
@@ -1020,7 +1034,8 @@ export function App() {
           parsed.topMode === "boost" ||
           parsed.topMode === "badge" ||
           parsed.topMode === "boards" ||
-          parsed.topMode === "relics"
+          parsed.topMode === "relics" ||
+          parsed.topMode === "movement"
             ? parsed.topMode
             : "story",
         boostTab:
@@ -1121,6 +1136,98 @@ export function App() {
     [project?.data.relicSystem],
   );
 
+  const movementConfig = useMemo(
+    () => normalizeMovementConfig(project?.data.movement),
+    [project?.data.movement],
+  );
+  const movementJingleUrl = useMemo(
+    () => movementConfig.jingleRelativePath ? toMediaUrl(movementConfig.jingleRelativePath) : null,
+    [movementConfig.jingleRelativePath],
+  );
+
+  const updateMovementConfig = useCallback((nextMovement: MovementConfig) => {
+    setProject((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          movement: normalizeMovementConfig(nextMovement),
+        },
+      };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const importMovementGif = useCallback(async (eventId: string) => {
+    if (!project) return;
+    const result = await window.appApi.importMedia();
+    if (!result || result.importedAssets.length === 0) return;
+
+    const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, result.importedAssets);
+    const gifAsset = normalizedImportedAssets.find((asset) => /\.gif$/i.test(asset.originalName || asset.relativePath));
+    if (!gifAsset) {
+      showToast("Choose an animated GIF for Movement", "edit", 1600);
+      return;
+    }
+
+    setProject((prev) => {
+      if (!prev) return prev;
+      const currentMovement = normalizeMovementConfig(prev.data.movement);
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          assets: [...prev.data.assets, ...normalizedImportedAssets],
+          movement: {
+            ...currentMovement,
+            events: currentMovement.events.map((event) =>
+              event.id === eventId ? { ...event, gifRelativePath: gifAsset.relativePath } : event,
+            ),
+          },
+        },
+      };
+    });
+    setIsDirty(true);
+  }, [project, showToast]);
+
+  const importMovementJingle = useCallback(async () => {
+    if (!project) return;
+    const result = await window.appApi.importMedia();
+    if (!result || result.importedAssets.length === 0) return;
+
+    const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, result.importedAssets);
+    const audioAsset = normalizedImportedAssets.find((asset) =>
+      asset.mediaType === "audio" || /\.(avi|mp4|mov|webm|mkv)$/i.test(asset.originalName || asset.relativePath),
+    );
+    if (!audioAsset) {
+      showToast("Choose .avi, .mp3, .wav, or another audio/video file for the Movement jingle", "edit", 1800);
+      return;
+    }
+
+    setProject((prev) => {
+      if (!prev) return prev;
+      const currentMovement = normalizeMovementConfig(prev.data.movement);
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          assets: [...prev.data.assets, ...normalizedImportedAssets],
+          movement: {
+            ...currentMovement,
+            jingleRelativePath: audioAsset.relativePath,
+          },
+        },
+      };
+    });
+    setIsDirty(true);
+  }, [project, showToast]);
+
+  useEffect(() => {
+    if (!movementJingleUrl || !movementConfig.jingleEnabled) return;
+    void audioManager.preload(movementJingleUrl);
+  }, [movementJingleUrl, movementConfig.jingleEnabled]);
+
   useEffect(() => {
     if (!project) return;
     const reconciled = ensureRelicProgressForRoster(normalizeRelicSystem(project.data.relicSystem), studentRoster);
@@ -1154,6 +1261,49 @@ export function App() {
   const patchRelicSystem = useCallback((updates: Partial<RelicSystem>) => {
     updateRelicSystem((current) => ({ ...current, ...updates }));
   }, [updateRelicSystem]);
+
+  const playMovementJingle = useCallback(() => {
+    if (!movementConfig.jingleEnabled) return;
+    if (movementJingleUrl) {
+      audioManager.stopClip(movementJingleUrl);
+      audioManager.playClip(movementJingleUrl, movementConfig.jingleVolume ?? 0.35, false, { fadeEnabled: false }, "sfx");
+      return;
+    }
+    audioManager.playGeneratedChime(movementConfig.jingleVolume ?? 0.35);
+  }, [movementConfig.jingleEnabled, movementConfig.jingleVolume, movementJingleUrl]);
+
+  const triggerMovementEvent = useCallback((event: MovementEventConfig | null) => {
+    if (!event || !event.enabled) return;
+    // Movement events are temporary attention-reset overlays; replacing prevents stacking.
+    playMovementJingle();
+    setActiveMovementEvent({ event, signal: Date.now() });
+  }, [playMovementJingle]);
+
+  const triggerRandomMovementEvent = useCallback(() => {
+    triggerMovementEvent(pickRandomMovementEvent(movementConfig));
+  }, [movementConfig, triggerMovementEvent]);
+
+  useEffect(() => {
+    if (!activeMovementEvent) return;
+    const timeout = window.setTimeout(() => {
+      setActiveMovementEvent((current) => current?.signal === activeMovementEvent.signal ? null : current);
+    }, Math.max(1, activeMovementEvent.event.durationSeconds) * 1000);
+    return () => window.clearTimeout(timeout);
+  }, [activeMovementEvent]);
+
+  useEffect(() => {
+    if (appMode !== "teach") return;
+    const handleMovementHotkey = (event: KeyboardEvent) => {
+      if (isEditableKeyTarget(event.target as HTMLElement | null)) return;
+      const movementEvent = getMovementEventByShortcut(movementConfig, event.code);
+      if (!movementEvent) return;
+      event.preventDefault();
+      event.stopPropagation();
+      triggerMovementEvent(movementEvent);
+    };
+    window.addEventListener("keydown", handleMovementHotkey, { capture: true });
+    return () => window.removeEventListener("keydown", handleMovementHotkey, { capture: true });
+  }, [appMode, movementConfig, triggerMovementEvent]);
 
   const saveRoster = useCallback(async (nextRoster: StudentRosterEntry[]): Promise<StudentRosterEntry[]> => {
     const settings = normalizeStudentRosterSettings({ version: 1, studentRoster: nextRoster });
@@ -3683,6 +3833,10 @@ export function App() {
                   onClick={() => setTopMode('relics')}
                 >Relics</button>
                 <button
+                  style={{ background: topMode === 'movement' ? '#444' : 'transparent', color: topMode === 'movement' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
+                  onClick={() => setTopMode('movement')}
+                >Movement</button>
+                <button
                   style={{ background: topMode === 'boards' ? '#444' : 'transparent', color: topMode === 'boards' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
                   onClick={() => setTopMode('boards')}
                 >Boards</button>
@@ -3724,7 +3878,7 @@ export function App() {
           </header>
           <AudioSettingsWorkspace
             open={audioSettingsOpen}
-            onClose={() => setAudioSettingsOpen(false)}
+            onClose={closeAudioSettings}
           />
           {showRestoreSessionPrompt && savedLiveSession && !project && (
             <div
@@ -4145,6 +4299,17 @@ export function App() {
                   onImportImage={importRelicImage}
                   onProgressAction={runRelicProgressAction}
                   onShowRewardCard={() => setIsRelicRewardCardVisible(true)}
+                />
+              ) : topMode === 'movement' ? (
+                <MovementPanel
+                  config={movementConfig}
+                  isEditMode={appMode === "edit"}
+                  onChange={updateMovementConfig}
+                  onTrigger={triggerMovementEvent}
+                  onRandomTrigger={triggerRandomMovementEvent}
+                  onImportGif={importMovementGif}
+                  onImportJingle={importMovementJingle}
+                  getMediaUrl={toMediaUrl}
                 />
               ) : topMode === 'story' ? (
                 <>
@@ -4603,6 +4768,11 @@ export function App() {
                 onHideReward={() => setIsRelicRewardCardVisible(false)}
                 animationSignal={relicAnimationSignal}
                 onWidgetOffsetChange={(widgetOffset) => patchRelicSystem({ widgetOffset })}
+              />
+              <MovementOverlay
+                event={activeMovementEvent?.event || null}
+                signal={activeMovementEvent?.signal || 0}
+                getMediaUrl={toMediaUrl}
               />
               {topMode === 'boards' ? (
                 <div style={{ position: 'absolute', inset: 0 }}>
