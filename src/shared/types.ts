@@ -286,13 +286,14 @@ export interface BadgeConfig {
     gold?: string;
     blue?: string;
     pink?: string;
+    crown?: string;
   };
   badgeSpriteMotion?: 'spin' | 'breathe' | 'zoom';
   badgeSpriteAnimDurationMs?: number;
   badgeSpriteAnimIntensity?: number;
 }
 
-export type SparkAwardVariant = 'gold' | 'blue' | 'pink';
+export type SparkAwardVariant = 'gold' | 'blue' | 'pink' | 'crown';
 
 export interface BadgeStudentSprite {
   id: string;
@@ -306,7 +307,7 @@ export interface BadgeStudentSprite {
   assetId?: string; // legacy fallback
 }
 
-export type SparkShape = 'star' | 'diamond' | 'circle' | 'heart';
+export type SparkShape = 'star' | 'diamond' | 'circle' | 'heart' | 'crown';
 
 export interface SparkStudent {
   id: string;
@@ -314,6 +315,7 @@ export interface SparkStudent {
   yellowSparks: number;
   blueSparks: number;
   pinkSparks: number;
+  crowns: number;
   stars: number;
   badgeVisible: boolean;
   badgeSparkVariant?: SparkAwardVariant;
@@ -334,6 +336,7 @@ export interface SparkConfig {
     gold?: SparkShape;
     blue?: SparkShape;
     pink?: SparkShape;
+    crown?: SparkShape;
   };
 }
 

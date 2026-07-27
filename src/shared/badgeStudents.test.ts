@@ -10,6 +10,7 @@ function createStudent(id: string, name: string): SparkStudent {
     yellowSparks: 0,
     blueSparks: 0,
     pinkSparks: 0,
+    crowns: 0,
     stars: 0,
     badgeVisible: true,
     badgeSparkVariant: "gold",
