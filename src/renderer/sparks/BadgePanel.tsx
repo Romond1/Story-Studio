@@ -4,9 +4,11 @@ import { ProjectState, SparkAwardVariant, SparkShape } from '../../shared/types'
 import { decorateImportedAssetsForContext } from '../../shared/mediaReferences';
 import {
     getRewardShapePath,
+    moveRewardSpriteLayer,
     REWARD_DEFINITIONS,
     REWARD_VARIANTS,
     setRewardAssetId,
+    resizeRewardSprite,
 } from '../../shared/sparkRewards';
 
 interface BadgePanelProps {
@@ -14,9 +16,18 @@ interface BadgePanelProps {
     project: ProjectState | null;
     onUpdateProject: (updates: Partial<ProjectState>) => void;
     show?: 'content' | 'settings' | 'both';
+    selectedSpriteId?: string | null;
+    onSelectSprite?: (spriteId: string) => void;
 }
 
-export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onUpdateProject, show = 'both' }) => {
+export const BadgePanel: React.FC<BadgePanelProps> = ({
+    isEditMode,
+    project,
+    onUpdateProject,
+    show = 'both',
+    selectedSpriteId = null,
+    onSelectSprite = () => undefined,
+}) => {
     const {
         totalSparks,
         activeSparkCounts,
@@ -68,6 +79,11 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
     const spriteMotion = badgeConfig.badgeSpriteMotion ?? 'spin';
     const spriteDurationMs = badgeConfig.badgeSpriteAnimDurationMs ?? 3200;
     const spriteIntensity = badgeConfig.badgeSpriteAnimIntensity ?? 100;
+    const selectedSprite = (badgeConfig.badgeSprites || []).find((sprite) => sprite.id === selectedSpriteId);
+
+    const updateBadgeSprites = (nextSprites: NonNullable<typeof badgeConfig.badgeSprites>) => {
+        setBadgeConfig({ badgeSprites: nextSprites });
+    };
 
     const ensureBadgeSpritesForCheckedStudents = () => {
         const existingSprites = badgeConfig.badgeSprites || [];
@@ -343,6 +359,54 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({ isEditMode, project, onU
                     })}
                 </div>
             </section>
+
+            {isEditMode && (badgeConfig.badgeSprites || []).length > 0 && (
+                <section className="badge-sprite-inspector">
+                    <h3>Reward Layout</h3>
+                    <div className="badge-sprite-picker">
+                        {(badgeConfig.badgeSprites || []).map((sprite) => {
+                            const student = students.find((item) => item.id === sprite.studentId);
+                            const variant = sprite.variant || 'gold';
+                            return (
+                                <button
+                                    key={sprite.id}
+                                    className={selectedSpriteId === sprite.id ? 'is-selected' : ''}
+                                    onClick={() => onSelectSprite(sprite.id)}
+                                >
+                                    {student?.name || 'Student'} · {REWARD_DEFINITIONS[variant].label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {selectedSprite && (
+                        <div className="badge-sprite-size-controls">
+                            <label style={labelStyle}>
+                                Size ({Math.round(selectedSprite.width)} × {Math.round(selectedSprite.height)})
+                                <input
+                                    type="range"
+                                    min={60}
+                                    max={420}
+                                    value={Math.min(420, Math.max(60, selectedSprite.width))}
+                                    onChange={(event) => {
+                                        const size = resizeRewardSprite(selectedSprite, Number(event.target.value));
+                                        updateBadgeSprites((badgeConfig.badgeSprites || []).map((sprite) => (
+                                            sprite.id === selectedSprite.id ? { ...sprite, ...size } : sprite
+                                        )));
+                                    }}
+                                />
+                            </label>
+                            <div className="badge-sprite-layer-actions">
+                                <button onClick={() => updateBadgeSprites(moveRewardSpriteLayer(badgeConfig.badgeSprites || [], selectedSprite.id, 'backward'))}>
+                                    Send Back
+                                </button>
+                                <button onClick={() => updateBadgeSprites(moveRewardSpriteLayer(badgeConfig.badgeSprites || [], selectedSprite.id, 'forward'))}>
+                                    Bring Forward
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </section>
+            )}
 
             <section>
                 <label style={labelStyle}>

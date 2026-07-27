@@ -84,6 +84,14 @@ import {
   normalizeMovementConfig,
   pickRandomMovementEvent,
 } from "../shared/movement";
+import {
+  ensureRewardSprites,
+  getRewardShapePath,
+  getRewardVariantForKey,
+  REWARD_DEFINITIONS,
+  REWARD_VARIANTS,
+  resolveRewardAppearance,
+} from "../shared/sparkRewards";
 import ContextMenu, { MenuItem } from "./components/ContextMenu";
 import { BUILD_VERSION } from "../shared/version";
 import { type AppMode, DEFAULT_MODE, ensureEditMode } from "./mode";
@@ -711,23 +719,35 @@ const BadgeStudentSprites = ({
   assetsById,
   getMediaUrl,
   isEditMode,
+  selectedSpriteId,
+  onSelectSprite,
 }: {
   assetsById: Map<string, AssetItem>;
   getMediaUrl: (path: string) => string;
   isEditMode: boolean;
+  selectedSpriteId: string | null;
+  onSelectSprite: (spriteId: string) => void;
 }) => {
-  const { badgeConfig, setBadgeConfig, students, isFinalScoreRevealed, removeStudent } = useSparks();
+  const { badgeConfig, setBadgeConfig, sparkConfig, students, isFinalScoreRevealed } = useSparks();
   const checkedStudents = students.filter((student) => student.badgeVisible !== false);
   const sprites = badgeConfig.badgeSprites || [];
   const motion = badgeConfig.badgeSpriteMotion || "spin";
   const durationMs = badgeConfig.badgeSpriteAnimDurationMs ?? 3200;
   const intensity = (badgeConfig.badgeSpriteAnimIntensity ?? 100) / 100;
   const shouldShowScore = isFinalScoreRevealed && badgeConfig.showFinalScore;
-  const getVariantSparkCount = (student: SparkStudent, variant: "gold" | "blue" | "pink") => {
+  const getVariantSparkCount = (student: SparkStudent, variant: (typeof REWARD_VARIANTS)[number]) => {
     if (variant === "gold") return student.yellowSparks || 0;
     if (variant === "blue") return student.blueSparks || 0;
-    return student.pinkSparks || 0;
+    if (variant === "pink") return student.pinkSparks || 0;
+    return student.crowns || 0;
   };
+
+  useEffect(() => {
+    const nextSprites = ensureRewardSprites(sprites, checkedStudents, () => crypto.randomUUID());
+    if (nextSprites.length !== sprites.length) {
+      setBadgeConfig({ badgeSprites: nextSprites });
+    }
+  }, [checkedStudents, setBadgeConfig, sprites]);
 
   const updateSprite = (spriteId: string, updates: Partial<BadgeStudentSprite>) => {
     const nextSprites = sprites.map((sprite) =>
@@ -739,41 +759,49 @@ const BadgeStudentSprites = ({
   return (
     <div className={`badge-student-sprite-layer ${isEditMode ? "is-edit" : ""}`}>
       {checkedStudents.flatMap((student) => {
-        const variants: Array<"gold" | "blue" | "pink"> = ["gold", "blue", "pink"];
-        return variants.map((variant) => {
+        return REWARD_VARIANTS.map((variant) => {
           const sprite = sprites.find(
             (item) => item.studentId === student.id && (item.variant || "gold") === variant,
           );
           if (!sprite) return null;
 
-          const variantAssetId = badgeConfig.badgeSparkAssetIds?.[variant];
-          const asset = assetsById.get(variantAssetId || "");
-          if (!asset) return null;
+          const appearance = resolveRewardAppearance(
+            variant,
+            sparkConfig,
+            badgeConfig,
+            new Set(assetsById.keys()),
+          );
+          const asset = appearance.assetId ? assetsById.get(appearance.assetId) : undefined;
 
           const scoreText = shouldShowScore ? String(getVariantSparkCount(student, variant)) : "?";
           const motionClass = `badge-sprite-motion-${motion}`;
+          const isSelected = selectedSpriteId === sprite.id;
 
           return (
             <Rnd
               key={sprite.id}
+              className={`badge-sprite-editor-box ${isEditMode ? "is-editable" : ""} ${isSelected ? "is-selected" : ""}`}
+              data-editor-label={`${student.name || "Student"} · ${REWARD_DEFINITIONS[variant].label}`}
               bounds="parent"
               disableDragging={!isEditMode}
-              enableResizing={isEditMode ? { bottomRight: true } : false}
+              lockAspectRatio
+              enableResizing={isEditMode && isSelected ? {
+                topLeft: true,
+                topRight: true,
+                bottomLeft: true,
+                bottomRight: true,
+              } : false}
               minWidth={60}
               minHeight={60}
-              resizeHandleStyles={{
-                bottomRight: {
-                  width: 18,
-                  height: 18,
-                  borderRadius: 3,
-                  background: "rgba(255,255,255,0.9)",
-                  border: "1px solid rgba(20,20,20,0.9)",
-                  right: -9,
-                  bottom: -9,
-                },
-              }}
+              maxWidth={420}
+              maxHeight={420}
               size={{ width: sprite.width, height: sprite.height }}
               position={{ x: sprite.x, y: sprite.y }}
+              onMouseDown={(event) => {
+                if (!isEditMode) return;
+                event.stopPropagation();
+                onSelectSprite(sprite.id);
+              }}
               onDragStop={(_, data) => {
                 updateSprite(sprite.id, { x: data.x, y: data.y });
               }}
@@ -797,11 +825,17 @@ const BadgeStudentSprites = ({
                   "--badge-sprite-intensity": intensity,
                 } as React.CSSProperties}
               >
-                <img
-                  src={getMediaUrl(asset.relativePath)}
-                  className="badge-student-sprite"
-                  alt={`${student.name || "student"} ${variant} badge`}
-                />
+                {asset ? (
+                  <img
+                    src={getMediaUrl(asset.relativePath)}
+                    className="badge-student-sprite"
+                    alt={`${student.name || "student"} ${variant} badge`}
+                  />
+                ) : (
+                  <svg className="badge-student-sprite badge-student-sprite--builtin" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={getRewardShapePath(appearance.shape)} />
+                  </svg>
+                )}
                 <div className="badge-sprite-score">
                   <div className="badge-sprite-student-name">{student.name || "Student"}</div>
                   <div className="badge-sprite-score-value">{scoreText}</div>
@@ -817,6 +851,7 @@ const BadgeStudentSprites = ({
 
 export function App() {
   const [project, setProject] = useState<ProjectState | null>(null);
+  const [selectedBadgeSpriteId, setSelectedBadgeSpriteId] = useState<string | null>(null);
   // Track viewport of ACTIVE slide without triggering re-renders
   const viewportRef = useRef<ViewportState>({ zoom: 1, pan: { x: 0, y: 0 } });
   // Track playback time of ACTIVE media (for seamless transition freezing)
@@ -833,6 +868,11 @@ export function App() {
   >("left");
 
   const [appMode, setAppMode] = useState<AppMode>(DEFAULT_MODE);
+  useEffect(() => {
+    if (appMode !== "edit") {
+      setSelectedBadgeSpriteId(null);
+    }
+  }, [appMode]);
 
   const ENABLE_BOOST_MODE = true;
   const [topMode, setTopMode] = useState<TopMode>('story');
@@ -4277,6 +4317,8 @@ export function App() {
                 <BadgePanel
                   isEditMode={appMode === "edit"}
                   project={project}
+                  selectedSpriteId={selectedBadgeSpriteId}
+                  onSelectSprite={setSelectedBadgeSpriteId}
                   show="content"
                   onUpdateProject={(upd) => {
                     if (upd.data) {
@@ -4668,6 +4710,8 @@ export function App() {
                     <BadgePanel
                       isEditMode={appMode === "edit"}
                       project={project}
+                      selectedSpriteId={selectedBadgeSpriteId}
+                      onSelectSprite={setSelectedBadgeSpriteId}
                       show="content"
                       onUpdateProject={(upd) => {
                         if (upd.data) {
@@ -4832,6 +4876,8 @@ export function App() {
                       assetsById={assetsById}
                       getMediaUrl={toMediaUrl}
                       isEditMode={appMode === "edit"}
+                      selectedSpriteId={selectedBadgeSpriteId}
+                      onSelectSprite={setSelectedBadgeSpriteId}
                     />
                   </div>
                 </div>
@@ -6715,6 +6761,8 @@ export function App() {
                   <BadgePanel
                     isEditMode={appMode === "edit"}
                     project={project}
+                    selectedSpriteId={selectedBadgeSpriteId}
+                    onSelectSprite={setSelectedBadgeSpriteId}
                     show="settings"
                     onUpdateProject={(upd) => {
                       if (upd.data) {
