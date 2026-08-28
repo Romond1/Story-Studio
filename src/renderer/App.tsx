@@ -13,7 +13,6 @@
 import {
   AssetItem,
   BadgeStudentSprite,
-  DrawPoint,
   MarkerStroke,
   ProjectState,
   Section,
@@ -345,17 +344,6 @@ const DEFAULT_DRAW_SETTINGS: DrawSettings = {
   rainbow: false,
   sparkle: false,
 };
-
-interface HighlighterStroke {
-  id: string;
-  points: DrawPoint[];
-  size: number;
-  opacity: number;
-  color: string;
-  fadeMs: number;
-  rainbow: boolean;
-  sparkle: boolean;
-}
 
 const DEFAULT_BCARD_TEACH_STATE: BCardTeachState = {
   isFlipped: false,
@@ -4881,14 +4869,14 @@ export function App() {
                 <>
                   {appMode === "edit" && !showBreakEditor && (
                     <button
-                      style={{ position: "absolute", top: 10, right: 10, zIndex: 60, padding: "8px 12px", background: "#333", border: "1px solid #555", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: "0.85rem" }}
+                      style={{ position: "absolute", top: 10, right: 10, zIndex: 21000, padding: "8px 12px", background: "#333", border: "1px solid #555", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: "0.85rem" }}
                       onClick={() => setShowBreakEditor(true)}
                     >
                       Edit Break
                     </button>
                   )}
                   {appMode === "edit" && showBreakEditor && (
-                    <div key={selectedSection.id} className="break-editor-panel" style={{ position: "absolute", top: 10, right: 10, width: "330px", maxHeight: "calc(100% - 20px)", height: "auto", zIndex: 60 }}>
+                    <div key={selectedSection.id} className="break-editor-panel" style={{ position: "absolute", top: 10, right: 10, width: "330px", maxHeight: "calc(100% - 20px)", height: "auto", zIndex: 21000 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #444", paddingBottom: "8px", margin: 0 }}>
                         <h3 style={{ margin: 0, color: "#fff" }}>Break Editor</h3>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -5942,9 +5930,6 @@ export function App() {
                               } as any
                             }
                             drawSettings={drawSettings}
-                            markerStrokes={previousSlide?.markerStrokes ?? []}
-                            onMarkerStrokesChange={() => undefined}
-                            clearSignal={drawClearSignal}
                             initialZoom={viewportRef.current.zoom}
                             initialPan={viewportRef.current.pan}
                             paused={true}
@@ -5970,11 +5955,6 @@ export function App() {
                             } as any
                           }
                           drawSettings={drawSettings}
-                          markerStrokes={currentSlide?.markerStrokes ?? []}
-                          onMarkerStrokesChange={(strokes) =>
-                            updateCurrentSlideMarkerStrokes(strokes)
-                          }
-                          clearSignal={drawClearSignal}
                           initialZoom={viewportRef.current.zoom}
                           initialPan={viewportRef.current.pan}
                           onViewportChange={(v) => {
@@ -6070,6 +6050,17 @@ export function App() {
                           const asset = assetsById.get(id);
                           return asset ? toMediaUrl(asset.relativePath) : null;
                         }}
+                      />
+                    )}
+
+                    {currentSlide && (
+                      <StageDrawingOverlay
+                        targetId={`slide:${currentSlide.id}`}
+                        settings={drawSettings}
+                        markerStrokes={currentSlide.markerStrokes ?? []}
+                        onMarkerStrokesChange={updateCurrentSlideMarkerStrokes}
+                        clearSignal={drawClearSignal}
+                        viewportRef={viewportRef}
                       />
                     )}
                   </div>
@@ -7333,9 +7324,6 @@ function MediaView({
   className,
   style,
   drawSettings,
-  markerStrokes,
-  onMarkerStrokesChange,
-  clearSignal,
   initialZoom,
   initialPan,
   onViewportChange,
@@ -7360,9 +7348,6 @@ function MediaView({
   className?: string;
   style?: CSSProperties;
   drawSettings: DrawSettings;
-  markerStrokes: MarkerStroke[];
-  onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
-  clearSignal?: number;
   initialZoom?: number;
   initialPan?: { x: number; y: number };
   onViewportChange?: (v: ViewportState) => void;
@@ -7384,7 +7369,6 @@ function MediaView({
 }) {
   const src = toMediaUrl(asset.relativePath);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const trimTrackRef = useRef<HTMLDivElement | null>(null);
   const resolvedVideoAudio = useMemo(() => resolveVideoAudioSettings(videoAudio), [videoAudio]);
@@ -7469,17 +7453,6 @@ function MediaView({
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
-  const [highlighterStrokes, setHighlighterStrokes] = useState<
-    HighlighterStroke[]
-  >([]);
-  const activeHighlighterRef = useRef<HighlighterStroke | null>(null);
-  const activeMarkerRef = useRef<MarkerStroke | null>(null);
-  const isDrawingRef = useRef(false);
-
-  useEffect(() => {
-    setHighlighterStrokes([]);
-  }, [clearSignal]);
-
   const transformParts = [
     `translate(${pan.x}px, ${pan.y}px)`,
     `scale(${zoom})`,
@@ -7548,28 +7521,6 @@ function MediaView({
       ...resolvedImageAdjustments,
       ...updates,
     }));
-  };
-
-  const getContentPoint = (
-    clientX: number,
-    clientY: number,
-  ): DrawPoint | null => {
-    const container = containerRef.current;
-    if (!container) return null;
-    const rect = container.getBoundingClientRect();
-    if (!rect.width || !rect.height) return null;
-
-    const localX = clientX - rect.left;
-    const localY = clientY - rect.top;
-    const x = (localX - pan.x) / zoom / rect.width;
-    const y = (localY - pan.y) / zoom / rect.height;
-
-    return {
-      x: Math.max(0, Math.min(1, x)),
-      y: Math.max(0, Math.min(1, y)),
-      t: performance.now(),
-      h: drawSettings.rainbow ? (performance.now() / 18) % 360 : undefined,
-    };
   };
 
   const onWheelZoom = useCallback(
@@ -7685,201 +7636,6 @@ function MediaView({
     frameId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frameId);
   }, []);
-
-  useEffect(() => {
-    const drawFrame = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (!canvas || !container) return;
-
-      const rect = container.getBoundingClientRect();
-      const width = Math.max(1, Math.floor(rect.width));
-      const height = Math.max(1, Math.floor(rect.height));
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-      }
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      const now = performance.now();
-      ctx.clearRect(0, 0, width, height);
-      ctx.save();
-      ctx.translate(pan.x, pan.y);
-      ctx.scale(zoom, zoom);
-
-      const renderStroke = (
-        stroke: {
-          points: DrawPoint[];
-          size: number;
-          opacity: number;
-          color: string;
-          rainbow: boolean;
-        },
-        segmentAlpha: (index: number) => number,
-      ) => {
-        const points = stroke.points;
-        if (points.length < 2) return;
-
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.lineWidth = stroke.size;
-
-        for (let i = 1; i < points.length; i += 1) {
-          const p0 = points[i - 1];
-          const p1 = points[i];
-          const alpha =
-            Math.max(0, Math.min(1, segmentAlpha(i))) * stroke.opacity;
-          if (alpha <= 0) continue;
-          const hue = stroke.rainbow ? (p1.h ?? now / 18 + i * 8) : undefined;
-          ctx.strokeStyle = stroke.rainbow
-            ? `hsla(${hue}, 95%, 62%, ${alpha})`
-            : stroke.color;
-          if (!stroke.rainbow) {
-            const color = stroke.color;
-            const clean = color.startsWith("#") ? color.slice(1) : color;
-            if (clean.length === 6) {
-              const r = Number.parseInt(clean.slice(0, 2), 16);
-              const g = Number.parseInt(clean.slice(2, 4), 16);
-              const b = Number.parseInt(clean.slice(4, 6), 16);
-              ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            }
-          }
-          ctx.beginPath();
-          ctx.moveTo(p0.x * width, p0.y * height);
-          ctx.lineTo(p1.x * width, p1.y * height);
-          ctx.stroke();
-        }
-      };
-
-      markerStrokes.forEach((stroke) => {
-        renderStroke(stroke, () => 1);
-      });
-
-      const activeHighlighter = activeHighlighterRef.current;
-      const allHighlighter = activeHighlighter
-        ? [...highlighterStrokes, activeHighlighter]
-        : highlighterStrokes;
-      allHighlighter.forEach((stroke) => {
-        renderStroke(stroke, (index) => {
-          const age = now - stroke.points[index].t;
-          return 1 - age / stroke.fadeMs;
-        });
-      });
-
-      const sparkleStroke = allHighlighter[allHighlighter.length - 1];
-      if (sparkleStroke?.sparkle && sparkleStroke.points.length > 0) {
-        const lastPoint = sparkleStroke.points[sparkleStroke.points.length - 1];
-        for (let i = 0; i < 6; i += 1) {
-          const angle = (now / 120 + i) * 1.7;
-          const dist = 2 + (i % 3) * 2;
-          const sx = lastPoint.x * width + Math.cos(angle) * dist;
-          const sy = lastPoint.y * height + Math.sin(angle) * dist;
-          ctx.fillStyle = `rgba(255, 255, 255, ${0.3 - i * 0.04})`;
-          ctx.beginPath();
-          ctx.arc(sx, sy, Math.max(0.6, 2.2 - i * 0.25), 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      ctx.restore();
-
-      setHighlighterStrokes((prev) => {
-        let changed = false;
-        const next = prev.filter((stroke) => {
-          const lastPoint = stroke.points[stroke.points.length - 1];
-          const keep = !lastPoint || now - lastPoint.t < stroke.fadeMs;
-          if (!keep) changed = true;
-          return keep;
-        });
-        return changed ? next : prev;
-      });
-    };
-
-    let raf = 0;
-    const loop = () => {
-      drawFrame();
-      raf = window.requestAnimationFrame(loop);
-    };
-    raf = window.requestAnimationFrame(loop);
-    return () => window.cancelAnimationFrame(raf);
-  }, [highlighterStrokes, markerStrokes, pan.x, pan.y, zoom]);
-
-  const handleDrawStart = (event: MouseEvent<HTMLCanvasElement>) => {
-    if (!drawSettings.drawMode || event.button !== 0) return;
-    const point = getContentPoint(event.clientX, event.clientY);
-    if (!point) return;
-    event.preventDefault();
-
-    isDrawingRef.current = true;
-    if (drawSettings.tool === "highlighter") {
-      activeHighlighterRef.current = {
-        id: crypto.randomUUID(),
-        points: [point],
-        size: drawSettings.size,
-        opacity: drawSettings.opacity,
-        color: drawSettings.color,
-        fadeMs: drawSettings.fadeMs,
-        rainbow: drawSettings.rainbow,
-        sparkle: drawSettings.sparkle,
-      };
-      return;
-    }
-
-    activeMarkerRef.current = {
-      id: crypto.randomUUID(),
-      points: [point],
-      size: drawSettings.size,
-      opacity: drawSettings.opacity,
-      color: drawSettings.color,
-      rainbow: drawSettings.rainbow,
-    };
-  };
-
-  const handleDrawMove = (event: MouseEvent<HTMLCanvasElement>) => {
-    if (!drawSettings.drawMode || !isDrawingRef.current) return;
-    const point = getContentPoint(event.clientX, event.clientY);
-    if (!point) return;
-    event.preventDefault();
-
-    if (drawSettings.tool === "highlighter" && activeHighlighterRef.current) {
-      activeHighlighterRef.current = {
-        ...activeHighlighterRef.current,
-        points: [...activeHighlighterRef.current.points, point],
-      };
-      return;
-    }
-
-    if (drawSettings.tool === "marker" && activeMarkerRef.current) {
-      activeMarkerRef.current = {
-        ...activeMarkerRef.current,
-        points: [...activeMarkerRef.current.points, point],
-      };
-    }
-  };
-
-  const handleDrawEnd = () => {
-    if (!isDrawingRef.current) return;
-    isDrawingRef.current = false;
-
-    if (drawSettings.tool === "highlighter" && activeHighlighterRef.current) {
-      const stroke = activeHighlighterRef.current;
-      if (stroke.points.length > 1) {
-        setHighlighterStrokes((prev) => [...prev, stroke]);
-      }
-      activeHighlighterRef.current = null;
-      return;
-    }
-
-    if (drawSettings.tool === "marker" && activeMarkerRef.current) {
-      const stroke = activeMarkerRef.current;
-      if (stroke.points.length > 1) {
-        onMarkerStrokesChange([...markerStrokes, stroke]);
-      }
-      activeMarkerRef.current = null;
-    }
-  };
 
   return (
     <div
@@ -8261,17 +8017,6 @@ function MediaView({
         })}
       </div>
 
-      <canvas
-        ref={canvasRef}
-        className={
-          drawSettings.drawMode ? "drawing-overlay active" : "drawing-overlay"
-        }
-        style={{ zIndex: 10 }} // Ensure drawing is above overlays
-        onMouseDown={handleDrawStart}
-        onMouseMove={handleDrawMove}
-        onMouseUp={handleDrawEnd}
-        onMouseLeave={handleDrawEnd}
-      />
     </div>
   );
 }

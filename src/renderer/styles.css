@@ -407,6 +407,7 @@ input {
   grid-template-rows: auto 1fr;
   gap: 10px;
   min-height: 0;
+  isolation: isolate;
 }
 
 .stage-controls {
@@ -573,15 +574,17 @@ input {
   color: #b8c8d8;
 }
 
-.drawing-overlay {
+.stage-drawing-overlay {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  z-index: 20000;
   pointer-events: none;
+  touch-action: none;
 }
 
-.drawing-overlay.active {
+.stage-drawing-overlay.active {
   pointer-events: auto;
   cursor: crosshair;
 }
