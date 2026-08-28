@@ -83,6 +83,7 @@ import {
   normalizeMovementConfig,
   pickRandomMovementEvent,
 } from "../shared/movement";
+import { isDrawModeShortcut } from "../shared/drawingLifecycle";
 import {
   StageDrawingOverlay,
   type DrawSettings,
@@ -2324,6 +2325,30 @@ export function App() {
     window.addEventListener("keydown", handleGlobalKey);
     return () => window.removeEventListener("keydown", handleGlobalKey);
   }, [toggleMode]);
+
+  useEffect(() => {
+    const handleDrawShortcut = (event: KeyboardEvent) => {
+      if (!isDrawModeShortcut({
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey,
+        repeat: event.repeat,
+        key: event.key,
+        target: event.target instanceof HTMLElement ? event.target : null,
+      })) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setDrawSettings((previous) => ({
+        ...previous,
+        drawMode: !previous.drawMode,
+      }));
+    };
+
+    window.addEventListener("keydown", handleDrawShortcut);
+    return () => window.removeEventListener("keydown", handleDrawShortcut);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
