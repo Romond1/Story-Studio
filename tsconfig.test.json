@@ -45,6 +45,8 @@
     "src/shared/counterGame.ts",
     "src/shared/counterGame.test.ts",
     "src/shared/relics.ts",
-    "src/shared/relics.test.ts"
+    "src/shared/relics.test.ts",
+    "src/shared/drawingLifecycle.ts",
+    "src/shared/drawingLifecycle.test.ts"
   ]
 }
