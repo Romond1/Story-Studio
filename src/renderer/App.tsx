@@ -85,6 +85,11 @@ import {
   pickRandomMovementEvent,
 } from "../shared/movement";
 import {
+  StageDrawingOverlay,
+  type DrawSettings,
+  type ViewportState,
+} from "./drawing/StageDrawingOverlay";
+import {
   ensureRewardSprites,
   getRewardShapePath,
   getRewardVariantForKey,
@@ -329,23 +334,6 @@ function AudioClipPlayer({
 
 
 type DrawTool = "highlighter" | "marker";
-
-// Internal type for communication, not strict state control
-interface ViewportState {
-  zoom: number;
-  pan: { x: number; y: number };
-}
-
-interface DrawSettings {
-  tool: DrawTool;
-  drawMode: boolean;
-  size: number;
-  opacity: number;
-  fadeMs: number;
-  color: string;
-  rainbow: boolean;
-  sparkle: boolean;
-}
 
 const DEFAULT_DRAW_SETTINGS: DrawSettings = {
   tool: "highlighter",
@@ -5340,6 +5328,7 @@ export function App() {
                   )}
                   <ZoomPanWrapper
                     className="break-stage-wrapper"
+                    targetId={selectedSection.id}
                     drawSettings={drawSettings}
                     markerStrokes={selectedSection.markerStrokes ?? []}
                     contentWidth={1920}
@@ -7155,6 +7144,7 @@ export function App() {
 function ZoomPanWrapper({
   children,
   className,
+  targetId,
   drawSettings,
   markerStrokes,
   contentWidth,
@@ -7166,6 +7156,7 @@ function ZoomPanWrapper({
 }: {
   children: React.ReactNode;
   className?: string;
+  targetId: string;
   drawSettings: DrawSettings;
   markerStrokes: MarkerStroke[];
   onMarkerStrokesChange: (strokes: MarkerStroke[]) => void;
@@ -7176,14 +7167,13 @@ function ZoomPanWrapper({
   onViewportChange?: (viewport: { zoom: number; panX: number; panY: number }) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
   const [zoom, setZoom] = useState(initialViewport?.zoom ?? 1);
   const [pan, setPan] = useState({ x: initialViewport?.panX ?? 0, y: initialViewport?.panY ?? 0 });
   const targetZoomRef = useRef(initialViewport?.zoom ?? 1);
   const targetPanRef = useRef({ x: initialViewport?.panX ?? 0, y: initialViewport?.panY ?? 0 });
-
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const drawingViewportRef = useRef<ViewportState>({ zoom, pan });
+  drawingViewportRef.current = { zoom, pan };
 
   useEffect(() => {
     if (initialViewport) {
@@ -7196,17 +7186,6 @@ function ZoomPanWrapper({
 
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
-
-  const [highlighterStrokes, setHighlighterStrokes] = useState<
-    HighlighterStroke[]
-  >([]);
-  const activeHighlighterRef = useRef<HighlighterStroke | null>(null);
-  const activeMarkerRef = useRef<MarkerStroke | null>(null);
-  const isDrawingRef = useRef(false);
-
-  useEffect(() => {
-    setHighlighterStrokes([]);
-  }, [clearSignal]);
 
   const onWheelZoom = (event: WheelEvent<HTMLElement>) => {
     event.preventDefault();
@@ -7245,135 +7224,35 @@ function ZoomPanWrapper({
     }
   };
 
-  const getContentPoint = (
-    clientX: number,
-    clientY: number,
-  ): DrawPoint | null => {
-    const container = containerRef.current;
-    if (!container) return null;
-    const rect = container.getBoundingClientRect();
-    if (!rect.width || !rect.height) return null;
-
-    const cWidth = contentWidth ?? rect.width;
-    const cHeight = contentHeight ?? rect.height;
-
-    const localX = clientX - rect.left;
-    const localY = clientY - rect.top;
-    const x = (localX - pan.x) / zoom / cWidth;
-    const y = (localY - pan.y) / zoom / cHeight;
-
-    return {
-      x: Math.max(0, Math.min(1, x)),
-      y: Math.max(0, Math.min(1, y)),
-      t: performance.now(),
-      h: drawSettings.rainbow ? (performance.now() / 18) % 360 : undefined,
-    };
-  };
-
   const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    if (drawSettings.drawMode && event.button === 0) {
-      // Draw Start
-      event.preventDefault();
-      const point = getContentPoint(event.clientX, event.clientY);
-      if (!point) return;
-
-      isDrawingRef.current = true;
-      if (drawSettings.tool === "highlighter") {
-        activeHighlighterRef.current = {
-          id: crypto.randomUUID(),
-          points: [point],
-          size: drawSettings.size,
-          opacity: drawSettings.opacity,
-          color: drawSettings.color,
-          fadeMs: drawSettings.fadeMs,
-          rainbow: drawSettings.rainbow,
-          sparkle: drawSettings.sparkle,
-        };
-        setHighlighterStrokes((prev) => [
-          ...prev,
-          activeHighlighterRef.current!,
-        ]);
-      } else {
-        activeMarkerRef.current = {
-          id: crypto.randomUUID(),
-          color: drawSettings.color,
-          size: drawSettings.size,
-          opacity: drawSettings.opacity,
-          rainbow: drawSettings.rainbow,
-          points: [point],
-        };
-        onMarkerStrokesChange([...markerStrokes, activeMarkerRef.current!]);
-      }
-    } else if (
-      event.button === 1 ||
-      (!drawSettings.drawMode && event.button === 0)
-    ) {
-      // Pan Start (Middle click OR Left click if not drawing)
-      // Actually, if drawMode is false, maybe we allow left click pan? Or keep strict?
-      // User requested "zoom/pan same as normal slides".
-      // Normal slides: Middle click Pan. Left click select?
-      // MediaView onMouseDown: `if (event.button !== 1) return;` (Only middle click).
-      // So I should keep strict middle click for Pan if I want identical behavior.
-      // But user might want left click pan if drawMode is off?
-      // I'll stick to Middle Click for Pan to be consistent.
-      if (event.button !== 1) return;
-      event.preventDefault();
-      targetZoomRef.current = zoom;
-      targetPanRef.current = pan;
-      panStartRef.current = {
-        x: event.clientX,
-        y: event.clientY,
-        panX: pan.x,
-        panY: pan.y,
-      };
-      setIsPanning(true);
-    }
+    if (event.button !== 1) return;
+    event.preventDefault();
+    targetZoomRef.current = zoom;
+    targetPanRef.current = pan;
+    panStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      panX: pan.x,
+      panY: pan.y,
+    };
+    setIsPanning(true);
   };
 
   useEffect(() => {
     const onMove = (event: globalThis.MouseEvent) => {
-      if (isDrawingRef.current) {
-        const point = getContentPoint(event.clientX, event.clientY);
-        if (point) {
-          if (activeHighlighterRef.current) {
-            activeHighlighterRef.current.points.push(point);
-            // Force update? No, render loop handles it by ref, but state update triggers re-render?
-            // Actually we need to update state to trigger re-render of canvas?
-            // We rely on requestAnimationFrame loop for canvas? Or React render?
-            // MediaView onMouseDown stores PIXEL coordinates?
-            // MediaView `drawFrame` loop draws whatever is in `markerStrokes` and `highlighterStrokes`.
-            // `markerStrokes` is updated via `onMarkerStrokesChange` which updates App state.
-            // `highlighterStrokes` is local state.
-            // Here:
-            if (activeHighlighterRef.current) {
-              // We need to update state to trigger re-render if we rely on React render?
-            }
-          } else if (activeMarkerRef.current) {
-            activeMarkerRef.current.points.push(point);
-            // Update parent state
-            onMarkerStrokesChange([
-              ...markerStrokes.slice(0, -1),
-              { ...activeMarkerRef.current },
-            ]);
-          }
-        }
-      } else if (isPanning) {
-        const deltaX = event.clientX - panStartRef.current.x;
-        const deltaY = event.clientY - panStartRef.current.y;
-        const nextPan = {
-          x: panStartRef.current.panX + deltaX,
-          y: panStartRef.current.panY + deltaY,
-        };
-        setPan(nextPan);
-        targetPanRef.current = nextPan;
-      }
+      if (!isPanning) return;
+      const deltaX = event.clientX - panStartRef.current.x;
+      const deltaY = event.clientY - panStartRef.current.y;
+      const nextPan = {
+        x: panStartRef.current.panX + deltaX,
+        y: panStartRef.current.panY + deltaY,
+      };
+      setPan(nextPan);
+      targetPanRef.current = nextPan;
     };
 
     const onUp = () => {
-      isDrawingRef.current = false;
       setIsPanning(false);
-      activeHighlighterRef.current = null;
-      activeMarkerRef.current = null;
       if (onViewportChange) {
         onViewportChange({ zoom: targetZoomRef.current, panX: targetPanRef.current.x, panY: targetPanRef.current.y });
       }
@@ -7385,7 +7264,7 @@ function ZoomPanWrapper({
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
-  }, [isPanning, markerStrokes, drawSettings, pan, zoom]); // Add deps
+  }, [isPanning, onViewportChange]);
 
   // Animation Loop (Zoom/Pan)
   useEffect(() => {
@@ -7411,165 +7290,6 @@ function ZoomPanWrapper({
     return () => cancelAnimationFrame(frameId);
   }, []);
 
-  // Drawing Loop
-  useEffect(() => {
-    const drawFrame = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (!canvas || !container) {
-        requestAnimationFrame(drawFrame);
-        return;
-      }
-
-      const rect = container.getBoundingClientRect();
-      const width = Math.max(1, Math.floor(rect.width));
-      const height = Math.max(1, Math.floor(rect.height));
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-      }
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        requestAnimationFrame(drawFrame);
-        return;
-      }
-
-      const now = performance.now();
-      ctx.clearRect(0, 0, width, height);
-
-      const cWidth = contentWidth ?? width;
-      const cHeight = contentHeight ?? height;
-
-      ctx.save();
-      // Apply transform
-      ctx.translate(pan.x, pan.y);
-      // Canvas is width/height of screen.
-      // Content is width/height of Rect (100%).
-      // Our coordinates are 0..1 relative to Rect.
-      // So we scale by Rect size.
-      ctx.scale(zoom * cWidth, zoom * cHeight);
-
-      // Draw Function
-      const renderStroke = (
-        stroke: {
-          points: DrawPoint[];
-          size: number;
-          opacity: number;
-          color: string;
-          rainbow: boolean;
-          fadeMs?: number;
-          sparkle?: boolean;
-        },
-        segmentAlpha: (index: number) => number,
-      ) => {
-        const points = stroke.points;
-        if (points.length < 2) return;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        // Size is in pixels? Or relative?
-        // MediaView uses `stroke.size`.
-        // But we scaled coordinate system by `width, height`.
-        // If we draw withlineWidth=size, it will be huge (multiplied by width).
-        // We need to divide lineWidth by scale?
-        // `ctx.lineWidth = stroke.size / (width * zoom)`? No.
-        // Wait, MediaView: `ctx.scale(zoom, zoom)`. And `ctx.lineWidth = stroke.size`.
-        // But MediaView logic at 1241: `x = (localX - pan.x) / zoom / rect.width`.
-        // So x is normalized.
-        // But MediaView render logic at 1373: `ctx.scale(zoom, zoom)`.
-        // DOES NOT scale by `rect.width`.
-        // This implies MediaView strokes are in PIXELS?
-        // Let's check MediaView logic again (Step 330).
-        // Line 1239: `localX`. Line 1241: `x` normalized.
-        // Line 1373: `ctx.scale(zoom, zoom)`.
-        // Missing `ctx.scale(width, height)`?
-        // If strokes are normalized (0..1), and we only scale by 0..1 pixels?
-        // Which is invisible.
-        // MediaView MUST be scaling by `width, height` somewhere?
-        // OR `MediaView` `onMouseDown` stores PIXEL coordinates?
-        // Step 330 Line 1245: `x` is normalized.
-        // Step 330 Line 1375: `renderStroke`.
-        // I missed where `x` is converted back to pixels for drawing.
-        // Ah, maybe `MediaView` stores Normalized points, but renders them by multiplying?
-        // Or maybe `MediaView` stores non-normalized points?
-        // Wait, `MediaView` Step 330 says `x = ... / rect.width`. So normalized.
-        // I must have missed `ctx.scale` or `p.x * width` in MediaView render loop.
-        // I will assume I need to scale by `width, height` or add `ctx.scale(width, height)`.
-        // If I add `ctx.scale(width, height)`, then `lineWidth` of 10 becomes 10 * width (huge).
-        // So I must set `ctx.lineWidth = stroke.size / width`? (approx).
-        // Or `ctx.lineWidth = stroke.size / ((width+height)/2)`.
-        // This seems complex.
-        // Let's assume standard behavior:
-        // Scale context by width, height.
-        // Divide lineWidth by average scale.
-        ctx.lineWidth = stroke.size / ((cWidth + cHeight) / 2); // Approximation
-
-        ctx.strokeStyle = stroke.color;
-        ctx.globalAlpha = stroke.opacity;
-
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-
-        for (let i = 1; i < points.length; i++) {
-          const p = points[i];
-          const prevP = points[i - 1];
-
-          // Rainbow effect
-          if (stroke.rainbow && p.h !== undefined) {
-            const gradient = ctx.createLinearGradient(
-              prevP.x,
-              prevP.y,
-              p.x,
-              p.y,
-            );
-            gradient.addColorStop(0, `hsl(${prevP.h}, 100%, 50%)`);
-            gradient.addColorStop(1, `hsl(${p.h}, 100%, 50%)`);
-            ctx.strokeStyle = gradient;
-          } else {
-            ctx.strokeStyle = stroke.color;
-          }
-
-          // Fade effect for highlighter
-          if (stroke.fadeMs && stroke.fadeMs > 0) {
-            const age = now - p.t;
-            const alpha = Math.max(0, 1 - age / stroke.fadeMs);
-            ctx.globalAlpha = stroke.opacity * alpha;
-          } else {
-            ctx.globalAlpha = stroke.opacity;
-          }
-
-          ctx.lineTo(p.x, p.y);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-        }
-      };
-
-      // Filter out faded highlighters, but avoid a no-op state write every frame.
-      setHighlighterStrokes((prev) => {
-        let changed = false;
-        const next = prev.filter((s) => {
-          const lastPoint = s.points[s.points.length - 1];
-          const keep =
-            !s.fadeMs ||
-            !lastPoint ||
-            now - lastPoint.t < s.fadeMs;
-          if (!keep) changed = true;
-          return keep;
-        });
-        return changed ? next : prev;
-      });
-
-      highlighterStrokes.forEach((s) => renderStroke(s, (idx) => 1));
-      markerStrokes.forEach((s) => renderStroke(s, (idx) => 1));
-
-      ctx.restore();
-      requestAnimationFrame(drawFrame);
-    };
-    const id = requestAnimationFrame(drawFrame);
-    return () => cancelAnimationFrame(id);
-  }, [markerStrokes, highlighterStrokes, pan, zoom, drawSettings]);
-
   const contentStyle: CSSProperties = {
     transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
     transformOrigin: "0 0",
@@ -7585,13 +7305,7 @@ function ZoomPanWrapper({
       onMouseDown={onMouseDown}
       style={{
         overflow: "hidden",
-        cursor: isDrawingRef.current
-          ? "crosshair"
-          : isPanning
-            ? "grabbing"
-            : drawSettings.drawMode
-              ? "crosshair"
-              : "default",
+        cursor: isPanning ? "grabbing" : drawSettings.drawMode ? "crosshair" : "default",
         position: "relative",
         width: "100%",
         height: "100%",
@@ -7599,10 +7313,15 @@ function ZoomPanWrapper({
       }}
     >
       <div style={contentStyle}>{children}</div>
-      <canvas
-        ref={canvasRef}
-        className="drawing-overlay"
-        style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0, zIndex: 10 }}
+      <StageDrawingOverlay
+        targetId={`break:${targetId}`}
+        settings={drawSettings}
+        markerStrokes={markerStrokes}
+        onMarkerStrokesChange={onMarkerStrokesChange}
+        clearSignal={clearSignal}
+        viewportRef={drawingViewportRef}
+        contentWidth={contentWidth}
+        contentHeight={contentHeight}
       />
     </div>
   );
