@@ -9,12 +9,12 @@
 **Tech Stack:** Existing Electron, React, TypeScript, Node tests, Vite and Web Audio/WebRTC.
 
 - [x] R0: Verify remote recovery references; audit actual state ownership; record architectural decision before coding.
-- [ ] R1: Add `src/shared/lesson/*` types, validation, immutable scene/object commands and stable live session. Test add/remove/copy/reuse, geometry, face reset, history, return identity and round-trip rejection of legacy formats.
-- [ ] R2: Add `src/shared/lesson/projection.ts` and `src/renderer/lesson/SceneSurface.tsx`. Reuse deterministic V2 face plans, logical frame and passive bubble/drawing primitives. Add the new target to the existing relay parser and Present entry point; exercise actual renderer composition.
-- [ ] R3: Add new-format atomic persistence behind dedicated IPC and preload methods. Require empty folders and format guards; reuse asset importer. Test disk round-trip, save refusal over legacy data, malformed input and Save As.
-- [ ] R4–R6: Add shared sequence timeline/pool/Inspector and direct object commands, optional library reuse, authored frame/background/audio/transition, new project lifecycle and history. Route normal startup to new application; retain explicit legacy mode.
-- [ ] R7: Integrate one live session, navigation return, card controls, drawing/viewport, rewards, existing mixer/settings and Present-owned video execution. Verify scene transition stops audio and Present deletion reflects history.
-- [ ] R8: Run synthetic vertical GUI proof in Electron, capture Edit/Teach/Present including video+cards, save/reopen and Activation return. Run `npm test`, `npm run build:renderer`, `npm run build:main`, and typecheck new entry boundaries. Write exact evidence and manual device checks in `docs/reconstruction-verification.md`.
+- [x] R1: Add `src/shared/lesson/*` types, validation, immutable scene/object commands and stable live session. Test add/remove/copy/reuse, geometry, face reset, history, return identity and round-trip rejection of legacy formats.
+- [x] R2: Add `src/shared/lesson/projection.ts` and `src/renderer/lesson/SceneSurface.tsx`. Reuse deterministic V2 face plans, logical frame and passive bubble/drawing primitives. Add the new target to the existing relay parser and Present entry point; exercise actual renderer composition.
+- [x] R3: Add new-format atomic persistence behind dedicated IPC and preload methods. Require empty folders and format guards; reuse asset importer. Test disk round-trip, save refusal over legacy data, malformed input and Save As.
+- [x] R4–R6: Add shared sequence timeline/pool/Inspector and direct object commands, optional library reuse, authored frame/background/audio/transition, new project lifecycle and history. Route normal startup to new application; retain explicit legacy mode.
+- [x] R7: Integrate one live session, navigation return, card controls, drawing/viewport, rewards, existing mixer/settings and Present-owned video execution. Verify scene transition stops audio and Present deletion reflects history.
+- [x] R8: Run synthetic vertical GUI proof in Electron, capture Edit/Teach/Present including video+cards, save/reopen and Activation return. Run `npm test`, `npm run build:renderer`, `npm run build:main`, and typecheck new entry boundaries. Write exact evidence and manual device checks in `docs/reconstruction-verification.md`.
 
 ## Contract and ownership
 
