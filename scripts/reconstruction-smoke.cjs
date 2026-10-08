@@ -38,8 +38,8 @@ const { execFileSync } = require('node:child_process');
         && !document.querySelector('.lesson-status')?.textContent.includes('Working'));
     };
     await choose(folder); await button('Create a new lesson').click();
-    await choose(source); await button('Import folder').click();
-    await page.locator('.lesson-pool-asset').filter({ hasText: 'lesson-image.png' }).dragTo(button('Add scene at end'));
+    await choose(source); await button('Media filters').click(); await button('Import folder').click(); await button('Media filters').click();
+    await page.locator('.lesson-pool-asset').filter({ hasText: 'lesson-image.png' }).dragTo(button('Add scene to Ungrouped'));
     await label('Scene title').fill('Story image');
     await button('Add Card').click(); await label('Card name').fill('Story question'); await label('Card text').fill('Where is the dragon?');
     await page.getByRole('tab', { name: 'Answer', exact: true }).click(); await label('Card text').fill('Behind the mountain.');
@@ -75,7 +75,7 @@ const { execFileSync } = require('node:child_process');
     await button('Hide celebration').click();
     passed('Existing student spark and badge visuals in Present, session-only totals, no student tools');
 
-    await button('Edit').click(); await button('Copy to Activation · independent').click();
+    await button('Edit').click(); await button('Timeline actions').click(); await page.getByRole('menuitem', { name: 'Copy to Activation', exact: true }).click();
     await button('Add Card').click(); await label('Card name').fill('Activation clue'); await label('Card text').fill('What did we discover?');
     const hit = await page.locator('.lesson-object-hit.is-selected').boundingBox();
     await page.mouse.move(hit.x + hit.width / 2, hit.y + hit.height / 2); await page.mouse.down();
@@ -98,7 +98,7 @@ const { execFileSync } = require('node:child_process');
     passed('Edit deletion reaches Present; undo/redo; independent Edit cursor; stable Story return');
 
     await button('Edit').click();
-    await page.locator('.lesson-pool-asset').filter({ hasText: 'lesson-video.webm' }).dragTo(button('Add scene at end'));
+    await page.locator('.lesson-pool-asset').filter({ hasText: 'lesson-video.webm' }).dragTo(button('Add scene to Ungrouped'));
     const preview = page.locator('.lesson-canvas video');
     assert.equal(await preview.getAttribute('controls'), '');
     assert.equal(await preview.evaluate(video => video.muted), true);
@@ -120,7 +120,7 @@ const { execFileSync } = require('node:child_process');
     await present.screenshot({ path: path.join(evidence, 'smoke-video-present.png') });
     await page.screenshot({ path: path.join(evidence, 'smoke-video-teach.png') });
 
-    await button('Edit').click(); await button('Copy to Activation · independent').click();
+    await button('Edit').click(); await button('Timeline actions').click(); await page.getByRole('menuitem', { name: 'Copy to Activation', exact: true }).click();
     await button('Show in Present').click(); await button('Teach').click(); await button('Play video').click();
     await present.waitForFunction(() => document.querySelector('video')?.currentTime > .4, undefined, { timeout: 15000 });
     await button('Return to Story').click(); await button('Pause video').click();

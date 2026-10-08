@@ -36,8 +36,16 @@ export function moveEntryToSection(project: LessonProject, sequence: SequenceKin
   const original = project.sequences[sequence].find(e => e.id === entryId);
   if (!original || entryId === beforeEntryId) return project;
   const entries = project.sequences[sequence].filter(e => e.id !== entryId);
-  let index = beforeEntryId ? entries.findIndex(e => e.id === beforeEntryId && e.sectionId === sectionId) : -1;
-  if (index < 0) { const last = entries.map(e => e.sectionId).lastIndexOf(sectionId); index = last < 0 ? entries.length : last + 1; }
+  let index = beforeEntryId ? entries.findIndex(e => e.id === beforeEntryId) : -1;
+  if (index < 0) {
+    const last = entries.map(e => e.sectionId).lastIndexOf(sectionId);
+    if (last >= 0) index = last + 1;
+    else {
+      const groups = timelineGroups(project, sequence), groupIndex = groups.findIndex(g => g.sectionId === sectionId);
+      const following = groups.slice(groupIndex + 1).flatMap(g => g.entries).find(e => e.id !== entryId);
+      index = following ? entries.findIndex(e => e.id === following.id) : entries.length;
+    }
+  }
   entries.splice(index, 0, { ...original, sectionId, section: section?.name ?? '' });
   return { ...project, sequences: { ...project.sequences, [sequence]: entries } };
 }
@@ -52,4 +60,85 @@ export function insertBreak(project: LessonProject, sequence: SequenceKind, befo
   let next = { ...added.project, sequences: { ...added.project.sequences, [sequence]: added.project.sequences[sequence].map(e => e.id === added.entryId ? { ...e, kind: 'break' as const } : e) } };
   if (inherited) next = moveEntryToSection(next, sequence, added.entryId, inherited, beforeEntryId);
   return { project: next, entryId: added.entryId };
+}
+
+/** Containers follow sequence order; disjoint legacy runs remain in place. */
+export function timelineGroups(project: LessonProject, sequence: SequenceKind) {
+  const groups: { key: string; sectionId?: string; entries: LessonProject['sequences']['story'] }[] = [];
+  for (const entry of project.sequences[sequence]) {
+    const previous = groups[groups.length - 1];
+    if (previous && previous.sectionId === entry.sectionId) previous.entries.push(entry);
+    else groups.push({ key: entry.id, sectionId: entry.sectionId, entries: [entry] });
+  }
+  const sections = project.sections?.filter(s => s.sequence === sequence) ?? [];
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
+    if (groups.some(g => g.sectionId === section.id)) continue;
+    const nextIds = sections.slice(i + 1).map(s => s.id);
+    const index = groups.findIndex(g => g.sectionId && nextIds.includes(g.sectionId));
+    groups.splice(index < 0 ? groups.length : index, 0, { key: section.id, sectionId: section.id, entries: [] });
+  }
+  if (!groups.some(g => !g.sectionId)) groups.push({ key: 'ungrouped', entries: [] });
+  return groups;
+}
+
+/** One immutable transaction moves every child, keeping scene and entry identities. */
+export function moveSection(project: LessonProject, sequence: SequenceKind, sectionId: string, beforeSectionId?: string, beforeEntryId?: string): LessonProject {
+  const all = project.sections?.filter(s => s.sequence === sequence) ?? [];
+  const visualIds = [...new Set(timelineGroups(project, sequence).map(g => g.sectionId).filter((id): id is string => !!id))];
+  const own = visualIds.map(id => all.find(s => s.id === id)).filter((s): s is typeof all[number] => !!s);
+  if (!own.some(s => s.id === sectionId) || (beforeSectionId && !own.some(s => s.id === beforeSectionId))) throw new Error('Section no longer exists in this sequence.');
+  if (sectionId === beforeSectionId) return project;
+  const section = own.find(s => s.id === sectionId)!;
+  const ordered = own.filter(s => s.id !== sectionId);
+  const sectionIndex = beforeSectionId ? ordered.findIndex(s => s.id === beforeSectionId) : ordered.length;
+  ordered.splice(sectionIndex, 0, section);
+  const children = project.sequences[sequence].filter(e => e.sectionId === sectionId);
+  const entries = project.sequences[sequence].filter(e => e.sectionId !== sectionId);
+  const following = ordered.slice(sectionIndex + 1).map(s => s.id);
+  const target = beforeEntryId ? entries.findIndex(e => e.id === beforeEntryId) : entries.findIndex(e => e.sectionId && following.includes(e.sectionId));
+  entries.splice(target < 0 ? entries.length : target, 0, ...children);
+  return { ...project, sections: [...(project.sections ?? []).filter(s => s.sequence !== sequence), ...ordered], sequences: { ...project.sequences, [sequence]: entries } };
+}
+
+/** Cut transfers occurrences, never duplicates or detaches linked scenes. */
+export function moveTimelineEntries(project: LessonProject, source: SequenceKind, destination: SequenceKind, ids: string[], sectionId?: string, beforeEntryId?: string): LessonProject {
+  const section = project.sections?.find(s => s.id === sectionId && s.sequence === destination);
+  if (sectionId && !section) throw new Error('Section no longer exists in this sequence.');
+  const moving = project.sequences[source].filter(e => ids.includes(e.id));
+  if (!moving.length || (source === destination && beforeEntryId && ids.includes(beforeEntryId))) return project;
+  const remaining = project.sequences[source].filter(e => !ids.includes(e.id));
+  const targets = [...(source === destination ? remaining : project.sequences[destination])];
+  if (targets.length + moving.length > LESSON_LIMITS.entriesPerSequence) throw new Error('The destination sequence has no room for these scenes.');
+  let index = beforeEntryId ? targets.findIndex(e => e.id === beforeEntryId) : -1;
+  if (index < 0) { const last = targets.map(e => e.sectionId).lastIndexOf(sectionId); index = last < 0 ? targets.length : last + 1; }
+  targets.splice(index, 0, ...moving.map(e => ({ ...e, sectionId, section: section?.name ?? '' })));
+  return { ...project, sequences: { ...project.sequences, [source]: remaining, [destination]: targets } };
+}
+
+/** Explicit append boundary keeps disjoint ungrouped/legacy runs independent. */
+export function timelineGroupBoundary(project: LessonProject, sequence: SequenceKind, group: ReturnType<typeof timelineGroups>[number]): string | undefined {
+  const last = group.entries[group.entries.length - 1];
+  if (!last) return undefined;
+  const index = project.sequences[sequence].findIndex(e => e.id === last.id);
+  return project.sequences[sequence][index + 1]?.id;
+}
+
+/** Explicit membership makes empty/collapsed targets identical to populated targets. */
+export function insertSectionMedia(project: LessonProject, sequence: SequenceKind, assetIds: string[], sectionId?: string, beforeEntryId?: string) {
+  if (sectionId && !project.sections?.some(s => s.id === sectionId && s.sequence === sequence)) throw new Error('Section no longer exists.');
+  const assets = assetIds.map(id => { const asset = project.assets.find(a => a.id === id && a.mediaType !== 'audio'); if (!asset) throw new Error('Drop image or video media here.'); return asset; });
+  const entryIds: string[] = [];
+  for (const asset of assets.length ? assets : [undefined]) {
+    const section = project.sections?.find(s => s.id === sectionId);
+    const groups = timelineGroups(project, sequence);
+    const groupIndex = groups.findIndex(g => g.sectionId === sectionId);
+    const own = project.sequences[sequence].filter(e => e.sectionId === sectionId);
+    const lastIndex = own.length ? project.sequences[sequence].findIndex(e => e.id === own[own.length - 1].id) : -1;
+    const next = beforeEntryId ?? (lastIndex >= 0 ? project.sequences[sequence][lastIndex + 1]?.id : groups.slice(groupIndex + 1).flatMap(g => g.entries)[0]?.id);
+    const added = insertScene(project, sequence, createScene(asset?.originalName ?? 'New scene', asset?.id), next);
+    project = { ...added.project, sequences: { ...added.project.sequences, [sequence]: added.project.sequences[sequence].map(e => e.id === added.entryId ? { ...e, sectionId, section: section?.name ?? '' } : e) } };
+    entryIds.push(added.entryId);
+  }
+  return { project, entryIds };
 }

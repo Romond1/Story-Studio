@@ -1,0 +1,28 @@
+.lesson-container-timeline .lesson-timeline-toolbar { min-height: 36px; padding: 3px 8px; gap: 6px; }
+.lesson-container-timeline .lesson-timeline-strip { gap: 10px; padding: 6px 10px 14px; align-items: stretch; min-height: 0; overflow-y: hidden; }
+.lesson-section-container { flex: 0 0 auto; display: flex; flex-direction: column; min-width: 185px; border: 1px solid #49627d; border-radius: 7px; background: #172636; overflow: hidden; }
+.lesson-section-container.is-drop { outline: 2px solid var(--lesson-accent); background: #254367; }
+.lesson-section-header { display: flex; align-items: center; gap: 3px; height: 28px; flex-shrink: 0; padding: 0 5px; background: #263c52; border-bottom: 1px solid #49627d; }
+.lesson-section-header button { min-height: 22px !important; padding: 1px 5px !important; border: 0 !important; background: transparent !important; font-size: 12px; }
+.lesson-section-title { text-align: left; flex: 1; font-weight: 600; }
+.lesson-section-title small { color: #acbed0; margin-left: 7px; }
+.lesson-section-drag-handle { cursor: grab; font-size: 18px !important; }
+.lesson-section-dropzone { flex: 1; min-height: 0; display: flex; gap: 7px; padding: 7px 8px 14px; }
+.lesson-container-timeline .lesson-timeline-item { flex: 0 0 var(--lesson-tile-width); min-height: 56px !important; }
+.lesson-container-timeline .lesson-timeline-item.is-selected { border-color: #9bc6ff !important; background: #2e4864; }
+.lesson-container-timeline .lesson-timeline-item.is-edit { border-color: var(--lesson-accent) !important; }
+.lesson-section-add { display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 32px !important; max-width: 180px; background: transparent !important; border: 1px dashed #59718a !important; color: #aec1d4 !important; font-size: 12px; }
+.lesson-section-add small { font-size: 10px; margin-top: 5px; }
+.lesson-section-end { flex: 0 0 75px; align-self: stretch; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #7188a0; border: 1px dashed #34465a; border-radius: 5px; }
+.lesson-timeline-selection-count { font-size: 11px; color: var(--lesson-accent); }
+.lesson-timeline-marquee { position: fixed; border: 1px solid #86baff; background: #86baff33; pointer-events: none; z-index: 100; }
+.lesson-timeline-menu-dismiss { position: fixed; inset: 0; z-index: 110; }
+.lesson-timeline-context { position: fixed; z-index: 111; background: #1b2a3c; border: 1px solid #526780; border-radius: 7px; box-shadow: 0 10px 30px #0008; padding: 5px; display: flex; flex-direction: column; min-width: 200px; }
+.lesson-timeline-context button { text-align: left; border: 0; font-size: 12px; }
+.lesson-container-timeline > footer { padding: 1px 10px 3px; font-size: 10px; }
+@media (max-width: 700px) { .lesson-container-timeline .lesson-timeline-toolbar > strong span { display: none; } .lesson-container-timeline .lesson-timeline-zoom input { width: 65px; } }
+.lesson-container-timeline .lesson-timeline-strip { padding-bottom: 6px; }
+.lesson-container-timeline .lesson-section-dropzone { padding: 5px 7px 7px; }
+.lesson-container-timeline .lesson-timeline-thumb { min-height: 55px; flex: 1 1 80px; height: auto; }
+.lesson-container-timeline .lesson-timeline-item { gap: 3px; }
+.lesson-container-timeline .lesson-section-container { min-height: 130px; }

@@ -1,0 +1,13 @@
+PASS Compact Media Pool exposes thumbnails first and preserves optional filters
+PASS Actual image and video drags from Media Pool insert scenes inside Section 2
+PASS Drag entire Section 2 before Section 1 preserves every child and its internal order
+PASS Scene drag between Sections is undoable; empty Section accepts media directly
+PASS Collapsed Section accepts media and scenes can be dragged back out to Ungrouped
+PASS Timeline marquee/modifier multi-selection, group duplicate/delete/undo, wheel scroll and Alt-wheel zoom
+PASS Reverse-order Ctrl-selection copies scenes in their lesson order
+PASS Cut/Paste between Story and Activation preserves shared scene identity and consumes the cut
+PASS Marquee and group select/copy/paste/cut/duplicate/delete/nudge/undo/redo operate on selected objects
+PASS Unmodified canvas wheel zoom, middle pan and transformed marquee work; text shortcuts stay native
+PASS Present receives intermediate drawing before mouse-up; one-step undo and cancelled stroke remove transient ink
+PASS Save/reopen retains container membership/order and excludes temporary teaching ink
+Disposable lesson: D:\Temp\story-timeline-ux-Ty0UKG\Timeline-demo

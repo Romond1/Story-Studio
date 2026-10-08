@@ -1,0 +1,439 @@
+{
+  "format": "story-studio-scene",
+  "version": 1,
+  "id": "c3304356-3a64-4c78-ac27-2a36b75b3d23",
+  "title": "Timeline interaction acceptance",
+  "createdAt": "2026-10-08T16:40:23.275Z",
+  "updatedAt": "2026-10-08T16:40:36.393Z",
+  "assets": [
+    {
+      "id": "image-blue",
+      "filename": "image-blue.png",
+      "originalName": "image-blue.png",
+      "relativePath": "assets/image-blue.png",
+      "mediaType": "image",
+      "sizeBytes": 100,
+      "importedAt": "2026-10-08T16:40:23.326Z"
+    },
+    {
+      "id": "image-orange",
+      "filename": "image-orange.png",
+      "originalName": "image-orange.png",
+      "relativePath": "assets/image-orange.png",
+      "mediaType": "image",
+      "sizeBytes": 100,
+      "importedAt": "2026-10-08T16:40:23.369Z"
+    },
+    {
+      "id": "image-green",
+      "filename": "image-green.png",
+      "originalName": "image-green.png",
+      "relativePath": "assets/image-green.png",
+      "mediaType": "image",
+      "sizeBytes": 100,
+      "importedAt": "2026-10-08T16:40:23.413Z"
+    },
+    {
+      "id": "image-purple",
+      "filename": "image-purple.png",
+      "originalName": "image-purple.png",
+      "relativePath": "assets/image-purple.png",
+      "mediaType": "image",
+      "sizeBytes": 100,
+      "importedAt": "2026-10-08T16:40:23.455Z"
+    },
+    {
+      "id": "video",
+      "filename": "video.webm",
+      "originalName": "video.webm",
+      "relativePath": "assets/video.webm",
+      "mediaType": "video",
+      "sizeBytes": 1000,
+      "importedAt": "2026-10-08T16:40:23.553Z"
+    }
+  ],
+  "mediaBins": [],
+  "cards": {
+    "e94589b0-6cd3-44d4-a565-8bea2b48e658": {
+      "id": "e94589b0-6cd3-44d4-a565-8bea2b48e658",
+      "label": "New card",
+      "tags": [],
+      "style": {
+        "preset": "classroom",
+        "fit": "auto"
+      },
+      "faces": [
+        {
+          "id": "37f9d7d4-acea-479d-bade-19d9f82f2696",
+          "label": "Prompt",
+          "layout": "text",
+          "text": "First Card"
+        },
+        {
+          "id": "0a1606ae-c553-41cb-a3ae-a3872f9a1420",
+          "label": "Answer",
+          "layout": "text",
+          "text": "Type an answer"
+        }
+      ]
+    },
+    "407e40b1-6feb-4c7d-aa4d-ec0db2420609": {
+      "id": "407e40b1-6feb-4c7d-aa4d-ec0db2420609",
+      "label": "New card",
+      "tags": [],
+      "style": {
+        "preset": "classroom",
+        "fit": "auto"
+      },
+      "faces": [
+        {
+          "id": "79c52042-6203-4d77-ab59-800d167cb04c",
+          "label": "Prompt",
+          "layout": "text",
+          "text": "First Card"
+        },
+        {
+          "id": "03543337-9c9c-4df3-b848-dbf23b143ba4",
+          "label": "Answer",
+          "layout": "text",
+          "text": "Type an answer"
+        }
+      ]
+    }
+  },
+  "library": [],
+  "cardSets": [],
+  "scenes": {
+    "57959740-c86c-4f08-bc05-d14f7f016643": {
+      "id": "57959740-c86c-4f08-bc05-d14f7f016643",
+      "title": "Opening",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [
+        {
+          "kind": "card",
+          "id": "765d0a25-04be-49ae-9485-92edaadc3d37",
+          "cardId": "e94589b0-6cd3-44d4-a565-8bea2b48e658",
+          "initialFaceId": "37f9d7d4-acea-479d-bade-19d9f82f2696",
+          "initiallyConcealed": false,
+          "interaction": "cycle",
+          "visible": true,
+          "box": {
+            "width": 220,
+            "height": 130,
+            "x": 120,
+            "y": 110
+          }
+        },
+        {
+          "kind": "bubble",
+          "id": "7b1fb1c8-e158-4d02-a854-a1725b814c84",
+          "visible": true,
+          "text": "Select us together",
+          "fontSize": 32,
+          "color": "#182331",
+          "align": "center",
+          "box": {
+            "width": 240,
+            "height": 140,
+            "x": 430,
+            "y": 110
+          }
+        },
+        {
+          "kind": "text",
+          "id": "b2e1a178-aa58-44a7-8c60-c5327d4c3e03",
+          "visible": true,
+          "text": "Outside selection",
+          "fontSize": 32,
+          "color": "#ffffff",
+          "align": "center",
+          "box": {
+            "width": 280,
+            "height": 120,
+            "x": 920,
+            "y": 440
+          }
+        }
+      ],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "1f43331c-244b-4a9a-bf54-ed2872b73bb6": {
+      "id": "1f43331c-244b-4a9a-bf54-ed2872b73bb6",
+      "title": "Practice",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [
+        {
+          "kind": "card",
+          "id": "f6997be4-d5a1-421f-b118-fb571c5cb99d",
+          "cardId": "407e40b1-6feb-4c7d-aa4d-ec0db2420609",
+          "initialFaceId": "79c52042-6203-4d77-ab59-800d167cb04c",
+          "initiallyConcealed": false,
+          "interaction": "cycle",
+          "visible": true,
+          "box": {
+            "width": 220,
+            "height": 130,
+            "x": 152,
+            "y": 142
+          }
+        },
+        {
+          "kind": "bubble",
+          "id": "e42c089c-4a59-4f81-86ce-5a6b66e4a719",
+          "visible": true,
+          "text": "Select us together",
+          "fontSize": 32,
+          "color": "#182331",
+          "align": "center",
+          "box": {
+            "width": 240,
+            "height": 140,
+            "x": 462,
+            "y": 142
+          }
+        }
+      ],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "c5c1eedf-4bbc-4ecf-bf82-fe92562bb9fb": {
+      "id": "c5c1eedf-4bbc-4ecf-bf82-fe92562bb9fb",
+      "title": "Review",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "e0af826b-804f-4dca-9050-2eaceeb36fcd": {
+      "id": "e0af826b-804f-4dca-9050-2eaceeb36fcd",
+      "title": "Activation",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "6906959e-afec-42a5-84a7-2ae709feac4d": {
+      "id": "6906959e-afec-42a5-84a7-2ae709feac4d",
+      "title": "image-blue.png",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332",
+        "assetId": "image-blue"
+      },
+      "objects": [],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "c3a6c0ad-df7f-4b40-80b4-a1ef233c791f": {
+      "id": "c3a6c0ad-df7f-4b40-80b4-a1ef233c791f",
+      "title": "video.webm",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332",
+        "assetId": "video"
+      },
+      "objects": [],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "fe86f1ad-8430-4b1c-8904-c5eb9b93bda2": {
+      "id": "fe86f1ad-8430-4b1c-8904-c5eb9b93bda2",
+      "title": "image-orange.png",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332",
+        "assetId": "image-orange"
+      },
+      "objects": [],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    }
+  },
+  "sequences": {
+    "story": [
+      {
+        "id": "da150e43-040f-477b-be7c-cac0e095b113",
+        "sceneId": "1f43331c-244b-4a9a-bf54-ed2872b73bb6",
+        "section": "Section 2",
+        "sectionId": "d3386fd5-ec80-41b4-a388-075e4e174312"
+      },
+      {
+        "id": "91e2f725-ffcc-4586-bd41-1eb7f3786c67",
+        "sceneId": "6906959e-afec-42a5-84a7-2ae709feac4d",
+        "section": "Section 2",
+        "sectionId": "d3386fd5-ec80-41b4-a388-075e4e174312"
+      },
+      {
+        "id": "134b8c54-bd34-4a0e-80e8-e3971e2ada31",
+        "sceneId": "c3a6c0ad-df7f-4b40-80b4-a1ef233c791f",
+        "section": "Section 2",
+        "sectionId": "d3386fd5-ec80-41b4-a388-075e4e174312"
+      },
+      {
+        "id": "48b017e5-6181-426f-8e3d-0bf48fa9a69e",
+        "sceneId": "c5c1eedf-4bbc-4ecf-bf82-fe92562bb9fb",
+        "section": "Section 2",
+        "sectionId": "d3386fd5-ec80-41b4-a388-075e4e174312"
+      },
+      {
+        "id": "4835c96b-17b1-4fa1-8912-e9a061a1c534",
+        "sceneId": "57959740-c86c-4f08-bc05-d14f7f016643",
+        "section": "Section 1",
+        "sectionId": "63491a84-bc85-42f6-b16a-ed163a3cdc86"
+      },
+      {
+        "id": "2865487c-5634-42ad-b05f-acf52cbca2f5",
+        "sceneId": "fe86f1ad-8430-4b1c-8904-c5eb9b93bda2",
+        "section": "Empty section",
+        "sectionId": "0eeed372-43c6-48bc-b291-688f117e611a"
+      }
+    ],
+    "activation": [
+      {
+        "id": "886027eb-b3fe-4bec-b401-d95a8b84c7e0",
+        "sceneId": "e0af826b-804f-4dca-9050-2eaceeb36fcd",
+        "section": ""
+      },
+      {
+        "id": "e973fb03-4c3d-4874-93d8-2555c8e33456",
+        "sceneId": "c5c1eedf-4bbc-4ecf-bf82-fe92562bb9fb",
+        "section": ""
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "d3386fd5-ec80-41b4-a388-075e4e174312",
+      "name": "Section 2",
+      "sequence": "story"
+    },
+    {
+      "id": "63491a84-bc85-42f6-b16a-ed163a3cdc86",
+      "name": "Section 1",
+      "sequence": "story"
+    },
+    {
+      "id": "0eeed372-43c6-48bc-b291-688f117e611a",
+      "name": "Empty section",
+      "sequence": "story"
+    }
+  ]
+}

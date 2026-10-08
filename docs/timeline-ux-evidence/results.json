@@ -1,0 +1,20 @@
+{
+  "results": [
+    "Compact Media Pool exposes thumbnails first and preserves optional filters",
+    "Actual image and video drags from Media Pool insert scenes inside Section 2",
+    "Drag entire Section 2 before Section 1 preserves every child and its internal order",
+    "Scene drag between Sections is undoable; empty Section accepts media directly",
+    "Collapsed Section accepts media and scenes can be dragged back out to Ungrouped",
+    "Timeline marquee/modifier multi-selection, group duplicate/delete/undo, wheel scroll and Alt-wheel zoom",
+    "Reverse-order Ctrl-selection copies scenes in their lesson order",
+    "Cut/Paste between Story and Activation preserves shared scene identity and consumes the cut",
+    "Marquee and group select/copy/paste/cut/duplicate/delete/nudge/undo/redo operate on selected objects",
+    "Unmodified canvas wheel zoom, middle pan and transformed marquee work; text shortcuts stay native",
+    "Present receives intermediate drawing before mouse-up; one-step undo and cancelled stroke remove transient ink",
+    "Save/reopen retains container membership/order and excludes temporary teaching ink"
+  ],
+  "errors": [],
+  "sampleProject": "D:\\Temp\\story-timeline-ux-Ty0UKG\\Timeline-demo",
+  "nativeDrag": true,
+  "originalLessonsTouched": false
+}

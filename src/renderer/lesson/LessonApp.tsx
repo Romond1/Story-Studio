@@ -1,11 +1,13 @@
+import { copyObjects, pasteObjects, type ObjectClipboard } from '../../shared/lesson/objectClipboard';
+import { previewDrawings, translateBoxes, type DrawingPreview } from '../../shared/lesson/objectSelection';
 import { DrawingToolbar, type DrawingTool } from './DrawingToolbar';
 import type { SceneViewport } from '../../shared/teachingScene';
 import { useSceneMenus } from './SceneMenus';
 import { useWorkspaceLayout } from './WorkspaceLayout';
 import { useLessonMouseSafety } from './useLessonMouseSafety';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { addCard, addObject, addText, duplicateEntry as duplicateSceneEntry, createScene, duplicateObject, fitBox, insertCardSet, insertScene, layerObject, putCard, putObject, putScene, removeEntry, removeObject, reorderEntry } from '../../shared/lesson/commands';
-import { clone, makeId, sceneAt, type EditorSelection, type LessonProject, type LessonProjectState, type LessonScene, type LessonSession, type SequenceKind } from '../../shared/lesson/model';
+import { addCard, addObject, addText, duplicateEntry as duplicateSceneEntry, createScene, fitBox, insertCardSet, insertScene, layerObject, putCard, putObject, putScene, removeEntry, reorderEntry } from '../../shared/lesson/commands';
+import { makeId, sceneAt, type EditorSelection, type LessonProject, type LessonProjectState, type LessonScene, type LessonSession, type Rect, type SequenceKind } from '../../shared/lesson/model';
 import { cardAction, createSession, exitActivation, navigate, reconcileSession, startActivation, stepScene, resetScene, moveLiveCard, setLiveDrawings, undoLiveDrawing, redoLiveDrawing } from '../../shared/lesson/session';
 import { parseLessonProject } from '../../shared/lesson/validation';
 import { ProjectHistory } from '../../shared/projectHistory';
@@ -38,6 +40,9 @@ export function LessonApp() {
   const latest = useRef(project); latest.current = project;
   const history = useRef(new ProjectHistory<LessonProject>());
   const [selection, setSelection] = useState<EditorSelection>(emptySelection);
+  const [multiSelection, setMultiSelection] = useState<{ entryId: string | null; ids: string[] }>({ entryId: null, ids: [] });
+  const objectClipboard = useRef<ObjectClipboard | null>(null);
+  const [drawingPreview, setDrawingPreview] = useState<{ key: string; value: DrawingPreview } | null>(null);
   const [facePreview, setFacePreview] = useState<{ sceneId: string; objectId: string; faceId: string } | null>(null);
   const [session, setSession] = useState<LessonSession>(createSession);
   const [mode, setMode] = useState<'edit' | 'teach'>('edit');
@@ -55,7 +60,9 @@ export function LessonApp() {
   const resolve = (id: string) => { const asset = project?.assets.find(item => item.id === id); return asset && lessonMediaUrl(asset.relativePath, project!.id); };
   const videoAsset = liveScene && project?.assets.find(asset => asset.id === liveScene.background.assetId && asset.mediaType === 'video');
   const media = usePresentationMedia(videoAsset ? `${project!.id}:${session.cursor!.entryId}:${session.visit}:${videoAsset.id}` : null, { enabled: true, volume: 1 }, undefined, mode === 'teach' && !!videoAsset);
+  const liveKey = `${session.id}:${session.cursor?.entryId}:${session.visit}`;
   const livePlan = useMemo(() => project && liveScene ? projectScene(project, liveScene.id, session, resolve) : null, [project, liveScene, session]);
+  const presentationPlan = useMemo(() => livePlan && drawingPreview?.key === liveKey ? { ...livePlan, drawings: previewDrawings(livePlan.drawings, drawingPreview.value) } : livePlan, [livePlan, drawingPreview, liveKey]);
   const editPlan = useMemo(() => {
     if (!project || !editScene) return null;
     const selected = editScene.objects.find(item => item.id === selection.objectId);
@@ -74,6 +81,8 @@ export function LessonApp() {
   const plan = mode === 'edit' ? editPlan : livePlan;
   const dirty = history.current.isDirty;
   const currentSequence = mode === 'edit' ? selection.sequence : session.cursor?.sequence ?? selection.sequence;
+  const selectedIds = multiSelection.entryId === selection.entryId && multiSelection.ids.includes(selection.objectId ?? '') ? multiSelection.ids.filter(id => editScene?.objects.some(o => o.id === id)) : selection.objectId ? [selection.objectId] : [];
+  const selectMany = (ids: string[]) => { setMultiSelection({ entryId: selection.entryId, ids }); setSelection(old => ({ ...old, objectId: ids[0] ?? null })); };
   const object = editScene?.objects.find(item => item.id === selection.objectId);
 
   const editCommand = (work: () => void) => { try { work(); } catch (reason) { setError(String(reason)); } };
@@ -87,12 +96,15 @@ export function LessonApp() {
     if (operation.current) return; const value = history.current[direction](); if (!value) return;
     latest.current = value; setProject(value); setSession(old => reconcileSession(value, old));
   };
-  const removeSelected = () => { if (project && editScene && object) { apply(removeObject(project, editScene.id, object.id)); setSelection(old => ({ ...old, objectId: null })); } };
-  const duplicateSelected = () => editCommand(() => {
-    if (!project || !editScene || !object) return;
-    const result = duplicateObject(project, editScene.id, object.id); apply(result.project); setSelection(old => ({ ...old, objectId: result.objectId }));
+  const removeSelected = () => { if (project && editScene && selectedIds.length) { changeScene({ ...editScene, objects: editScene.objects.filter(o => !selectedIds.includes(o.id)) }); selectMany([]); } };
+  const copySelected = () => { if (project && editScene && selectedIds.length) { objectClipboard.current = copyObjects(project, editScene.id, selectedIds); setNotice(`${selectedIds.length} object${selectedIds.length === 1 ? '' : 's'} copied.`); } };
+  const pasteSelected = () => editCommand(() => {
+    const copied = objectClipboard.current; if (!project || !editScene || !copied || copied.projectId !== project.id) return;
+    const result = pasteObjects(project, editScene.id, copied); apply(result.project); selectMany(result.objectIds);
   });
-  const menus = useSceneMenus({ project, scene: editScene, selection, mode, apply, select: setSelection, setNotice, setError, add: kind => add(kind), duplicate: duplicateSelected, remove: removeSelected,
+  const duplicateSelected = () => { if (!selectedIds.length) return; copySelected(); pasteSelected(); };
+  const changeGeometries = (changes: { id: string; box: Rect }[]) => { if (editScene && changes.length) changeScene({ ...editScene, objects: editScene.objects.map(o => { const change = changes.find(c => c.id === o.id); return change ? { ...o, box: change.box } : o; }) }); };
+  const menus = useSceneMenus({ project, scene: editScene, selection, mode, apply, select: value => { setMultiSelection({ entryId: value.entryId, ids: value.objectId ? [value.objectId] : [] }); setSelection(value); }, copySelection: copySelected, pasteSelection: pasteSelected, canPasteSelection: objectClipboard.current?.projectId === project?.id, setNotice, setError, add: kind => add(kind), duplicate: duplicateSelected, remove: removeSelected,
     navigate: direction => project && setSession(old => stepScene(project, old, direction)), reset: () => project && setSession(old => resetScene(project, old)),
     chooseTool: tool => { if (tool === 'navigate') setDrawing(false); else { setDrawTool(tool); setDrawing(true); } }, importImages: () => importMedia('files') });
   const updateView = (viewport: SceneViewport) => mode === 'edit' && editScene ? setEditView({ sceneId: editScene.id, viewport }) : setSession(old => ({ ...old, viewport, revision: old.revision + 1 }));
@@ -104,11 +116,11 @@ export function LessonApp() {
     return () => { unsubscribe(); audio.current.stop(); };
   }, []);
   useEffect(() => {
-    const snapshot = { sessionId: session.id, revision: ++revision.current, target: livePlan
-      ? { kind: 'scene' as const, occurrenceId: `${session.cursor!.entryId}:${session.visit}`, plan: livePlan, ...(media.intent && videoAsset ? { media: media.intent } : {}) }
+    const snapshot = { sessionId: session.id, revision: ++revision.current, target: presentationPlan
+      ? { kind: 'scene' as const, occurrenceId: `${session.cursor!.entryId}:${session.visit}`, plan: presentationPlan, ...(media.intent && videoAsset ? { media: media.intent } : {}) }
       : { kind: 'empty' as const, occurrenceId: 'empty' } };
     void window.appApi.publishPresentSnapshot(snapshot).then(ok => { if (!ok) setError('The presentation rejected this scene. Your authored changes are still available.'); }).catch(reason => setError(String(reason)));
-  }, [livePlan, session.id, JSON.stringify(media.intent)]);
+  }, [presentationPlan, session.id, JSON.stringify(media.intent)]);
   useEffect(() => {
     const owner = audio.current;
     if (mode === 'teach' && liveScene) void owner.play(liveScene.audio.filter(track => track.autoplay), resolve).catch(reason => setError(String(reason)));
@@ -123,14 +135,20 @@ export function LessonApp() {
       if (event.defaultPrevented || (event.target as HTMLElement)?.closest?.('[role="dialog"], [role="menu"], form')) return;
       const tag = (event.target as HTMLElement)?.tagName;
       if (['INPUT','TEXTAREA','SELECT'].includes(tag) || (event.target as HTMLElement)?.isContentEditable) return;
+      const command = event.ctrlKey || event.metaKey, key = event.key.toLowerCase();
+      if (command && key === 's') { event.preventDefault(); void save('save'); return; }
+      if (command && (key === 'z' || key === 'y')) { event.preventDefault(); const redo = key === 'y' || event.shiftKey; if (mode === 'edit') historyStep(redo ? 'redo' : 'undo'); else setSession(redo ? redoLiveDrawing : undoLiveDrawing); return; }
+      if ((event.target as HTMLElement)?.closest?.('.lesson-timeline, .lesson-pool')) return;
+      if ((event.target as HTMLElement)?.closest?.('button, [role="button"], a') && !(event.target as HTMLElement)?.closest?.('.lesson-object-hit')) return;
       if (event.ctrlKey || event.metaKey) {
-        if (event.key.toLowerCase() === 'z' && mode === 'edit') { event.preventDefault(); historyStep(event.shiftKey ? 'redo' : 'undo'); }
-        if (event.key.toLowerCase() === 's') { event.preventDefault(); void save('save'); }
-        if (event.key.toLowerCase() === 'c' && mode === 'edit' && object?.kind === 'card') { event.preventDefault(); menus.copy(); }
-        if (event.key.toLowerCase() === 'v' && mode === 'edit' && menus.canPaste) { event.preventDefault(); menus.paste(); }
-        if (event.key.toLowerCase() === 'z' && mode === 'teach') { event.preventDefault(); setSession(event.shiftKey ? redoLiveDrawing : undoLiveDrawing); }
+        if (event.key.toLowerCase() === 'c' && mode === 'edit') { event.preventDefault(); copySelected(); }
+        if (event.key.toLowerCase() === 'x' && mode === 'edit') { event.preventDefault(); copySelected(); removeSelected(); }
+        if (event.key.toLowerCase() === 'a' && mode === 'edit' && editScene) { event.preventDefault(); selectMany(editScene.objects.filter(o => o.visible).map(o => o.id)); }
+        if (event.key.toLowerCase() === 'v' && mode === 'edit') { event.preventDefault(); pasteSelected(); }
         if (event.key.toLowerCase() === 'd' && mode === 'edit') { event.preventDefault(); duplicateSelected(); }
-      } else if (mode === 'edit' && ['Delete','Backspace'].includes(event.key)) { event.preventDefault(); removeSelected(); }
+      } else if (mode === 'edit' && event.key === 'Escape') { selectMany([]); setDrawing(false); }
+      else if (mode === 'edit' && editScene && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) { event.preventDefault(); const step = event.shiftKey ? 10 : 1; changeGeometries(translateBoxes(editScene.objects.filter(o => selectedIds.includes(o.id)), event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0, event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0, editScene.frame)); }
+      else if (mode === 'edit' && ['Delete','Backspace'].includes(event.key)) { event.preventDefault(); removeSelected(); }
       else if (mode === 'teach' && project && ['ArrowRight','ArrowLeft'].includes(event.key)) { event.preventDefault(); setSession(old => stepScene(project, old, event.key === 'ArrowRight' ? 1 : -1)); }
     };
     window.addEventListener('keydown', handler); return () => window.removeEventListener('keydown', handler);
@@ -221,9 +239,11 @@ export function LessonApp() {
             editCommand(() => { const ids = JSON.parse(payload) as string[]; let next = project; for (const id of ids) if (project.assets.some(asset => asset.id === id && asset.mediaType === 'image')) next = addObject(next, editScene.id, { id: makeId(), kind: 'image', assetId: id, visible: true, box: { x: 60, y: 60, width: 400, height: 300 } }); apply(next); });
           }}>
             {plan ? <SceneSurface plan={plan} surface={mode} selectedObjectId={mode === 'edit' ? selection.objectId ?? undefined : liveObject ?? undefined}
-              onSelect={id => mode === 'edit' ? setSelection(old => ({ ...old, objectId: id })) : setLiveObject(id)}
+              selectedObjectIds={mode === 'edit' ? selectedIds : undefined} onSelectMany={mode === 'edit' ? selectMany : undefined} onGeometryChanges={changeGeometries}
+              onDrawingPreview={value => { if (mode === 'teach') setDrawingPreview(value ? { key: liveKey, value } : null); }}
+              onSelect={id => mode === 'edit' ? selectMany(id ? [id] : []) : setLiveObject(id)}
               onGeometryChange={mode === 'edit' ? (id, box) => { const item = editScene?.objects.find(o => o.id === id); if (item && editScene) apply(putObject(project, editScene.id, { ...item, box })); } : (id, box) => setSession(old => moveLiveCard(project, old, id, box))}
-              onViewportChange={updateView} onContextMenu={menus.openContext} onCardDrop={menus.dropCard} occurrenceKey={mode === 'edit' ? selection.entryId ?? '' : session.cursor?.entryId}
+              onViewportChange={updateView} onContextMenu={menus.openContext} onCardDrop={menus.dropCard} occurrenceKey={mode === 'edit' ? selection.entryId ?? '' : liveKey}
               erasableStrokeIds={mode === 'teach' ? session.drawings.map(stroke => stroke.id) : undefined} drawingTool={drawTool} drawColor={drawColor} drawSize={drawSize}
               onErase={ids => mode === 'edit' && editScene ? changeScene({ ...editScene, drawings: editScene.drawings.filter(stroke => !ids.includes(stroke.id)) }) : setSession(old => setLiveDrawings(old, old.drawings.filter(stroke => !ids.includes(stroke.id))))}
               onInteract={id => { setLiveObject(id); setSession(old => cardAction(project, old, id, 'interact')); }}
@@ -233,17 +253,16 @@ export function LessonApp() {
           </div>
           {mode === 'teach' && videoAsset && <div className="lesson-toolbar"><button onClick={() => void media.command('play')}>Play video</button><button onClick={() => void media.command('pause')}>Pause video</button><button onClick={() => void media.command('replay')}>Replay video</button><label>Video position<input aria-label="Video position" type="range" min="0" max={media.status?.durationSec || 1} step=".1" value={media.status?.positionSec ?? 0} onChange={e => void media.command('seek', Number(e.target.value))} /></label><span>{media.error ?? (media.available ? media.status?.state ?? 'Ready' : 'Open Present to play video')}</span></div>}
           {layout.splitter('timeline')}
-          <LessonTimeline onProjectChange={apply} project={project} sequence={currentSequence} selectedEntryId={mode === 'edit' ? selection.entryId : session.cursor?.entryId ?? null} live={session.cursor} readOnly={mode === 'teach'}
+          <LessonTimeline onHistory={historyStep} onProjectChange={apply} project={project} sequence={currentSequence} selectedEntryId={mode === 'edit' ? selection.entryId : session.cursor?.entryId ?? null} live={session.cursor} readOnly={mode === 'teach'}
             onSelect={entryId => { if (mode === 'edit') setSelection(old => ({ ...old, entryId, objectId: null })); else setSession(old => navigate(project, old, { sequence: currentSequence, entryId })); }} onAdd={addScenes}
             onReorder={(id, before) => apply(reorderEntry(project, selection.sequence, id, before))}
             onDelete={id => { const next = removeEntry(project, selection.sequence, id); apply(next); setSelection(old => ({ ...old, entryId: next.sequences[old.sequence][0]?.id ?? null, objectId: null })); }}
-            onCopy={duplicateEntry} onSection={(id, section) => apply({ ...project, sequences: { ...project.sequences, [selection.sequence]: project.sequences[selection.sequence].map(entry => entry.id === id ? { ...entry, section } : entry) } })} />
-          {mode === 'edit' && selection.sequence === 'story' && selection.entryId && <div className="lesson-toolbar"><button onClick={() => duplicateEntry(selection.entryId!, true, 'activation')}>Reuse in Activation · linked</button><button onClick={() => duplicateEntry(selection.entryId!, false, 'activation')}>Copy to Activation · independent</button></div>}
+            onCopy={duplicateEntry} onCopyToActivation={(id, linked) => duplicateEntry(id, linked, 'activation')} onSection={(id, section) => apply({ ...project, sequences: { ...project.sequences, [selection.sequence]: project.sequences[selection.sequence].map(entry => entry.id === id ? { ...entry, section } : entry) } })} />
         </main>
         {layout.splitter('inspector')}
         {mode === 'edit' ? <div className="lesson-side"><label>Lesson title<input value={project.title} onChange={e => apply({ ...project, title: e.target.value })} /></label>
           {editScene && Object.values(project.sequences).flat().filter(entry => entry.sceneId === editScene.id).length > 1 && <p className="lesson-shared-note">Shared scene: changes appear wherever this scene is reused. Use an independent copy to edit separately.</p>}
-          <SceneInspector project={project} scene={editScene} object={object} onSelectObject={id => setSelection(old => ({ ...old, objectId: id }))} onPreviewFace={previewFace} onSceneChange={changeScene} onObjectChange={item => editScene && apply(putObject(project, editScene.id, item))} onCardChange={card => apply(putCard(project, card))} onDelete={removeSelected} onDuplicate={duplicateSelected} onLayer={direction => editScene && object && apply(layerObject(project, editScene.id, object.id, direction))}
+          <SceneInspector project={project} scene={editScene} object={object} onSelectObject={id => selectMany(id ? [id] : [])} onPreviewFace={previewFace} onSceneChange={changeScene} onObjectChange={item => editScene && apply(putObject(project, editScene.id, item))} onCardChange={card => apply(putCard(project, card))} onDelete={removeSelected} onDuplicate={duplicateSelected} onLayer={direction => editScene && object && apply(layerObject(project, editScene.id, object.id, direction))}
             onSaveSet={set => apply({ ...project, cardSets: [...project.cardSets.filter(item => item.id !== set.id), set] })}
             onInsertSet={id => { if (!editScene) return; try { const result = insertCardSet(project, editScene.id, id); apply(result.project); setSelection(old => ({ ...old, objectId: result.objectIds[0] ?? null })); } catch (reason) { setError(String(reason)); } }}
             onLibrarySave={() => object?.kind === 'card' && apply({ ...project, library: [...new Set([...project.library, object.cardId])] })}
