@@ -1,0 +1,6 @@
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #08090c; }
+.present-surface { width: 100%; height: 100%; display: grid; place-items: center; color: #c7cad3; font-family: Inter, system-ui, Arial, sans-serif; }
+
+.present-surface p { max-width: 38rem; padding: 2rem; text-align: center; font-size: clamp(1rem, 2.3vw, 1.6rem); }
+

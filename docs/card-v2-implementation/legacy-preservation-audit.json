@@ -1,0 +1,109 @@
+{
+  "episodes": [
+    {
+      "path": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 1\\WIN APP\\Prod EP1\\project.json",
+      "temporaryCopy": "D:\\Temp\\story-card-v2-baseline-cjWW1S",
+      "sha256Before": "3edb23f264a0999f9e06beaf2dbe8c0572f9269b7479e0affcfd6e4212823142",
+      "sha256After": "3edb23f264a0999f9e06beaf2dbe8c0572f9269b7479e0affcfd6e4212823142",
+      "changes": [],
+      "noV2Module": true,
+      "aCards": 4,
+      "bCards": 31
+    },
+    {
+      "path": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 2\\Ep2 Studio\\project.json",
+      "temporaryCopy": "D:\\Temp\\story-card-v2-baseline-Xd3HfF",
+      "sha256Before": "5f5dad6decae528d704bca93cafe83d335a00c32cbc5b94ceefe12aa4aebc43a",
+      "sha256After": "5f5dad6decae528d704bca93cafe83d335a00c32cbc5b94ceefe12aa4aebc43a",
+      "changes": [],
+      "noV2Module": true,
+      "aCards": 1,
+      "bCards": 10
+    },
+    {
+      "path": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 3\\STORY STUDIO\\ep3 raw\\project.json",
+      "temporaryCopy": "D:\\Temp\\story-card-v2-baseline-aSfRME",
+      "sha256Before": "5dcc669a63dbb8ffed248eee1967105101678bcf4c69eb6008f3e57d96a1ed34",
+      "sha256After": "5dcc669a63dbb8ffed248eee1967105101678bcf4c69eb6008f3e57d96a1ed34",
+      "changes": [],
+      "noV2Module": true,
+      "aCards": 1,
+      "bCards": 27
+    },
+    {
+      "path": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 4\\STORY STUDIO\\project.json",
+      "temporaryCopy": "D:\\Temp\\story-card-v2-baseline-VHHN5D",
+      "sha256Before": "1c23ef0f248e1e346480c745840f18e91e1c83ec7f6319404f15385beb323d81",
+      "sha256After": "1c23ef0f248e1e346480c745840f18e91e1c83ec7f6319404f15385beb323d81",
+      "changes": [],
+      "noV2Module": true,
+      "aCards": 1,
+      "bCards": 24
+    },
+    {
+      "path": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 5\\STORY STUDIO\\project.json",
+      "temporaryCopy": "D:\\Temp\\story-card-v2-baseline-ZBhcgZ",
+      "sha256Before": "b79148e524d0edbc73ce50e5a98d268576822b25f6b86af83b82491e3ebe43de",
+      "sha256After": "b79148e524d0edbc73ce50e5a98d268576822b25f6b86af83b82491e3ebe43de",
+      "changes": [],
+      "noV2Module": true,
+      "aCards": 1,
+      "bCards": 22
+    },
+    {
+      "path": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 6\\STORY STUDIO\\project.json",
+      "temporaryCopy": "D:\\Temp\\story-card-v2-baseline-LkAq0h",
+      "sha256Before": "27db02139da4068e9812c4d930be103b92ee86461e048db3b41a24321653bdb7",
+      "sha256After": "27db02139da4068e9812c4d930be103b92ee86461e048db3b41a24321653bdb7",
+      "changes": [],
+      "noV2Module": true,
+      "aCards": 1,
+      "bCards": 23
+    }
+  ],
+  "preservation": {
+    "condition": "B",
+    "resolved": true,
+    "temporaryCopy": "D:\\Temp\\story-card-v2-baseline-gqXHeQ",
+    "before": {
+      "id": "section",
+      "name": "Story",
+      "storyReferences": [
+        {
+          "id": "old-placement",
+          "type": "bCardRef",
+          "bCardId": "card",
+          "position": {
+            "x": 100,
+            "y": 120
+          },
+          "size": {
+            "width": 270,
+            "height": 390
+          }
+        }
+      ]
+    },
+    "after": {
+      "id": "section",
+      "name": "Story",
+      "storyReferences": [
+        {
+          "id": "old-placement",
+          "type": "bCardRef",
+          "bCardId": "card",
+          "position": {
+            "x": 100,
+            "y": 120
+          },
+          "size": {
+            "width": 270,
+            "height": 390
+          }
+        }
+      ],
+      "bgm": [],
+      "tags": []
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { importProjectMedia, detectMediaType } from './mediaImportService';
 // src/main/main.ts
 import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
 import { createReadStream, promises as fs } from 'node:fs';
@@ -28,6 +29,9 @@ import { normalizeSlideVideoTrim } from '../shared/videoTrim';
 import { normalizeSlideImageAdjustments } from '../shared/imageAdjustments';
 import { normalizeRelicSystem, normalizeStudentRosterSettings } from '../shared/relics';
 import { normalizeSparkStudents } from '../shared/sparkRewards';
+import { installPresentWindow } from './presentWindow';
+import { LegacyCardPersistence } from './legacyCardPersistence';
+import { assertCardsV2 } from '../shared/cardsV2';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -50,62 +54,64 @@ protocol.registerSchemesAsPrivileged([
 let mainWindow: BrowserWindow | null = null;
 let creatingMainWindow = false;
 let currentProjectFolder: string | null = null;
+let pendingProject: { token: string; folderPath: string; cards: LegacyCardPersistence } | null = null;
+const loadedCardBaselines = new WeakMap<ProjectState, LegacyCardPersistence>();
+let activeCardPersistence: LegacyCardPersistence | null = null;
+let projectWriteInProgress = false;
+let projectImportsInProgress = 0;
+
+function handleProjectImport(channel: string, handler: Parameters<typeof ipcMain.handle>[1]) {
+  ipcMain.handle(channel, async (event, ...args) => {
+    if (projectWriteInProgress) throw new Error('Project is saving. Import after saving finishes.');
+    projectImportsInProgress++;
+    try {
+      return await handler(event, ...args);
+    } finally {
+      projectImportsInProgress--;
+    }
+  });
+}
+
+function prepareProject(project: ProjectState): ProjectState {
+  const activationToken = randomUUID();
+  pendingProject = {
+    token: activationToken, folderPath: project.folderPath,
+    cards: loadedCardBaselines.get(project) || new LegacyCardPersistence(project.data, project.data),
+  };
+  return { ...project, activationToken };
+}
+
+// In-memory commit only: synchronous acknowledgement lets the renderer commit its
+// prepared document in the same turn, without an asynchronous edit/switch gap.
+ipcMain.on('project:activate', (event, token: unknown) => {
+  if (projectImportsInProgress) {
+    event.returnValue = 'Project is importing assets. Please wait and open again.';
+    return;
+  }
+  if (projectWriteInProgress) {
+    event.returnValue = 'Project is saving. Please wait and try again.';
+    return;
+  }
+  if (!pendingProject || pendingProject.token !== token) {
+    event.returnValue = 'Project candidate expired. Please open the project again.';
+    return;
+  }
+  currentProjectFolder = pendingProject.folderPath;
+  activeCardPersistence = pendingProject.cards;
+  pendingProject = null;
+  event.returnValue = null;
+});
 
 const imageExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
 const videoExts = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi']);
 const audioExts = new Set(['.mp3', '.wav', '.ogg', '.aac', '.m4a']);
 
-function detectMediaType(ext: string): MediaType | null {
-  if (imageExts.has(ext)) return 'image';
-  if (videoExts.has(ext)) return 'video';
-  if (audioExts.has(ext)) return 'audio';
-  return null;
-}
-
 async function importMediaFiles(filePaths: string[]): Promise<ImportResult | null> {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
-  if (filePaths.length === 0) return null;
-
-  const importedAssets: AssetItem[] = [];
-  const createdSlides: Slide[] = [];
-  const defaultSectionId = (await loadProject(currentProjectFolder)).data.sections[0]?.id ?? randomUUID();
-  await fs.mkdir(path.join(currentProjectFolder, ASSETS_DIR), { recursive: true });
-
-  for (const sourcePath of filePaths) {
-    const ext = path.extname(sourcePath).toLowerCase();
-    const mediaType = detectMediaType(ext);
-    if (mediaType !== 'image' && mediaType !== 'video' && mediaType !== 'audio') continue;
-
-    const stat = await fs.stat(sourcePath);
-    if (!stat.isFile()) continue;
-
-    const id = randomUUID();
-    const filename = `${id}${ext}`;
-    const targetPath = path.join(currentProjectFolder, ASSETS_DIR, filename);
-    await fs.copyFile(sourcePath, targetPath);
-
-    importedAssets.push({
-      id,
-      relativePath: path.join(ASSETS_DIR, filename).replaceAll('\\', '/'),
-      filename,
-      originalName: path.basename(sourcePath),
-      mediaType,
-      sizeBytes: stat.size,
-      importedAt: new Date().toISOString()
-    });
-
-    if (mediaType === 'image' || mediaType === 'video') {
-      createdSlides.push({
-        id: randomUUID(),
-        assetId: id,
-        sectionId: defaultSectionId,
-        transition: 'fade',
-        ...(mediaType === 'video' ? { videoAudio: { enabled: true, volume: 1 } } : {}),
-      });
-    }
-  }
-
-  return importedAssets.length > 0 ? { importedAssets, createdSlides } : null;
+  if (!filePaths.length) return null;
+  const folder = currentProjectFolder;
+  const sectionId=(await loadProject(folder)).data.sections[0]?.id ?? randomUUID();
+  return importProjectMedia(folder,filePaths,sectionId);
 }
 
 function getWindow(): BrowserWindow {
@@ -160,14 +166,10 @@ async function writeStoryStudioSettings(settings: StoryStudioSettings): Promise<
   return normalized;
 }
 
-async function ensureProjectFolder(folder: string): Promise<void> {
-  await fs.mkdir(path.join(folder, ASSETS_DIR), { recursive: true });
-}
-
 async function ensureFolderIsEmpty(folder: string): Promise<void> {
   const entries = await fs.readdir(folder);
   if (entries.length > 0) {
-    throw new Error('Selected folder is not empty. Choose an empty folder for Save As.');
+    throw new Error('Selected folder is not empty. Choose an empty folder to create or copy a project.');
   }
 }
 
@@ -175,28 +177,53 @@ async function copyProjectFolder(sourceFolder: string, targetFolder: string): Pr
   await fs.mkdir(targetFolder, { recursive: true });
   const sourceEntries = await fs.readdir(sourceFolder, { withFileTypes: true });
   for (const entry of sourceEntries) {
-    if (entry.name === TEMP_PROJECT_FILENAME) continue;
+    // Publish project.json only after the copy and final write succeed.
+    if (entry.name === PROJECT_FILENAME || entry.name === TEMP_PROJECT_FILENAME) continue;
     const sourcePath = path.join(sourceFolder, entry.name);
     const targetPath = path.join(targetFolder, entry.name);
     await fs.cp(sourcePath, targetPath, { recursive: true, errorOnExist: true, force: false });
   }
 }
 
-async function writeProjectAtomic(folder: string, data: ProjectData): Promise<string> {
+async function writeProjectAtomic(folder: string, data: ProjectData, createOnly = false): Promise<string> {
+  if (data.cardsV2 !== undefined) assertCardsV2(data.cardsV2);
   const now = new Date().toISOString();
   const finalData: ProjectData = { ...data, updatedAt: now };
-  const tmpPath = path.join(folder, TEMP_PROJECT_FILENAME);
+  const tmpPath = path.join(folder, `.project-${randomUUID()}.tmp`);
   const finalPath = projectPath(folder);
-  await fs.writeFile(tmpPath, JSON.stringify(finalData, null, 2), 'utf8');
-  await fs.rename(tmpPath, finalPath);
+  const serialized = JSON.stringify(finalData, null, 2);
+  const file = await fs.open(tmpPath, 'wx');
+  try {
+    try {
+      await file.writeFile(serialized, 'utf8');
+      await file.sync();
+    } finally {
+      await file.close();
+    }
+    if (createOnly) {
+      // Unlike rename, link cannot replace a concurrently created project.json.
+      await fs.link(tmpPath, finalPath);
+    } else {
+      await fs.rename(tmpPath, finalPath);
+    }
+  } finally {
+    await fs.unlink(tmpPath).catch(() => {});
+  }
   return now;
 }
 
 async function loadProject(folder: string): Promise<ProjectState> {
   const raw = await fs.readFile(projectPath(folder), 'utf8');
   const parsed = JSON.parse(raw) as ProjectData;
-  const data = normalizeProjectData(parsed);
-  return { folderPath: folder, data, lastSavedAt: data.updatedAt };
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)
+    || !Array.isArray(parsed.slides) || !Array.isArray(parsed.assets)) {
+    throw new Error('Invalid project.json: expected a project with slides and assets arrays.');
+  }
+  if (parsed.cardsV2 !== undefined) assertCardsV2(parsed.cardsV2);
+  const data = normalizeProjectData(JSON.parse(JSON.stringify(parsed)));
+  const project = { folderPath: folder, data, lastSavedAt: data.updatedAt };
+  loadedCardBaselines.set(project, new LegacyCardPersistence(parsed, data));
+  return project;
 }
 
 
@@ -362,14 +389,21 @@ function normalizeSequenceItem(raw: unknown): SequenceItem | null {
   const item = raw as Record<string, unknown>;
   const id = typeof item.id === 'string' && item.id ? item.id : randomUUID();
   const bCardInstances = normalizeBCardInstances(item.bCardInstances);
+  const cardPlacementId = typeof item.cardPlacementId === 'string' ? item.cardPlacementId : undefined;
+  if (item.type === 'cardActivityRef') {
+    if (item.engine !== 'card-v2' || typeof item.placementId !== 'string') throw new Error('Unsupported Card activity reference');
+    return { id, type: 'cardActivityRef', engine: 'card-v2', placementId: item.placementId };
+  }
 
   if (item.type === 'slideRef') {
     return {
       id,
       type: 'slideRef',
       slideId: typeof item.slideId === 'string' ? item.slideId : '',
+      ...(typeof item.independentCopyOf === 'string' ? {independentCopyOf:item.independentCopyOf} : {}),
       viewOverride: item.viewOverride && typeof item.viewOverride === 'object' ? item.viewOverride as { zoom?: number; panX?: number; panY?: number } : undefined,
       bCardInstances,
+      ...(cardPlacementId ? { cardPlacementId } : {}),
     };
   }
 
@@ -380,6 +414,7 @@ function normalizeSequenceItem(raw: unknown): SequenceItem | null {
       breakId: typeof item.breakId === 'string' ? item.breakId : '',
       textOverride: typeof item.textOverride === 'string' ? item.textOverride : undefined,
       bCardInstances,
+      ...(cardPlacementId ? { cardPlacementId } : {}),
     };
   }
 
@@ -391,6 +426,7 @@ function normalizeSequenceItem(raw: unknown): SequenceItem | null {
       body: typeof item.body === 'string' ? item.body : '',
       durationMs: coerceFiniteNumber(item.durationMs) ?? undefined,
       bCardInstances,
+      ...(cardPlacementId ? { cardPlacementId } : {}),
     };
   }
 
@@ -401,6 +437,7 @@ function normalizeSequenceItem(raw: unknown): SequenceItem | null {
       gameType: 'placeholder',
       config: item.config && typeof item.config === 'object' ? item.config as Record<string, unknown> : undefined,
       bCardInstances,
+      ...(cardPlacementId ? { cardPlacementId } : {}),
     };
   }
 
@@ -410,6 +447,7 @@ function normalizeSequenceItem(raw: unknown): SequenceItem | null {
       type: 'aCardRef',
       aCardId: typeof item.aCardId === 'string' ? item.aCardId : '',
       bCardInstances,
+      ...(cardPlacementId ? { cardPlacementId } : {}),
     };
   }
 
@@ -691,10 +729,12 @@ function createMainWindow(): void {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
+      backgroundThrottling: false,
       nodeIntegration: false
     }
   });
 
+  installPresentWindow(() => mainWindow);
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
     void mainWindow.loadURL(devUrl);
@@ -752,7 +792,7 @@ ipcMain.handle('project:create', async () => {
   if (canceled || filePaths.length === 0) return null;
 
   const folderPath = filePaths[0];
-  await ensureProjectFolder(folderPath);
+  await ensureFolderIsEmpty(folderPath);
 
   const now = new Date().toISOString();
   const defaultSparkStudent = createDefaultSparkStudent();
@@ -769,9 +809,16 @@ ipcMain.handle('project:create', async () => {
     relicSystem: normalizeRelicSystem(undefined),
   };
 
-  await writeProjectAtomic(folderPath, data);
-  currentProjectFolder = folderPath;
-  return { folderPath, data, lastSavedAt: now } satisfies ProjectState;
+  const assetsPath = path.join(folderPath, ASSETS_DIR);
+  await fs.mkdir(assetsPath); // Exclusive: never reuse a pre-existing assets folder.
+  try {
+    const lastSavedAt = await writeProjectAtomic(folderPath, data, true);
+    return prepareProject({ folderPath, data: { ...data, updatedAt: lastSavedAt }, lastSavedAt });
+  } catch (error) {
+    // Remove only our empty directory, never recursively remove user content.
+    await fs.rmdir(assetsPath).catch(() => {});
+    throw error;
+  }
 });
 
 ipcMain.handle('project:open', async () => {
@@ -782,7 +829,6 @@ ipcMain.handle('project:open', async () => {
   if (canceled || filePaths.length === 0) return null;
 
   const folderPath = filePaths[0];
-  await ensureProjectFolder(folderPath);
 
   const pjPath = projectPath(folderPath);
   try {
@@ -791,8 +837,7 @@ ipcMain.handle('project:open', async () => {
     throw new Error('project.json not found in selected folder');
   }
 
-  currentProjectFolder = folderPath;
-  return loadProject(folderPath);
+  return prepareProject(await loadProject(folderPath));
 });
 
 ipcMain.handle('project:open-path', async (_, folderPathRaw: unknown) => {
@@ -808,11 +853,10 @@ ipcMain.handle('project:open-path', async (_, folderPathRaw: unknown) => {
     throw new Error('project.json not found at saved project path');
   }
 
-  currentProjectFolder = folderPath;
-  return loadProject(folderPath);
+  return prepareProject(await loadProject(folderPath));
 });
 
-ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> => {
+handleProjectImport('project:import-media', async (): Promise<ImportResult | null> => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
 
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
@@ -827,17 +871,24 @@ ipcMain.handle('project:import-media', async (): Promise<ImportResult | null> =>
   return importMediaFiles(filePaths);
 });
 
-ipcMain.handle('project:import-dropped-media', async (_, filePaths: string[]): Promise<ImportResult | null> => {
+handleProjectImport('project:import-folder', async ():Promise<ImportResult|null> => {
+  const {canceled,filePaths}=await dialog.showOpenDialog(getWindow(),{title:'Import folder into Media Pool',properties:['openDirectory']});
+  return canceled?null:importMediaFiles(filePaths);
+});
+
+handleProjectImport('project:import-dropped-media', async (_, filePaths: string[]): Promise<ImportResult | null> => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
   if (!Array.isArray(filePaths)) return null;
   return importMediaFiles(filePaths);
 });
 
-ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'save') => {
+async function saveProject(data: ProjectData, mode: SaveMode, expectedFolder: string) {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
+  if (expectedFolder !== currentProjectFolder) throw new Error('Active project changed. Save cancelled; please try again.');
+  const sourceFolder = currentProjectFolder;
+  const authoredData = activeCardPersistence ? activeCardPersistence.forSave(data) : data;
 
   if (mode === 'saveAs') {
-    const sourceFolder = currentProjectFolder;
     const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
       title: 'Save Project As',
       properties: ['openDirectory', 'createDirectory']
@@ -850,16 +901,32 @@ ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'sa
     if (normalizedSource === normalizedTarget) {
       throw new Error('Please choose a different folder for Save As.');
     }
+    const relativeTarget = path.relative(normalizedSource, normalizedTarget);
+    if (!relativeTarget.startsWith(`..${path.sep}`) && relativeTarget !== '..' && !path.isAbsolute(relativeTarget)) {
+      throw new Error('Choose a Save As folder outside the current project.');
+    }
 
     await ensureFolderIsEmpty(targetFolder);
     await copyProjectFolder(sourceFolder, targetFolder);
-    const lastSavedAt = await writeProjectAtomic(targetFolder, data);
+    const lastSavedAt = await writeProjectAtomic(targetFolder, authoredData, true);
     currentProjectFolder = targetFolder;
+    pendingProject = null;
     return { lastSavedAt, folderPath: targetFolder };
   }
 
-  const lastSavedAt = await writeProjectAtomic(currentProjectFolder, data);
-  return { lastSavedAt, folderPath: currentProjectFolder };
+  const lastSavedAt = await writeProjectAtomic(sourceFolder, authoredData);
+  return { lastSavedAt, folderPath: sourceFolder };
+}
+
+ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'save', expectedFolder: string) => {
+  if (projectImportsInProgress) throw new Error('Project is importing assets. Save after importing finishes.');
+  if (projectWriteInProgress) throw new Error('Project is saving. Please wait and try again.');
+  projectWriteInProgress = true;
+  try {
+    return await saveProject(data, mode, expectedFolder);
+  } finally {
+    projectWriteInProgress = false;
+  }
 });
 
 ipcMain.handle('settings:get-student-roster', async (): Promise<StudentRosterSettings> => {
@@ -889,7 +956,7 @@ ipcMain.handle('settings:save-audio', async (_, settings: AudioSettingsV1): Prom
   })).audio;
 });
 
-ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => {
+handleProjectImport('project:import-audio', async (): Promise<AssetItem[] | null> => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
 
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
@@ -928,7 +995,7 @@ ipcMain.handle('project:import-audio', async (): Promise<AssetItem[] | null> => 
   return importedAssets;
 });
 
-ipcMain.handle('import-bubble-template', async (): Promise<{ success: boolean; relativePath?: string }> => {
+handleProjectImport('import-bubble-template', async (): Promise<{ success: boolean; relativePath?: string }> => {
   if (!currentProjectFolder) return { success: false };
 
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {

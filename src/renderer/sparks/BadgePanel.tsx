@@ -1,3 +1,4 @@
+import { visualMediaUrl } from '../../shared/visualMedia';
 import React, { useState } from 'react';
 import { useSparks } from './SparkProvider';
 import { ProjectState, SparkAwardVariant, SparkShape } from '../../shared/types';
@@ -12,6 +13,7 @@ import {
 } from '../../shared/sparkRewards';
 
 interface BadgePanelProps {
+    visualScope?: string;
     isEditMode: boolean;
     project: ProjectState | null;
     onUpdateProject: (updates: Partial<ProjectState>) => void;
@@ -21,6 +23,7 @@ interface BadgePanelProps {
 }
 
 export const BadgePanel: React.FC<BadgePanelProps> = ({
+    visualScope = "",
     isEditMode,
     project,
     onUpdateProject,
@@ -203,7 +206,7 @@ export const BadgePanel: React.FC<BadgePanelProps> = ({
             .split('/')
             .map((segment) => encodeURIComponent(segment))
             .join('/');
-        return `media://${encoded}`;
+        return visualMediaUrl(`media://${encoded}`, visualScope);
     };
 
     const labelStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem', color: '#aaa' };

@@ -138,6 +138,8 @@ export const useSparks = () => {
 interface SparkProviderProps {
     children: ReactNode;
     config?: SparkConfig;
+    onTriggerSpark?: (studentId: string, variant: SparkVariant, id?: string) => void;
+    onResetSparks?: (studentId: string) => void;
     onConfigChange?: (updates: Partial<SparkConfig>) => void;
     badgeConfig?: BadgeConfig;
     onBadgeConfigChange?: (updates: Partial<BadgeConfig>) => void;
@@ -153,6 +155,8 @@ interface SparkProviderProps {
 
 export const SparkProvider: React.FC<SparkProviderProps> = ({
     children,
+    onTriggerSpark,
+    onResetSparks,
     config,
     onConfigChange,
     badgeConfig,
@@ -284,6 +288,7 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
 
     const triggerSpark = useCallback((variant: SparkVariant) => {
         if (!activeStudent) return;
+        if (onTriggerSpark) { onTriggerSpark(activeStudent.id, variant, crypto.randomUUID()); return; }
 
         const id = crypto.randomUUID();
         const studentName = activeStudent.name?.trim() || 'Student';
@@ -294,7 +299,7 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
         setTimeout(() => {
             setActiveBursts((prev) => prev.filter((b) => b.id !== id));
         }, (currentConfig?.burstDurationMs ?? 800) + 200);
-    }, [activeStudent, currentStudents, commitStudents, currentConfig?.burstDurationMs]);
+    }, [activeStudent, currentStudents, commitStudents, currentConfig?.burstDurationMs, onTriggerSpark]);
 
     const showFinalSparkBadge = useCallback(() => {
         if (onBadgeVisibilityChange) {
@@ -319,10 +324,11 @@ export const SparkProvider: React.FC<SparkProviderProps> = ({
 
     const resetSparks = useCallback(() => {
         if (!activeStudent) return;
+        if (onResetSparks) { onResetSparks(activeStudent.id); return; }
         const nextStudents = resetStudentRewards(currentStudents, activeStudent.id);
         commitStudents(nextStudents);
         setActiveBursts([]);
-    }, [activeStudent, currentStudents, commitStudents]);
+    }, [activeStudent, currentStudents, commitStudents, onResetSparks]);
 
     return (
         <SparkContext.Provider

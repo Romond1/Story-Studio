@@ -1,24 +1,28 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { BCardInstance, BCardTeachState } from '../../shared/types';
-import { useCardSystem } from '../store/CardStore';
+import { ACard, BCardLibrary, BCardInstance, BCardTeachState } from '../../shared/types';
+import { useOptionalCardSystem } from '../store/CardStore';
 import { StageInteractable } from './StageInteractable';
 import './acard.css';
 
 interface ACardStageRendererProps {
     aCardId: string;
+    card?: ACard;
+    cards?: BCardLibrary;
+    passive?: boolean;
+    startedAt?: number;
     teachStates?: Record<string, BCardTeachState>;
     resolveImageUrl: (imageId: string) => string | null;
     onInstanceClick?: (instanceId: string, bCardId: string) => void;
     selectedInstanceId?: string | null;
     mode?: 'teach' | 'edit'; // Added explicit mode passing for future editor logic boundaries
     onStageSizeChange?: (size: { w: number; h: number }) => void;
-    movementAnimation?: { durationMs: number; easing: string; key: number } | null;
+    movementAnimation?: { durationMs: number; easing: string; key: number; startedAt?: number } | null;
     stageBackgroundMode?: 'cardBackground' | 'transparent';
     onInstanceChange?: (instanceId: string, updates: Partial<BCardInstance>) => void;
 }
 
 export function ACardStageRenderer({
-    aCardId,
+    aCardId, card, cards, passive = false, startedAt,
     teachStates = {},
     resolveImageUrl,
     onInstanceClick,
@@ -29,27 +33,19 @@ export function ACardStageRenderer({
     stageBackgroundMode = 'cardBackground',
     onInstanceChange,
 }: ACardStageRendererProps) {
-    const { aCardLibrary } = useCardSystem();
+    const store = useOptionalCardSystem();
     const contentRef = useRef<HTMLDivElement | null>(null);
-    const timerStartRef = useRef(Date.now());
+
     const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
     const [timerNow, setTimerNow] = useState(() => Date.now());
 
-    const aCard = aCardLibrary[aCardId];
-    if (!aCard) {
-        return (
-            <div className="acard-stage-container" style={{ color: '#ff6666' }}>
-                ACard not found
-            </div>
-        );
-    }
-
+    const aCard = card ?? store?.aCardLibrary[aCardId];
     // Calculate Background Styles
     const showBackground = stageBackgroundMode !== 'transparent';
-    const stageMode = aCard.stageMode === 'half' ? 'half' : 'full';
+    const stageMode = aCard?.stageMode === 'half' ? 'half' : 'full';
     const isHalfStage = stageMode === 'half';
 
-    const background = aCard.background || { offsetX: 50, offsetY: 50, scale: 1, blur: 0 };
+    const background = aCard?.background || { offsetX: 50, offsetY: 50, scale: 1, blur: 0 };
     const backgroundMode = background.mode || (background.imageId ? 'image' : 'solid');
 
     const bgStyle = useMemo(() => {
@@ -82,21 +78,21 @@ export function ACardStageRenderer({
     }, [background, backgroundMode, resolveImageUrl]);
 
     const visibleBackground = showBackground && backgroundMode !== 'transparent';
-    const textPositionClass = `is-${aCard.position || 'center'}`;
-    const textAlign = aCard.align || 'center';
-    const titleText = aCard.title || '';
-    const questionsText = aCard.questions || '';
+    const textPositionClass = `is-${aCard?.position || 'center'}`;
+    const textAlign = aCard?.align || 'center';
+    const titleText = aCard?.title || '';
+    const questionsText = aCard?.questions || '';
     const hasText = Boolean(titleText.trim() || questionsText.trim());
-    const hasTimer = !!aCard.timer;
+    const hasTimer = !!aCard?.timer;
     const timerDisplay = useMemo(() => {
         if (!hasTimer) return '';
-        const elapsedSec = Math.floor((timerNow - timerStartRef.current) / 1000);
-        const duration = aCard.timerDuration ?? 300;
-        const value = aCard.timerMode === 'countup' ? elapsedSec : Math.max(0, duration - elapsedSec);
+        const elapsedSec = Math.max(0, Math.floor((timerNow - (startedAt ?? timerNow)) / 1000));
+        const duration = aCard?.timerDuration ?? 300;
+        const value = aCard?.timerMode === 'countup' ? elapsedSec : Math.max(0, duration - elapsedSec);
         const minutes = Math.floor(value / 60);
         const seconds = value % 60;
         return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }, [aCard.timerDuration, aCard.timerMode, hasTimer, timerNow]);
+    }, [aCard?.timerDuration, aCard?.timerMode, hasTimer, timerNow, startedAt]);
 
     useLayoutEffect(() => {
         if (!hasTimer) return;
@@ -125,6 +121,7 @@ export function ACardStageRenderer({
         };
     }, [aCardId, mode, onStageSizeChange]);
 
+    if (!aCard) return <div className="acard-stage-container">Activity unavailable</div>;
     return (
         <div
             className={`acard-stage-container acard-mode-${stageMode} ${visibleBackground ? '' : 'is-transparent'}`}
@@ -140,25 +137,25 @@ export function ACardStageRenderer({
                 <div
                     className={`acard-stage-text-layer ${textPositionClass}`}
                     style={{
-                        fontFamily: aCard.font || 'Arial',
-                        color: aCard.textColor || '#ffffff',
+                        fontFamily: aCard?.font || 'Arial',
+                        color: aCard?.textColor || '#ffffff',
                         textAlign,
-                        fontWeight: aCard.isBold ? 700 : 400,
-                        fontStyle: aCard.isItalic ? 'italic' : 'normal',
+                        fontWeight: aCard?.isBold ? 700 : 400,
+                        fontStyle: aCard?.isItalic ? 'italic' : 'normal',
                     }}
                 >
                     {titleText.trim() && (
-                        <div className="acard-stage-title" style={{ fontSize: aCard.titleFontSize || 44 }}>
+                        <div className="acard-stage-title" style={{ fontSize: aCard?.titleFontSize || 44 }}>
                             {titleText}
                         </div>
                     )}
                     {questionsText.trim() && (
-                        <div className="acard-stage-questions" style={{ fontSize: aCard.fontSize || 30 }}>
+                        <div className="acard-stage-questions" style={{ fontSize: aCard?.fontSize || 30 }}>
                             {questionsText}
                         </div>
                     )}
                     {hasTimer && (
-                        <div className="acard-stage-timer" style={{ fontSize: aCard.timerSize || 42 }}>
+                        <div className="acard-stage-timer" style={{ fontSize: aCard?.timerSize || 42 }}>
                             {timerDisplay}
                         </div>
                     )}
@@ -171,10 +168,12 @@ export function ACardStageRenderer({
                 ref={contentRef}
                 style={isHalfStage ? { position: 'absolute', top: '50%', left: 0, width: '100%', height: '50%' } : undefined}
             >
-                {aCard.bCardInstances.map(instance => (
+                {aCard?.bCardInstances.map(instance => (
                     <StageInteractable
                         key={instance.id}
                         instance={instance}
+                        card={cards?.[instance.bCardId]}
+                        passive={passive}
                         teachState={teachStates[instance.id]}
                         resolveImageUrl={resolveImageUrl}
                         onClick={onInstanceClick}

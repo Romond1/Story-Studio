@@ -14,6 +14,7 @@ import {
 import {
   deriveAudioEngineState,
   deriveAudioWarnings,
+  expectedAudioOutputFlow,
   type AudioEngineState as SharedAudioEngineState,
   type AudioWarning,
 } from "../../shared/audioDiagnostics";
@@ -79,6 +80,15 @@ type AttachedMediaNode = {
   source: MediaElementAudioSourceNode;
   gainNode: GainNode;
   routeCategory: AudioRouteCategory;
+  attached: boolean;
+};
+
+type ExternalMediaNode = {
+  stream: MediaStream;
+  source: MediaStreamAudioSourceNode;
+  gainNode: GainNode;
+  volume: number;
+  enabled: boolean;
 };
 
 type AudioGraph = {
@@ -128,7 +138,7 @@ function createDiagnostics(): AudioDiagnostics {
   };
 }
 
-function readMeter(analyser: AnalyserNode, samples: Float32Array): AudioMeterReading {
+function readMeter(analyser: AnalyserNode, samples: Float32Array<ArrayBuffer>): AudioMeterReading {
   analyser.getFloatTimeDomainData(samples);
   let squareSum = 0;
   let peak = 0;
@@ -142,6 +152,8 @@ function readMeter(analyser: AnalyserNode, samples: Float32Array): AudioMeterRea
 }
 
 export class AudioController {
+  private disposed = false;
+  private microphoneRequest = 0;
   private context: AudioContext | null = null;
   private graph: AudioGraph | null = null;
   private settingsApi: AudioSettingsApi | null = null;
@@ -164,6 +176,7 @@ export class AudioController {
   private buffers = new Map<string, AudioBuffer>();
   private activeNodes = new Map<string, ActiveBufferNode>();
   private mediaElementNodes = new Map<HTMLMediaElement, AttachedMediaNode>();
+  private externalMediaNodes = new Map<string, ExternalMediaNode>();
   private pauseTimes = new Map<string, number>();
   private startTimes = new Map<string, number>();
   private playRequestsPendingBuffer = new Set<string>();
@@ -248,6 +261,11 @@ export class AudioController {
   private refreshWarnings(emit = true): void {
     const { diagnostics, meters } = this.snapshot;
     const warnings = deriveAudioWarnings({
+      ...expectedAudioOutputFlow(this.snapshot.settings, {
+        microphoneFlowing: meters.microphone.flowing,
+        mediaFlowing: meters.media.flowing,
+        masterFlowing: meters.master.flowing,
+      }),
       selectedDevicesMissing: this.selectedMissingDevices(),
       masterFlowing: meters.master.flowing,
       mixFlowing: meters.mix.flowing,
@@ -264,7 +282,9 @@ export class AudioController {
       underruns: diagnostics.underruns,
       sampleRateMismatch: false,
       channelMismatch: false,
-      restartRequired: this.snapshot.engineState === "error",
+      // Derive health from actual failures. Feeding the previous derived error
+      // back in here permanently latched even a recovered/transient warning.
+      restartRequired: false,
     });
     const engineState = deriveAudioEngineState({
       reconnecting: this.pendingOutputChanges > 0,
@@ -338,6 +358,7 @@ export class AudioController {
   }
 
   private ensureGraph(): AudioGraph {
+    if (this.disposed) throw new Error('This audio engine has been disposed.');
     if (!this.context || this.context.state === "closed") {
       this.context = new AudioContext({ latencyHint: "interactive" });
     }
@@ -372,6 +393,7 @@ export class AudioController {
     this.initializePromise = api.getAudioSettings()
       .then((settings) => this.initialize(settings))
       .catch((error) => {
+        if (this.disposed) return;
         this.recordError("Could not load audio settings", error);
         return this.initialize(DEFAULT_AUDIO_SETTINGS);
       });
@@ -379,6 +401,7 @@ export class AudioController {
   }
 
   async initialize(settings: AudioSettingsV1 = DEFAULT_AUDIO_SETTINGS): Promise<void> {
+    if (this.disposed) return;
     this.snapshot = {
       ...this.snapshot,
       settings: normalizeAudioSettings(settings),
@@ -395,7 +418,7 @@ export class AudioController {
   }
 
   private attachDeviceListener(): void {
-    if (this.deviceListenerAttached || !navigator.mediaDevices) return;
+    if (this.disposed || this.deviceListenerAttached || !navigator.mediaDevices) return;
     navigator.mediaDevices.addEventListener("devicechange", this.handleDeviceChange);
     this.deviceListenerAttached = true;
   }
@@ -459,14 +482,21 @@ export class AudioController {
     audio.autoplay = true;
     audio.srcObject = route === "mix" ? graph.mixDestination.stream : graph.monitorDestination.stream;
     const sink = audio as HTMLAudioElement & { setSinkId(id: string): Promise<void> };
-    await sink.setSinkId(deviceId === "default" ? "" : deviceId);
-    await audio.play();
+    try {
+      await sink.setSinkId(deviceId === "default" ? "" : deviceId);
+      if (this.disposed) throw new Error('Audio engine was disposed during device selection.');
+      await audio.play();
+    } catch (error) {
+      audio.pause();
+      audio.srcObject = null;
+      throw error;
+    }
     let disposed = false;
     return {
       id: `${route}:${deviceId}:${this.generation}`,
       active: !audio.paused,
       disposeCalls: 0,
-      dispose() {
+      dispose(this: RouteHandle) {
         if (disposed) return;
         disposed = true;
         this.disposeCalls += 1;
@@ -481,7 +511,8 @@ export class AudioController {
     this.pendingOutputChanges += 1;
     this.updateSnapshot({ engineState: "reconnecting" });
     try {
-      await this.coordinator.replace(route, () => this.createSink(route, device.deviceId));
+      const accepted = await this.coordinator.replace(route, () => this.createSink(route, device.deviceId));
+      if (!accepted || this.disposed) return;
       const physicalKey = this.physicalKey(route, device.deviceId);
       const otherRoute: AudioOutputRoute = route === "mix" ? "monitor" : "mix";
       if (this.routePhysicalKeys[otherRoute] === physicalKey) {
@@ -541,6 +572,8 @@ export class AudioController {
   }
 
   async enableMic(deviceId?: string): Promise<void> {
+    if (this.disposed) return;
+    const request = ++this.microphoneRequest;
     const requestedId = deviceId || "default";
     let candidateStream: MediaStream | null = null;
     let candidateSource: MediaStreamAudioSourceNode | null = null;
@@ -548,6 +581,10 @@ export class AudioController {
       candidateStream = await navigator.mediaDevices.getUserMedia({
         audio: deviceId ? { deviceId: { exact: deviceId } } : true,
       });
+      if (this.disposed || request !== this.microphoneRequest) {
+        candidateStream.getTracks().forEach(track => track.stop());
+        return;
+      }
       const track = candidateStream.getAudioTracks()[0];
       if (!track || track.readyState !== "live") throw new Error("Microphone track did not become live");
       const graph = this.ensureGraph();
@@ -587,6 +624,7 @@ export class AudioController {
   }
 
   disableMic(): void {
+    this.microphoneRequest++;
     this.microphoneSource?.disconnect();
     this.microphoneSource = null;
     this.microphoneStream?.getTracks().forEach((track) => track.stop());
@@ -789,7 +827,33 @@ export class AudioController {
     return lines.join("\n");
   }
 
+  /** Shut down the old singleton before a development update replaces it. */
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.generation++;
+    this.listeners.clear();
+    this.disableMic();
+    this.stopMeterLoop();
+    this.detachDeviceListener();
+    this.coordinator.restart();
+    this.stopAllPlayback();
+    [...this.externalMediaNodes.keys()].forEach(id => this.detachExternalMediaStream(id));
+    this.testNodes.forEach(node => { try { node.stop(); } catch { /* already stopped */ } node.disconnect(); });
+    this.testNodes.clear();
+    if (this.graph) {
+      this.graph.monitorDestination.stream.getTracks().forEach(track => track.stop());
+      this.graph.mixDestination.stream.getTracks().forEach(track => track.stop());
+    }
+    this.disconnectGraph();
+    this.graph = null;
+    if (this.context && this.context.state !== 'closed') void this.context.close().catch(() => undefined);
+    this.context = null;
+    this.listeners.clear();
+  }
+
   async restart(): Promise<void> {
+    if (this.disposed) return;
     const settings = this.snapshot.settings;
     this.generation += 1;
     this.updateSnapshot({ engineState: "reconnecting", generation: this.generation });
@@ -812,7 +876,11 @@ export class AudioController {
     this.ensureGraph();
     this.mediaElementNodes.forEach((node) => {
       try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
+      if (node.attached) node.gainNode.connect(this.graph!.mediaBus);
+    });
+    this.externalMediaNodes.forEach(node => {
       node.gainNode.connect(this.graph!.mediaBus);
+      this.applyExternalMediaGain(node);
     });
     this.attachDeviceListener();
     this.snapshot = { ...this.snapshot, settings, diagnostics: createDiagnostics() };
@@ -831,6 +899,9 @@ export class AudioController {
     });
     Object.values(this.graph.analysers).forEach((analyser) => analyser.disconnect());
     this.mediaElementNodes.forEach((node) => {
+      try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
+    });
+    this.externalMediaNodes.forEach(node => {
       try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
     });
   }
@@ -1011,10 +1082,11 @@ export class AudioController {
       const source = this.getContext().createMediaElementSource(element);
       const gainNode = this.getContext().createGain();
       source.connect(gainNode);
-      node = { source, gainNode, routeCategory };
+      node = { source, gainNode, routeCategory, attached: true };
       this.mediaElementNodes.set(element, node);
     }
     node.routeCategory = routeCategory;
+    node.attached = true;
     try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
     node.gainNode.connect(this.ensureGraph().mediaBus);
     node.gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), this.getContext().currentTime);
@@ -1023,15 +1095,73 @@ export class AudioController {
 
   setMediaElementVolume(element: HTMLMediaElement, volume: number): void {
     const node = this.mediaElementNodes.get(element);
-    if (!node) return;
+    if (!node?.attached) return;
     node.gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), this.getContext().currentTime);
   }
 
   detachMediaElement(element: HTMLMediaElement): void {
     const node = this.mediaElementNodes.get(element);
     if (!node) return;
+    node.attached = false;
     try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
     node.gainNode.gain.setValueAtTime(0, this.getContext().currentTime);
+  }
+
+  /** One received Present stream enters the existing media bus. New inputs are
+   * silent until the bridge explicitly opens its readiness gate. */
+  attachExternalMediaStream(id: string, stream: MediaStream, volume = 1): void {
+    const context = this.getContext();
+    const previous = this.externalMediaNodes.get(id);
+    if (previous?.stream === stream) {
+      this.setExternalMediaVolume(id, volume);
+      return;
+    }
+    if (previous) this.detachExternalMediaStream(id);
+    const source = context.createMediaStreamSource(stream);
+    const gainNode = context.createGain();
+    const node: ExternalMediaNode = { stream, source, gainNode, volume: this.externalVolume(volume), enabled: false };
+    this.applyExternalMediaGain(node);
+    try {
+      source.connect(gainNode);
+      gainNode.connect(this.ensureGraph().mediaBus);
+      this.externalMediaNodes.set(id, node);
+    } catch (error) {
+      source.disconnect(); gainNode.disconnect();
+      throw error;
+    }
+  }
+
+  setExternalMediaVolume(id: string, volume: number): void {
+    const node = this.externalMediaNodes.get(id);
+    if (!node) return;
+    node.volume = this.externalVolume(volume);
+    this.applyExternalMediaGain(node);
+  }
+
+  setExternalMediaEnabled(id: string, enabled: boolean): void {
+    const node = this.externalMediaNodes.get(id);
+    if (!node) return;
+    node.enabled = enabled;
+    this.applyExternalMediaGain(node);
+  }
+
+  detachExternalMediaStream(id: string): void {
+    const node = this.externalMediaNodes.get(id);
+    if (!node) return;
+    this.externalMediaNodes.delete(id);
+    node.enabled = false;
+    this.applyExternalMediaGain(node);
+    try { node.source.disconnect(); } catch { /* already disconnected */ }
+    try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
+    // The bridge owns tracks and its muted decoder; never stop shared tracks here.
+  }
+
+  private externalVolume(value: number): number {
+    return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+  }
+
+  private applyExternalMediaGain(node: ExternalMediaNode): void {
+    node.gainNode.gain.setValueAtTime(node.enabled ? node.volume : 0, this.context?.currentTime ?? 0);
   }
 
   playSectionMusic(url: string, volume = 1, fadeEnabled = false): void {
@@ -1055,3 +1185,6 @@ export class AudioController {
 }
 
 export const audioController = new AudioController();
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => audioController.dispose());
+}

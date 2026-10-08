@@ -1,10 +1,53 @@
-﻿import {
+import { MediaPool } from './MediaPool';
+import { LessonTimeline, type TimelineSlot } from './LessonTimeline';
+import { TimelineFrame } from './TimelineFrame';
+import { EditVideoTransport } from './EditVideoTransport';
+import { registerPoolImport, insertPoolAssets } from '../shared/mediaPool';
+import { toMediaUrl, resolvePassiveOverlays } from './mediaUrls';
+import { EditorPreviewAudioContext, useEditorPreviewAudio } from './audio/EditorPreviewAudio';
+import { useEditSelection } from './useEditSelection';
+import { showEditInPresent, runNavigationAudio } from '../shared/editSelection';
+import { composeActivityScene } from './composeActivityScene';
+import { EditDock, EditInspector, EditWorkspaceProvider, useEditHosts } from './EditWorkspace';
+import { CardV2Editor } from './cardsV2/CardV2Editor';
+import { CardV2Scene } from './cardsV2/CardV2Scene';
+import { CardV2Controls } from './cardsV2/CardV2Controls';
+import { useCardV2Session } from './cardsV2/useCardV2Session';
+import { buildCardV2RenderPlan } from '../shared/cardV2Render';
+import { BoosterContext } from './BoosterContext';
+import { duplicateBoosterItem, moveBoosterItem, removeBoosterItem } from '../shared/cardAuthoring';
+import { CardPlacementInspector } from './cardsV2/CardPlacementInspector';
+import { addCardToHost, pasteHostCard, hostPlacementId, resolveCardHost, duplicateHostCard, makeHostCardIndependent, removeHostCard, updateHostGeometry, independentBoosterSlide } from '../shared/cardAuthoring';
+import { createMediaSlide } from '../shared/mediaPool';
+import type { CardsV2Module, CardDefinition, CardInstance } from '../shared/cardsV2';
+import { TeachMovementControls } from './TeachMovementControls';
+import { TeachPreview, TeachDivider, TeachNavigatorDivider, useTeachLayout } from './TeachWorkspace';
+import { TeachLiveControls, TeachQuickControls } from './TeachLiveControls';
+import { TeachNavigator } from './TeachNavigator';
+import './teachWorkspace.css';
+import { PromptCardScene } from './PromptCardScene';
+import { visualMediaUrl, visualMediaBackground } from '../shared/visualMedia';
+import { useRewardPresentation } from './useRewardPresentation';
+import { RewardSurface } from './RewardScene';
+import { createMovementPresentation, expireMovementPresentation, movementRemaining, MovementExecutionGuard } from '../shared/movementPresentation';
+import { movementMediaUrl } from './movement/builtinMedia';
+import { isPlainTeacherKey, claimTeacherKey, shouldIgnoreTeacherKey } from '../shared/keyboardShortcuts';
+import { TransitionLayers } from './TransitionLayers';
+import { useCardRuntime } from './useCardRuntime';
+import type { ActivityScene, BoardVisual } from '../shared/activityScene';
+import { useTeachingScene } from './useTeachingScene';
+import { clientToLogical } from '../shared/teachingScene';
+import type { LogicalFrame } from '../shared/staticScene';
+import { PresentStatus } from './PresentStatus';
+import { LogicalSceneFrame, PassiveImage, PassiveOverlays } from './StaticScene';
+import {
   type CSSProperties,
   type DragEvent,
   type MouseEvent,
   type WheelEvent,
   Fragment,
   useEffect,
+  useContext,
   useCallback,
   useMemo,
   useRef,
@@ -42,6 +85,11 @@ import {
   MovementConfig,
   MovementEventConfig,
 } from "../shared/types";
+import { usePresentProjection } from "./usePresentProjection";
+import { usePresentationMedia } from "./usePresentationMedia";
+import { MediaTransportControls } from "./MediaTransportControls";
+import { usePresentationSession } from "./usePresentationSession";
+import { resolvePresentationTarget, reducePresentationSession, navigatePresentation, presentationToken, targetMatches, applyPresentationDrawing } from "../shared/presentationSession";
 import { BUBBLE_LIBRARY } from "../shared/bubbleDefs";
 import {
   decorateImportedAssetsForContext,
@@ -84,6 +132,7 @@ import {
   pickRandomMovementEvent,
 } from "../shared/movement";
 import { isDrawModeShortcut } from "../shared/drawingLifecycle";
+import { ProjectHistory, getHistoryShortcut } from "../shared/projectHistory";
 import {
   StageDrawingOverlay,
   type DrawSettings,
@@ -107,9 +156,9 @@ import { AudioSettingsWorkspace } from "./audio/AudioSettingsWorkspace";
 import { CompactAudioPanel } from "./audio/CompactAudioPanel";
 import { AudioStatus } from "./audio/AudioStatus";
 import { SparkProvider, useSparks, DEFAULT_SPARK_CONFIG, getStudentSparkTotal } from "./sparks/SparkProvider";
-import { SparkOverlay } from "./sparks/SparkOverlay";
+
 import { BadgePanel } from "./sparks/BadgePanel";
-import { FinalBadgeOverlay } from "./sparks/FinalBadgeOverlay";
+
 import { Rnd } from "react-rnd";
 import { CardSystemProvider } from "./store/CardStore";
 import { ACardSystem } from "./acards/ACardSystem";
@@ -120,9 +169,9 @@ import { ACardStageRenderer } from "./acards/ACardStageRenderer";
 import { BCardInstanceLayer, type BCardOverlayClickAction } from "./acards/BCardInstanceLayer";
 import { BCardEditor } from "./acards/BCardEditor";
 import { RelicsPanel } from "./relics/RelicsPanel";
-import { RelicStageWidget } from "./relics/RelicStageWidget";
+
 import { MovementPanel } from "./movement/MovementPanel";
-import { MovementOverlay } from "./movement/MovementOverlay";
+import { MovementOverlay, MovementSurface } from "./movement/MovementOverlay";
 
 function formatVideoTrimTime(seconds: number): string {
   const safeSeconds = Number.isFinite(seconds) ? seconds : 0;
@@ -151,10 +200,14 @@ function AudioClipPlayer({
   showRemove?: boolean;
   onRemove?: () => void;
 }) {
+  const editorPreview = useContext(EditorPreviewAudioContext);
+  const preview = useEditorPreviewAudio(clip.url,editorPreview);
+  const playback = editorPreview ? preview : audioManager;
+  if(editorPreview){onPlay=preview.play;onPause=preview.pause;onStop=preview.stop;}
   const [time, setTime] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  const isPlaying = audioManager.isPlaying(clip.url);
-  const duration = audioManager.getDuration(clip.url) || 100;
+  const isPlaying = playback.isPlaying(clip.url);
+  const duration = playback.getDuration(clip.url) || 100;
   const shortcutBadge = (() => {
     const s = clip.shortcut || "";
     if (!s) return "";
@@ -167,20 +220,20 @@ function AudioClipPlayer({
 
   // time polling
   useEffect(() => {
-    const interval = setInterval(() => setTime(audioManager.getCurrentTime(clip.url)), 100);
+    const interval = setInterval(() => setTime(playback.getCurrentTime(clip.url)), 100);
     return () => clearInterval(interval);
-  }, [clip.url]);
+  }, [clip.url, editorPreview]);
 
   // hotkey handling
   useEffect(() => {
-    if (!clip.shortcut) return;
+    if (editorPreview || !clip.shortcut) return;
 
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.repeat) return;
+      if (!isPlainTeacherKey(e)) return;
 
       if (e.code === clip.shortcut) {
-        if (audioManager.isPlaying(clip.url)) {
+        claimTeacherKey(e);
+        if (playback.isPlaying(clip.url)) {
           onPause(clip.url);
         } else {
           onPlay(clip.url, clip.volume, { fadeEnabled: clip.fadeEnabled || false });
@@ -250,7 +303,7 @@ function AudioClipPlayer({
             max={duration}
             step={0.1}
             value={time}
-            onChange={(e) => audioManager.seek(clip.url, Number(e.target.value))}
+            onChange={(e) => playback.seek(clip.url, Number(e.target.value))}
             style={{ flex: 1, minWidth: 0 }}
           />
           <span style={{ fontSize: "0.75rem", color: "#ddd", whiteSpace: "nowrap" }}>
@@ -320,7 +373,7 @@ function AudioClipPlayer({
             value={clip.volume ?? 1}
             onChange={(e) => {
               const v = Number(e.target.value);
-              audioManager.setVolume(clip.url, v);
+              playback.setVolume(clip.url, v);
               onUpdate({ volume: v });
             }}
             style={{ width: 70, height: 20, transform: "rotate(-90deg)", cursor: "pointer" }}
@@ -380,17 +433,6 @@ type LiveSessionSnapshot = {
   finalScoreRevealed: boolean;
 };
 
-function toMediaUrl(relativePath: string): string {
-  if (!relativePath || typeof relativePath !== 'string') return "";
-  const normalizedRelative = relativePath
-    .replace(/\\/g, "/")
-    .replace(/^\/+/, "");
-  const encodedRelative = normalizedRelative
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-  return `media://${encodedRelative}`;
-}
 
 function ensureSections(project: ProjectState): ProjectState {
   if (project.data.sections.length > 0) {
@@ -526,7 +568,7 @@ function SparkLab() {
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: globalThis.MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
@@ -634,25 +676,18 @@ function SparkHotkeyHandler({
     if (appMode !== 'teach') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        (e.target as HTMLElement).isContentEditable
-      ) {
-        return;
-      }
+      if (!isPlainTeacherKey(e)) return;
 
       const rewardVariant = getRewardVariantForKey(e.key);
       if (rewardVariant) {
-        e.preventDefault();
+        claimTeacherKey(e);
         triggerSpark(rewardVariant);
         return;
       }
 
       if (e.key === 'Backspace') {
         if (students.length === 0) return;
-        e.preventDefault();
-        e.stopPropagation();
+        claimTeacherKey(e);
         const currentIndex = students.findIndex((student) => student.id === activeStudentId);
         const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % students.length : 0;
         const nextStudent = students[nextIndex];
@@ -835,7 +870,24 @@ const BadgeStudentSprites = ({
 };
 
 export function App() {
-  const [project, setProject] = useState<ProjectState | null>(null);
+  const [project, renderProject] = useState<ProjectState | null>(null);
+  const projectRef = useRef<ProjectState | null>(null);
+  const historyRef = useRef(new ProjectHistory<ProjectData>());
+  const gestureRef = useRef<object>();
+  const textEditRef = useRef<object>();
+  // Update synchronously so IPC completions see even edits React has not rendered
+  // yet. Project data is immutable: its reference identifies the saved revision.
+  const setProject = useCallback((update: React.SetStateAction<ProjectState | null>, authored = true) => {
+    const next = typeof update === "function" ? update(projectRef.current) : update;
+    if (!next) historyRef.current.reset(null);
+    else if (authored) historyRef.current.record(next.data, gestureRef.current ?? textEditRef.current);
+    else historyRef.current.rebase(next.data);
+    projectRef.current = next;
+    dirtyRef.current = historyRef.current.isDirty;
+    renderDirty(dirtyRef.current);
+    renderProject(next);
+  }, []);
+  const operationRef = useRef(false);
   const [selectedBadgeSpriteId, setSelectedBadgeSpriteId] = useState<string | null>(null);
   // Track viewport of ACTIVE slide without triggering re-renders
   const viewportRef = useRef<ViewportState>({ zoom: 1, pan: { x: 0, y: 0 } });
@@ -853,6 +905,7 @@ export function App() {
   >("left");
 
   const [appMode, setAppMode] = useState<AppMode>(DEFAULT_MODE);
+  const [editPreviewVideo, setEditPreviewVideo] = useState<HTMLVideoElement|null>(null);
   useEffect(() => {
     if (appMode !== "edit") {
       setSelectedBadgeSpriteId(null);
@@ -860,34 +913,50 @@ export function App() {
   }, [appMode]);
 
   const ENABLE_BOOST_MODE = true;
-  const [topMode, setTopMode] = useState<TopMode>('story');
-  const [selectedACardId, setSelectedACardId] = useState<string | null>(null);
+  const presentation = usePresentationSession(projectRef);
+  const editor = useEditSelection(projectRef, presentation.session);
+  const selection = appMode === 'edit' ? editor : presentation;
+  const { session: presentationSession, setTopMode, setSelectedSectionId, setBoostTab,
+    setSelectedBoostItemId, setSelectedACardId, setCurrentIndex } = selection;
+  const { setActiveMovementEvent } = presentation;
+  const liveSession = presentation.session;
+  useEffect(() => {
+    const data=project?.data;if(!data)return;
+    const cursor=editor.cursor.current;
+    if(cursor.storySlideId&&!data.slides.some(s=>s.id===cursor.storySlideId)) editor.setCurrentIndex(Math.max(0,data.slides.findIndex(s=>s.sectionId===cursor.sectionId)));
+    if(cursor.sectionId&&!data.sections.some(s=>s.id===cursor.sectionId)) editor.setSelectedSectionId(data.slides.find(s=>s.id===editor.cursor.current.storySlideId)?.sectionId??data.sections[0]?.id??null);
+  },[project?.data]);
+  const topMode = presentationSession.mode;
+  const selectedACardId = presentationSession.boardId;
+  const selectedSectionId = presentationSession.sectionId;
+  const boostTab = presentationSession.boostTab;
+  const selectedBoostItemId = presentationSession.boostItemId;
+  const currentIndex = Math.max(0, project?.data.slides.findIndex(slide => slide.id === presentationSession.storySlideId) ?? 0);
   const [selectedLibraryBCardId, setSelectedLibraryBCardId] = useState<string | null>(null);
-  const [boostTab, setBoostTab] = useState<'activation' | 'language' | 'games' | 'badge'>('activation');
-  const [selectedBoostItemId, setSelectedBoostItemId] = useState<string | null>(null);
+  const [cardsV2Open, setCardsV2Open] = useState(false);
+  const [selectedV2Card, setSelectedV2Card] = useState('');
+  const [previewV2Face, setPreviewV2Face] = useState('');
+  const [reuseCardIndependent,setReuseCardIndependent]=useState(false);
+  const [,refreshCardClipboard]=useState(0);
+  const cardClipboard = useRef<{project:string;card:CardDefinition;instance:CardInstance}|null>(null);
+  const hasLegacyCards = !!(Object.keys(project?.data.aCardLibrary ?? {}).length || Object.keys(project?.data.bCardLibrary ?? {}).length);
+  useEffect(() => { setCardsV2Open(false); }, [project?.folderPath, appMode]);
   const [boostSearchQuery, setBoostSearchQuery] = useState("");
   const [selectedStoryRefId, setSelectedStoryRefId] = useState<string | null>(null);
   const [selectedPlacedBCardId, setSelectedPlacedBCardId] = useState<string | null>(null);
-  const [overlayBCardTeachStates, setOverlayBCardTeachStates] = useState<Record<string, BCardTeachState>>({});
   const [overlayBCardClickAction, setOverlayBCardClickAction] = useState<BCardOverlayClickAction>("flip");
   const [badgeVisibleState, setBadgeVisibleState] = useState(false);
   const [finalScoreRevealedState, setFinalScoreRevealedState] = useState(false);
   const [storyRefsCollapsed, setStoryRefsCollapsed] = useState(true);
   const [storyBCardTeachCollapsed, setStoryBCardTeachCollapsed] = useState(true);
   const [boostBCardTeachCollapsed, setBoostBCardTeachCollapsed] = useState(true);
-  const [activeMovementEvent, setActiveMovementEvent] = useState<{ event: MovementEventConfig; signal: number } | null>(null);
+  const activeMovementEvent = liveSession.overlays.movement;
 
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
-    null,
-  );
   const [renamingSectionId, setRenamingSectionId] = useState<string | null>(
     null,
   );
   const [renamingSlideId, setRenamingSlideId] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [updateAudio, setUpdateAudio] = useState(0);
-  const [previousIndex, setPreviousIndex] = useState<number | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDragImportActive, setIsDragImportActive] = useState(false);
   const dragImportDepthRef = useRef(0);
@@ -913,7 +982,13 @@ export function App() {
   } | null>(null);
   const [drawClearSignal, setDrawClearSignal] = useState(0);
   const [showBreakEditor, setShowBreakEditor] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
+  const [poolBusy,setPoolBusy] = useState(false);
+  const [isDirty, renderDirty] = useState(false);
+  const dirtyRef = useRef(false);
+  const setIsDirty = useCallback((dirty: boolean) => {
+    dirtyRef.current = dirty;
+    renderDirty(dirty);
+  }, []);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
   const [isSaveInProgress, setIsSaveInProgress] = useState(false);
@@ -923,6 +998,7 @@ export function App() {
   const [copyBubbleTargetIds, setCopyBubbleTargetIds] = useState<string[]>([]);
   const [showBreakBgLibrary, setShowBreakBgLibrary] = useState(false);
   const [breakThumbDrag, setBreakThumbDrag] = useState<{
+    screenScale: number;
     sectionId: string;
     mediaId: string;
     mode: "move" | "scale";
@@ -1004,7 +1080,11 @@ export function App() {
   // Initialization: apply stored window dimensions if present from main process
   useEffect(() => {
     const unsub = window.appApi.onRequestClose(() => {
-      if (isDirty) {
+      if (operationRef.current) {
+        showToast("Please wait for the project operation to finish, then close again", "edit", 2200);
+        return;
+      }
+      if (dirtyRef.current) {
         setPendingAction("close");
         setShowConfirmModal(true);
       } else {
@@ -1161,13 +1241,20 @@ export function App() {
     [project?.data.relicSystem],
   );
 
+  const [cardRuntimeGeneration, setCardRuntimeGeneration] = useState(0);
+  const rewardScope = JSON.stringify([liveSession.sessionId, liveSession.projectId, cardRuntimeGeneration]);
+  const rewards = useRewardPresentation({ scope: rewardScope, project, setProject, roster: studentRoster, setDirty: setIsDirty, setBadgeVisible: setBadgeVisibleState, setScoresRevealed: setFinalScoreRevealedState });
+
+  const visualScope = JSON.stringify([liveSession.sessionId, liveSession.projectId, cardRuntimeGeneration]);
+  const toVisualMediaUrl = (path: string) => visualMediaUrl(toMediaUrl(path), visualScope);
+  const movementScope = `${liveSession.sessionId}:${cardRuntimeGeneration}`;
   const movementConfig = useMemo(
     () => normalizeMovementConfig(project?.data.movement),
     [project?.data.movement],
   );
   const movementJingleUrl = useMemo(
-    () => movementConfig.jingleRelativePath ? toMediaUrl(movementConfig.jingleRelativePath) : null,
-    [movementConfig.jingleRelativePath],
+    () => movementConfig.jingleRelativePath ? movementMediaUrl(movementConfig.jingleRelativePath, movementScope) : null,
+    [movementConfig.jingleRelativePath, movementScope],
   );
 
   const updateMovementConfig = useCallback((nextMovement: MovementConfig) => {
@@ -1265,13 +1352,14 @@ export function App() {
         ...project.data,
         relicSystem: reconciled,
       },
-    });
+    }, false);
   }, [project, studentRoster]);
 
   const updateRelicSystem = useCallback((updater: (current: RelicSystem) => RelicSystem) => {
     setProject((prev) => {
       if (!prev) return prev;
       const nextRelicSystem = normalizeRelicSystem(updater(normalizeRelicSystem(prev.data.relicSystem)));
+      rewards.observeVisibility(nextRelicSystem.showOnStage);
       return {
         ...prev,
         data: {
@@ -1281,12 +1369,16 @@ export function App() {
       };
     });
     setIsDirty(true);
-  }, [showToast]);
+  }, [showToast, rewards.observeVisibility]);
 
   const patchRelicSystem = useCallback((updates: Partial<RelicSystem>) => {
     updateRelicSystem((current) => ({ ...current, ...updates }));
   }, [updateRelicSystem]);
 
+  const movementFrameRef = useRef<LogicalFrame>({ width: 1280, height: 720 });
+  const movementScopeRef = useRef(movementScope);
+  movementScopeRef.current = movementScope;
+  const movementExecution = useRef(new MovementExecutionGuard());
   const playMovementJingle = useCallback(() => {
     if (!movementConfig.jingleEnabled) return;
     if (movementJingleUrl) {
@@ -1295,14 +1387,17 @@ export function App() {
       return;
     }
     audioManager.playGeneratedChime(movementConfig.jingleVolume ?? 0.35);
-  }, [movementConfig.jingleEnabled, movementConfig.jingleVolume, movementJingleUrl]);
+  }, [movementConfig.jingleEnabled, movementConfig.jingleVolume, movementConfig.jingleRelativePath, movementJingleUrl]);
 
-  const triggerMovementEvent = useCallback((event: MovementEventConfig | null) => {
+  const triggerMovementEvent = useCallback((event: MovementEventConfig | null, commandId = crypto.randomUUID()) => {
     if (!event || !event.enabled) return;
-    // Movement events are temporary attention-reset overlays; replacing prevents stacking.
+    if (movementScope !== movementScopeRef.current) return;
+    const scope = movementScope;
+    if (!movementExecution.current.claim(scope, commandId)) return;
+    const next = createMovementPresentation(commandId, event, Date.now(), movementFrameRef.current);
+    setActiveMovementEvent(next);
     playMovementJingle();
-    setActiveMovementEvent({ event, signal: Date.now() });
-  }, [playMovementJingle]);
+  }, [playMovementJingle, movementScope]);
 
   const triggerRandomMovementEvent = useCallback(() => {
     triggerMovementEvent(pickRandomMovementEvent(movementConfig));
@@ -1311,19 +1406,18 @@ export function App() {
   useEffect(() => {
     if (!activeMovementEvent) return;
     const timeout = window.setTimeout(() => {
-      setActiveMovementEvent((current) => current?.signal === activeMovementEvent.signal ? null : current);
-    }, Math.max(1, activeMovementEvent.event.durationSeconds) * 1000);
+      setActiveMovementEvent((current) => expireMovementPresentation(current, activeMovementEvent.id, Date.now()));
+    }, movementRemaining(activeMovementEvent, Date.now()));
     return () => window.clearTimeout(timeout);
   }, [activeMovementEvent]);
 
   useEffect(() => {
     if (appMode !== "teach") return;
     const handleMovementHotkey = (event: KeyboardEvent) => {
-      if (isEditableKeyTarget(event.target as HTMLElement | null)) return;
+      if (!isPlainTeacherKey(event)) return;
       const movementEvent = getMovementEventByShortcut(movementConfig, event.code);
       if (!movementEvent) return;
-      event.preventDefault();
-      event.stopPropagation();
+      claimTeacherKey(event);
       triggerMovementEvent(movementEvent);
     };
     window.addEventListener("keydown", handleMovementHotkey, { capture: true });
@@ -1423,48 +1517,7 @@ export function App() {
     }));
   }, [updateRelicSystem]);
 
-  const runRelicProgressAction = useCallback((action: "increase" | "decrease" | "reset" | "complete") => {
-    const activeStudentIds = getActiveRelicStudentIds(relicSystem, studentRoster);
-    if (activeStudentIds.length === 0) {
-      showToast("No active student selected", "edit", 1200);
-      return;
-    }
-    const beforeProgress = activeStudentIds.map((studentId) => relicSystem.studentProgress[studentId]?.progress ?? 0);
-    const afterProgress = beforeProgress.map((progress) => {
-      if (action === "increase") return clampRelicProgress(progress + 1);
-      if (action === "decrease") return clampRelicProgress(progress - 1);
-      if (action === "reset") return 0;
-      return 30;
-    });
-    const crossesStageBoundary = beforeProgress.some((progress, index) => {
-      const next = afterProgress[index] ?? progress;
-      return (
-        (progress === 0 && next >= 1) ||
-        (progress <= 10 && next >= 11) ||
-        (progress <= 20 && next >= 21) ||
-        (progress <= 29 && next >= 30)
-      );
-    });
-    const reachesComplete = beforeProgress.some((progress, index) => progress < 30 && (afterProgress[index] ?? progress) >= 30);
-    updateRelicSystem((current) => {
-      const visibleCurrent = { ...current, showOnStage: true };
-      if (action === "increase") return applyRelicProgressDelta(visibleCurrent, activeStudentIds, 1);
-      if (action === "decrease") return applyRelicProgressDelta(visibleCurrent, activeStudentIds, -1);
-      if (action === "reset") return setRelicProgressForStudents(visibleCurrent, activeStudentIds, 0);
-      return setRelicProgressForStudents(visibleCurrent, activeStudentIds, 30);
-    });
-    if (action === "complete") {
-      setIsRelicRewardCardVisible(true);
-    }
-    const kind = reachesComplete ? "complete" : crossesStageBoundary ? "stage" : "progress";
-    const shouldAnimate =
-      (kind === "complete" && relicSystem.animateOnComplete) ||
-      (kind === "stage" && relicSystem.animateOnStageChange) ||
-      (kind === "progress" && relicSystem.animateOnProgress);
-    if (shouldAnimate) {
-      setRelicAnimationSignal({ kind, nonce: Date.now() });
-    }
-  }, [relicSystem, showToast, studentRoster, updateRelicSystem]);
+  const runRelicProgressAction = rewards.relicAction;
 
   const toggleRelicWidgetVisibility = useCallback(() => {
     updateRelicSystem((current) => ({ ...current, showOnStage: !current.showOnStage }));
@@ -1530,6 +1583,11 @@ export function App() {
 
   useEffect(() => {
     const handleRelicHotkeys = (event: KeyboardEvent) => {
+      if (shouldIgnoreTeacherKey(event)) return;
+      // Drawing owns its reserved chord even if a custom Relic shortcut matches.
+      if (isDrawModeShortcut({ ctrlKey: event.ctrlKey, metaKey: event.metaKey,
+        altKey: event.altKey, shiftKey: event.shiftKey, repeat: event.repeat, key: event.key,
+        target: event.target instanceof HTMLElement ? event.target : null })) return;
       const target = event.target as HTMLElement | null;
       if (
         target instanceof HTMLInputElement ||
@@ -1540,76 +1598,64 @@ export function App() {
         return;
       }
       if (matchesRelicHotkey(event, relicSystem.hotkeys.increaseProgress)) {
-        event.preventDefault();
+        claimTeacherKey(event);
         runRelicProgressAction("increase");
       } else if (matchesRelicHotkey(event, relicSystem.hotkeys.decreaseProgress)) {
-        event.preventDefault();
+        claimTeacherKey(event);
         runRelicProgressAction("decrease");
       } else if (matchesRelicHotkey(event, relicSystem.hotkeys.toggleWidget)) {
-        event.preventDefault();
+        claimTeacherKey(event);
         toggleRelicWidgetVisibility();
       } else if (!event.ctrlKey || !event.altKey || event.metaKey || event.shiftKey) {
         return;
       } else if (event.key === "r" || event.key === "R") {
-        event.preventDefault();
+        claimTeacherKey(event);
         runRelicProgressAction("reset");
       } else if (event.key === "c" || event.key === "C") {
-        event.preventDefault();
+        claimTeacherKey(event);
         runRelicProgressAction("complete");
       } else if (event.key === "k" || event.key === "K") {
-        event.preventDefault();
-        setIsRelicRewardCardVisible(true);
+        claimTeacherKey(event);
+        rewards.showRelicReward(true);
       }
     };
-    window.addEventListener("keydown", handleRelicHotkeys);
-    return () => window.removeEventListener("keydown", handleRelicHotkeys);
+    window.addEventListener("keydown", handleRelicHotkeys, true);
+    return () => window.removeEventListener("keydown", handleRelicHotkeys, true);
   }, [matchesRelicHotkey, relicSystem.hotkeys, runRelicProgressAction, toggleRelicWidgetVisibility]);
 
   const sections = project?.data.sections ?? [];
-  let _matchedSection = sections.find((s) => s.id === selectedSectionId) ?? null;
-
-  let activeItem: SequenceItem | null = null;
-  let activeBoostSequence: SequenceItem[] = [];
-  let activeBoostIndex = -1;
-  if (topMode === 'boost') {
-    _matchedSection = null;
-    if (project?.data.boostPack) {
-      activeBoostSequence = project.data.boostPack[`${boostTab}Sequence` as keyof BoostPack] || [];
-      activeBoostIndex = activeBoostSequence.findIndex((i) => i.id === selectedBoostItemId);
-      activeItem = activeBoostIndex >= 0 ? activeBoostSequence[activeBoostIndex] : null;
-      if (activeItem?.type === 'breakRef') {
-        const breakId = (activeItem as Extract<SequenceItem, { type: 'breakRef' }>).breakId;
-        _matchedSection = sections.find(s => s.id === breakId) ?? null;
-      }
-    }
-  }
-
-  const boostBackdropContext = (() => {
-    if (topMode !== "boost" || !project || activeBoostIndex < 0) return null;
-    for (let i = activeBoostIndex; i >= 0; i -= 1) {
-      const item = activeBoostSequence[i];
-      if (!item) continue;
-      if (item.type === "slideRef") {
-        const slide = project.data.slides.find((s) => s.id === item.slideId) ?? null;
-        if (slide) return { kind: "slide" as const, slide };
-        continue;
-      }
-      if (item.type === "breakRef") {
-        const section = sections.find((s) => s.id === item.breakId) ?? null;
-        if (section) return { kind: "break" as const, section };
-      }
-    }
-    return null;
-  })();
-
-  if (topMode === "boost" && boostTab === "language" && activeItem?.type === "aCardRef" && boostBackdropContext?.kind === "break") {
-    _matchedSection = boostBackdropContext.section;
-  }
-
-  const selectedSection = _matchedSection;
+  const presentationTarget = resolvePresentationTarget(project?.data ?? null, presentationSession);
+  const activeTargetToken = presentationToken(presentationSession, presentationTarget);
+  const liveTarget = resolvePresentationTarget(project?.data ?? null, liveSession);
+  const liveAsset = project?.data.assets.find(a=>a.id===liveTarget.slide?.assetId) ?? null;
+  const liveBindCards = useCardRuntime(`${liveSession.sessionId}:${liveSession.projectId}:${cardRuntimeGeneration}`, liveTarget.occurrenceId, liveSession.targetRevision);
+  const editBindCards = useCardRuntime(`${presentationSession.sessionId}:${presentationSession.projectId}:${cardRuntimeGeneration}`, presentationTarget.occurrenceId, presentationSession.targetRevision);
+  const bindCards = appMode === 'edit' ? editBindCards : liveBindCards;
+  const activeItem = presentationTarget.item;
+  const v2Host = resolveCardHost(presentationTarget);
+  const v2PlacementId = project && v2Host ? hostPlacementId(project.data,v2Host) : undefined;
+  const v2Module = project?.data.cardsV2;
+  const v2Activity = v2Module && v2PlacementId ? v2Module.activities[v2Module.placements[v2PlacementId]?.activityId] : undefined;
+  const liveV2ModuleRef=useRef(v2Module);
+  if(appMode==='teach')liveV2ModuleRef.current=v2Module;
+  const liveV2Module=liveV2ModuleRef.current;
+  const liveV2Host = resolveCardHost(liveTarget);
+  const liveV2PlacementId = project && liveV2Host ? hostPlacementId(project.data,liveV2Host) : undefined;
+  const v2Runtime = useCardV2Session(liveV2Module, JSON.stringify([liveSession.sessionId, liveSession.projectId, cardRuntimeGeneration]), {
+    sessionId: liveSession.sessionId, projectId: liveSession.projectId ?? '', occurrenceId: liveTarget.occurrenceId, targetRevision: liveSession.targetRevision, revision: 0,
+  }, liveV2PlacementId);
+  const liveV2Activity = liveV2Module && liveV2PlacementId ? liveV2Module.activities[liveV2Module.placements[liveV2PlacementId]?.activityId] : undefined;
+  const liveV2Plan = liveV2Module && liveV2Activity ? buildCardV2RenderPlan(liveV2Module,liveV2Activity,v2Runtime.state??undefined,id=>{const asset=assetsById.get(id);return asset?toVisualMediaUrl(asset.relativePath):undefined;}) : undefined;
+  const v2Plan = v2Module && v2Activity ? buildCardV2RenderPlan(v2Module, appMode === 'edit' ? {...v2Activity,instances:v2Activity.instances.map(i=>({...i,initiallyConcealed:false,...(i.id===selectedV2Card&&v2Module.cards[i.cardId].faces.some(f=>f.id===previewV2Face)?{initialFaceId:previewV2Face}:{})}))} : v2Activity, appMode === 'teach' ? v2Runtime.state ?? undefined : undefined, id => {
+    const asset = project?.data.assets.find(item => item.id === id && item.mediaType === 'image');
+    return asset ? toVisualMediaUrl(asset.relativePath) : undefined;
+  }) : undefined;
+  useEffect(()=>{if(selectedV2Card&&!v2Activity?.instances.some(i=>i.id===selectedV2Card)){setSelectedV2Card('');setPreviewV2Face('');}},[presentationTarget.occurrenceId,v2Activity,selectedV2Card]);
+  const activeBoostSequence = presentationTarget.sequence;
+  const activeBoostIndex = presentationTarget.sequenceIndex;
+  const selectedSection = presentationTarget.section;
   const selectedSectionType = topMode === 'boost' && activeItem && activeItem.type !== 'slideRef' && activeItem.type !== 'breakRef'
-    ? activeItem.type
-    : selectedSection?.type;
+    ? activeItem.type : selectedSection?.type;
 
   useEffect(() => {
     const nextShowBreakEditor =
@@ -1655,29 +1701,8 @@ export function App() {
     return sectionSlideIndices.get(selectedSectionId) ?? [];
   }, [project, sectionSlideIndices, selectedSectionId]);
 
-  let currentSlide = project?.data.slides[currentIndex] ?? null;
-  let currentAsset = currentSlide
-    ? (assetsById.get(currentSlide.assetId) ?? null)
-    : null;
-
-  if (topMode === 'boost' && activeItem) {
-    if (activeItem.type === 'slideRef') {
-      const activeSlide = project?.data.slides.find(s => s.id === activeItem.slideId) ?? null;
-      currentSlide = activeSlide;
-      currentAsset = activeSlide ? (assetsById.get(activeSlide.assetId) ?? null) : null;
-    } else if (activeItem.type === 'aCardRef' && boostTab === 'language') {
-      if (boostBackdropContext?.kind === "slide") {
-        currentSlide = boostBackdropContext.slide;
-        currentAsset = assetsById.get(boostBackdropContext.slide.assetId) ?? null;
-      } else {
-        currentSlide = null;
-        currentAsset = null;
-      }
-    } else {
-      currentSlide = null;
-      currentAsset = null;
-    }
-  }
+  const currentSlide = presentationTarget.slide;
+  const currentAsset = currentSlide ? (assetsById.get(currentSlide.assetId) ?? null) : null;
 
   const currentVideoAudioSettings = currentSlide
     ? resolveVideoAudioSettings(currentSlide.videoAudio)
@@ -1762,6 +1787,9 @@ export function App() {
   const activeOverlayBCardInstances = topMode === "story"
     ? (storyBCardHost?.instances || [])
     : (boostBCardHost?.instances || []);
+  const overlayBinding = bindCards('overlays', activeOverlayBCardInstances);
+  const overlayBCardTeachStates = overlayBinding.state.states;
+  const boardBinding = (id: string, ref = 'board') => bindCards(ref, project?.data.aCardLibrary?.[id]?.bCardInstances ?? []);
   const selectedOverlayBCardInstanceId =
     selectedPlacedBCardId && activeOverlayBCardInstances.some((item) => item.id === selectedPlacedBCardId)
       ? selectedPlacedBCardId
@@ -1771,7 +1799,7 @@ export function App() {
     : null;
 
   const setOverlayBCardState = (instanceId: string, next: BCardTeachState) => {
-    setOverlayBCardTeachStates((prev) => ({ ...prev, [instanceId]: next }));
+    overlayBinding.setState(instanceId, next);
   };
   const toggleSelectedOverlayBCardState = (property: keyof BCardTeachState) => {
     if (!selectedOverlayBCardInstanceId || !selectedOverlayBCardState) return;
@@ -1797,29 +1825,6 @@ export function App() {
   }, [storyRefContext, selectedStoryRefId]);
 
   useEffect(() => {
-    const validIds = new Set(activeOverlayBCardInstances.map((item) => item.id));
-    setOverlayBCardTeachStates((prev) => {
-      const next: Record<string, BCardTeachState> = {};
-      for (const [id, state] of Object.entries(prev)) {
-        if (validIds.has(id)) next[id] = state;
-      }
-      const prevKeys = Object.keys(prev);
-      const nextKeys = Object.keys(next);
-      if (prevKeys.length === nextKeys.length) {
-        let changed = false;
-        for (const key of prevKeys) {
-          if (!(key in next) || next[key] !== prev[key]) {
-            changed = true;
-            break;
-          }
-        }
-        if (!changed) return prev;
-      }
-      return next;
-    });
-  }, [activeOverlayBCardInstances]);
-
-  useEffect(() => {
     if (!selectedPlacedBCardId) return;
     if (!activeOverlayBCardInstances.some((item) => item.id === selectedPlacedBCardId)) {
       setSelectedPlacedBCardId(activeOverlayBCardInstances[0]?.id || null);
@@ -1836,13 +1841,69 @@ export function App() {
     }
   }, [topMode]);
 
-  const previousSlide =
-    previousIndex !== null ? project?.data.slides[previousIndex] : null;
-  const previousAsset = previousSlide
-    ? (assetsById.get(previousSlide.assetId) ?? null)
-    : null;
   const resolvedCurrentSrc =
     project && currentAsset ? toMediaUrl(currentAsset.relativePath) : null;
+
+  const [modernEdit, setModernEdit] = useState(() => { try { return localStorage.getItem('story-studio.edit-layout') !== 'legacy'; } catch { return true; } });
+  const editWorkspace = appMode === 'edit' && modernEdit;
+  const [editFocus, setEditFocus] = useState(false);
+  const editHosts = useEditHosts();
+  const teachLayout = useTeachLayout(appMode);
+  const [teachSecondaryOpen, setTeachSecondaryOpen] = useState(false);
+  const [presentFrame, setPresentFrame] = useState<LogicalFrame | null>(null);
+  const presentMode = appMode === 'teach' || presentFrame !== null;
+  const [viewportResetSignal, setViewportResetSignal] = useState(0);
+  const liveTeachingScene = useTeachingScene(JSON.stringify(presentationToken(liveSession,liveTarget)));
+  const editTeachingScene = useTeachingScene(JSON.stringify(activeTargetToken));
+  const teachingScene = appMode === 'edit' ? editTeachingScene : liveTeachingScene;
+  // One occurrence-scoped runtime viewport feeds both renderers and drawing interaction.
+  viewportRef.current = teachingScene.state.viewport;
+  const staticStageRef = useRef<HTMLDivElement | null>(null);
+  const [staticFrame, setStaticFrame] = useState({ width: 1280, height: 720 });
+  useEffect(() => {
+    const stage = staticStageRef.current;
+    if (!stage) return;
+    const update = () => {
+      const logical = stage.querySelector<HTMLElement>('[data-logical-scene]') ?? stage;
+      if (logical.clientWidth > 0 && logical.clientHeight > 0) setStaticFrame({ width: logical.clientWidth, height: logical.clientHeight });
+    };
+    update(); const observer = new ResizeObserver(update); observer.observe(stage);
+    return () => observer.disconnect();
+  }, [presentationTarget.occurrenceId, editWorkspace]);
+  useEffect(() => {
+    if (appMode === 'teach') setPresentFrame(frame => frame ?? staticFrame);
+  }, [appMode]);
+  const breakSection = presentationTarget.section?.type === 'break' ? presentationTarget.section : null;
+  const liveBreak = liveTarget.section?.type === 'break' ? liveTarget.section : null;
+  const activity = composeActivityScene(project?.data??null,presentationSession,presentationTarget,bindCards,timerState,visualScope,appMode==='teach');
+  const liveActivity = composeActivityScene(project?.data??null,liveSession,liveTarget,liveBindCards,timerState,visualScope,true);
+  // Present owns the live decoder in either Control mode. Editor media is local.
+  const usesPresentVideo = appMode === 'teach';
+  const mediaPlayback = usePresentationMedia(liveAsset?.mediaType === 'video'
+    ? JSON.stringify([liveSession.sessionId,cardRuntimeGeneration,liveTarget.occurrenceId,liveTarget.slide?.id,liveAsset.id]) : null,
+    resolveVideoAudioSettings(liveTarget.slide?.videoAudio),liveTarget.slide?.videoTrim,true);
+  if (mediaPlayback.status) lastMediaTimeRef.current = mediaPlayback.status.positionSec;
+  const rewardPresentation = rewards.projectScene(liveBreak ? {width:1920,height:1080} : presentFrame ?? staticFrame,liveTarget.contentId==='badge',finalScoreRevealedState);
+  useEffect(()=>{if(liveTarget.contentId==='badge')rewards.reconcileBadge();},[rewardScope,liveTarget.kind,project?.data.sparkStudents,project?.data.badgeConfig?.badgeSprites]);
+  const { openPresent: openProjectedPresent, transition: sceneTransition } = usePresentProjection(liveSession,liveTarget,liveAsset,liveAsset?toMediaUrl(liveAsset.relativePath):null,{
+    imageHeightFraction:liveActivity.boards.some(b=>b.card.stageMode==='half')?0.5:undefined,
+    frame:liveBreak?{width:1920,height:1080}:presentFrame??{width:1280,height:720},viewport:liveTeachingScene.state.viewport,
+    markerStrokes:liveBreak?.markerStrokes??liveTarget.slide?.markerStrokes??[],transient:liveTeachingScene.state.transient,adjustments:liveTarget.slide?.imageAdjustments,
+    overlays:liveBreak?[]:resolvePassiveOverlays(liveTarget.slide?.overlays??[],project?.data.bubbleDefinitions,visualScope),
+  },liveActivity,cardRuntimeGeneration,mediaPlayback.intent,rewardPresentation,liveV2Plan);
+
+  movementFrameRef.current = breakSection ? { width: 1920, height: 1080 } : presentFrame ?? staticFrame;
+
+  const showInPresent = () => {
+    const next = showEditInPresent(editor.cursor.current,presentation.ref.current);
+    if(next !== presentation.ref.current) runNavigationAudio('teach',next.sectionId!==presentation.ref.current.sectionId,audioManager);
+    presentation.commit(next);
+  };
+  const openPresent = async () => {
+    if (!presentFrame) setPresentFrame(staticFrame);
+    setAppMode('teach');
+    await openProjectedPresent();
+  };
 
   // Sync staged transition controls when slide changes
   useEffect(() => {
@@ -1856,64 +1917,41 @@ export function App() {
   const goToSlideByAbsoluteIndex = useCallback(
     (index: number) => {
       if (!project) return;
-      if (index === currentIndex) return;
+      if (index === currentIndex && presentationTarget.kind === "slide" && selectedSectionId === project.data.slides[index]?.sectionId) return;
       const targetSlide = project?.data.slides[index];
       if (!targetSlide) return;
 
-      const duration = targetSlide?.transitionDuration ?? 500;
 
       // Ensure the view switches if the target slide is in a different section
       // This fixes the bug where the stage gets "stuck" on a break section
       if (targetSlide.sectionId !== selectedSectionId) {
         setSelectedSectionId(targetSlide.sectionId);
-        audioManager.stopSectionMusic();
       }
 
-      setPreviousIndex(currentIndex);
       setCurrentIndex(index);
-      audioManager.stopSlideAudio(); // Stop slide audio on slide change
-      setIsAnimating(true);
-      window.setTimeout(() => {
-        setIsAnimating(false);
-        setPreviousIndex(null);
-      }, duration);
+      runNavigationAudio(appMode,targetSlide.sectionId !== selectedSectionId,audioManager);
     },
-    [project, currentIndex, selectedSectionId],
+    [project, currentIndex, selectedSectionId, presentationTarget.kind, appMode],
   );
 
-  const goToNextSlide = () => {
-    if (!project) return;
-    if (selectedSection?.type === 'break') {
-      const sections = project.data.sections;
-      const currentIdx = sections.findIndex(s => s.id === selectedSection.id);
-      for (let i = currentIdx + 1; i < sections.length; i++) {
-        const firstSlide = sectionSlideIndices.get(sections[i].id)?.[0];
-        if (firstSlide !== undefined) {
-          goToSlideByAbsoluteIndex(firstSlide);
-          return;
-        }
-      }
-    } else if (currentIndex < project.data.slides.length - 1) {
-      goToSlideByAbsoluteIndex(currentIndex + 1);
+  const navigateLiveTarget = (direction: -1 | 1) => {
+    const current = projectRef.current;
+    if (!current) return;
+    const session = selection.ref.current;
+    const target = resolvePresentationTarget(current.data, session);
+    if (!targetMatches(session, target, activeTargetToken)) return;
+    const next = navigatePresentation(current.data, session, direction);
+    if (next === session) return;
+    if (session.mode === 'boost') {
+      selection.commit(next);
+      runNavigationAudio(appMode,false,audioManager);
+    } else {
+      const index = current.data.slides.findIndex(slide => slide.id === next.storySlideId);
+      if (index >= 0) goToSlideByAbsoluteIndex(index);
     }
   };
-
-  const goToPrevSlide = () => {
-    if (!project) return;
-    if (selectedSection?.type === 'break') {
-      const sections = project.data.sections;
-      const currentIdx = sections.findIndex(s => s.id === selectedSection.id);
-      for (let i = currentIdx - 1; i >= 0; i--) {
-        const slides = sectionSlideIndices.get(sections[i].id);
-        if (slides && slides.length > 0) {
-          goToSlideByAbsoluteIndex(slides[slides.length - 1]);
-          return;
-        }
-      }
-    } else if (currentIndex > 0) {
-      goToSlideByAbsoluteIndex(currentIndex - 1);
-    }
-  };
+  const goToNextSlide = () => navigateLiveTarget(1);
+  const goToPrevSlide = () => navigateLiveTarget(-1);
 
   const goToNextBreak = () => {
     if (!project) return;
@@ -1951,7 +1989,7 @@ export function App() {
   const updateCurrentSlide = (updates: Partial<Slide>) => {
     if (!project || !currentSlide) return;
     const newSlides = project.data.slides.map((s, index) => {
-      if (index === currentIndex) {
+      if (s.id === currentSlide.id) {
         return { ...s, ...updates };
       }
       return s;
@@ -1992,13 +2030,15 @@ export function App() {
 
   const goToVisibleOffset = useCallback(
     (offset: number) => {
+      if (topMode === "boost") { navigateLiveTarget(offset < 0 ? -1 : 1); return; }
+      if (presentationTarget.kind === "break") { navigateLiveTarget(offset < 0 ? -1 : 1); return; }
       const currentVisiblePos = visibleSlideIndices.indexOf(currentIndex);
       if (currentVisiblePos < 0) return;
       const target = visibleSlideIndices[currentVisiblePos + offset];
       if (target === undefined) return;
       goToSlideByAbsoluteIndex(target);
     },
-    [visibleSlideIndices, currentIndex, goToSlideByAbsoluteIndex],
+    [visibleSlideIndices, currentIndex, goToSlideByAbsoluteIndex, presentationSession.revision],
   );
 
   const updateSequenceItem = (itemId: string, updates: Partial<SequenceItem>) => {
@@ -2008,6 +2048,93 @@ export function App() {
     const newSeq = seq.map(item => item.id === itemId ? { ...item, ...updates } as SequenceItem : item);
     setProject({ ...project, data: { ...project.data, boostPack: { ...project.data.boostPack, [prop]: newSeq } } });
     setIsDirty(true);
+  };
+
+  const commitCardData = (data: ProjectData) => { setProject(previous=>previous?{...previous,data}:previous); setIsDirty(true); };
+  const selectV2Card = (id:string) => { setSelectedV2Card(id); if(id!==selectedV2Card)setPreviewV2Face(''); setEditFocus(false); };
+  const cardAction = (action:()=>void) => { try { action(); } catch(error) { showToast(error instanceof Error ? error.message : 'Card change could not be applied.','edit',3000); } };
+  const quickAddCard = (sourceCardId?:string, independent=false, newCanvas=false, paste=false) => cardAction(()=>{
+    if(!project || appMode!=='edit')return;
+    let data=project.data, host=newCanvas?null:v2Host;
+    if(!host && topMode==='boost' && boostTab!=='badge') {
+      const item: SequenceItem={id:crypto.randomUUID(),type:'cardActivityRef',engine:'card-v2',placementId:''};
+      // Creation of a new empty Booster card canvas and its placement is one history revision.
+      const prop=`${boostTab}Sequence` as const;
+      const pack=data.boostPack??{activationSequence:[],languageSequence:[],gamesSequence:[]};
+      const sequence=[...pack[prop]]; sequence.splice(Math.max(0,activeBoostIndex+1),0,item);
+      data={...data,boostPack:{...pack,[prop]:sequence}};
+      host={kind:'booster',id:item.id,tab:boostTab};
+      const added=paste&&cardClipboard.current?pasteHostCard(data,host,cardClipboard.current,()=>crypto.randomUUID()):addCardToHost(data,host,()=>crypto.randomUUID(),sourceCardId,independent);
+      commitCardData(added.data);setSelectedBoostItemId(item.id);selectV2Card(added.instanceId);return;
+    }
+    if(!host)return;
+    const added=paste&&cardClipboard.current?pasteHostCard(data,host,cardClipboard.current,()=>crypto.randomUUID()):addCardToHost(data,host,()=>crypto.randomUUID(),sourceCardId,independent);commitCardData(added.data);selectV2Card(added.instanceId);
+  });
+  const addSetToCanvas = (setId:string) => cardAction(()=>{
+    if(!project||!v2Host)return;const set=project.data.cardsV2?.sets[setId];if(!set)return;
+    let data=project.data,last='';for(const entry of set.entries){const added=addCardToHost(data,v2Host,()=>crypto.randomUUID(),entry.cardId,reuseCardIndependent);data=added.data;last=added.instanceId;}
+    if(last){commitCardData(data);selectV2Card(last);}
+  });
+  const duplicateSelectedV2 = (independent=true) => cardAction(()=>{
+    if(!project || !v2Host || !selectedV2Card)return;
+    const added=duplicateHostCard(project.data,v2Host,selectedV2Card,()=>crypto.randomUUID(),independent);commitCardData(added.data);selectV2Card(added.instanceId);
+  });
+  const removeSelectedV2 = () => cardAction(()=>{if(project&&v2Host&&selectedV2Card){commitCardData(removeHostCard(project.data,v2Host,selectedV2Card));selectV2Card('');}});
+  const copySelectedV2 = () => {const instance=v2Activity?.instances.find(i=>i.id===selectedV2Card);if(project&&instance)cardClipboard.current={project:project.folderPath,card:JSON.parse(JSON.stringify(v2Module!.cards[instance.cardId])),instance:JSON.parse(JSON.stringify(instance))};refreshCardClipboard(n=>n+1);};
+  useEffect(()=>{
+    if(appMode!=='edit')return;
+    const handler=(event:KeyboardEvent)=>{
+      if((event.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true]') || cardsV2Open)return;
+      if(event.ctrlKey||event.metaKey){
+        if(event.key.toLowerCase()==='d'&&selectedV2Card){event.preventDefault();event.stopImmediatePropagation();duplicateSelectedV2();}
+        if(event.key.toLowerCase()==='c'&&selectedV2Card){event.preventDefault();event.stopImmediatePropagation();copySelectedV2();}
+        if(event.key.toLowerCase()==='v'&&cardClipboard.current?.project===project?.folderPath){event.preventDefault();event.stopImmediatePropagation();quickAddCard(undefined,true,false,true);}
+      }else if(event.key==='Escape'&&selectedV2Card){event.preventDefault();selectV2Card('');}
+      else if((event.key==='Delete'||event.key==='Backspace')&&selectedV2Card){event.preventDefault();event.stopImmediatePropagation();removeSelectedV2();}
+    };
+    window.addEventListener('keydown',handler,true);return()=>window.removeEventListener('keydown',handler,true);
+  },[appMode,project,v2PlacementId,selectedV2Card,cardsV2Open]);
+
+  const insertBoosterItem = (item:SequenceItem,data=project?.data) => {
+    if(!data || boostTab==='badge')return;
+    const pack=data.boostPack??{activationSequence:[],languageSequence:[],gamesSequence:[]};
+    const prop=`${boostTab}Sequence` as const, sequence=[...pack[prop]];
+    sequence.splice(Math.max(0,activeBoostIndex+1),0,item);
+    commitCardData({...data,boostPack:{...pack,[prop]:sequence}});setSelectedBoostItemId(item.id);
+  };
+  const reuseBoosterSlide = (slideId:string,independent:boolean) => cardAction(()=>{
+    if(!project || boostTab==='badge')return;
+    const item:SequenceItem={id:crypto.randomUUID(),type:'slideRef',slideId};
+    if(independent){const pack=project.data.boostPack??{activationSequence:[],languageSequence:[],gamesSequence:[]};const prop=`${boostTab}Sequence` as const;const data={...project.data,boostPack:{...pack,[prop]:[...pack[prop],item]}};const copied=independentBoosterSlide(data,boostTab,item.id,()=>crypto.randomUUID());const sequence=copied.data.boostPack![prop].filter(i=>i.id!==item.id);sequence.splice(Math.max(0,activeBoostIndex+1),0,{...item,slideId:copied.slideId,independentCopyOf:slideId});commitCardData({...copied.data,boostPack:{...copied.data.boostPack!,[prop]:sequence}});setSelectedBoostItemId(item.id);}
+    else insertBoosterItem(item);
+  });
+  const addBoosterMedia = (assetId:string) => cardAction(()=>{
+    if(!project)return;
+    const asset=project.data.assets.find(a=>a.id===assetId);if(!asset||asset.mediaType==='audio')return;
+    const section=project.data.sections.find(s=>s.type!=='break');if(!section){showToast('Create a Story section to store imported slides.','edit',3000);return;}
+    const slide=createMediaSlide(asset,section.id,()=>crypto.randomUUID());
+    insertBoosterItem({id:crypto.randomUUID(),type:'slideRef',slideId:slide.id},{...project.data,slides:[...project.data.slides,slide]});
+  });
+  const changeBoosterSequence = (operation:'duplicate'|'remove'|'earlier'|'later') => cardAction(()=>{
+    if(!project||!activeItem||boostTab==='badge')return;
+    if(operation==='duplicate'){const copy=duplicateBoosterItem(project.data,boostTab,activeItem.id,()=>crypto.randomUUID());commitCardData(copy.data);setSelectedBoostItemId(copy.itemId);}
+    else if(operation==='remove'){commitCardData(removeBoosterItem(project.data,boostTab,activeItem.id));setSelectedBoostItemId(activeBoostSequence[activeBoostIndex+1]?.id??activeBoostSequence[activeBoostIndex-1]?.id??null);}
+    else commitCardData(moveBoosterItem(project.data,boostTab,activeItem.id,operation==='earlier'?-1:1));
+  });
+  const updateCardsV2 = (cardsV2: CardsV2Module) => {
+    setProject(previous => previous ? { ...previous, data: { ...previous.data, cardsV2 } } : previous);
+    setIsDirty(true);
+  };
+  const addV2ToBooster = (placementId: string) => {
+    const id = crypto.randomUUID();
+    setProject(previous => {
+      if (!previous?.data.cardsV2?.placements[placementId]) return previous;
+      const boostPack = previous.data.boostPack ?? { activationSequence: [], languageSequence: [], gamesSequence: [] };
+      const sequenceKey = boostTab === 'badge' ? 'activationSequence' : `${boostTab}Sequence` as const;
+      return { ...previous, data: { ...previous.data, boostPack: { ...boostPack, [sequenceKey]: [...boostPack[sequenceKey], { id, type: 'cardActivityRef', engine: 'card-v2', placementId }] } } };
+    });
+    setTopMode('boost'); if(boostTab === 'badge')setBoostTab('activation'); setSelectedBoostItemId(id);
+    setIsDirty(true); setCardsV2Open(false);
   };
 
   const buildNewBCardInstance = (bCardId: string, existingCount: number): BCardInstance => ({
@@ -2032,6 +2159,7 @@ export function App() {
     } else if (type === 'promptCard') {
       newItem = { id, type, body: '' } as PromptCardItem;
     } else if (type === 'aCardRef') {
+      if (!hasLegacyCards) return;
       newItem = { id, type, aCardId: Object.values(project.data.aCardLibrary || {})[0]?.id || '' } as any;
     } else {
       newItem = { id, type: 'miniGame', gameType: 'placeholder' } as MiniGameItem;
@@ -2103,6 +2231,7 @@ export function App() {
   };
 
   const addStoryReference = (type: "aCardRef" | "bCard") => {
+    if (!hasLegacyCards) { setCardsV2Open(true); return; }
     if (!(topMode === "story" && (appMode === "edit" || appMode === "teach"))) return;
     if (!project) return;
 
@@ -2159,6 +2288,7 @@ export function App() {
   };
 
   const updatePlacedBCardInstance = (instanceId: string, updates: Partial<BCardInstance>) => {
+    if (appMode === "teach") { overlayBinding.move(instanceId, updates); return; }
     const source = topMode === 'story' ? storyBCardHost : boostBCardHost;
     if (!source) return;
     const next = source.instances.map((instance) =>
@@ -2193,21 +2323,11 @@ export function App() {
     setIsDirty(true);
   };
 
-  const handlePlacedACardInstanceClick = (instanceId: string) => {
+  const handlePlacedACardInstanceClick = (aCardId: string, refId: string, instanceId: string) => {
     setSelectedPlacedBCardId(instanceId);
-    if (overlayBCardClickAction === "none") return;
-    const mapping = {
-      flip: "isFlipped",
-      blur: "isBlurred",
-      cover: "isCovered",
-      zoom: "isZoomed",
-    } as const;
-    const property = mapping[overlayBCardClickAction];
-    const current = overlayBCardTeachStates[instanceId] || DEFAULT_BCARD_TEACH_STATE;
-    setOverlayBCardState(instanceId, {
-      ...current,
-      [property]: !current[property],
-    });
+    if (overlayBCardClickAction === 'none') return;
+    const mapping = { flip: 'isFlipped', blur: 'isBlurred', cover: 'isCovered', zoom: 'isZoomed' } as const;
+    boardBinding(aCardId, refId).toggle(instanceId, mapping[overlayBCardClickAction]);
   };
 
   const removePlacedBCardInstance = (instanceId: string) => {
@@ -2225,6 +2345,7 @@ export function App() {
   };
 
   const addBoostBCardInstance = () => {
+    if (!hasLegacyCards || activeItem?.type === 'cardActivityRef') { setCardsV2Open(true); return; }
     if (!project || !boostBCardHost) return;
     const defaultBCardId = Object.values(project.data.bCardLibrary || {})[0]?.id || "";
     if (!defaultBCardId) return;
@@ -2277,17 +2398,87 @@ export function App() {
     (sectionId: string) => {
       setSelectedSectionId((prevSectionId) => {
         if (prevSectionId === sectionId) return prevSectionId; // same section: keep music playing
-        audioManager.stopSectionMusic(); // only when section actually changes
+        if (appMode === 'teach') audioManager.stopSectionMusic();
         return sectionId;
       });
 
       const firstInSection = sectionSlideIndices.get(sectionId)?.[0];
       if (firstInSection !== undefined) {
         setCurrentIndex(firstInSection);
-      }
+      } else if(appMode === "edit") { editor.commit({...editor.ref.current,sectionId,storySlideId:null}); }
     },
-    [sectionSlideIndices],
+    [sectionSlideIndices, appMode],
   );
+
+  const applyHistory = (direction: "undo" | "redo") => {
+    const current = projectRef.current;
+    if (!current) return;
+    const data = historyRef.current[direction]();
+    if (!data) return;
+    setProject({ ...current, data });
+    setIsDirty(historyRef.current.isDirty);
+    const slideId = current.data.slides[currentIndex]?.id;
+    const restoredIndex = data.slides.findIndex(slide => slide.id === slideId);
+    const index = restoredIndex >= 0 ? restoredIndex : Math.max(0, Math.min(currentIndex, data.slides.length - 1));
+    setCurrentIndex(index);
+
+    setActiveOverlayId(null);
+    setSelectedStoryRefId(null);
+    setSelectedBadgeSpriteId(null);
+    setSelectedSlideIds(new Set(data.slides[index] ? [data.slides[index].id] : []));
+    if (!data.sections.some(section => section.id === selectedSectionId)) {
+      const sectionId = data.slides[index]?.sectionId ?? data.sections[0]?.id ?? null;
+      setSelectedSectionId(sectionId);
+      setExpandedSectionId(sectionId);
+    }
+    setSelectedACardId(previous => previous && data.aCardLibrary?.[previous] ? previous : null);
+  };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (shouldIgnoreTeacherKey(event)) return;
+      const direction = getHistoryShortcut({
+        ctrlKey: event.ctrlKey, metaKey: event.metaKey, altKey: event.altKey,
+        shiftKey: event.shiftKey, repeat: event.repeat, key: event.key,
+        target: event.target instanceof HTMLElement ? event.target : null,
+      });
+      if (!direction) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      applyHistory(direction);
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [currentIndex, selectedSectionId]);
+
+  useEffect(() => {
+    let releaseTimer: ReturnType<typeof setTimeout> | undefined;
+    const startGesture = () => { clearTimeout(releaseTimer); gestureRef.current = {}; };
+    // Include mouseup/React drag-stop callbacks in the same pointer gesture.
+    const endGesture = () => { releaseTimer = setTimeout(() => { gestureRef.current = undefined; }, 0); };
+    const startText = (event: FocusEvent) => {
+      const target = event.target;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+        || (target instanceof HTMLElement && target.isContentEditable)) textEditRef.current = {};
+    };
+    const endText = () => { textEditRef.current = undefined; };
+    const reset = () => { clearTimeout(releaseTimer); gestureRef.current = undefined; endText(); };
+    document.addEventListener("pointerdown", startGesture, true);
+    document.addEventListener("pointerup", endGesture, true);
+    document.addEventListener("pointercancel", endGesture, true);
+    document.addEventListener("focusin", startText);
+    document.addEventListener("focusout", endText);
+    window.addEventListener("blur", reset);
+    return () => {
+      reset();
+      document.removeEventListener("pointerdown", startGesture, true);
+      document.removeEventListener("pointerup", endGesture, true);
+      document.removeEventListener("pointercancel", endGesture, true);
+      document.removeEventListener("focusin", startText);
+      document.removeEventListener("focusout", endText);
+      window.removeEventListener("blur", reset);
+    };
+  }, []);
 
   const toggleMode = useCallback(() => {
     setAppMode((prev) => {
@@ -2313,12 +2504,13 @@ export function App() {
 
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
+      if (shouldIgnoreTeacherKey(e) || e.altKey) return;
       if (
         (e.metaKey || e.ctrlKey) &&
         e.shiftKey &&
         (e.key === "m" || e.key === "M")
       ) {
-        e.preventDefault();
+        claimTeacherKey(e);
         toggleMode();
       }
     };
@@ -2328,6 +2520,7 @@ export function App() {
 
   useEffect(() => {
     const handleDrawShortcut = (event: KeyboardEvent) => {
+      if (shouldIgnoreTeacherKey(event)) return;
       if (!isDrawModeShortcut({
         ctrlKey: event.ctrlKey,
         metaKey: event.metaKey,
@@ -2352,16 +2545,13 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      )
-        return;
+      if (!isPlainTeacherKey(e)) return;
 
       if (appMode === "edit" && (e.key === "Delete" || e.key === "Backspace")) {
         if (activeOverlayId && project) {
-          const cSlide = project.data.slides[currentIndex];
+          const cSlide = resolvePresentationTarget(project.data, selection.ref.current).slide;
           if (cSlide) {
+            claimTeacherKey(e);
             const nextOverlays = (cSlide.overlays || []).filter((o) => o.id !== activeOverlayId);
             setProject({
               ...project,
@@ -2381,7 +2571,7 @@ export function App() {
         const bgms = selectedSection?.bgm;
         if (!bgms || bgms.length === 0) return;
 
-        e.preventDefault();
+        claimTeacherKey(e);
 
         const delta = e.code === "NumpadAdd" ? 0.05 : -0.05;
         const first = bgms[0];
@@ -2393,19 +2583,21 @@ export function App() {
           bgm: bgms.map((b, i) => (i === 0 ? { ...b, volume: next } : b)),
         });
 
-        audioManager.setVolume(first.url, next);
+        if (appMode === "teach") audioManager.setVolume(first.url, next);
         return;
       }
 
       if (e.key === "d" || e.key === "D" || e.key === "ArrowRight") {
+        claimTeacherKey(e);
         goToVisibleOffset(1);
       } else if (e.key === "a" || e.key === "A" || e.key === "ArrowLeft") {
+        claimTeacherKey(e);
         goToVisibleOffset(-1);
       } else if (e.key === "s" || e.key === "S" || e.key === "ArrowDown") {
-        e.preventDefault();
+        claimTeacherKey(e);
         if (selectedSectionId) setExpandedSectionId(selectedSectionId);
       } else if (e.key === "w" || e.key === "W" || e.key === "ArrowUp") {
-        e.preventDefault();
+        claimTeacherKey(e);
         if (selectedSectionId && expandedSectionId === selectedSectionId) {
           setExpandedSectionId(null);
         }
@@ -2417,12 +2609,13 @@ export function App() {
           const sections = project.data.sections.filter((s) => s.type !== "break");
           const section = sections[num - 1];
           if (section) {
+            claimTeacherKey(e);
             selectSection(section.id);
           }
         } else if (e.key.startsWith("F")) {
           const fNum = parseInt(e.key.substring(1));
           if (!isNaN(fNum) && fNum >= 1 && fNum <= 9) {
-            e.preventDefault(); // Prevent default browser actions for F-keys
+            claimTeacherKey(e);
             if (!project) return;
             const breaks = project.data.sections.filter(
               (s) => s.type === "break",
@@ -2453,19 +2646,21 @@ export function App() {
     restoreSnapshot?: LiveSessionSnapshot | null,
   ) => {
     if (!next) {
+      presentation.commit(reducePresentationSession(presentation.ref.current, { type: 'project', projectId: null, slideId: null, sectionId: null }));
       setProject(null);
+      editor.reset();
       setSelectedSectionId(null);
       setCurrentIndex(0);
-      setPreviousIndex(null);
+
       setError(null);
       setExpandedSectionId(null);
       setSelectedSlideIds(new Set());
       setSelectedStoryRefId(null);
-      setOverlayBCardTeachStates({});
       setOverlayBCardClickAction("none");
       setBadgeVisibleState(false);
       setFinalScoreRevealedState(false);
       setDrawPanelCollapsed(true);
+      setCardRuntimeGeneration(n => n + 1);
       setDrawSettings({ ...DEFAULT_DRAW_SETTINGS });
       return;
     }
@@ -2495,14 +2690,23 @@ export function App() {
         },
       };
     }
+    // Preparation can throw. Commit the main-process folder only after it passes.
+    if (!next.activationToken) throw new Error("Project candidate is missing. Please open it again.");
+    window.appApi.activateProject(next.activationToken);
+    historyRef.current.reset(normalizedWithRefs.data, !matchesRestore);
     setProject(normalizedWithRefs);
+    editor.reset();
+    presentation.commit(reducePresentationSession(presentation.ref.current, {
+      type: 'project', projectId: crypto.randomUUID(), slideId: normalizedWithRefs.data.slides[0]?.id ?? null,
+      sectionId: normalizedWithRefs.data.sections[0]?.id ?? null,
+    }));
     const fallbackSectionId = normalizedWithRefs.data.sections[0]?.id ?? null;
     const restoredSectionId =
       matchesRestore && restoreSnapshot?.selectedSectionId &&
       normalizedWithRefs.data.sections.some((s) => s.id === restoreSnapshot.selectedSectionId)
         ? restoreSnapshot.selectedSectionId
         : fallbackSectionId;
-    setSelectedSectionId(restoredSectionId);
+    presentation.setSelectedSectionId(restoredSectionId);
     setExpandedSectionId(restoredSectionId);
     const restoredIndex =
       matchesRestore && restoreSnapshot
@@ -2513,35 +2717,38 @@ export function App() {
         : 0;
     const restoredSlideId = normalizedWithRefs.data.slides[restoredIndex]?.id;
     setSelectedSlideIds(restoredSlideId ? new Set([restoredSlideId]) : new Set());
-    setCurrentIndex(restoredIndex);
-    setPreviousIndex(null);
+    presentation.setCurrentIndex(restoredIndex);
+
     setError(null);
     setError(null);
     setSelectedStoryRefId(
       matchesRestore ? (restoreSnapshot?.selectedStoryRefId || null) : null,
     );
-    setOverlayBCardTeachStates({});
     setOverlayBCardClickAction(
       matchesRestore ? (restoreSnapshot?.overlayBCardClickAction || "flip") : "flip",
     );
     setBadgeVisibleState(matchesRestore ? Boolean(restoreSnapshot?.badgeVisible) : false);
     setFinalScoreRevealedState(matchesRestore ? Boolean(restoreSnapshot?.finalScoreRevealed) : false);
     setDrawPanelCollapsed(true);
+      setCardRuntimeGeneration(n => n + 1);
     setDrawSettings({ ...DEFAULT_DRAW_SETTINGS });
-    setTopMode(matchesRestore ? (restoreSnapshot?.topMode || "story") : "story");
-    setBoostTab(matchesRestore ? (restoreSnapshot?.boostTab || "activation") : "activation");
-    setSelectedBoostItemId(matchesRestore ? (restoreSnapshot?.selectedBoostItemId || null) : null);
-    setSelectedACardId(matchesRestore ? (restoreSnapshot?.selectedACardId || null) : null);
+    presentation.setTopMode(matchesRestore ? (restoreSnapshot?.topMode || "story") : "story");
+    presentation.setBoostTab(matchesRestore ? (restoreSnapshot?.boostTab || "activation") : "activation");
+    presentation.setSelectedBoostItemId(matchesRestore ? (restoreSnapshot?.selectedBoostItemId || null) : null);
+    presentation.setSelectedACardId(matchesRestore ? (restoreSnapshot?.selectedACardId || null) : null);
     setAppMode(matchesRestore ? (restoreSnapshot?.appMode || "teach") : "teach");
     setIsDirty(matchesRestore);
   };
 
   const executePendingAction = async (action: "create" | "open" | "close") => {
+    if (operationRef.current) return;
     if (action === "close") {
       window.appApi.forceClose();
       return;
     }
 
+    operationRef.current = true;
+    const previous = projectRef.current;
     try {
       let next;
       if (action === "create") {
@@ -2550,11 +2757,16 @@ export function App() {
         next = await window.appApi.openProject();
       }
       if (next) {
+        if (projectRef.current?.data !== previous?.data) {
+          throw new Error("The current project changed while opening. Save your changes and try again.");
+        }
         setProjectState(next, pendingRestoreSession);
         setPendingRestoreSession(null);
       }
     } catch (err) {
       setError((err as Error).message);
+    } finally {
+      operationRef.current = false;
     }
   };
 
@@ -2582,7 +2794,8 @@ export function App() {
   };
 
   const onCreateProject = () => {
-    if (isDirty) {
+    if (operationRef.current) return;
+    if (dirtyRef.current) {
       setPendingAction("create");
       setShowConfirmModal(true);
     } else {
@@ -2591,7 +2804,8 @@ export function App() {
   };
 
   const onOpenProject = () => {
-    if (isDirty) {
+    if (operationRef.current) return;
+    if (dirtyRef.current) {
       setPendingAction("open");
       setShowConfirmModal(true);
     } else {
@@ -2602,8 +2816,8 @@ export function App() {
   useEffect(() => {
     if (!breakThumbDrag) return;
     const onMove = (event: globalThis.MouseEvent) => {
-      const dx = event.clientX - breakThumbDrag.startClientX;
-      const dy = event.clientY - breakThumbDrag.startClientY;
+      const dx = (event.clientX - breakThumbDrag.startClientX) / breakThumbDrag.screenScale;
+      const dy = (event.clientY - breakThumbDrag.startClientY) / breakThumbDrag.screenScale;
       if (breakThumbDrag.mode === "move") {
         updateBreakMediaItem(breakThumbDrag.sectionId, breakThumbDrag.mediaId, {
           x: breakThumbDrag.startX + dx,
@@ -2638,18 +2852,25 @@ export function App() {
   };
 
   const onRestoreSession = async () => {
-    if (!savedLiveSession) return;
+    if (!savedLiveSession || operationRef.current) return;
+    operationRef.current = true;
+    const previous = projectRef.current;
     setPendingRestoreSession(savedLiveSession);
     setShowRestoreSessionPrompt(false);
     try {
       const next = await window.appApi.openProjectByPath(savedLiveSession.projectFolderPath);
       if (!next) return;
+      if (projectRef.current?.data !== previous?.data) {
+        throw new Error("The current project changed while opening. Save your changes and try again.");
+      }
       setProjectState(next, savedLiveSession);
       setPendingRestoreSession(null);
       showToast("Session restored", "success", 1500);
     } catch (err) {
       setError((err as Error).message);
       showToast("Open the project manually to restore session", "edit", 2000);
+    } finally {
+      operationRef.current = false;
     }
   };
 
@@ -2661,13 +2882,13 @@ export function App() {
       projectFolderPath: project.folderPath,
       projectCreatedAt: project.data.createdAt,
       appMode,
-      topMode,
-      boostTab,
-      currentIndex,
-      selectedSectionId,
-      selectedBoostItemId,
+      topMode: liveSession.mode,
+      boostTab: liveSession.boostTab,
+      currentIndex: Math.max(0,project.data.slides.findIndex(s=>s.id===liveSession.storySlideId)),
+      selectedSectionId: liveSession.sectionId,
+      selectedBoostItemId: liveSession.boostItemId,
       selectedStoryRefId,
-      selectedACardId,
+      selectedACardId: liveSession.boardId,
       overlayBCardClickAction,
       sparkStudents: project.data.sparkStudents || [],
       activeStudentId: project.data.activeStudentId || null,
@@ -2715,23 +2936,52 @@ export function App() {
   ]);
 
   const applyImportedMedia = (result: ImportResult, targetSectionId: string | null | undefined) => {
-    if (!project || result.importedAssets.length === 0 || result.createdSlides.length === 0) return;
+    const current = projectRef.current;
+    if (result.failures?.length) alert(result.failures.map(f => `${f.name}: ${f.reason}`).join("\n"));
+    if (!current || result.importedAssets.length === 0) return;
 
-    const nextData = applyMediaImportToProjectData(project.data, result, targetSectionId);
+    const nextData = applyMediaImportToProjectData(current.data, result, targetSectionId);
     setProject({
-      ...project,
+      ...current,
       data: nextData,
     });
     setIsDirty(true);
 
-    if (nextData.slides.length > 0 && project.data.slides.length === 0) {
+    if (nextData.slides.length > 0 && current.data.slides.length === 0) {
       setCurrentIndex(0);
     }
   };
 
+  const placePoolAssets = (ids:string[],slot:TimelineSlot) => {
+    const current=projectRef.current;if(!current||appMode!=='edit')return;
+    try {setProject({...current,data:insertPoolAssets(current.data,ids,slot.sectionId,slot.beforeId,()=>crypto.randomUUID())});}
+    catch(error){showToast((error as Error).message,'edit',3500);}
+  };
+  const importToPool = async (kind:'files'|'folder'|'drop',paths?:string[],binId?:string,slot?:TimelineSlot) => {
+    const current=projectRef.current;if(!current||appMode!=='edit'||operationRef.current)return;
+    operationRef.current=true;setPoolBusy(true);dragImportDepthRef.current=0;setIsDragImportActive(false);
+    try {
+      const result=kind==='folder'?await window.appApi.importMediaFolder():kind==='drop'?await window.appApi.importDroppedMedia(paths??[]):await window.appApi.importMedia();
+      if(!result)return;
+      const latest=projectRef.current;if(!latest||latest.folderPath!==current.folderPath)throw Error('Project changed during import.');
+      let data=registerPoolImport(latest.data,result,binId);
+      const messages=(result.failures??[]).map(f=>`${f.name}: ${f.reason}`);
+      if(slot){const ids=result.importedAssets.filter(a=>a.mediaType!=='audio').map(a=>a.id);
+        try {if(ids.length)data=insertPoolAssets(data,ids,slot.sectionId,slot.beforeId,()=>crypto.randomUUID());}
+        catch(error){messages.push(`Assets kept in Media Pool; placement failed: ${(error as Error).message}`);}
+        if(result.importedAssets.some(a=>a.mediaType==='audio'))messages.push('Audio was added to Media Pool. Select it there to attach it to a lesson object.');
+      }
+      if(result.importedAssets.length||result.importedBins?.length)setProject({...latest,data});
+      showToast(`Imported ${result.importedAssets.length} assets`,'success',2200);
+      if(messages.length)alert(messages.join('\n'));
+    }catch(error){alert(`Import failed: ${(error as Error).message}`);}
+    finally {operationRef.current=false;setPoolBusy(false);}
+  };
+
   const onImportMedia = async () => {
     if (!ensureEditMode(appMode, "import media")) return;
-    if (!project) return;
+    if (!project || operationRef.current) return;
+    operationRef.current = true;
     try {
       const result = await window.appApi.importMedia();
       if (!result) return;
@@ -2740,6 +2990,8 @@ export function App() {
       console.error(err);
       alert("Failed to import media: " + (err as Error).message);
       setError((err as Error).message);
+    } finally {
+      operationRef.current = false;
     }
   };
 
@@ -2785,7 +3037,7 @@ export function App() {
     event.preventDefault();
     dragImportDepthRef.current = 0;
     setIsDragImportActive(false);
-    if (!project || appMode !== "edit") return;
+    if (!project || appMode !== "edit" || operationRef.current) return;
 
     const filePaths = getDroppedFilePaths(event);
     if (filePaths.length === 0) {
@@ -2793,6 +3045,7 @@ export function App() {
       return;
     }
 
+    operationRef.current = true;
     try {
       const result = await window.appApi.importDroppedMedia(filePaths);
       if (!result) {
@@ -2805,6 +3058,8 @@ export function App() {
       console.error(err);
       alert("Failed to import dropped media: " + (err as Error).message);
       setError((err as Error).message);
+    } finally {
+      operationRef.current = false;
     }
   };
 
@@ -2868,7 +3123,8 @@ export function App() {
 
   const onImportBubbleTemplate = async () => {
     if (!ensureEditMode(appMode, "import bubble template")) return;
-    if (!project) return;
+    if (!project || operationRef.current) return;
+    operationRef.current = true;
     try {
       const result = await (window as any).api.importBubbleTemplate() as { success: boolean; relativePath: string };
       if (!result || !result.success || !result.relativePath) return;
@@ -2882,65 +3138,79 @@ export function App() {
         defaultTextRect: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 },
       };
 
+      const latest = projectRef.current!;
       const nextData = {
-        ...project.data,
-        bubbleDefinitions: [...(project.data.bubbleDefinitions || []), newTemplate],
+        ...latest.data,
+        bubbleDefinitions: [...(latest.data.bubbleDefinitions || []), newTemplate],
       };
 
-      setProject({ ...project, data: nextData });
+      setProject({ ...latest, data: nextData });
       setIsDirty(true);
 
       // Persist as requested
-      await window.appApi.saveProject(nextData);
-      setIsDirty(false);
-      showToast("Bubble template imported and project saved", "success");
+      operationRef.current = false;
+      if (await performSave("save")) {
+        showToast("Bubble template imported and project saved", "success");
+      }
     } catch (err) {
       console.error(err);
       alert("Failed to import bubble template: " + (err as Error).message);
+    } finally {
+      operationRef.current = false;
     }
   };
 
   const performSave = async (mode: "save" | "saveAs") => {
-    if (!ensureEditMode(appMode, "save")) return;
-    if (!project) return;
+    // Teach already permits persistent markers, references and reward progress.
+    // Saving those changes must work in both modes; edit permissions stay separate.
+    const snapshot = projectRef.current;
+    if (!snapshot || operationRef.current) return false;
+    operationRef.current = true;
+    historyRef.current.breakGroup();
     try {
       setIsSaveInProgress(true);
-      const response = await window.appApi.saveProject(project.data, mode);
-      if (!response) return;
+      const response = await window.appApi.saveProject(snapshot.data, mode, snapshot.folderPath);
+      if (!response) return false;
+      const current = projectRef.current;
+      if (!current || current.folderPath !== snapshot.folderPath) return false;
+      const savedCurrentRevision = current.data === snapshot.data;
+      historyRef.current.markSaved(snapshot.data);
       setProject({
-        ...project,
+        ...current,
         folderPath: response.folderPath,
-        data: {
-          ...project.data,
-          updatedAt: response.lastSavedAt,
-        },
+        // updatedAt is written on disk; lastSavedAt carries save metadata here.
+        // Do not create a content revision (or undo step) for a timestamp.
+        data: current.data,
         lastSavedAt: response.lastSavedAt,
       });
-      setIsDirty(false);
-      showToast(mode === "saveAs" ? "Saved as new project" : "Saved", "success", 2000);
-      return true;
+      setIsDirty(historyRef.current.isDirty);
+      showToast(savedCurrentRevision
+        ? (mode === "saveAs" ? "Saved as new project" : "Saved")
+        : "Earlier changes saved; newer changes still need saving", savedCurrentRevision ? "success" : "edit", 2200);
+      // Close/Open/Refresh may proceed only when the current revision was saved.
+      return savedCurrentRevision;
     } catch (err) {
       setError((err as Error).message);
       return false;
     } finally {
+      operationRef.current = false;
       setIsSaveInProgress(false);
     }
   };
 
   const onSave = () => {
-    if (!ensureEditMode(appMode, "save")) return;
-    if (!project) return;
+    if (!project || operationRef.current) return;
     setShowSaveChoiceModal(true);
   };
 
   const onRefreshApp = async () => {
     if (!ensureEditMode(appMode, "refresh app")) return;
-    if (!project) return;
+    if (!project || operationRef.current) return;
     setContextMenu(null);
     setPendingSectionDeleteId(null);
     persistLiveSessionSnapshot();
     window.localStorage.setItem(LIVE_SESSION_AUTO_RESTORE_KEY, "1");
-    if (isDirty) {
+    if (dirtyRef.current) {
       const didSave = await performSave("save");
       if (!didSave) {
         showToast("Could not save before refresh", "edit", 2200);
@@ -3018,6 +3288,14 @@ export function App() {
     setIsDirty(true);
   };
 
+  const attachPoolAudio = (id:string,kind:'dialogue'|'sfx'|'bgm'|'section-bgm') => {
+    const asset=assetsById.get(id);if(appMode!=='edit'||asset?.mediaType!=='audio')return;
+    const clip:AudioClip={url:toMediaUrl(asset.relativePath),volume:1,name:getAssetDescription(asset)};
+    if(kind==='section-bgm'&&selectedSection)updateSection(selectedSection.id,{bgm:[...(selectedSection.bgm??[]),clip]});
+    else if(kind!=='section-bgm'&&currentSlide)updateSlide(currentSlide.id,kind==='bgm'?{bgm:clip}:{[kind]:[...(currentSlide[kind]??[]),clip]});
+    else showToast('Select a slide, section or break for this audio.','edit',2500);
+  };
+
   const commitSlideName = (slideId: string, rawName: string) => {
     const slide = project?.data.slides.find((s) => s.id === slideId);
     const asset = slide ? assetsById.get(slide.assetId) : undefined;
@@ -3026,14 +3304,18 @@ export function App() {
     setRenamingSlideId(null);
   };
 
-  const onAddSection = () => {
+  const insertSectionAt = (sections:Section[],section:Section,beforeId?:string) => {
+    const index=beforeId?sections.findIndex(s=>s.id===beforeId):-1;
+    return index<0?[...sections,section]:[...sections.slice(0,index),section,...sections.slice(index)];
+  };
+  const onAddSection = (name?:string,beforeId?:string) => {
     if (!ensureEditMode(appMode, "add section")) return;
     const count = (project?.data.sections || []).filter(
       (s) => s.type !== "break",
     ).length;
     const nextSection: Section = {
       id: crypto.randomUUID(),
-      name: `Section ${count + 1}`,
+      name: name || `Section ${count + 1}`,
       type: "section",
     };
     setProject((prev) => {
@@ -3042,16 +3324,17 @@ export function App() {
         ...prev,
         data: {
           ...prev.data,
-          sections: [...prev.data.sections, nextSection],
+          sections: insertSectionAt(prev.data.sections,nextSection,beforeId),
         },
       };
     });
     setSelectedSectionId(nextSection.id);
+    editor.commit({...editor.ref.current,mode:"story",sectionId:nextSection.id,storySlideId:null});
     setExpandedSectionId(nextSection.id);
     setIsDirty(true);
   };
 
-  const onAddBreak = () => {
+  const onAddBreak = (beforeId?:string) => {
     if (!ensureEditMode(appMode, "add break")) return;
     const count = (project?.data.sections || []).filter(
       (s) => s.type === "break",
@@ -3074,7 +3357,7 @@ export function App() {
         ...prev,
         data: {
           ...prev.data,
-          sections: [...prev.data.sections, nextBreak],
+          sections: insertSectionAt(prev.data.sections,nextBreak,beforeId),
         },
       };
     });
@@ -3290,14 +3573,6 @@ export function App() {
       return s;
     });
 
-    // Selection fallback
-    if (currentIndex === indexToDelete) {
-      const nextIdx = Math.max(0, indexToDelete - 1);
-      setCurrentIndex(nextIdx);
-    } else if (currentIndex > indexToDelete) {
-      setCurrentIndex(currentIndex - 1);
-    }
-
     setProject({
       ...project,
       data: {
@@ -3307,6 +3582,11 @@ export function App() {
         boostPack: newBoostPack,
       }
     });
+    // Stable IDs survive removal of earlier slides. Resolve fallback against the
+    // new document only when the selected content itself was deleted.
+    if (selection.ref.current.storySlideId === slideId) {
+      setCurrentIndex(Math.max(0, indexToDelete - 1));
+    }
     setIsDirty(true);
   };
 
@@ -3419,7 +3699,7 @@ export function App() {
     });
     setIsDirty(true);
     setCurrentIndex(insertAt);
-    setPreviousIndex(null);
+
     setDraggedSlideIndex(null);
     setDragInsertIndex(null);
   };
@@ -3605,24 +3885,14 @@ export function App() {
   /* Removed reorderSections logic */
 
   const updateCurrentSlideMarkerStrokes = (strokes: MarkerStroke[]) => {
-    if (!project || !currentSlide) return;
-    setProject({
-      ...project,
-      data: {
-        ...project.data,
-        slides: project.data.slides.map((slide, index) =>
-          index === currentIndex ? { ...slide, markerStrokes: strokes } : slide,
-        ),
-      },
-    });
+    const current = projectRef.current;
+    if (!current) return;
+    const data = applyPresentationDrawing(current.data, selection.ref.current, activeTargetToken, strokes);
+    if (data !== current.data) setProject({ ...current, data });
   };
 
   const clearCurrentSlideDrawings = () => {
-    if (selectedSectionType === "break" && selectedSection) {
-      updateSection(selectedSection.id, { markerStrokes: [] });
-    } else {
-      updateCurrentSlideMarkerStrokes([]);
-    }
+    updateCurrentSlideMarkerStrokes([]);
     setDrawClearSignal((prev) => prev + 1);
   };
 
@@ -3676,7 +3946,7 @@ export function App() {
         ? currentSlide.bgm
         : (type === "dialogue" ? currentSlide.dialogue : currentSlide.sfx)?.[index ?? -1];
 
-    if (clipToRemove) {
+    if (clipToRemove && appMode === "teach") {
       audioManager.stopClip(clipToRemove.url, { fadeEnabled: clipToRemove.fadeEnabled || false });
     }
 
@@ -3705,14 +3975,149 @@ export function App() {
     const clip = sectionTracks[index];
     if (!clip) return;
 
-    audioManager.stopClip(clip.url, { fadeEnabled: clip.fadeEnabled || false });
-    // keep section music singleton state clean if this one was active
-    audioManager.stopSectionMusic(undefined, clip.fadeEnabled || false);
+    if (appMode === "teach") {
+      audioManager.stopClip(clip.url, { fadeEnabled: clip.fadeEnabled || false });
+      audioManager.stopSectionMusic(undefined, clip.fadeEnabled || false);
+    }
 
     updateSection(selectedSection.id, {
       bgm: sectionTracks.filter((_, i) => i !== index),
     });
   };
+
+  const drawingPanel = !drawPanelCollapsed && (
+                        <div
+                          className="draw-panel"
+                        >
+                          <label>
+                            Tool
+                            <select
+                              value={drawSettings.tool}
+                              onChange={(event) =>
+                                setDrawSettings((prev) => ({
+                                  ...prev,
+                                  tool: event.target.value as DrawTool,
+                                }))
+                              }
+                            >
+                              <option value="highlighter">Highlighter</option>
+                              <option value="marker">Marker</option>
+                            </select>
+                          </label>
+
+                          <label>
+                            Size
+                            <input
+                              type="range"
+                              min={2}
+                              max={36}
+                              value={drawSettings.size}
+                              onChange={(event) =>
+                                setDrawSettings((prev) => ({
+                                  ...prev,
+                                  size: Number(event.target.value),
+                                }))
+                              }
+                            />
+                          </label>
+
+                          <label>
+                            Opacity
+                            <input
+                              type="range"
+                              min={0.1}
+                              max={1}
+                              step={0.05}
+                              value={drawSettings.opacity}
+                              onChange={(event) =>
+                                setDrawSettings((prev) => ({
+                                  ...prev,
+                                  opacity: Number(event.target.value),
+                                }))
+                              }
+                            />
+                          </label>
+
+                          {drawSettings.tool === "highlighter" && (
+                            <label>
+                              Fade (ms)
+                              <input
+                                type="range"
+                                min={400}
+                                max={6000}
+                                step={100}
+                                value={drawSettings.fadeMs}
+                                onChange={(event) =>
+                                  setDrawSettings((prev) => ({
+                                    ...prev,
+                                    fadeMs: Number(event.target.value),
+                                  }))
+                                }
+                              />
+                            </label>
+                          )}
+
+                          <label>
+                            Color
+                            <input
+                              type="color"
+                              value={drawSettings.color}
+                              onChange={(event) =>
+                                setDrawSettings((prev) => ({
+                                  ...prev,
+                                  color: event.target.value,
+                                }))
+                              }
+                            />
+                          </label>
+
+                          <label className="draw-inline-check">
+                            <input
+                              type="checkbox"
+                              checked={drawSettings.rainbow}
+                              onChange={(event) =>
+                                setDrawSettings((prev) => ({
+                                  ...prev,
+                                  rainbow: event.target.checked,
+                                }))
+                              }
+                            />
+                            Rainbow
+                          </label>
+
+                          <label className="draw-inline-check">
+                            <input
+                              type="checkbox"
+                              checked={drawSettings.sparkle}
+                              onChange={(event) =>
+                                setDrawSettings((prev) => ({
+                                  ...prev,
+                                  sparkle: event.target.checked,
+                                }))
+                              }
+                            />
+                            Sparkle
+                          </label>
+
+                          <label className="draw-inline-check">
+                            <input
+                              type="checkbox"
+                              checked={drawSettings.drawMode}
+                              onChange={(event) =>
+                                setDrawSettings((prev) => ({
+                                  ...prev,
+                                  drawMode: event.target.checked,
+                                }))
+                              }
+                            />
+                            Draw mode
+                          </label>
+
+                          <button onClick={clearCurrentSlideDrawings}>
+                            Clear Drawings
+                          </button>
+                        </div>
+                      );
 
   const activeSparkStudentName =
     project?.data.sparkStudents?.find((student) => student.id === project?.data.activeStudentId)?.name ||
@@ -3720,7 +4125,9 @@ export function App() {
     "No Student";
 
   return (
-    <SparkProvider
+    <EditorPreviewAudioContext.Provider value={appMode === "edit"}><SparkProvider
+      onTriggerSpark={rewards.triggerSpark}
+      onResetSparks={rewards.resetSparks}
       config={project?.data.sparkConfig}
       onConfigChange={(updates) => {
         setProject(prev => {
@@ -3785,7 +4192,7 @@ export function App() {
       }}
       isBadgeVisible={badgeVisibleState}
       isFinalScoreRevealed={finalScoreRevealedState}
-      onBadgeVisibilityChange={setBadgeVisibleState}
+      onBadgeVisibilityChange={rewards.badgeVisibility}
       onFinalScoreRevealedChange={setFinalScoreRevealedState}
     >
       <CardSystemProvider
@@ -3816,6 +4223,10 @@ export function App() {
           appMode={appMode}
           onActiveStudentChangeFlash={(name) => showToast(`Active Student: ${name}`, "teach", 300)}
         />
+        {cardsV2Open && appMode === 'edit' && project && <div role="dialog" aria-modal="true" aria-label="Cards and Sets library" style={{ position: 'fixed', inset: 12, zIndex: 100000, background: '#161e28', border: '1px solid #62778b', borderRadius: 12, overflow: 'auto', boxShadow: '0 12px 50px #0009' }} onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') setCardsV2Open(false); }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', gap: 12 }}><span>Cards · project library</span><button onClick={onImportMedia}>Import image into project</button></div>
+          <CardV2Editor initialPlacementId={v2PlacementId} module={v2Module} onChange={updateCardsV2} assets={project.data.assets} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : undefined; }} onAddToBooster={addV2ToBooster} onClose={() => setCardsV2Open(false)} />
+        </div>}
         <div
           className={isDragImportActive ? "app drag-import-active" : "app"}
           onDragEnter={handleAppDragEnter}
@@ -3831,20 +4242,30 @@ export function App() {
             </div>
           )}
           <header
-            className="topbar"
+            className={`topbar ${appMode === 'teach' ? 'edit-topbar-hidden' : ''}`}
             style={{
               background: appMode === "edit" ? "#331515" : undefined,
               borderBottomColor: appMode === "edit" ? "#552222" : undefined,
             }}
           >
+            <button onClick={() => setModernEdit(value => { const next = !value; try { localStorage.setItem('story-studio.edit-layout', next ? 'modern' : 'legacy'); } catch {} return next; })}>{modernEdit ? 'Legacy layout' : 'Modern workspace'}</button>
             <button onClick={onCreateProject}>Create Project</button>
             <button onClick={onOpenProject}>Open Project</button>
             <button onClick={onImportMedia} disabled={!project}>
               Import Media
             </button>
+            {appMode === "edit" && !modernEdit && <button onClick={showInPresent}>Show in Present</button>}
             <button onClick={onSave} disabled={!project || isSaveInProgress}>
               Save
             </button>
+            {topMode === 'boost' && boostTab !== 'badge' && <>
+              <button onClick={() => goToVisibleOffset(-1)} disabled={activeBoostIndex <= 0}>Prev</button>
+              <button onClick={() => goToVisibleOffset(1)} disabled={activeBoostIndex < 0 || activeBoostIndex >= activeBoostSequence.length - 1}>Next</button>
+            </>}
+            {selectedSection?.type === 'break' && <div className="break-drawing-tools" style={{ position: 'relative', zIndex: 30001 }}><button onClick={() => setDrawPanelCollapsed(v => !v)}>Draw</button>{drawingPanel}</div>}
+            {presentationTarget.capabilities.canZoom && <button onClick={() => { teachingScene.updateViewport({ zoom: 1, pan: { x: 0, y: 0 } }); setViewportResetSignal(n => n + 1); }}>Reset view</button>}
+            <button aria-label="Undo" title="Undo (Ctrl+Z)" onClick={() => applyHistory("undo")} disabled={!historyRef.current.canUndo}>↶</button>
+            <button aria-label="Redo" title="Redo (Ctrl+Shift+Z)" onClick={() => applyHistory("redo")} disabled={!historyRef.current.canRedo}>↷</button>
             {appMode === "edit" && (
               <button onClick={onRefreshApp} disabled={!project || isSaveInProgress}>
                 Refresh App
@@ -3863,7 +4284,7 @@ export function App() {
                 {timerState.isRunning ? "Stop Timer" : "Start Timer"}
               </button>
             )}
-            {ENABLE_BOOST_MODE && (
+            {ENABLE_BOOST_MODE && !editWorkspace && (
               <div style={{ display: 'flex', gap: 4, background: '#222', padding: '2px', borderRadius: 4, marginRight: 10 }}>
                 <button
                   style={{ background: topMode === 'story' ? '#444' : 'transparent', color: topMode === 'story' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
@@ -3887,11 +4308,13 @@ export function App() {
                 >Movement</button>
                 <button
                   style={{ background: topMode === 'boards' ? '#444' : 'transparent', color: topMode === 'boards' ? '#fff' : '#aaa', border: 'none', padding: '4px 8px', borderRadius: 2 }}
-                  onClick={() => setTopMode('boards')}
-                >Boards</button>
+                  hidden={!hasLegacyCards && appMode !== 'edit'}
+                  onClick={() => hasLegacyCards ? setTopMode('boards') : setCardsV2Open(true)}
+                >{hasLegacyCards ? 'Legacy boards' : 'Cards'}</button>
               </div>
             )}
 
+            {appMode === 'edit' && <button disabled={!project} onClick={() => setCardsV2Open(true)}>Cards / Sets</button>}
             <button
               className="audio-toolbar-button"
               style={{ marginLeft: "auto" }}
@@ -3925,6 +4348,13 @@ export function App() {
               Build {BUILD_VERSION}
             </span>
           </header>
+          {appMode === 'teach' && <header className="teach-header">
+            <strong>Teach workspace</strong><TeachQuickControls /><button title="Previous live target" disabled={!presentationTarget.capabilities.canNavigate} onClick={goToPrevSlide}>Previous</button><button title="Next live target" disabled={!presentationTarget.capabilities.canNavigate} onClick={goToNextSlide}>Next</button><span>{project?.folderPath.split(/[\\/]/).pop() || 'No lesson open'}</span>
+            <PresentStatus />
+            <button disabled={!project} onClick={() => void openPresent().catch(error => setError(String(error)))}>Open / Reopen Present</button>
+            <button onClick={onOpenProject}>Open lesson</button>
+            <button onClick={toggleMode}>Switch to Edit</button>
+          </header>}
           <AudioSettingsWorkspace
             open={audioSettingsOpen}
             onClose={closeAudioSettings}
@@ -4016,14 +4446,14 @@ export function App() {
                           {asset ? (
                             asset.mediaType === "video" ? (
                               <video
-                                src={toMediaUrl(asset.relativePath)}
+                                src={toVisualMediaUrl(asset.relativePath)}
                                 muted
                                 preload="metadata"
                                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                               />
                             ) : asset.mediaType === "image" ? (
                               <img
-                                src={toMediaUrl(asset.relativePath)}
+                                src={toVisualMediaUrl(asset.relativePath)}
                                 alt=""
                                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                               />
@@ -4076,9 +4506,9 @@ export function App() {
                           <span className="bubble-copy-thumb">
                             {asset ? (
                               asset.mediaType === "video" ? (
-                                <video src={toMediaUrl(asset.relativePath)} muted preload="metadata" />
+                                <video src={toVisualMediaUrl(asset.relativePath)} muted preload="metadata" />
                               ) : asset.mediaType === "image" ? (
-                                <img src={toMediaUrl(asset.relativePath)} alt="" />
+                                <img src={toVisualMediaUrl(asset.relativePath)} alt="" />
                               ) : (
                                 <span>Audio</span>
                               )
@@ -4137,7 +4567,7 @@ export function App() {
                         style={{ textAlign: "left", padding: "8px", background: "#111", border: "1px solid #333", color: "#fff", cursor: "pointer", borderRadius: 6, display: "flex", alignItems: "center", gap: 8 }}
                       >
                         <img
-                          src={toMediaUrl(asset.relativePath)}
+                          src={toVisualMediaUrl(asset.relativePath)}
                           alt=""
                           style={{ width: 56, height: 34, objectFit: "cover", borderRadius: 4, border: "1px solid #30364d", flex: "0 0 auto" }}
                         />
@@ -4317,13 +4747,14 @@ export function App() {
             </div>
           )}
 
-          <div className={`content ${topMode === 'badge' ? 'is-badge-mode' : ''}`}>
+          <EditWorkspaceProvider enabled={editWorkspace} hosts={editHosts.hosts}>
+          <div ref={teachLayout.workspaceRef} className={`content ${topMode === 'badge' ? 'is-badge-mode' : ''} ${appMode === 'teach' ? 'teach-workspace' : ''} ${teachSecondaryOpen ? 'teach-secondary-open' : ''} ${editWorkspace ? 'edit-workspace' : ''} ${editWorkspace && editFocus ? 'edit-focus' : ''}`} style={appMode === 'teach' || editWorkspace ? teachLayout.style : undefined}>
             {topMode === 'badge' && (
-              <BadgeTabBackground project={project} toMediaUrl={toMediaUrl} />
+              <BadgeTabBackground project={project} toMediaUrl={toVisualMediaUrl} />
             )}
-            <aside className="sidebar">
+            <EditDock area="tools"><aside className={`sidebar ${['badge', 'relics', 'movement'].includes(topMode) ? 'teach-secondary-eligible' : ''}`}>
               {topMode === 'badge' ? (
-                <BadgePanel
+                <BadgePanel visualScope={visualScope}
                   isEditMode={appMode === "edit"}
                   project={project}
                   selectedSpriteId={selectedBadgeSpriteId}
@@ -4336,12 +4767,19 @@ export function App() {
                     }
                   }}
                 />
+              ) : topMode === 'relics' && appMode === 'teach' ? (
+                <section className="teach-control-card">
+                  <h3>Relic progress</h3>
+                  {studentRoster.filter(student => !student.archived).map(student => <label key={student.id} style={{display:'flex',gap:8,marginBottom:10}}><input type="checkbox" checked={relicSystem.studentProgress[student.id]?.active ?? false} onChange={event => updateRelicStudentProgress(student.id,{active:event.target.checked})} />{student.name} · {relicSystem.studentProgress[student.id]?.progress ?? 0} / 30</label>)}
+                  <div className="teach-actions">{(['increase','decrease','reset','complete'] as const).map((action,index)=><button key={action} onClick={()=>runRelicProgressAction(action)}>{['+1 progress','−1 progress','Reset progress','Complete relic'][index]}</button>)}</div>
+                  <div className="teach-actions"><button onClick={()=>patchRelicSystem({showOnStage:!relicSystem.showOnStage})}>{relicSystem.showOnStage?'Hide relic':'Show relic'}</button><button onClick={()=>rewards.showRelicReward(true)}>Show reward card</button></div>
+                </section>
               ) : topMode === 'relics' ? (
                 <RelicsPanel
                   relicSystem={relicSystem}
                   roster={studentRoster}
                   assets={project?.data.assets || []}
-                  toMediaUrl={toMediaUrl}
+                  toMediaUrl={toVisualMediaUrl}
                   onRelicChange={patchRelicSystem}
                   onStudentProgressChange={updateRelicStudentProgress}
                   onAddStudent={addRosterStudent}
@@ -4349,7 +4787,7 @@ export function App() {
                   onArchiveStudent={archiveRosterStudent}
                   onImportImage={importRelicImage}
                   onProgressAction={runRelicProgressAction}
-                  onShowRewardCard={() => setIsRelicRewardCardVisible(true)}
+                  onShowRewardCard={() => rewards.showRelicReward(true)}
                 />
               ) : topMode === 'movement' ? (
                 <MovementPanel
@@ -4360,7 +4798,7 @@ export function App() {
                   onRandomTrigger={triggerRandomMovementEvent}
                   onImportGif={importMovementGif}
                   onImportJingle={importMovementJingle}
-                  getMediaUrl={toMediaUrl}
+                  getMediaUrl={movementMediaUrl}
                 />
               ) : topMode === 'story' ? (
                 <>
@@ -4543,14 +4981,14 @@ export function App() {
                                               {asset ? (
                                                 asset.mediaType === "video" ? (
                                                   <video
-                                                    src={toMediaUrl(asset.relativePath)}
+                                                    src={toVisualMediaUrl(asset.relativePath)}
                                                     muted
                                                     preload="metadata"
                                                     className="slide-thumb-media"
                                                   />
                                                 ) : asset.mediaType === "image" ? (
                                                   <img
-                                                    src={toMediaUrl(asset.relativePath)}
+                                                    src={toVisualMediaUrl(asset.relativePath)}
                                                     alt={getAssetDescription(asset)}
                                                     className="slide-thumb-media"
                                                   />
@@ -4677,7 +5115,7 @@ export function App() {
                     <button
                       className="section-break-btn"
                       style={{ flex: 1, marginTop: 0 }}
-                      onClick={onAddSection}
+                      onClick={() => onAddSection()}
                       disabled={!project}
                     >
                       + Section
@@ -4685,7 +5123,7 @@ export function App() {
                     <button
                       className="section-break-btn"
                       style={{ flex: 1, marginTop: 0 }}
-                      onClick={onAddBreak}
+                      onClick={() => onAddBreak()}
                       disabled={!project}
                     >
                       + Break
@@ -4698,7 +5136,7 @@ export function App() {
                   selectedBCardId={selectedLibraryBCardId}
                   onSelectACard={setSelectedACardId}
                   onSelectBCard={setSelectedLibraryBCardId}
-                  appMode={appMode}
+                  appMode={hasLegacyCards ? appMode : "teach"}
                 />
               ) : (
                 <>
@@ -4716,7 +5154,7 @@ export function App() {
                   </div>
 
                   {boostTab === 'badge' ? (
-                    <BadgePanel
+                    <BadgePanel visualScope={visualScope}
                       isEditMode={appMode === "edit"}
                       project={project}
                       selectedSpriteId={selectedBadgeSpriteId}
@@ -4804,78 +5242,70 @@ export function App() {
                   )}
                 </>
               )}
-            </aside>
+            </aside></EditDock>
 
-            <main className="stage-wrap" style={{ position: "relative" }}>
-              <SparkOverlay
-                assets={project?.data.assets || []}
-                getMediaUrl={toMediaUrl}
-              />
-              <FinalBadgeOverlay
-                assets={project?.data.assets}
-                getMediaUrl={toMediaUrl}
-              />
-              <RelicStageWidget
-                relicSystem={relicSystem}
-                roster={studentRoster}
-                assetsById={assetsById}
-                toMediaUrl={toMediaUrl}
-                rewardVisible={isRelicRewardCardVisible}
-                onHideReward={() => setIsRelicRewardCardVisible(false)}
-                animationSignal={relicAnimationSignal}
-                onWidgetOffsetChange={(widgetOffset) => patchRelicSystem({ widgetOffset })}
-              />
-              <MovementOverlay
-                event={activeMovementEvent?.event || null}
-                signal={activeMovementEvent?.signal || 0}
-                getMediaUrl={toMediaUrl}
-              />
+            <TeachPreview enabled={appMode === 'teach' || editWorkspace} viewport={teachLayout.viewport}>
+            <main className="stage-wrap" style={{ position: "relative" }} onPointerDown={event=>{if(appMode==='edit'&&selectedV2Card&&!(event.target as Element).closest('.card-v2-interactive'))selectV2Card('');}}>
+              {!presentMode && <RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} />}
+              {!presentMode && <MovementOverlay presentation={activeMovementEvent} />}
+              {presentMode && (presentationTarget.contentId === 'badge' || activeItem?.type === 'promptCard' || activeItem?.type === 'miniGame' || (activeItem?.type === 'breakRef' && !selectedSection)) && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
+              {v2Plan && activeItem?.type!=='cardActivityRef' && <div className="card-host-layer" style={{position:'absolute',inset:0,zIndex:40,pointerEvents:'none'}}><CardV2Scene plan={v2Plan} className="card-host-overlay" selectedInstanceId={appMode==='edit'?selectedV2Card:Object.values(v2Runtime.state?.instances??{}).find(i=>i.selected)?.instanceId} showWarnings={appMode==='edit'} onSelect={appMode==='edit'?selectV2Card:id=>{if(!v2Runtime.state)v2Runtime.dispatch({type:'StartActivity',placementId:v2PlacementId!});else v2Runtime.dispatch({type:'SelectCard',instanceId:id});}} onGeometryChange={appMode==='edit'?(id,geometry)=>cardAction(()=>{if(project&&v2Host)commitCardData(updateHostGeometry(project.data,v2Host,id,geometry));}):undefined}/></div>}
               {topMode === 'boards' ? (
                 <div style={{ position: 'absolute', inset: 0 }}>
+                <LogicalSceneFrame frame={editWorkspace ? presentFrame ?? {width:1280,height:720} : appMode === 'teach' ? presentFrame : null}>
                   {selectedACardId ? (
                     <ACardSystem
                       aCardId={selectedACardId}
+                      runtime={boardBinding(selectedACardId)}
+                      teachPanelHost={teachToolsHostRef.current}
                       mode={appMode}
                       assets={project?.data.assets || []}
                       resolveImageUrl={(id) => {
                         const asset = assetsById.get(id);
-                        return asset ? toMediaUrl(asset.relativePath) : null;
+                        return asset ? toVisualMediaUrl(asset.relativePath) : null;
                       }}
                     />
-                  ) : selectedLibraryBCardId ? (
+                  ) : appMode === "edit" && selectedLibraryBCardId ? (
                     <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
                       <BCardEditor
                         bCardId={selectedLibraryBCardId}
                         assets={project?.data.assets || []}
                         resolveImageUrl={(id) => {
                           const asset = assetsById.get(id);
-                          return asset ? toMediaUrl(asset.relativePath) : null;
+                          return asset ? toVisualMediaUrl(asset.relativePath) : null;
                         }}
                       />
                     </div>
                   ) : (
-                    <BoardEmptyState onCreated={setSelectedACardId} />
+                    appMode === "edit" ? <BoardEmptyState onCreated={setSelectedACardId} /> : <div className="placeholder">Choose a board in the teacher controls.</div>
                   )}
+                </LogicalSceneFrame>
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
                 </div>
               ) : topMode === 'boost' && boostTab !== 'language' && activeItem?.type === 'aCardRef' && (activeItem as any).aCardId ? (
                 <div style={{ position: 'absolute', inset: 0 }}>
+                <LogicalSceneFrame frame={editWorkspace ? presentFrame ?? {width:1280,height:720} : appMode === 'teach' ? presentFrame : null}>
                   <ACardSystem
                     aCardId={(activeItem as any).aCardId}
+                    runtime={boardBinding((activeItem as any).aCardId)}
                     mode={appMode}
                     assets={project?.data.assets || []}
                     teachPanelHost={teachToolsHostRef.current}
                     resolveImageUrl={(id) => {
                       const asset = assetsById.get(id);
-                      return asset ? toMediaUrl(asset.relativePath) : null;
+                      return asset ? toVisualMediaUrl(asset.relativePath) : null;
                     }}
                   />
+                  <BCardInstanceLayer instances={appMode === "teach" ? overlayBinding.state.instances : activeOverlayBCardInstances} mode={appMode} selectedInstanceId={selectedOverlayBCardInstanceId} onSelectInstance={setSelectedPlacedBCardId} onInstanceChange={updatePlacedBCardInstance} teachStates={overlayBCardTeachStates} clickAction={overlayBCardClickAction} onTeachStateChange={setOverlayBCardState} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : null; }} />
+                </LogicalSceneFrame>
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
                 </div>
-              ) : topMode === 'badge' ? (
-                <div className="badge-stage">
+              ) : presentationTarget.contentId === 'badge' ? (
+                <div className="badge-stage" style={appMode === 'teach' ? { visibility: 'hidden' } : undefined}>
                   <div className="badge-bg-layer">
                     {project?.data.badgeImageAssetId ? (
                       <img
-                        src={toMediaUrl(assetsById.get(project.data.badgeImageAssetId)?.relativePath || '')}
+                        src={toVisualMediaUrl(assetsById.get(project.data.badgeImageAssetId)?.relativePath || '')}
                         style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                       />
                     ) : null}
@@ -4883,7 +5313,7 @@ export function App() {
                   <div className={`badge-shield-layer ${appMode === "edit" ? "is-edit" : ""}`}>
                     <BadgeStudentSprites
                       assetsById={assetsById}
-                      getMediaUrl={toMediaUrl}
+                      getMediaUrl={toVisualMediaUrl}
                       isEditMode={appMode === "edit"}
                       selectedSpriteId={selectedBadgeSpriteId}
                       onSelectSprite={setSelectedBadgeSpriteId}
@@ -4901,7 +5331,7 @@ export function App() {
                     </button>
                   )}
                   {appMode === "edit" && showBreakEditor && (
-                    <div key={selectedSection.id} className="break-editor-panel" style={{ position: "absolute", top: 10, right: 10, width: "330px", maxHeight: "calc(100% - 20px)", height: "auto", zIndex: 21000 }}>
+                    <EditDock area="content">                    <div key={selectedSection.id} className="break-editor-panel" style={{ position: "absolute", top: 10, right: 10, width: "330px", maxHeight: "calc(100% - 20px)", height: "auto", zIndex: 21000 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #444", paddingBottom: "8px", margin: 0 }}>
                         <h3 style={{ margin: 0, color: "#fff" }}>Break Editor</h3>
                         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -5320,7 +5750,6 @@ export function App() {
                             onStop={(url, opts) => audioManager.stopClip(url, { fadeEnabled: opts?.fadeEnabled || false })}
                             showRemove={true}
                             onRemove={() => {
-                              audioManager.stopClip(clip.url, { fadeEnabled: clip.fadeEnabled || false });
                               const bgm = [...selectedSection.bgm!];
                               bgm.splice(idx, 1);
                               updateSection(selectedSection.id, { bgm });
@@ -5337,21 +5766,27 @@ export function App() {
                       >
                         Done
                       </button>
-                    </div>
+                    </div></EditDock>
                   )}
+                  <LogicalSceneFrame frame={presentMode || editWorkspace ? { width: 1920, height: 1080 } : null}>
                   <ZoomPanWrapper
+                    key={JSON.stringify(activeTargetToken)}
+                    onTransientChange={teachingScene.updateTransient}
+                    onLiveViewportChange={teachingScene.updateViewport}
+                    resetSignal={viewportResetSignal}
+                    requestedViewport={teachingScene.state.viewport}
                     className="break-stage-wrapper"
-                    targetId={selectedSection.id}
+                    targetId={`${presentationSession.projectId}:${presentationSession.targetRevision}:${presentationTarget.occurrenceId}`}
                     drawSettings={drawSettings}
                     markerStrokes={selectedSection.markerStrokes ?? []}
                     contentWidth={1920}
                     contentHeight={1080}
-                    onMarkerStrokesChange={(strokes) =>
-                      updateSection(selectedSection.id, { markerStrokes: strokes })
-                    }
+                    onMarkerStrokesChange={updateCurrentSlideMarkerStrokes}
                     clearSignal={drawClearSignal}
                     initialViewport={selectedSection.breakViewport}
                     onViewportChange={(vp) => {
+                      const live = resolvePresentationTarget(projectRef.current?.data ?? null, selection.ref.current);
+                      if (!targetMatches(selection.ref.current, live, activeTargetToken)) return;
                       if (appMode === "edit" || (appMode === "teach" && !selectedSection.breakViewport)) { // Try recording it the first time Teach interacts with it? Actually user wants Edit changes saved. Let's record in both places, or maybe strictly edit. Let's just do it broadly for break. Wait, user specifically said "Update viewport state whenever the user changes pan/zoom in Edit".
                         if (appMode === "edit") {
                           updateSection(selectedSection.id, { breakViewport: vp });
@@ -5364,7 +5799,7 @@ export function App() {
                       onContextMenu={handleStageContextMenu}
                       style={{
                         backgroundColor: selectedSection.background && !selectedSection.background.startsWith("url") ? undefined : "#111",
-                        background: selectedSection.bgTransform && selectedSection.bgTransform.blur ? "transparent" : (selectedSection.background || "#111"),
+                        background: selectedSection.bgTransform && selectedSection.bgTransform.blur ? "transparent" : (visualMediaBackground(selectedSection.background || "#111", visualScope)),
                         backgroundRepeat: "no-repeat",
                         backgroundSize: selectedSection.bgTransform ? `${(selectedSection.bgTransform.scale ?? 1) * 100}%` : "cover",
                         backgroundPosition: selectedSection.bgTransform ? `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)` : "center",
@@ -5376,7 +5811,7 @@ export function App() {
                       }}
                     >
                       {selectedSection.bgTransform && selectedSection.bgTransform.blur && selectedSection.background?.startsWith("url") ? (
-                        <div style={{ position: "absolute", zIndex: -1, inset: -100, pointerEvents: "none", background: selectedSection.background || "#111", backgroundRepeat: "no-repeat", backgroundSize: `${(selectedSection.bgTransform.scale ?? 1) * 100}%`, backgroundPosition: `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)`, filter: `blur(${selectedSection.bgTransform.blur}px)` }} />
+                        <div style={{ position: "absolute", zIndex: -1, inset: -100, pointerEvents: "none", background: visualMediaBackground(selectedSection.background || "#111", visualScope), backgroundRepeat: "no-repeat", backgroundSize: `${(selectedSection.bgTransform.scale ?? 1) * 100}%`, backgroundPosition: `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)`, filter: `blur(${selectedSection.bgTransform.blur}px)` }} />
                       ) : null}
                       {/* Thumbnails at Top */}
                       <div className="break-thumbnails-grid">
@@ -5386,7 +5821,7 @@ export function App() {
                           );
                           const asset = slide ? assetsById.get(slide.assetId) : null;
                           if (!asset) return null;
-                          const src = toMediaUrl(asset.relativePath);
+                          const src = visualMediaUrl(toMediaUrl(asset.relativePath), visualScope);
                           const baseWidth = selectedSection.thumbnailSize ?? 200;
                           const baseHeight = baseWidth * 0.5625;
                           const scale = m.scale ?? 1;
@@ -5410,6 +5845,7 @@ export function App() {
                                 event.preventDefault();
                                 event.stopPropagation();
                                 setBreakThumbDrag({
+                                  screenScale: Math.max(0.001, event.currentTarget.getBoundingClientRect().width / event.currentTarget.offsetWidth),
                                   sectionId: selectedSection.id,
                                   mediaId: m.id,
                                   mode: "move",
@@ -5447,6 +5883,7 @@ export function App() {
                                     event.preventDefault();
                                     event.stopPropagation();
                                     setBreakThumbDrag({
+                                  screenScale: Math.max(0.001, event.currentTarget.getBoundingClientRect().width / event.currentTarget.offsetWidth),
                                       sectionId: selectedSection.id,
                                       mediaId: m.id,
                                       mode: "scale",
@@ -5530,26 +5967,29 @@ export function App() {
                       {((topMode === "story" && storyACardRefs.length > 0) || (topMode === "boost" && boostTab === "language" && boostLanguageACardRefs.length > 0)) && (
                         <div style={{ position: "absolute", inset: 0, zIndex: 34, pointerEvents: "none" }}>
                           {(topMode === "story" ? storyACardRefs : boostLanguageACardRefs).map((ref) => (
-                            <ACardStageRenderer
+<div key={ref.id} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{
+                            appMode === "teach" ? <ACardSystem key={ref.id} aCardId={ref.aCardId} mode="teach" runtime={boardBinding(ref.aCardId, ref.id)} teachPanelHost={teachToolsHostRef.current} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : null; }} /> : <ACardStageRenderer
                               key={ref.id}
                               aCardId={ref.aCardId}
-                              teachStates={overlayBCardTeachStates}
+                              startedAt={boardBinding(ref.aCardId, ref.id).state.startedAt}
+                              teachStates={boardBinding(ref.aCardId, ref.id).state.states}
                               mode={appMode}
                               selectedInstanceId={selectedPlacedBCardId}
-                              onInstanceClick={(instanceId) => handlePlacedACardInstanceClick(instanceId)}
-                              onInstanceChange={appMode === "edit" ? (instanceId, updates) => updateACardBCardInstance(ref.aCardId, instanceId, updates) : undefined}
+                              onInstanceClick={(instanceId) => handlePlacedACardInstanceClick(ref.aCardId, ref.id, instanceId)}
+                              onInstanceChange={appMode === "edit" ? (instanceId, updates) => updateACardBCardInstance(ref.aCardId, instanceId, updates) : boardBinding(ref.aCardId, ref.id).move}
                               resolveImageUrl={(id) => {
                                 const asset = assetsById.get(id);
-                                return asset ? toMediaUrl(asset.relativePath) : null;
+                                return asset ? toVisualMediaUrl(asset.relativePath) : null;
                               }}
                             />
+}</div>
                           ))}
                         </div>
                       )}
 
                       {activeOverlayBCardInstances.length > 0 && (
                         <BCardInstanceLayer
-                          instances={activeOverlayBCardInstances}
+                          instances={appMode === "teach" ? overlayBinding.state.instances : activeOverlayBCardInstances}
                           mode={appMode}
                           selectedInstanceId={selectedOverlayBCardInstanceId}
                           onSelectInstance={setSelectedPlacedBCardId}
@@ -5559,19 +5999,23 @@ export function App() {
                           onTeachStateChange={setOverlayBCardState}
                           resolveImageUrl={(id) => {
                             const asset = assetsById.get(id);
-                            return asset ? toMediaUrl(asset.relativePath) : null;
+                            return asset ? toVisualMediaUrl(asset.relativePath) : null;
                           }}
                         />
                       )}
                     </div>
                   </ZoomPanWrapper>
+                  </LogicalSceneFrame>
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
                 </>
+              ) : activeItem?.type === 'cardActivityRef' ? (
+                <div style={{position: 'absolute', inset: 0}}>{v2Plan ? <CardV2Scene plan={v2Plan} selectedInstanceId={appMode==='edit'?selectedV2Card:Object.values(v2Runtime.state?.instances ?? {}).find(item => item.selected)?.instanceId} showWarnings={appMode === 'edit'} onSelect={appMode==='edit'?selectV2Card: v2Runtime.state ? id => v2Runtime.dispatch({type: 'SelectCard', instanceId: id}) : undefined} onGeometryChange={appMode==='edit'?(id,geometry)=>cardAction(()=>{if(project&&v2Host)commitCardData(updateHostGeometry(project.data,v2Host,id,geometry));}):undefined} /> : <p>Card activity is missing.</p>}</div>
               ) : activeItem?.type === 'promptCard' ? (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef', color: '#111', borderRadius: 8 }}>
-                  <div style={{ background: '#fff', padding: 40, borderRadius: 16, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', maxWidth: 600, textAlign: 'center' }}>
-                    <h2 style={{ fontSize: '2rem', marginBottom: 20 }}>{activeItem.title || 'Prompt Card'}</h2>
-                    <p style={{ fontSize: '1.25rem', whiteSpace: 'pre-wrap' }}>{activeItem.body || 'Add a prompt body in the tools panel.'}</p>
-                  </div>
+                <div style={{ position: 'absolute', inset: 0 }}>
+                  <LogicalSceneFrame frame={editWorkspace ? presentFrame ?? {width:1280,height:720} : appMode === 'teach' ? presentFrame : null}>
+                    <PromptCardScene title={activeItem.title ?? ''} body={activeItem.body ?? ''} />
+                    <BCardInstanceLayer instances={appMode === "teach" ? overlayBinding.state.instances : activeOverlayBCardInstances} mode={appMode} selectedInstanceId={selectedOverlayBCardInstanceId} onSelectInstance={setSelectedPlacedBCardId} onInstanceChange={updatePlacedBCardInstance} teachStates={overlayBCardTeachStates} clickAction={overlayBCardClickAction} onTeachStateChange={setOverlayBCardState} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : null; }} />
+                  </LogicalSceneFrame>
                 </div>
               ) : activeItem?.type === 'miniGame' ? (
                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#222', color: '#fff', borderRadius: 8 }}>
@@ -5586,10 +6030,12 @@ export function App() {
                 </div>
               ) : (
                 <>
+                  <EditDock area="presentation">
                   <div
                     className="stage-controls"
                     style={{
                       display: "flex",
+                      flexWrap: "wrap",
                       gap: "8px",
                       alignItems: "center",
                       padding: "10px",
@@ -5598,6 +6044,7 @@ export function App() {
                       marginBottom: "10px",
                     }}
                   >
+                    {topMode !== 'boost' && <>
                     <button
                       onClick={() => goToVisibleOffset(-1)}
                       disabled={!project || currentVisiblePos <= 0}
@@ -5608,12 +6055,12 @@ export function App() {
                       onClick={() => goToVisibleOffset(1)}
                       disabled={
                         !project ||
-                        currentVisiblePos < 0 ||
-                        currentVisiblePos >= visibleSlideIndices.length - 1
+                        (currentVisiblePos < 0 || currentVisiblePos >= visibleSlideIndices.length - 1)
                       }
                     >
                       Next
                     </button>
+                    </>}
 
                     <div
                       style={{
@@ -5727,145 +6174,7 @@ export function App() {
                       >
                         Draw
                       </button>
-                      {!drawPanelCollapsed && (
-                        <div
-                          className="draw-panel"
-                          style={{
-                            top: "100%",
-                            right: 0,
-                            left: "auto",
-                            marginTop: 4,
-                          }}
-                        >
-                          <label>
-                            Tool
-                            <select
-                              value={drawSettings.tool}
-                              onChange={(event) =>
-                                setDrawSettings((prev) => ({
-                                  ...prev,
-                                  tool: event.target.value as DrawTool,
-                                }))
-                              }
-                            >
-                              <option value="highlighter">Highlighter</option>
-                              <option value="marker">Marker</option>
-                            </select>
-                          </label>
 
-                          <label>
-                            Size
-                            <input
-                              type="range"
-                              min={2}
-                              max={36}
-                              value={drawSettings.size}
-                              onChange={(event) =>
-                                setDrawSettings((prev) => ({
-                                  ...prev,
-                                  size: Number(event.target.value),
-                                }))
-                              }
-                            />
-                          </label>
-
-                          <label>
-                            Opacity
-                            <input
-                              type="range"
-                              min={0.1}
-                              max={1}
-                              step={0.05}
-                              value={drawSettings.opacity}
-                              onChange={(event) =>
-                                setDrawSettings((prev) => ({
-                                  ...prev,
-                                  opacity: Number(event.target.value),
-                                }))
-                              }
-                            />
-                          </label>
-
-                          {drawSettings.tool === "highlighter" && (
-                            <label>
-                              Fade (ms)
-                              <input
-                                type="range"
-                                min={400}
-                                max={6000}
-                                step={100}
-                                value={drawSettings.fadeMs}
-                                onChange={(event) =>
-                                  setDrawSettings((prev) => ({
-                                    ...prev,
-                                    fadeMs: Number(event.target.value),
-                                  }))
-                                }
-                              />
-                            </label>
-                          )}
-
-                          <label>
-                            Color
-                            <input
-                              type="color"
-                              value={drawSettings.color}
-                              onChange={(event) =>
-                                setDrawSettings((prev) => ({
-                                  ...prev,
-                                  color: event.target.value,
-                                }))
-                              }
-                            />
-                          </label>
-
-                          <label className="draw-inline-check">
-                            <input
-                              type="checkbox"
-                              checked={drawSettings.rainbow}
-                              onChange={(event) =>
-                                setDrawSettings((prev) => ({
-                                  ...prev,
-                                  rainbow: event.target.checked,
-                                }))
-                              }
-                            />
-                            Rainbow
-                          </label>
-
-                          <label className="draw-inline-check">
-                            <input
-                              type="checkbox"
-                              checked={drawSettings.sparkle}
-                              onChange={(event) =>
-                                setDrawSettings((prev) => ({
-                                  ...prev,
-                                  sparkle: event.target.checked,
-                                }))
-                              }
-                            />
-                            Sparkle
-                          </label>
-
-                          <label className="draw-inline-check">
-                            <input
-                              type="checkbox"
-                              checked={drawSettings.drawMode}
-                              onChange={(event) =>
-                                setDrawSettings((prev) => ({
-                                  ...prev,
-                                  drawMode: event.target.checked,
-                                }))
-                              }
-                            />
-                            Draw mode
-                          </label>
-
-                          <button onClick={clearCurrentSlideDrawings}>
-                            Clear Drawings
-                          </button>
-                        </div>
-                      )}
                     </div>
 
                     {appMode === "edit" && (
@@ -5918,9 +6227,13 @@ export function App() {
                         )}
                       </div>
                     )}
+                      {drawingPanel}
+
                   </div>
 
-                  <div className="stage" onContextMenu={handleStageContextMenu}>
+                  </EditDock>
+                  <div ref={staticStageRef} className="stage" onContextMenu={handleStageContextMenu}>
+                    <LogicalSceneFrame frame={editWorkspace ? presentFrame ?? {width:1280,height:720} : appMode === 'teach' ? presentFrame : null}>
                     {!currentAsset && (
                       <div className="placeholder">
                         {topMode === 'boost' && activeItem?.type === 'slideRef'
@@ -5931,66 +6244,37 @@ export function App() {
                     {currentAsset && (
                       <div
                         className="media-layer"
-                        style={
-                          stageHasHalfACardOverlay
-                            ? { position: "absolute", top: 0, left: 0, width: "100%", height: "50%" }
-                            : undefined
-                        }
                       >
-                        {/* Outgoing Slide */}
-                        {isAnimating && previousAsset && (
-                          <MediaView
-                            key={previousSlide?.id}
-                            asset={previousAsset}
-                            overlays={previousSlide?.overlays ?? []}
-                            videoAudio={previousSlide?.videoAudio}
-                            className={`media ${currentSlide?.transition === "card-slide"
-                              ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-out`
-                              : `transition-${currentSlide?.transition ?? "fade"}-out`
-                              }`}
-                            style={
-                              {
-                                "--transition-duration":
-                                  (currentSlide?.transitionDuration ?? 500) + "ms",
-                              } as any
-                            }
-                            drawSettings={drawSettings}
-                            initialZoom={viewportRef.current.zoom}
-                            initialPan={viewportRef.current.pan}
-                            paused={true}
-                            initialTime={lastMediaTimeRef.current}
-                            showControls={false}
-                            bubbleDefinitions={project?.data.bubbleDefinitions}
-                          />
-                        )}
+                        <TransitionLayers event={appMode === "teach" ? sceneTransition : null} heightFraction={stageHasHalfACardOverlay ? 0.5 : 1}>
                         {/* Incoming Slide */}
                         <MediaView
-                          key={currentSlide?.id}
+                          key={JSON.stringify(activeTargetToken)}
+                          visualScope={visualScope}
                           asset={currentAsset}
                           overlays={currentSlide?.overlays ?? []}
                           videoAudio={currentSlide?.videoAudio}
-                          className={`media ${currentSlide?.transition === "card-slide"
-                            ? `transition-card-slide-${currentSlide.transitionDirection ?? "left"}-in`
-                            : `transition-${currentSlide?.transition ?? "fade"}-in`
-                            }`}
-                          style={
-                            {
-                              "--transition-duration":
-                                (currentSlide?.transitionDuration ?? 500) + "ms",
-                            } as any
-                          }
+                          className="media"
                           drawSettings={drawSettings}
                           initialZoom={viewportRef.current.zoom}
                           initialPan={viewportRef.current.pan}
+                          viewportResetSignal={viewportResetSignal}
+                          requestedViewport={teachingScene.state.viewport}
                           onViewportChange={(v) => {
+                            const live = resolvePresentationTarget(projectRef.current?.data ?? null, selection.ref.current);
+                            if (!targetMatches(selection.ref.current, live, activeTargetToken)) return;
                             viewportRef.current = v;
+                            teachingScene.updateViewport(v);
                           }}
-                          paused={false}
+                          paused={usesPresentVideo || appMode === "edit"}
+                          passiveVideo={usesPresentVideo}
+                          previewStream={mediaPlayback.previewStream}
+                          previewDuration={mediaPlayback.status?.durationSec}
                           onTimeUpdate={(t) => {
                             lastMediaTimeRef.current = t;
                           }}
                           showControls={true}
                           isEditMode={appMode === "edit"}
+                          onEditVideoElement={setEditPreviewVideo}
                           activeOverlayId={activeOverlayId}
                           showOverlayIds={appMode === "edit"}
                           onOverlaySelect={setActiveOverlayId}
@@ -6038,32 +6322,36 @@ export function App() {
                           }}
                           bubbleDefinitions={project?.data.bubbleDefinitions}
                         />
+                        </TransitionLayers>
                       </div>
                     )}
 
                     {((topMode === "story" && storyACardRefs.length > 0) || (topMode === "boost" && boostTab === "language" && boostLanguageACardRefs.length > 0)) && (
                       <div style={{ position: "absolute", inset: 0, zIndex: 34, pointerEvents: "none" }}>
                         {(topMode === "story" ? storyACardRefs : boostLanguageACardRefs).map((ref) => (
-                          <ACardStageRenderer
+<div key={ref.id} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>{
+                          appMode === "teach" ? <ACardSystem key={ref.id} aCardId={ref.aCardId} mode="teach" runtime={boardBinding(ref.aCardId, ref.id)} teachPanelHost={teachToolsHostRef.current} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : null; }} /> : <ACardStageRenderer
                             key={ref.id}
                             aCardId={ref.aCardId}
-                            teachStates={overlayBCardTeachStates}
+                              startedAt={boardBinding(ref.aCardId, ref.id).state.startedAt}
+                            teachStates={boardBinding(ref.aCardId, ref.id).state.states}
                             mode={appMode}
                             selectedInstanceId={selectedPlacedBCardId}
-                            onInstanceClick={(instanceId) => handlePlacedACardInstanceClick(instanceId)}
-                            onInstanceChange={appMode === "edit" ? (instanceId, updates) => updateACardBCardInstance(ref.aCardId, instanceId, updates) : undefined}
+                            onInstanceClick={(instanceId) => handlePlacedACardInstanceClick(ref.aCardId, ref.id, instanceId)}
+                            onInstanceChange={appMode === "edit" ? (instanceId, updates) => updateACardBCardInstance(ref.aCardId, instanceId, updates) : boardBinding(ref.aCardId, ref.id).move}
                             resolveImageUrl={(id) => {
                               const asset = assetsById.get(id);
-                              return asset ? toMediaUrl(asset.relativePath) : null;
+                              return asset ? toVisualMediaUrl(asset.relativePath) : null;
                             }}
                           />
+}</div>
                         ))}
                       </div>
                     )}
 
                     {activeOverlayBCardInstances.length > 0 && (
                       <BCardInstanceLayer
-                        instances={activeOverlayBCardInstances}
+                        instances={appMode === "teach" ? overlayBinding.state.instances : activeOverlayBCardInstances}
                         mode={appMode}
                         selectedInstanceId={selectedOverlayBCardInstanceId}
                         onSelectInstance={setSelectedPlacedBCardId}
@@ -6073,35 +6361,105 @@ export function App() {
                         onTeachStateChange={setOverlayBCardState}
                         resolveImageUrl={(id) => {
                           const asset = assetsById.get(id);
-                          return asset ? toMediaUrl(asset.relativePath) : null;
+                          return asset ? toVisualMediaUrl(asset.relativePath) : null;
                         }}
                       />
                     )}
 
                     {currentSlide && (
                       <StageDrawingOverlay
-                        targetId={`slide:${currentSlide.id}`}
+                        targetId={`${presentationSession.projectId}:${presentationSession.targetRevision}:${presentationTarget.occurrenceId}`}
                         settings={drawSettings}
                         markerStrokes={currentSlide.markerStrokes ?? []}
                         onMarkerStrokesChange={updateCurrentSlideMarkerStrokes}
                         clearSignal={drawClearSignal}
                         viewportRef={viewportRef}
+                        onTransientChange={(strokes) => {
+                          const live = resolvePresentationTarget(projectRef.current?.data ?? null, selection.ref.current);
+                          if (targetMatches(selection.ref.current, live, activeTargetToken)) teachingScene.updateTransient(strokes);
+                        }}
                       />
                     )}
+                    </LogicalSceneFrame>
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
                   </div>
                 </>
               )}
             </main>
+            </TeachPreview>
+            {appMode === 'teach' && <>
+              <TeachDivider value={teachLayout.split} onChange={teachLayout.resize} />
+              <section className="teach-control-region" aria-label="Teacher controls">
+                <section className="teach-control-card">
+                  <div className="teach-context"><strong>Live: {presentationTarget.kind === 'break' ? selectedSection?.name : currentSlide ? getSlideDisplayName(currentSlide) : presentationTarget.board?.name || presentationTarget.kind}</strong><span>{topMode === 'boost' ? `${boostTab} booster · ${activeBoostIndex + 1} / ${activeBoostSequence.length}` : selectedSection?.name}</span></div>
+                  <div className="teach-actions">
+                    <button onClick={goToPrevSlide} disabled={!presentationTarget.capabilities.canNavigate}>Previous</button>
+                    <button onClick={goToNextSlide} disabled={!presentationTarget.capabilities.canNavigate}>Next</button>
+                    {topMode === 'boost' && <button onClick={() => setTopMode('story')}>Return to lesson</button>}
+                  </div>
+                  <div className="teach-actions" aria-label="Teaching context">
+                    <button aria-pressed={topMode === 'story'} onClick={() => {setTopMode('story');setTeachSecondaryOpen(false);}}>Lesson</button>
+                    <button aria-pressed={topMode === 'boost'} onClick={() => {setTopMode('boost');setTeachSecondaryOpen(false);}}>Boosters</button>
+                    {hasLegacyCards && <button aria-pressed={topMode === 'boards'} onClick={() => {setTopMode('boards');setTeachSecondaryOpen(false);}}>Legacy boards</button>}
+                    {(['badge','relics'] as const).map(mode => <button key={mode} aria-expanded={topMode === mode && teachSecondaryOpen} onClick={() => {setTopMode(mode);setTeachSecondaryOpen(topMode === mode ? !teachSecondaryOpen : true);}}>{mode === 'badge' ? 'Badges / students' : mode === 'relics' ? 'Relics' : 'Movement'}</button>)}
+                  </div>
+                  {teachSecondaryOpen && <button className="teach-secondary-close" onClick={() => setTeachSecondaryOpen(false)}>Close secondary tools</button>}
+                  {topMode === 'boost' && <div className="teach-actions">{(['activation','language','games'] as const).map(tab => <button key={tab} aria-pressed={boostTab === tab} onClick={() => setBoostTab(tab)}>{tab}</button>)}</div>}
+                  {topMode === 'boards' && <label>Board <select aria-label="Active board" value={selectedACardId ?? ''} onChange={event => setSelectedACardId(event.target.value)}><option value="">Choose board</option>{Object.values(project?.data.aCardLibrary ?? {}).map(card => <option key={card.id} value={card.id}>{card.name}</option>)}</select></label>}
+                </section>
+                {(presentationTarget.capabilities.canDraw || presentationTarget.capabilities.canZoom) && <section className="teach-control-card teach-spatial-tools">
+                  <h3>Preview tools</h3><div className="teach-actions">
+                  {presentationTarget.capabilities.canDraw && <><button aria-pressed={drawSettings.drawMode} onClick={() => setDrawSettings(prev => ({...prev,drawMode:!prev.drawMode}))}>{drawSettings.drawMode ? 'Drawing on' : 'Draw'}</button><button disabled={!(presentationTarget.kind === "break" ? selectedSection?.markerStrokes?.length : currentSlide?.markerStrokes?.length)} onClick={() => updateCurrentSlideMarkerStrokes((presentationTarget.kind === "break" ? selectedSection?.markerStrokes ?? [] : currentSlide?.markerStrokes ?? []).slice(0,-1))}>Undo marker</button><button onClick={clearCurrentSlideDrawings}>Clear drawing</button><button aria-expanded={!drawPanelCollapsed} onClick={() => setDrawPanelCollapsed(v => !v)}>Pen options</button></>}
+                  {presentationTarget.capabilities.canZoom && <>{([-0.25,0.25] as const).map(delta => <button key={delta} aria-label={delta < 0 ? 'Zoom out' : 'Zoom in'} onClick={() => {const v=teachingScene.state.viewport;teachingScene.updateViewport({...v,zoom:Math.max(1,Math.min(4,v.zoom+delta))});setViewportResetSignal(n=>n+1);}}>{delta < 0 ? '− Zoom' : '+ Zoom'}</button>)}<button onClick={() => {teachingScene.updateViewport({zoom:1,pan:{x:0,y:0}});setViewportResetSignal(n=>n+1);}}>Reset view</button></>}
+                  </div>{presentationTarget.capabilities.canDraw && drawingPanel}
+                  {presentationTarget.capabilities.canZoom && <p>Scroll over the preview to zoom. Middle-drag to pan. {Math.round(teachingScene.state.viewport.zoom*100)}%</p>}
+                </section>}
+                {mediaPlayback.intent && <section className="teach-control-card"><h3>Video</h3><MediaTransportControls key={mediaPlayback.intent.identity} {...mediaPlayback} intent={mediaPlayback.intent} /></section>}
+                {presentationTarget.kind === 'break' && <section className="teach-control-card"><h3>Break timer</h3><button onClick={toggleTimer}>{timerState.isRunning ? 'Stop timer' : 'Start timer'}</button></section>}
+                <div ref={teachToolsHostRef} className="teach-board-tools" />
+                {v2Module && v2PlacementId && <CardV2Controls module={v2Module} placementId={v2PlacementId} state={v2Runtime.state} dispatch={v2Runtime.dispatch} onReturn={() => setTopMode('story')} />}
+                {selectedOverlayBCardState && <section className="teach-control-card"><h3>Selected card</h3><div className="teach-actions">{(['isFlipped','isBlurred','isCovered','isZoomed'] as const).map((key,index)=><button key={key} aria-pressed={selectedOverlayBCardState[key]} onClick={()=>toggleSelectedOverlayBCardState(key)}>{['Flip','Blur','Cover','Zoom'][index]}</button>)}<button onClick={resetSelectedOverlayBCardState}>Reset card</button></div></section>}
+                <TeachLiveControls movementControls={<TeachMovementControls config={movementConfig} active={activeMovementEvent} onTrigger={triggerMovementEvent} onRandom={triggerRandomMovementEvent} onStop={() => setActiveMovementEvent(null)} />} section={presentationTarget.section} slide={presentationTarget.slide} onOpenAudio={() => setAudioSettingsOpen(true)} />
+              </section>
 
-            <aside className="audio-sidebar">
-              {topMode === 'story' || topMode === 'relics' ? (
+              <TeachNavigatorDivider height={teachLayout.navigatorHeight} maximum={teachLayout.navigatorMaximum} onChange={teachLayout.resizeNavigator} />
+              <TeachNavigator data={project?.data ?? null} session={presentationSession} target={presentationTarget}
+                onSlide={id => {setTopMode('story');const index=project?.data.slides.findIndex(slide=>slide.id===id) ?? -1;if(index>=0)goToSlideByAbsoluteIndex(index);}}
+                onSection={id => {setTopMode('story');setSelectedSectionId(id);audioManager.stopSlideAudio();audioManager.stopSectionMusic();}}
+                onBoostItem={setSelectedBoostItemId}
+                resolveImage={id => {const asset=assetsById.get(id);return asset?.mediaType==='image'?toVisualMediaUrl(asset.relativePath):null;}} />
+            </>}
+
+            {editWorkspace && <>
+              <TeachDivider value={teachLayout.split} onChange={teachLayout.resize} />
+              <EditInspector actions={<div className="edit-heading-actions"><button disabled={!v2Host&&!(topMode==='boost'&&boostTab!=='badge')} onClick={()=>quickAddCard()}>+ Card</button>{topMode==='boost'&&<button onClick={()=>setTopMode('story')}>← Back to Story</button>}</div>} selectionKey={selectedV2Card} contextual={v2Module&&v2PlacementId&&selectedV2Card&&v2Activity?.instances.some(i=>i.id===selectedV2Card)?<CardPlacementInspector key={`${v2PlacementId}:${selectedV2Card}`} module={v2Module} placementId={v2PlacementId} instanceId={selectedV2Card} assets={project?.data.assets??[]} onChange={updateCardsV2} onDuplicate={duplicateSelectedV2} onRemove={removeSelectedV2} onIndependent={()=>cardAction(()=>{if(project&&v2Host)commitCardData(makeHostCardIndependent(project.data,v2Host,selectedV2Card,()=>crypto.randomUUID()));})} onCopy={copySelectedV2} onOpenLibrary={()=>setCardsV2Open(true)} resolveImageUrl={id=>{const asset=assetsById.get(id);return asset?toVisualMediaUrl(asset.relativePath):undefined;}} onPreviewFace={setPreviewV2Face} onActivityCreated={addV2ToBooster}/>:undefined} pool={<>{project&&topMode==='boost'&&<BoosterContext data={project.data} tab={boostTab} item={activeItem} index={activeBoostIndex} count={activeBoostSequence.length} onReturn={()=>setTopMode('story')} onTab={tab=>{setBoostTab(tab);setSelectedBoostItemId(project.data.boostPack?.[`${tab}Sequence`][0]?.id??null);}} onSelect={direction=>{const item=activeBoostSequence[activeBoostIndex+direction];if(item)setSelectedBoostItemId(item.id);}} onMedia={addBoosterMedia} onReuse={reuseBoosterSlide} onIndependent={()=>cardAction(()=>{if(boostTab!=='badge'&&activeItem)commitCardData(independentBoosterSlide(project.data,boostTab,activeItem.id,()=>crypto.randomUUID()).data);})} onPrompt={()=>insertBoosterItem({id:crypto.randomUUID(),type:'promptCard',title:'Question',body:''})} onCards={()=>quickAddCard(undefined,false,true)} onBreak={id=>insertBoosterItem({id:crypto.randomUUID(),type:'breakRef',breakId:id})}/>}<div className="edit-quick-add"><button disabled={!currentSlide} onClick={()=>{selectV2Card('');setBubblePanelOpen(true);}}>Text / Bubble</button><button onClick={()=>setCardsV2Open(true)}>Card Library / Activity</button>{v2Module&&v2Host&&<details className="quick-card-reuse"><summary>Add from Cards / Sets</summary><label><input type="checkbox" checked={reuseCardIndependent} onChange={e=>setReuseCardIndependent(e.target.checked)}/> Make independent copies</label><p>{reuseCardIndependent?'New content for this canvas.':'Linked content: face edits update all uses.'}</p><label>Card<select aria-label="Add existing Card" value="" onChange={e=>{if(e.target.value)quickAddCard(e.target.value,reuseCardIndependent);}}><option value="">Choose Card…</option>{Object.values(v2Module.cards).map(c=><option value={c.id} key={c.id}>{c.label}</option>)}</select></label><label>Set<select aria-label="Add from Set" value="" onChange={e=>{if(e.target.value)addSetToCanvas(e.target.value);}}><option value="">Choose Set…</option>{Object.values(v2Module.sets).map(c=><option value={c.id} key={c.id}>{c.label}</option>)}</select></label></details>}{cardClipboard.current?.project===project?.folderPath&&<button onClick={()=>quickAddCard(undefined,true,false,true)}>Paste Card</button>}</div>{project && <MediaPool focusContentKey={selectedV2Card} key={project.folderPath} data={project.data} busy={poolBusy} onChange={data=>setProject(previous=>previous?{...previous,data}:previous)} onImport={importToPool} onAttachAudio={attachPoolAudio} resolveUrl={toVisualMediaUrl}/>}</>} categories={['content','presentation','audio','tools']} refs={editHosts.refs} title={topMode === 'story' ? (selectedSectionType === 'break' ? `Break · ${selectedSection?.name}` : currentSlide ? getSlideDisplayName(currentSlide) : 'Inspector') : topMode==='boost'?`Boosters › ${boostTab[0].toUpperCase()+boostTab.slice(1)} · ${activeBoostIndex+1} / ${activeBoostSequence.length}`:`${topMode} workspace`} focus={editFocus} onFocus={() => setEditFocus(value => !value)} tools={<div className="edit-lesson-tools">{(['story','boost','boards','movement','badge','relics'] as const).map(mode => <button key={mode} aria-pressed={topMode === mode} onClick={() => mode === 'boards' && !hasLegacyCards ? setCardsV2Open(true) : setTopMode(mode)}>{mode === 'story' ? 'Sections / structure' : mode === 'boost' ? 'Boosters' : mode === 'badge' ? 'Badges' : mode}</button>)}</div>} />
+              <TeachNavigatorDivider minimum={300} height={teachLayout.navigatorHeight} maximum={teachLayout.navigatorMaximum} onChange={teachLayout.resizeNavigator} />
+              {project && <LessonTimeline key={project.folderPath} data={project.data} liveActive={teachLayout.presentActive} selectedIds={selectedSlideIds} edit={presentationTarget} live={liveTarget} session={presentationSession}
+                transport={<EditVideoTransport video={currentAsset?.mediaType==='video'?editPreviewVideo:null} trim={currentSlide?.videoTrim} label={currentSlide?.name||currentAsset?.originalName}/>}
+                onSlide={(id,event)=>{setTopMode('story');const index=project.data.slides.findIndex(s=>s.id===id);if(index>=0){if(event)onSlideWrapperClick(index,event);else goToSlideByAbsoluteIndex(index);}}}
+                onSection={id=>{setTopMode('story');selectSection(id);}} onBoost={setSelectedBoostItemId} onBoostAction={changeBoosterSequence}
+                onPlace={placePoolAssets} onFiles={(paths,slot)=>void importToPool(paths?'drop':'files',paths,undefined,slot)}
+                onReorder={(id,slot)=>{const from=project.data.slides.findIndex(s=>s.id===id);const slide=project.data.slides[from];if(!slide)return;if(slide.sectionId!==slot.sectionId){showToast('Cross-section moves are not supported yet.','edit',2500);return;}const indices=sectionSlideIndices.get(slot.sectionId)??[];const to=slot.beforeId?project.data.slides.findIndex(s=>s.id===slot.beforeId):(indices[indices.length-1]??from)+1;reorderSlidesWithinSection(from,to);}}
+                onSectionAdd={before=>onAddSection(undefined,before)} onBreakAdd={before=>onAddBreak(before)} onLessonAdd={()=>{const lesson=project.data.sections.find(s=>s.name==='Lesson'&&s.type!=='break');if(lesson)selectSection(lesson.id);else onAddSection('Lesson',project.data.sections[0]?.id);}}
+                onDelete={onDeleteSlide} onDeleteSection={deleteSection} onDuplicateBreak={duplicateBreak} onMoveSection={moveSection}
+                onRename={(id,name,section)=>section?updateSection(id,{name}):commitSlideName(id,name)} onShow={showInPresent}
+                resolveUrl={toVisualMediaUrl} previewActivity={item=>{
+                  if(item.type==='slideRef'){const slide=project.data.slides.find(s=>s.id===item.slideId);return slide?<TimelineFrame data={project.data} slide={slide} frame={presentFrame??staticFrame} scope={visualScope} resolveUrl={toVisualMediaUrl}/>:null;}
+                  if(item.type==='promptCard')return <LogicalSceneFrame frame={{width:1280,height:720}}><PromptCardScene title={item.title??''} body={item.body??''}/></LogicalSceneFrame>;
+                  if(item.type==='cardActivityRef'&&v2Module){const activity=v2Module.activities[v2Module.placements[item.placementId]?.activityId];return activity?<CardV2Scene plan={buildCardV2RenderPlan(v2Module,activity,undefined,id=>{const asset=assetsById.get(id);return asset?toVisualMediaUrl(asset.relativePath):undefined;})}/>:null;}
+                  return null;
+                }} preview={slide=><TimelineFrame data={project.data} slide={slide} frame={presentFrame??staticFrame} scope={visualScope} resolveUrl={toVisualMediaUrl}/>}/>}
+            </>}
+            <EditDock area="inspector"><aside className="audio-sidebar">
+
+              {topMode === 'story' || (!editWorkspace && topMode === 'relics') ? (
                 <>
-                  <div className="audio-block" style={{ border: '1px solid #3a475f', background: 'linear-gradient(180deg, #1a202b, #171b24)', order: 90 }}>
+                  <div className="edit-group edit-group-content">                  <div className="audio-block" style={{ border: '1px solid #3a475f', background: 'linear-gradient(180deg, #1a202b, #171b24)', order: 90 }}>
                     <h4
                       onClick={() => setStoryRefsCollapsed((v) => !v)}
                       style={{ margin: "0", color: "#a9c7ff", fontSize: "0.9rem", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                     >
-                      Story Scene Attachments
+                      Legacy Story Attachments
                       <span>{storyRefsCollapsed ? ">" : "v"}</span>
                     </h4>
                     {!storyRefsCollapsed && (
@@ -6118,14 +6476,14 @@ export function App() {
                               onClick={() => addStoryReference("aCardRef")}
                               disabled={!storyRefContext}
                             >
-                              + ACard Board
+                              + Legacy board
                             </button>
                             <button
                               style={{ flex: 1, padding: "6px", fontSize: "0.75rem", background: "#24343d", border: "1px solid #456576", color: "#c3ebff", borderRadius: 4 }}
                               onClick={() => addStoryReference("bCard")}
                               disabled={!storyBCardHost}
                             >
-                              + BCard Overlay
+                              + Legacy overlay
                             </button>
                           </div>
                         )}
@@ -6236,7 +6594,7 @@ export function App() {
                                     assets={project?.data.assets || []}
                                     resolveImageUrl={(id) => {
                                       const asset = assetsById.get(id);
-                                      return asset ? toMediaUrl(asset.relativePath) : null;
+                                      return asset ? toVisualMediaUrl(asset.relativePath) : null;
                                     }}
                                   />
                                 </div>
@@ -6314,6 +6672,7 @@ export function App() {
                     )}
                   </div>
 
+</div>
                   {appMode === "teach" && activeOverlayBCardInstances.length > 0 && selectedOverlayBCardInstanceId && selectedOverlayBCardState && (
                     <div className="audio-block" style={{ border: "1px solid #3f5968", background: "linear-gradient(180deg, #182129, #121920)", order: 91 }}>
                       <h4
@@ -6356,12 +6715,12 @@ export function App() {
                     </div>
                   )}
 
-                  {(() => {
+                  <div className="edit-group edit-group-content">                  {(() => {
                     const activeOverlay = currentSlide?.overlays?.find(o => o.id === activeOverlayId);
                     return activeOverlay && appMode === "edit" ? (
-                      <div className="audio-block" style={{ border: '1px solid #55f', background: '#1a1a24' }}>
+                      <div className="audio-block bubble-inspector" aria-label="Selected bubble settings">
                         <h4 style={{ color: '#88f', margin: '4px 0 8px 0' }}>Selected Bubble: {activeOverlay.bubbleId || 'N/A'}</h4>
-                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                        <div className="bubble-field"><label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
                           Bubble Type
                           <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
                             <select
@@ -6401,29 +6760,8 @@ export function App() {
                               +
                             </button>
                           </div>
-                        </label>
-
-                        {(project?.data.bubbleDefinitions || []).length > 0 && (
-                          <div style={{ marginBottom: 12 }}>
-                            <h5 style={{ fontSize: '0.7rem', color: '#666', textTransform: 'uppercase', marginBottom: 4 }}>Custom Templates</h5>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                              {project?.data.bubbleDefinitions?.map((bt) => (
-                                <div key={bt.templateName} style={{ display: 'flex', alignItems: 'center', background: '#222', border: '1px solid #333', padding: '2px 4px', borderRadius: 4, fontSize: '0.75rem' }}>
-                                  <span style={{ color: '#eee', marginRight: 8 }}>{bt.templateName}</span>
-                                  <button
-                                    onClick={() => onDeleteBubbleTemplate(bt.templateName)}
-                                    style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, fontSize: '0.75rem', fontWeight: 'bold' }}
-                                    title="Remove Template"
-                                  >
-                                    X
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 8, marginBottom: 8 }}>
+                        </label></div>
+                        <div className="bubble-compact-actions"><label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 8, marginBottom: 8 }}>
                           <input
                             type="checkbox"
                             checked={!!activeOverlay.locked}
@@ -6435,8 +6773,7 @@ export function App() {
                             }}
                           />
                           Locked
-                        </label>
-                        <button
+                        </label><button
                           onClick={() => {
                             if (!currentSlide || !project) return;
                             const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).filter(o => o.id !== activeOverlay.id);
@@ -6444,43 +6781,13 @@ export function App() {
                             setActiveOverlayId(null);
                             setIsDirty(true);
                           }}
-                          style={{ background: '#633', color: '#fff', border: 'none', padding: '6px', borderRadius: 4, width: '100%', cursor: 'pointer', marginBottom: 8 }}
+                          style={{ background: '#633', color: '#fff', border: 'none', padding: '6px', borderRadius: 4,  cursor: 'pointer', marginBottom: 8 }}
                         >
                           Delete Bubble
-                        </button>
-                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
-                          Font Size
-                          <input
-                            type="number"
-                            min={10} max={200}
-                            value={activeOverlay.fontSize ?? 24}
-                            onChange={(e) => {
-                              if (!currentSlide || !project) return;
-                              const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, fontSize: Number(e.target.value) } : o);
-                              setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
-                              setIsDirty(true);
-                            }}
-                            style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
-                          />
-                        </label>
-                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
-                          Text Alignment
-                          <select
-                            value={activeOverlay.align || 'center'}
-                            onChange={(e) => {
-                              if (!currentSlide || !project) return;
-                              const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, align: e.target.value as any } : o);
-                              setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
-                              setIsDirty(true);
-                            }}
-                            style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
-                          >
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                          </select>
-                        </label>
-                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                        </button></div>
+                        <section className="bubble-settings-section" aria-label="Bubble typography">
+                          <h5>Text style</h5>
+                          <div className="bubble-field-grid"><label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
                           Font Family
                           <select
                             value={activeOverlay.fontFamily || 'sans-serif'}
@@ -6498,9 +6805,37 @@ export function App() {
                             <option value="Comic Sans MS">Comic Sans MS</option>
                             <option value="sans-serif">Default</option>
                           </select>
-                        </label>
-
-                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                        </label><label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                          Font Size
+                          <input
+                            type="number"
+                            min={10} max={200}
+                            value={activeOverlay.fontSize ?? 24}
+                            onChange={(e) => {
+                              if (!currentSlide || !project) return;
+                              const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, fontSize: Number(e.target.value) } : o);
+                              setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                              setIsDirty(true);
+                            }}
+                            style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                          />
+                        </label><label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                          Text Alignment
+                          <select
+                            value={activeOverlay.align || 'center'}
+                            onChange={(e) => {
+                              if (!currentSlide || !project) return;
+                              const nextOverlays: OverlayItem[] = (currentSlide.overlays || []).map(o => o.id === activeOverlay.id ? { ...o, align: e.target.value as any } : o);
+                              setProject({ ...project, data: { ...project.data, slides: project.data.slides.map(s => s.id === currentSlide.id ? { ...s, overlays: nextOverlays } : s) } });
+                              setIsDirty(true);
+                            }}
+                            style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
+                          >
+                            <option value="left">Left</option>
+                            <option value="center">Center</option>
+                            <option value="right">Right</option>
+                          </select>
+                        </label><label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
                           Bold Strength ({activeOverlay.fontWeight || 400})
                           <input
                             type="range"
@@ -6514,9 +6849,8 @@ export function App() {
                             }}
                             style={{ cursor: 'pointer' }}
                           />
-                        </label>
-
-                        <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 8, marginBottom: 8 }}>
+                        </label></div>
+                          <div className="bubble-compact-actions"><label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 8, marginBottom: 8 }}>
                           <input
                             type="checkbox"
                             checked={activeOverlay.fontStyle === 'italic'}
@@ -6528,9 +6862,7 @@ export function App() {
                             }}
                           />
                           Italic
-                        </label>
-
-                        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                        </label><div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                           <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.8rem', color: '#ccc', gap: 4, cursor: 'pointer' }}>
                             <input
                               type="checkbox"
@@ -6557,8 +6889,7 @@ export function App() {
                             />
                             Flip V
                           </label>
-                        </div>
-                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                        </div><label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
                           Text Color
                           <input
                             type="color"
@@ -6571,9 +6902,11 @@ export function App() {
                             }}
                             style={{ background: "transparent", border: "none", width: "100%", height: 24, cursor: "pointer", padding: 0 }}
                           />
-                        </label>
-
-                        <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
+                        </label></div>
+                        </section>
+                        <details className="bubble-advanced">
+                          <summary>Tags &amp; text area</summary>
+                          <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4, marginBottom: 8 }}>
                           Tags (comma-separated)
                           <input
                             type="text"
@@ -6588,9 +6921,7 @@ export function App() {
                             }}
                             style={{ background: '#222', color: '#fff', border: '1px solid #444', padding: '4px', borderRadius: 4 }}
                           />
-                        </label>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                        </label><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                           {(['x', 'y', 'width', 'height'] as const).map(prop => (
                             <label key={prop} style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem', color: '#ccc', gap: 4 }}>
                               TextRect {prop}
@@ -6612,11 +6943,36 @@ export function App() {
                             </label>
                           ))}
                         </div>
+                        </details>
+                        <details className="bubble-advanced">
+                          <summary>Custom templates</summary>
+                          {(project?.data.bubbleDefinitions || []).length > 0 && (
+                          <div style={{ marginBottom: 12 }}>
+                            <h5 style={{ fontSize: '0.7rem', color: '#666', textTransform: 'uppercase', marginBottom: 4 }}>Custom Templates</h5>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                              {project?.data.bubbleDefinitions?.map((bt) => (
+                                <div key={bt.templateName} style={{ display: 'flex', alignItems: 'center', background: '#222', border: '1px solid #333', padding: '2px 4px', borderRadius: 4, fontSize: '0.75rem' }}>
+                                  <span style={{ color: '#eee', marginRight: 8 }}>{bt.templateName}</span>
+                                  <button
+                                    onClick={() => onDeleteBubbleTemplate(bt.templateName)}
+                                    style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, fontSize: '0.75rem', fontWeight: 'bold' }}
+                                    title="Remove Template"
+                                  >
+                                    X
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        </details>
                       </div>
                     ) : null;
                   })()}
-                  <div className="audio-block">
-                    {currentSlide && renderTagEditor(currentSlide)}
+</div>
+                  <div className="edit-group edit-group-content">{selectedSectionType !== 'break' && currentSlide && renderTagEditor(currentSlide)}</div>
+                  <div className="edit-group edit-group-audio">
+                  {selectedSectionType !== 'break' && <div className="audio-block">
                     <h4>Slide Audio</h4>
                     {currentSlide && (
                       <>
@@ -6733,9 +7089,10 @@ export function App() {
                           )}
                       </>
                     )}
-                  </div>
+                  </div>}
 
-                  <div className="audio-block">
+                  </div>
+                  <div className="edit-group edit-group-audio"><div className="audio-block">
                     <h4 style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "0 0 10px 0", color: "#ffb86c", fontSize: "0.9rem", borderBottom: "1px solid #333", paddingBottom: "6px" }}>
                       Section Music
                       {appMode === "edit" && <button style={{ padding: "0px 6px", fontSize: "12px", background: "#4a2a2a", border: "1px solid #7a3a3a", color: "#fff" }} onClick={() => onImportAudio("section-bgm")}>+</button>}
@@ -6767,11 +7124,12 @@ export function App() {
 
                   </div>
 
-                  <CompactAudioPanel onOpenSettings={() => setAudioSettingsOpen(true)} />
+                  </div>
+                  {!editWorkspace && <CompactAudioPanel onOpenSettings={() => setAudioSettingsOpen(true)} />}
                 </>
-              ) : topMode === 'badge' ? (
+              ) : editWorkspace && ['movement', 'relics', 'boards'].includes(topMode) ? null : topMode === 'badge' ? (
                 <div className="audio-block" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <BadgePanel
+                  <BadgePanel visualScope={visualScope}
                     isEditMode={appMode === "edit"}
                     project={project}
                     selectedSpriteId={selectedBadgeSpriteId}
@@ -6786,23 +7144,24 @@ export function App() {
                   />
                 </div>
               ) : (
-                <div className="audio-block" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h4 style={{ margin: "0", color: "#66f", fontSize: "1rem" }}>Boost Tools</h4>
+                <div className="audio-block edit-group edit-group-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <h4 style={{ margin: 0 }}>Booster content</h4>
 
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', margin: "10px 0", borderBottom: '1px solid #333', paddingBottom: 10 }}>
-                    <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('slideRef')}>+ SlideRef</button>
-                    <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('breakRef')}>+ BreakRef</button>
+                  <div hidden={editWorkspace} style={{ display: 'flex', gap: 4, flexWrap: 'wrap', margin: "10px 0", borderBottom: '1px solid #333', paddingBottom: 10 }}>
+                    <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('slideRef')}>Use Existing Slide</button>
+                    <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('breakRef')}>Use Existing Break</button>
                     <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('promptCard')}>+ Prompt</button>
                     <button style={{ padding: '6px', background: '#334', border: '1px solid #446', color: '#ddf', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('miniGame')}>+ Game</button>
-                    <button style={{ padding: '6px', background: '#253525', border: '1px solid #4a6a4a', color: '#adfaad', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} onClick={() => addSequenceItem('aCardRef')}>+ ACard</button>
-                    <button style={{ padding: '6px', background: '#253535', border: '1px solid #4a6a6a', color: '#adeaff', borderRadius: 4, cursor: activeItem ? 'pointer' : 'not-allowed', opacity: activeItem ? 1 : 0.45, fontSize: '0.75rem', flex: 1 }} onClick={addBoostBCardInstance} disabled={!activeItem}>+ BCard Overlay</button>
+                    <button style={{ padding: '6px', background: '#253525', border: '1px solid #4a6a4a', color: '#adfaad', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem', flex: 1 }} disabled={!hasLegacyCards} onClick={() => addSequenceItem('aCardRef')}>+ Legacy board</button>
+                    <button style={{ padding: '6px', background: '#253535', border: '1px solid #4a6a6a', color: '#adeaff', borderRadius: 4, cursor: activeItem ? 'pointer' : 'not-allowed', opacity: activeItem ? 1 : 0.45, fontSize: '0.75rem', flex: 1 }} onClick={addBoostBCardInstance} disabled={!activeItem || !hasLegacyCards || activeItem.type === 'cardActivityRef'}>+ Legacy overlay</button>
                   </div>
 
+                  {!editWorkspace&&<button onClick={() => setCardsV2Open(true)}>Add Card Activity / Edit Cards</button>}
                   {activeItem ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       {activeItem.type === 'slideRef' && (
                         <>
-                          <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Editing SlideRef</h4>
+                          <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Reused Story slide</h4>
                           <details style={{ marginBottom: 16 }}>
                             <summary style={{ cursor: 'pointer', color: '#88f', fontSize: '0.85rem', marginBottom: 8 }}>Select Slide</summary>
                             <input
@@ -6823,7 +7182,7 @@ export function App() {
                                   <button
                                     key={s.id}
                                     style={{ padding: '6px', background: activeItem.slideId === s.id ? '#556' : '#222', border: activeItem.slideId === s.id ? '1px solid #77f' : '1px solid #444', color: '#ddd', borderRadius: 4, cursor: 'pointer', textAlign: 'left', fontSize: '0.8rem' }}
-                                    onClick={() => updateSequenceItem(activeItem.id, { slideId: s.id })}
+                                    onClick={() => updateSequenceItem(activeItem.id, { slideId: s.id, independentCopyOf:undefined })}
                                   >
                                     {idx + 1}. {visibleLabel.length > 30 ? visibleLabel.slice(0, 30) + '...' : visibleLabel}
                                   </button>
@@ -6835,7 +7194,7 @@ export function App() {
                       )}
                       {activeItem.type === 'breakRef' && (
                         <>
-                          <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Editing BreakRef</h4>
+                          <h4 style={{ margin: 0, color: "#ccc", fontSize: "0.85rem" }}>Reused Story break</h4>
                           <select
                             value={activeItem.breakId}
                             onChange={e => updateSequenceItem(activeItem.id, { breakId: e.target.value })}
@@ -6878,12 +7237,12 @@ export function App() {
                           {appMode === 'teach' && (
                             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #2f3340', display: 'flex', flexDirection: 'column', gap: 8 }}>
                               <h4 style={{ margin: 0, color: '#9ecbff', fontSize: '0.8rem' }}>BCard Teach Tools</h4>
-                              <div ref={teachToolsHostRef} />
+
                             </div>
                           )}
                         </>
                       )}
-                      <div style={{ borderTop: '1px solid #2f3340', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ borderTop: '1px solid #2f3340', paddingTop: 12, display: activeItem.type === 'cardActivityRef' || !hasLegacyCards ? 'none' : 'flex', flexDirection: 'column', gap: 8 }}>
                         <h4 style={{ margin: 0, color: '#adeaff', fontSize: '0.85rem' }}>BCard Overlays On This Host</h4>
                         <p style={{ margin: 0, fontSize: '0.75rem', color: '#888' }}>These BCards live on the current Boost scene item and render over the host content.</p>
                         <button style={{ padding: '6px', background: '#24343d', border: '1px solid #456576', color: '#c3ebff', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' }} onClick={addBoostBCardInstance}>
@@ -7008,8 +7367,9 @@ export function App() {
                   )}
                 </div>
               )}
-            </aside>
+            </aside></EditDock>
           </div>
+          </EditWorkspaceProvider>
           {
             contextMenu && (
               <ContextMenu
@@ -7035,12 +7395,12 @@ export function App() {
                       {
                         label: "Next Slide",
                         onClick: goToNextSlide,
-                        disabled: !project || (currentIndex >= project.data.slides.length - 1 && selectedSection?.type !== 'break')
+                        disabled: !project || (topMode === "boost" ? activeBoostIndex < 0 || activeBoostIndex >= activeBoostSequence.length - 1 : currentIndex >= project.data.slides.length - 1 && selectedSection?.type !== 'break')
                       },
                       {
                         label: "Prev Slide",
                         onClick: goToPrevSlide,
-                        disabled: !project || (currentIndex <= 0 && selectedSection?.type !== 'break')
+                        disabled: !project || (topMode === "boost" ? activeBoostIndex <= 0 : currentIndex <= 0 && selectedSection?.type !== 'break')
                       },
                       {
                         label: "Next Break",
@@ -7153,7 +7513,7 @@ export function App() {
             )}
         </div>
       </CardSystemProvider>
-    </SparkProvider>
+    </SparkProvider></EditorPreviewAudioContext.Provider>
   );
 }
 
@@ -7169,8 +7529,16 @@ function ZoomPanWrapper({
   clearSignal,
   initialViewport,
   onViewportChange,
+  onLiveViewportChange,
+  resetSignal,
+  requestedViewport,
+  onTransientChange,
 }: {
   children: React.ReactNode;
+  resetSignal?: number;
+  requestedViewport?: ViewportState;
+  onLiveViewportChange?: (viewport: ViewportState) => void;
+  onTransientChange?: (strokes: import("../shared/teachingScene").TransientStroke[]) => void;
   className?: string;
   targetId: string;
   drawSettings: DrawSettings;
@@ -7190,6 +7558,7 @@ function ZoomPanWrapper({
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const drawingViewportRef = useRef<ViewportState>({ zoom, pan });
   drawingViewportRef.current = { zoom, pan };
+  useEffect(() => { onLiveViewportChange?.({ zoom, pan }); }, [zoom, pan]);
 
   useEffect(() => {
     if (initialViewport) {
@@ -7200,6 +7569,14 @@ function ZoomPanWrapper({
     }
   }, [initialViewport]);
 
+  const previousResetSignal = useRef(resetSignal);
+  useEffect(() => {
+    if (previousResetSignal.current === resetSignal) return;
+    previousResetSignal.current = resetSignal;
+    const next = requestedViewport ?? {zoom:1,pan:{x:0,y:0}};
+    targetZoomRef.current = next.zoom; targetPanRef.current = next.pan; setZoom(next.zoom); setPan(next.pan);
+    onViewportChange?.({ zoom: next.zoom, panX: next.pan.x, panY: next.pan.y });
+  }, [resetSignal]);
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
 
@@ -7209,8 +7586,8 @@ function ZoomPanWrapper({
     if (!container) return;
 
     const rect = container.getBoundingClientRect();
-    const cursorX = event.clientX - rect.left;
-    const cursorY = event.clientY - rect.top;
+    const cursorX = (event.clientX - rect.left) * container.clientWidth / rect.width;
+    const cursorY = (event.clientY - rect.top) * container.clientHeight / rect.height;
 
     // Calculate target zoom
     const zoomFactor = Math.pow(1.0015, -event.deltaY);
@@ -7257,8 +7634,10 @@ function ZoomPanWrapper({
   useEffect(() => {
     const onMove = (event: globalThis.MouseEvent) => {
       if (!isPanning) return;
-      const deltaX = event.clientX - panStartRef.current.x;
-      const deltaY = event.clientY - panStartRef.current.y;
+      const rect = containerRef.current?.getBoundingClientRect();
+      const scale = rect ? rect.width / Math.max(1, containerRef.current!.clientWidth) : 1;
+      const deltaX = (event.clientX - panStartRef.current.x) / scale;
+      const deltaY = (event.clientY - panStartRef.current.y) / scale;
       const nextPan = {
         x: panStartRef.current.panX + deltaX,
         y: panStartRef.current.panY + deltaY,
@@ -7331,6 +7710,7 @@ function ZoomPanWrapper({
       <div style={contentStyle}>{children}</div>
       <StageDrawingOverlay
         targetId={`break:${targetId}`}
+        onTransientChange={onTransientChange}
         settings={drawSettings}
         markerStrokes={markerStrokes}
         onMarkerStrokesChange={onMarkerStrokesChange}
@@ -7343,7 +7723,9 @@ function ZoomPanWrapper({
   );
 }
 
+
 function MediaView({
+  visualScope,
   asset,
   overlays,
   className,
@@ -7351,12 +7733,18 @@ function MediaView({
   drawSettings,
   initialZoom,
   initialPan,
+  viewportResetSignal,
+  requestedViewport,
   onViewportChange,
   paused,
+  passiveVideo = false,
+  previewStream,
+  previewDuration,
   initialTime,
   onTimeUpdate,
   showControls = true,
   isEditMode = false,
+  onEditVideoElement,
   activeOverlayId = null,
   bubbleDefinitions,
   showOverlayIds = false,
@@ -7368,6 +7756,7 @@ function MediaView({
   imageAdjustments,
   onImageAdjustmentsChange,
 }: {
+  visualScope: string;
   asset: AssetItem;
   overlays: OverlayItem[];
   className?: string;
@@ -7375,12 +7764,18 @@ function MediaView({
   drawSettings: DrawSettings;
   initialZoom?: number;
   initialPan?: { x: number; y: number };
+  viewportResetSignal?: number;
+  requestedViewport?: ViewportState;
   onViewportChange?: (v: ViewportState) => void;
   paused?: boolean;
+  passiveVideo?: boolean;
+  previewStream?: MediaStream | null;
+  previewDuration?: number;
   initialTime?: number;
   onTimeUpdate?: (t: number) => void;
   showControls?: boolean;
   isEditMode?: boolean;
+  onEditVideoElement?: (video:HTMLVideoElement|null)=>void;
   activeOverlayId?: string | null;
   bubbleDefinitions?: BubbleTemplate[];
   showOverlayIds?: boolean;
@@ -7392,16 +7787,22 @@ function MediaView({
   imageAdjustments?: Slide["imageAdjustments"];
   onImageAdjustmentsChange?: (settings: Slide["imageAdjustments"]) => void;
 }) {
-  const src = toMediaUrl(asset.relativePath);
+  const src = visualMediaUrl(toMediaUrl(asset.relativePath), visualScope);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(()=>{
+    if(!isEditMode||passiveVideo||asset.mediaType!=='video')return;
+    onEditVideoElement?.(videoRef.current);
+    return()=>onEditVideoElement?.(null);
+  },[isEditMode,passiveVideo,asset.id,onEditVideoElement]);
   const trimTrackRef = useRef<HTMLDivElement | null>(null);
   const resolvedVideoAudio = useMemo(() => resolveVideoAudioSettings(videoAudio), [videoAudio]);
   const resolvedImageAdjustments = useMemo(
     () => resolveImageAdjustments(imageAdjustments),
     [imageAdjustments],
   );
-  const [videoDuration, setVideoDuration] = useState(0);
+  const [fileVideoDuration, setVideoDuration] = useState(0);
+  const videoDuration = passiveVideo ? previewDuration ?? 0 : fileVideoDuration;
   const [draggingTrimHandle, setDraggingTrimHandle] = useState<"in" | "out" | null>(null);
   const effectiveVideoTrim = useMemo(
     () => getEffectiveVideoTrim(videoTrim, videoDuration),
@@ -7416,12 +7817,13 @@ function MediaView({
     // If we have an initial time and we are paused (outgoing), snap to that frame.
     // If not paused (incoming), we might also want to restore time if we were tracking history?
     // For now, only outgoing needs to freeze at specific time.
-    if (initialTime !== undefined && videoRef.current) {
+    if (!passiveVideo && initialTime !== undefined && videoRef.current) {
       videoRef.current.currentTime = initialTime;
     }
-  }, []); // Run once on mount
+  }, [passiveVideo]); // Restore position on initial mount or return to normal teaching.
 
   useEffect(() => {
+    if (passiveVideo) return;
     if (paused && videoRef.current) {
       videoRef.current.pause();
     } else if (!paused && videoRef.current) {
@@ -7429,21 +7831,35 @@ function MediaView({
       // No, initialTime effect handles the seek.
       videoRef.current.play().catch(() => { });
     }
-  }, [paused]);
+  }, [paused, passiveVideo]);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || asset.mediaType !== "video" || !videoDuration) return;
+    if (!passiveVideo || !video) return;
+    video.muted = true; video.srcObject = previewStream ?? null;
+    if (previewStream) void video.play().catch(() => {});
+    return () => { video.pause(); video.srcObject = null; };
+  }, [passiveVideo, previewStream]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || passiveVideo || asset.mediaType !== "video" || !videoDuration) return;
     const nextTime = clampVideoTimeToTrim(video.currentTime, videoTrim, videoDuration);
     if (Math.abs(nextTime - video.currentTime) > 0.02) {
       video.currentTime = nextTime;
     }
-  }, [asset.mediaType, videoDuration, videoTrim]);
+  }, [asset.mediaType, passiveVideo, videoDuration, videoTrim]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || asset.mediaType !== "video") return;
-
+    if (passiveVideo) { video.muted = true; return; }
+    if (isEditMode) {
+      video.muted = !resolvedVideoAudio.enabled;
+      video.volume = resolvedVideoAudio.volume;
+      return () => { video.pause(); };
+    }
+    video.muted = false;
     video.volume = 1;
     audioManager.attachMediaElement(
       video,
@@ -7452,19 +7868,21 @@ function MediaView({
     );
 
     return () => {
+      video.pause();
       audioManager.detachMediaElement(video);
     };
-  }, [asset.id, asset.mediaType]);
+  }, [asset.id, asset.mediaType, passiveVideo, isEditMode]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || asset.mediaType !== "video") return;
 
+    if (isEditMode) { video.muted = !resolvedVideoAudio.enabled; video.volume = resolvedVideoAudio.volume; return; }
     audioManager.setMediaElementVolume(
       video,
       resolvedVideoAudio.enabled ? resolvedVideoAudio.volume : 0,
     );
-  }, [asset.id, asset.mediaType, resolvedVideoAudio.enabled, resolvedVideoAudio.volume]);
+  }, [asset.id, asset.mediaType, resolvedVideoAudio.enabled, resolvedVideoAudio.volume, isEditMode]);
 
   const [zoom, setZoom] = useState(initialZoom ?? 1);
   const [pan, setPan] = useState(initialPan ?? { x: 0, y: 0 });
@@ -7474,6 +7892,13 @@ function MediaView({
   useEffect(() => {
     onViewportChange?.({ zoom, pan });
   }, [zoom, pan, onViewportChange]);
+
+  useEffect(() => {
+    if (!viewportResetSignal) return;
+    const next = requestedViewport ?? {zoom:1,pan:{x:0,y:0}};
+    targetZoomRef.current = next.zoom; targetPanRef.current = next.pan;
+    setZoom(next.zoom); setPan(next.pan);
+  }, [viewportResetSignal]);
 
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
@@ -7555,8 +7980,9 @@ function MediaView({
       if (!container) return;
 
       const rect = container.getBoundingClientRect();
-      const cursorX = event.clientX - rect.left;
-      const cursorY = event.clientY - rect.top;
+      const logical = clientToLogical({ x: event.clientX, y: event.clientY }, rect, { width: container.clientWidth, height: container.clientHeight });
+      const cursorX = logical.x;
+      const cursorY = logical.y;
 
       // Calculate target zoom
       const zoomFactor = Math.pow(1.0015, -event.deltaY);
@@ -7584,10 +8010,17 @@ function MediaView({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    const handler = (e: globalThis.WheelEvent) => onWheelZoom(e);
-    container.addEventListener("wheel", handler, { passive: false });
-    return () => container.removeEventListener("wheel", handler);
-  }, [onWheelZoom]);
+    // In Teach, the drawing canvas is a sibling of the media layer. Listen at
+    // their shared logical frame so Draw mode still reaches the same zoom owner.
+    const wheelHost = isEditMode ? container : container.closest('[data-logical-scene]') ?? container;
+    const handler = (event: globalThis.WheelEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (container.contains(target) || target.matches('.stage-drawing-overlay')) onWheelZoom(event);
+    };
+    wheelHost.addEventListener("wheel", handler as EventListener, { passive: false });
+    return () => wheelHost.removeEventListener("wheel", handler as EventListener);
+  }, [onWheelZoom, isEditMode]);
 
   const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 1) return;
@@ -7609,8 +8042,12 @@ function MediaView({
     if (!isPanning) return;
 
     const onMove = (event: globalThis.MouseEvent) => {
-      const deltaX = event.clientX - panStartRef.current.x;
-      const deltaY = event.clientY - panStartRef.current.y;
+      const container = containerRef.current;
+      const rect = container?.getBoundingClientRect();
+      const scaleX = container && rect ? container.clientWidth / Math.max(1, rect.width) : 1;
+      const scaleY = container && rect ? container.clientHeight / Math.max(1, rect.height) : 1;
+      const deltaX = (event.clientX - panStartRef.current.x) * scaleX;
+      const deltaY = (event.clientY - panStartRef.current.y) * scaleY;
       const nextPan = {
         x: panStartRef.current.panX + deltaX,
         y: panStartRef.current.panY + deltaY,
@@ -7677,37 +8114,36 @@ function MediaView({
       }}
     >
       {asset.mediaType === "image" ? (
-        <img
-          src={src}
-          className="media-content"
-          alt={getAssetDescription(asset)}
-          style={imageMediaStyle}
-          draggable={false}
-        />
+        <PassiveImage src={src} adjustments={imageAdjustments} style={imageMediaStyle} />
       ) : (
         <video
+          key={passiveVideo ? 'present-stream' : 'lesson-file'}
           ref={videoRef}
-          src={src}
+          src={passiveVideo ? undefined : src}
           className="media-content"
           style={mediaStyle}
-          controls={showControls}
-          autoPlay={!paused}
+          controls={showControls && !passiveVideo}
+          muted={passiveVideo}
+          autoPlay={!paused && !passiveVideo}
           onLoadedMetadata={(e) => {
+            if (passiveVideo) return;
             const video = e.target as HTMLVideoElement;
             setVideoDuration(Number.isFinite(video.duration) ? video.duration : 0);
-            const nextTime = clampVideoTimeToTrim(video.currentTime, videoTrim, video.duration);
+            const nextTime = clampVideoTimeToTrim(initialTime ?? video.currentTime, videoTrim, video.duration);
             if (Math.abs(nextTime - video.currentTime) > 0.02) {
               video.currentTime = nextTime;
             }
           }}
           onPlay={(e) => {
             const video = e.target as HTMLVideoElement;
+            if (passiveVideo) return;
             const nextTime = clampVideoTimeToTrim(video.currentTime, videoTrim, video.duration);
             if (Math.abs(nextTime - video.currentTime) > 0.02) {
               video.currentTime = nextTime;
             }
           }}
           onTimeUpdate={(e) => {
+            if (passiveVideo) return;
             const video = e.target as HTMLVideoElement;
             if (shouldStopAtTrimOut(video.currentTime, videoTrim, video.duration)) {
               video.currentTime = getEffectiveVideoTrim(videoTrim, video.duration).outSec;
@@ -7719,7 +8155,7 @@ function MediaView({
       )}
 
       {showVideoTrimEditor && (
-        <div className="video-trim-editor" onPointerDown={(e) => e.stopPropagation()}>
+        <EditDock area="content">        <div className="video-trim-editor" onPointerDown={(e) => e.stopPropagation()}>
           <div className="video-trim-times">
             <span>{formatVideoTrimTime(effectiveVideoTrim.inSec)}</span>
             <span>{formatVideoTrimTime(effectiveVideoTrim.outSec)}</span>
@@ -7754,11 +8190,11 @@ function MediaView({
               }}
             />
           </div>
-        </div>
+        </div></EditDock>
       )}
 
       {showImageAdjustmentEditor && (
-        <div className="image-adjustment-editor" onPointerDown={(e) => e.stopPropagation()}>
+        <EditDock area="content">        <div className="image-adjustment-editor" onPointerDown={(e) => e.stopPropagation()}>
           <div className="image-adjustment-row">
             <span>Image</span>
             <button
@@ -7812,7 +8248,7 @@ function MediaView({
             />
             <output>{Math.round(resolvedImageAdjustments.saturate * 100)}%</output>
           </label>
-        </div>
+        </div></EditDock>
       )}
 
       {/* Overlay Layer */}
@@ -7830,8 +8266,12 @@ function MediaView({
         }}
         onPointerMove={(e) => {
           if (draggingOverlayRef.current && dragStartRef.current && onOverlayChange) {
-            const dx = (e.clientX - dragStartRef.current.cx) / zoom;
-            const dy = (e.clientY - dragStartRef.current.cy) / zoom;
+            const container = containerRef.current;
+            const rect = container?.getBoundingClientRect();
+            const scaleX = container && rect ? container.clientWidth / Math.max(1, rect.width) : 1;
+            const scaleY = container && rect ? container.clientHeight / Math.max(1, rect.height) : 1;
+            const dx = (e.clientX - dragStartRef.current.cx) * scaleX / zoom;
+            const dy = (e.clientY - dragStartRef.current.cy) * scaleY / zoom;
             const { ox, oy, ow, oh, handle } = dragStartRef.current;
 
             if (handle) {
@@ -7887,14 +8327,14 @@ function MediaView({
           }
         }}
       >
-        {overlays.map((overlay) => {
+        {!isEditMode ? <PassiveOverlays overlays={resolvePassiveOverlays(overlays, bubbleDefinitions, visualScope)} /> : overlays.map((overlay) => {
           if (overlay.visible === false) return null;
           const isActive = overlay.id === activeOverlayId;
           const mappedCustom: BubbleDef[] = (bubbleDefinitions || []).map(bt => ({
             bubbleDefId: `BD_CUSTOM_${bt.templateName}`,
             name: bt.templateName,
             templateName: bt.templateName,
-            src: toMediaUrl(bt.imageSrc),
+            src: visualMediaUrl(toMediaUrl(bt.imageSrc), visualScope),
             type: 'speech',
             textRect: bt.defaultTextRect,
           }));
@@ -7947,7 +8387,7 @@ function MediaView({
                 <div style={{
                   position: 'absolute',
                   inset: 0,
-                  backgroundImage: `url(${overlay.customImageSrc ? toMediaUrl(overlay.customImageSrc) : (def.src || "")})`,
+                  backgroundImage: `url(${overlay.customImageSrc ? visualMediaUrl(toMediaUrl(overlay.customImageSrc), visualScope) : (def.src || "")})`,
                   backgroundSize: '100% 100%',
                   backgroundRepeat: 'no-repeat',
                   transform: `scale(${overlay.flipX ? -1 : 1}, ${overlay.flipY ? -1 : 1})`,

@@ -5,6 +5,7 @@ class AudioRouteCoordinator {
     constructor() {
         this.generation = 0;
         this.routes = new Map();
+        this.requests = new Map();
     }
     get(route) {
         return this.routes.get(route);
@@ -13,6 +14,7 @@ class AudioRouteCoordinator {
         this.routes.set(route, handle);
     }
     remove(route) {
+        this.requests.delete(route);
         const current = this.routes.get(route);
         if (!current)
             return;
@@ -21,21 +23,25 @@ class AudioRouteCoordinator {
     }
     async replace(route, create) {
         const generation = this.generation;
-        const previous = this.routes.get(route);
+        const request = {};
+        this.requests.set(route, request);
         const candidate = await create();
-        if (generation !== this.generation) {
+        if (generation !== this.generation || this.requests.get(route) !== request) {
             candidate.dispose();
-            return;
+            return false;
         }
         if (!candidate.active) {
             candidate.dispose();
             throw new Error(`${route} route did not become active`);
         }
+        const previous = this.routes.get(route);
         this.routes.set(route, candidate);
         previous?.dispose();
+        return true;
     }
     restart() {
         this.generation += 1;
+        this.requests.clear();
         this.routes.forEach((route) => route.dispose());
         this.routes.clear();
     }

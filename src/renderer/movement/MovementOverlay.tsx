@@ -1,13 +1,15 @@
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { movementRemaining, type MovementPresentation } from "../../shared/movementPresentation";
+import { LogicalSceneFrame } from "../StaticScene";
+import { movementMediaUrl } from "./builtinMedia";
 import type { MovementEventConfig } from "../../shared/types";
 import "./movement.css";
 
-interface MovementOverlayProps {
-  event: MovementEventConfig | null;
-  signal: number;
-  getMediaUrl: (relativePath: string) => string;
+interface MovementOverlayProps { presentation: MovementPresentation | null; canonical?: boolean }
+export function MovementSurface({ presentation }: MovementOverlayProps) {
+  if (!presentation) return null;
+  return <div data-movement-surface style={{ position: 'absolute', inset: 0, zIndex: 30000, pointerEvents: 'none' }}><LogicalSceneFrame frame={presentation.frame} transparent><MovementOverlay presentation={presentation} canonical /></LogicalSceneFrame></div>;
 }
-
 function MovementIcon({
   animation,
   gifUrl,
@@ -15,10 +17,11 @@ function MovementIcon({
   animation: MovementEventConfig["animation"];
   gifUrl: string | null;
 }) {
-  if (gifUrl) {
+  const [failed, setFailed] = useState(false);
+  if (gifUrl && !failed) {
     return (
       <div className="movement-gif-frame">
-        <img src={gifUrl} alt="" className="movement-gif" />
+        <img src={gifUrl} alt="" className="movement-gif" onError={() => setFailed(true)} />
       </div>
     );
   }
@@ -38,15 +41,27 @@ function MovementIcon({
   return <div className="movement-color-gem" aria-hidden="true" />;
 }
 
-export function MovementOverlay({ event, signal, getMediaUrl }: MovementOverlayProps) {
-  if (!event) return null;
-  const gifUrl = event.gifRelativePath ? getMediaUrl(event.gifRelativePath) : null;
-
+export function MovementOverlay({ presentation, canonical = false }: MovementOverlayProps) {
+  if (!presentation) return null;
+  return <MovementInstance key={presentation.id} presentation={presentation} canonical={canonical} />;
+}
+function MovementInstance({ presentation, canonical }: { presentation: MovementPresentation; canonical: boolean }) {
+  const [elapsed] = useState(() => Math.max(0, Date.now() - presentation.startedAt));
+  const [expired, setExpired] = useState(() => movementRemaining(presentation, Date.now()) === 0);
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setExpired(true), movementRemaining(presentation, Date.now()));
+    return () => window.clearTimeout(timeout);
+  }, [presentation.id]);
+  if (expired) return null;
+  const event = presentation.event;
+  const gifUrl = event.gifRelativePath ? movementMediaUrl(event.gifRelativePath, presentation.id) : null;
   return (
     <div
-      key={`${event.id}-${signal}`}
+      data-movement-id={presentation.id}
       className={`movement-overlay movement-${event.animation}`}
       style={{
+        "--movement-elapsed": `${elapsed}ms`,
+        ...(canonical ? { "--movement-vw": `${presentation.frame.width / 100}px` } : {}),
         "--movement-duration": `${event.durationSeconds}s`,
         "--movement-overlay-opacity": event.overlayOpacity ?? 0.72,
         "--movement-ring-speed": `${event.ringSpeedSeconds ?? 1.5}s`,

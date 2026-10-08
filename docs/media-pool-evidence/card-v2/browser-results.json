@@ -1,0 +1,482 @@
+{
+  "errors": [],
+  "saved": {
+    "version": 4,
+    "createdAt": "2026-10-08",
+    "updatedAt": "2026-10-08",
+    "sections": [
+      {
+        "id": "story",
+        "name": "Episode 7"
+      }
+    ],
+    "slides": [
+      {
+        "id": "slide",
+        "assetId": "picture",
+        "sectionId": "story",
+        "transition": "none"
+      }
+    ],
+    "assets": [
+      {
+        "id": "picture",
+        "relativePath": "fixture.svg",
+        "filename": "fixture.svg",
+        "originalName": "Picture",
+        "mediaType": "image",
+        "sizeBytes": 1,
+        "importedAt": "2026-10-08",
+        "referenceDescription": "Picture",
+        "canonicalLabel": "Picture"
+      }
+    ],
+    "boostPack": {
+      "activationSequence": [
+        {
+          "id": "43f0dbfd-7976-438a-893f-8738da9ae821",
+          "type": "cardActivityRef",
+          "engine": "card-v2",
+          "placementId": "406a742a-00c3-4d13-98e1-7958b4998e9a"
+        }
+      ],
+      "languageSequence": [],
+      "gamesSequence": []
+    },
+    "cardsV2": {
+      "engine": "card-v2",
+      "version": 1,
+      "cards": {
+        "64718dd2-fead-44ea-87e9-73ea13ac0ad5": {
+          "id": "64718dd2-fead-44ea-87e9-73ea13ac0ad5",
+          "label": "Episode 7 recall",
+          "tags": [
+            "episode-7",
+            "vocabulary"
+          ],
+          "template": "question-answer-explanation",
+          "style": {
+            "preset": "classroom",
+            "fit": "auto",
+            "minFontSize": 18,
+            "maxFontSize": 52
+          },
+          "faces": [
+            {
+              "id": "4a0643f7-2c95-4409-aa61-032c40065547",
+              "label": "Question",
+              "layout": "text",
+              "text": "What did you notice?\n何を見ましたか？"
+            },
+            {
+              "id": "d7d21a3b-20d0-4f8b-931c-6a072911e6bd",
+              "label": "Hint",
+              "layout": "image-text",
+              "text": "Look at the picture.",
+              "imageAssetId": "picture",
+              "alt": "Picture hint"
+            },
+            {
+              "id": "80608731-4ef8-4555-b147-d339b68145d4",
+              "label": "Answer",
+              "layout": "text",
+              "text": "A cat · 猫 · un gatto"
+            },
+            {
+              "id": "88f57b76-a989-4f9a-83b9-e0a73e96751d",
+              "label": "Explanation",
+              "layout": "text",
+              "text": "The cat is on the wall. Il gatto è sul muro."
+            }
+          ]
+        }
+      },
+      "sets": {
+        "414274ee-2fb1-4973-a70c-0550008f7df1": {
+          "id": "414274ee-2fb1-4973-a70c-0550008f7df1",
+          "label": "Episode 7 recall set",
+          "tags": [
+            "episode-7",
+            "vocabulary"
+          ],
+          "entries": [
+            {
+              "id": "9613a3f7-97c3-49e9-a5a9-a536c73dbd8c",
+              "cardId": "64718dd2-fead-44ea-87e9-73ea13ac0ad5"
+            }
+          ]
+        }
+      },
+      "activities": {
+        "85b2602e-46a1-4fca-89cc-130f5231b330": {
+          "id": "85b2602e-46a1-4fca-89cc-130f5231b330",
+          "type": "recall-reveal",
+          "label": "Activation recall",
+          "setId": "414274ee-2fb1-4973-a70c-0550008f7df1",
+          "frame": {
+            "width": 960,
+            "height": 720
+          },
+          "allowCycling": true,
+          "allowDirectFace": true,
+          "circularCycling": false,
+          "instances": [
+            {
+              "id": "3015567d-6f5b-4e03-9777-ecb345513a23",
+              "cardId": "64718dd2-fead-44ea-87e9-73ea13ac0ad5",
+              "initialFaceId": "4a0643f7-2c95-4409-aa61-032c40065547",
+              "revealFaceId": "80608731-4ef8-4555-b147-d339b68145d4",
+              "initiallyConcealed": false,
+              "geometry": {
+                "width": 285,
+                "height": 260,
+                "x": 30,
+                "y": 40
+              }
+            }
+          ]
+        }
+      },
+      "placements": {
+        "406a742a-00c3-4d13-98e1-7958b4998e9a": {
+          "id": "406a742a-00c3-4d13-98e1-7958b4998e9a",
+          "activityId": "85b2602e-46a1-4fca-89cc-130f5231b330",
+          "label": "Activation recall"
+        }
+      }
+    }
+  },
+  "duplicated": {
+    "version": 4,
+    "createdAt": "2026-10-08",
+    "updatedAt": "2026-10-08",
+    "sections": [
+      {
+        "id": "story",
+        "name": "Episode 7"
+      }
+    ],
+    "slides": [
+      {
+        "id": "slide",
+        "assetId": "picture",
+        "sectionId": "story",
+        "transition": "none"
+      }
+    ],
+    "assets": [
+      {
+        "id": "picture",
+        "relativePath": "fixture.svg",
+        "filename": "fixture.svg",
+        "originalName": "Picture",
+        "mediaType": "image",
+        "sizeBytes": 1,
+        "importedAt": "2026-10-08",
+        "referenceDescription": "Picture",
+        "canonicalLabel": "Picture"
+      }
+    ],
+    "boostPack": {
+      "activationSequence": [
+        {
+          "id": "43f0dbfd-7976-438a-893f-8738da9ae821",
+          "type": "cardActivityRef",
+          "engine": "card-v2",
+          "placementId": "406a742a-00c3-4d13-98e1-7958b4998e9a"
+        },
+        {
+          "id": "21423e7e-f569-4541-af11-8c8d3e37d5c0",
+          "type": "cardActivityRef",
+          "engine": "card-v2",
+          "placementId": "dc021bc8-700b-4219-ba99-411f67bf9aef"
+        }
+      ],
+      "languageSequence": [],
+      "gamesSequence": []
+    },
+    "cardsV2": {
+      "engine": "card-v2",
+      "version": 1,
+      "cards": {
+        "64718dd2-fead-44ea-87e9-73ea13ac0ad5": {
+          "id": "64718dd2-fead-44ea-87e9-73ea13ac0ad5",
+          "label": "Episode 7 recall",
+          "tags": [
+            "episode-7",
+            "vocabulary"
+          ],
+          "template": "question-answer-explanation",
+          "style": {
+            "preset": "classroom",
+            "fit": "auto",
+            "minFontSize": 18,
+            "maxFontSize": 52
+          },
+          "faces": [
+            {
+              "id": "4a0643f7-2c95-4409-aa61-032c40065547",
+              "label": "Question",
+              "layout": "text",
+              "text": "What did you notice?\n何を見ましたか？"
+            },
+            {
+              "id": "d7d21a3b-20d0-4f8b-931c-6a072911e6bd",
+              "label": "Hint",
+              "layout": "image-text",
+              "text": "Look at the picture.",
+              "imageAssetId": "picture",
+              "alt": "Picture hint"
+            },
+            {
+              "id": "80608731-4ef8-4555-b147-d339b68145d4",
+              "label": "Answer",
+              "layout": "text",
+              "text": "A cat · 猫 · un gatto"
+            },
+            {
+              "id": "88f57b76-a989-4f9a-83b9-e0a73e96751d",
+              "label": "Explanation",
+              "layout": "text",
+              "text": "The cat is on the wall. Il gatto è sul muro."
+            }
+          ]
+        },
+        "1a7f5a5f-4a97-4068-be83-1f9164a738d5": {
+          "id": "1a7f5a5f-4a97-4068-be83-1f9164a738d5",
+          "label": "Independent copy",
+          "tags": [
+            "episode-7",
+            "vocabulary"
+          ],
+          "template": "question-answer-explanation",
+          "style": {
+            "preset": "classroom",
+            "fit": "auto",
+            "minFontSize": 18,
+            "maxFontSize": 52
+          },
+          "faces": [
+            {
+              "id": "1ca6718e-b4a2-4534-b066-53013c1ee6b3",
+              "label": "Question",
+              "layout": "text",
+              "text": "Independent learning content"
+            },
+            {
+              "id": "98b14947-00f2-4a74-a408-2086c3271a03",
+              "label": "Hint",
+              "layout": "image-text",
+              "text": "Look at the picture.",
+              "imageAssetId": "picture",
+              "alt": "Picture hint"
+            },
+            {
+              "id": "20db9252-2854-4faa-b268-d98814ed9887",
+              "label": "Answer",
+              "layout": "text",
+              "text": "A cat · 猫 · un gatto"
+            },
+            {
+              "id": "b89dd37f-0241-4333-9dd4-b0a2b3897ea4",
+              "label": "Explanation",
+              "layout": "text",
+              "text": "The cat is on the wall. Il gatto è sul muro."
+            }
+          ]
+        }
+      },
+      "sets": {
+        "414274ee-2fb1-4973-a70c-0550008f7df1": {
+          "id": "414274ee-2fb1-4973-a70c-0550008f7df1",
+          "label": "Episode 7 recall set",
+          "tags": [
+            "episode-7",
+            "vocabulary"
+          ],
+          "entries": [
+            {
+              "id": "9613a3f7-97c3-49e9-a5a9-a536c73dbd8c",
+              "cardId": "64718dd2-fead-44ea-87e9-73ea13ac0ad5"
+            }
+          ]
+        },
+        "71f15541-27ce-4912-b4e5-6dfdf7305e9c": {
+          "id": "71f15541-27ce-4912-b4e5-6dfdf7305e9c",
+          "label": "Episode 7 recall set copy",
+          "tags": [
+            "episode-7",
+            "vocabulary"
+          ],
+          "entries": [
+            {
+              "id": "a7d7ed73-5060-402a-9db6-3dacf4d4959f",
+              "cardId": "64718dd2-fead-44ea-87e9-73ea13ac0ad5"
+            }
+          ]
+        }
+      },
+      "activities": {
+        "85b2602e-46a1-4fca-89cc-130f5231b330": {
+          "id": "85b2602e-46a1-4fca-89cc-130f5231b330",
+          "type": "recall-reveal",
+          "label": "Activation recall",
+          "setId": "414274ee-2fb1-4973-a70c-0550008f7df1",
+          "frame": {
+            "width": 960,
+            "height": 720
+          },
+          "allowCycling": true,
+          "allowDirectFace": true,
+          "circularCycling": false,
+          "instances": [
+            {
+              "id": "3015567d-6f5b-4e03-9777-ecb345513a23",
+              "cardId": "64718dd2-fead-44ea-87e9-73ea13ac0ad5",
+              "initialFaceId": "4a0643f7-2c95-4409-aa61-032c40065547",
+              "revealFaceId": "80608731-4ef8-4555-b147-d339b68145d4",
+              "initiallyConcealed": false,
+              "geometry": {
+                "width": 285,
+                "height": 260,
+                "x": 30,
+                "y": 40
+              }
+            }
+          ]
+        },
+        "f1fbe4fb-8673-4da3-8aff-7efae0b7847f": {
+          "id": "f1fbe4fb-8673-4da3-8aff-7efae0b7847f",
+          "type": "recall-reveal",
+          "label": "Second recall",
+          "setId": "414274ee-2fb1-4973-a70c-0550008f7df1",
+          "frame": {
+            "width": 960,
+            "height": 720
+          },
+          "allowCycling": true,
+          "allowDirectFace": true,
+          "circularCycling": false,
+          "instances": [
+            {
+              "id": "f0c5f21a-31c7-437e-86a8-6c7725c69c38",
+              "cardId": "64718dd2-fead-44ea-87e9-73ea13ac0ad5",
+              "initialFaceId": "4a0643f7-2c95-4409-aa61-032c40065547",
+              "revealFaceId": "80608731-4ef8-4555-b147-d339b68145d4",
+              "initiallyConcealed": false,
+              "geometry": {
+                "width": 285,
+                "height": 260,
+                "x": 30,
+                "y": 40
+              }
+            },
+            {
+              "id": "1e784722-a19e-4a31-b751-58f4cef35c66",
+              "cardId": "64718dd2-fead-44ea-87e9-73ea13ac0ad5",
+              "initialFaceId": "4a0643f7-2c95-4409-aa61-032c40065547",
+              "revealFaceId": "80608731-4ef8-4555-b147-d339b68145d4",
+              "initiallyConcealed": false,
+              "geometry": {
+                "width": 304,
+                "height": 272,
+                "x": 81,
+                "y": 85
+              }
+            }
+          ]
+        }
+      },
+      "placements": {
+        "406a742a-00c3-4d13-98e1-7958b4998e9a": {
+          "id": "406a742a-00c3-4d13-98e1-7958b4998e9a",
+          "activityId": "85b2602e-46a1-4fca-89cc-130f5231b330",
+          "label": "Activation recall"
+        },
+        "dc021bc8-700b-4219-ba99-411f67bf9aef": {
+          "id": "dc021bc8-700b-4219-ba99-411f67bf9aef",
+          "activityId": "f1fbe4fb-8673-4da3-8aff-7efae0b7847f",
+          "label": "Second recall"
+        }
+      }
+    }
+  },
+  "studentProjection": {
+    "sessionId": "a7074720-d8a7-462a-8c27-244a707ae4a8",
+    "revision": 5,
+    "target": {
+      "kind": "cards-v2",
+      "occurrenceId": "[\"6300cd9a-03c0-43e2-a186-f641504264c7\",1,\"[\\\"[\\\\\\\"boost\\\\\\\",\\\\\\\"activation\\\\\\\",\\\\\\\"43f0dbfd-7976-438a-893f-8738da9ae821\\\\\\\"]\\\",\\\"cards-v2\\\",\\\"406a742a-00c3-4d13-98e1-7958b4998e9a\\\",null]\"]",
+      "plan": {
+        "engine": "card-v2",
+        "version": 1,
+        "frame": {
+          "width": 960,
+          "height": 720
+        },
+        "cards": [
+          {
+            "instanceId": "3015567d-6f5b-4e03-9777-ecb345513a23",
+            "faceId": "80608731-4ef8-4555-b147-d339b68145d4",
+            "box": {
+              "width": 285,
+              "height": 260,
+              "x": 30,
+              "y": 40
+            },
+            "concealed": false,
+            "highlighted": false,
+            "style": {
+              "surface": "#fffdf7",
+              "ink": "#1f2937",
+              "border": "#9ca3af",
+              "accent": "#467565",
+              "radius": 16,
+              "borderWidth": 2,
+              "padding": 20
+            },
+            "texts": [
+              {
+                "fontSize": 52,
+                "lineHeight": 65,
+                "lines": [
+                  {
+                    "text": "A cat · ",
+                    "width": 200.71999999999997
+                  },
+                  {
+                    "text": "猫 · un ",
+                    "width": 192.39999999999998
+                  },
+                  {
+                    "text": "gatto",
+                    "width": 150.79999999999998
+                  }
+                ],
+                "overflow": false,
+                "box": {
+                  "x": 20,
+                  "y": 20,
+                  "width": 245,
+                  "height": 220
+                },
+                "align": "center",
+                "verticalAlign": "center",
+                "emphasis": "normal"
+              }
+            ],
+            "overflow": false
+          }
+        ]
+      }
+    },
+    "rewards": {
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "sparks": []
+    }
+  },
+  "returned": "[\"6300cd9a-03c0-43e2-a186-f641504264c7\",1,\"[\\\"[\\\\\\\"story\\\\\\\",\\\\\\\"story\\\\\\\",\\\\\\\"slide\\\\\\\"]\\\",\\\"slide\\\",\\\"slide\\\",{\\\"kind\\\":\\\"slide\\\",\\\"id\\\":\\\"slide\\\"}]\"]"
+}

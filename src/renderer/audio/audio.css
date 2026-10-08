@@ -139,6 +139,8 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overflow-anchor: none;
+  scrollbar-gutter: stable;
   padding: 0 22px 28px;
 }
 
@@ -183,6 +185,8 @@
   flex-direction: column;
 }
 
+.audio-warnings-section { margin-top: 24px; }
+
 .audio-device-row {
   display: grid;
   grid-template-columns: minmax(250px, 0.95fr) minmax(0, 1.6fr);
@@ -202,6 +206,8 @@
 
 .audio-device-picker__trigger {
   width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -234,6 +240,7 @@
 
 .audio-device-picker__menu button {
   width: 100%;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;

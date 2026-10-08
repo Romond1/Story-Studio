@@ -204,3 +204,5 @@ export function useCardSystem() {
     }
     return context;
 }
+
+export function useOptionalCardSystem() { return useContext(CardSystemContext); }

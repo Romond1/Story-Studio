@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-export interface MenuItem {
-    label: string;
+export type MenuItem = {
     onClick?: () => void;
     disabled?: boolean;
     submenu?: MenuItem[];
-    isDivider?: boolean;
-}
+} & ({ isDivider: true; label?: string } | { isDivider?: false; label: string });
 
 interface ContextMenuProps {
     x: number;

@@ -1,0 +1,140 @@
+﻿episode,id,name,front,back,frontCharacters,backCharacters,uses,sizes,frontFontSize,backFontSize,frontImage,backImage,audio,animation
+1,42eceead-1f67-4055-8a5e-90d941774ffc,B1 What is her name?,What is her name?,Her name is Mia,17,15,6,244x160; 270x390; 291x118; 301x182; 326x167; 425x147,43,46,9b12dd82-307a-482d-813d-8daa43a549cd,,,flip
+1,a409ba5e-6f42-4d20-a79a-c7eb2e57c19c,B1 What is his name?,What is his name?,His name is Yuki,17,16,6,257x159; 270x390; 287x193; 303x122; 318x183; 392x166,43,46,767b6925-0f56-4fa3-850a-8fcf7ff13a41,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,79bdefca-9aa9-4f69-94b4-03f5fe4c4a65,What is his name? (Copy),What is his name?,His name is Kage,17,16,2,300x106; 408x132,43,46,d786b19a-85f2-41b5-b935-e84a2f1d1bee,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,878546d9-c9c9-4fa6-bc14-4e8fa3f13329,The forest is .....,The forest is .......,dangerous,21,9,2,233x89; 450x119,43,46,26246cd9-fb3d-49e7-80eb-15c3d47ffc69,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,79d6a930-1541-4e7d-b282-8f15466ad7f8,What did Yuki throw?,What did Yuki throw?,Yuki threw a ROCK,20,17,2,270x112; 607x148,43,46,cceb6d23-a82f-4f2f-b74b-4422a0a604ec,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,434ea4d1-65c0-4fa0-874e-a5e5defaabd6,What was in the treasure chest?,What was in the treasure chest?,In the chest there was an armor.,31,32,2,346x174; 569x255,43,46,3fcdc956-6543-44ec-b49f-a623aeef97dd,4bd7b170-79c8-45c9-910a-72a214512a2f,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,634da7be-0022-4af7-93de-8ebd555fbd69,What was in the treasure chest? (Copy),The bird took the _________,,27,0,2,594x106; 720x103,43,46,,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,72a2d767-6458-4982-adec-cd8d49ba7a88,Heart SMALL,,Heart,0,5,2,222x104; 242x80,43,46,,f80983e1-65de-4082-be7b-78d3bea9677a,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,0daf84d0-8208-4672-aabb-6719a9f58277,I feel super strong,,Strong,0,6,2,234x158; 253x160,43,46,,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,c90c207f-7985-4e68-9a21-d3d09cd34f3b,I feel super strong (Copy),,I feel very fast,0,16,2,234x158; 307x113,43,46,,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,2157494f-8af9-47ce-921e-2dc7818f6797,The forest became.....quiet,The forest became.....,quiet,22,5,2,306x135; 609x161,43,46,8195f335-c1d3-48a2-b342-487efb311e6f,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,40cbfd38-6acb-4665-9ff3-9037cebea4eb,The forest became.....windy,The forest became.....,windy,22,5,2,456x110; 653x158,43,46,25b1ed77-1f39-4a56-be0d-2aeb128ca10c,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,bb37684d-56cc-4931-8c5c-f50603a65317,In the sky they saw a ....,In the sky they saw a ....,Dragon,26,6,2,468x123; 522x144,43,46,52518ddd-83c7-4b42-9953-08eb80583584,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,90cea6d3-40e9-4668-891d-67f2164527e3,Yuki was happy?,Yuki was happy?,"No, Yuki was sad",15,16,2,237x131; 443x191,43,46,01260031-52cc-416b-8f40-eed5354861c8,24a8f905-0afa-4ced-897d-91ff5478eb40,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,d9a2988a-36fe-41d3-ba92-556daa958213,B1 Is Mia scared ,Is Mia scared,Yes she is ,13,11,2,308x182; 318x198,49,69,044a6bfb-e17c-46b0-a33b-857c7ba6a69c,,,
+1,daf2fc84-b97c-4b52-b88c-6b3f8d1295e5,MB1 is Mia a girl?,is Mia a girl?,Yes she is,14,10,1,267x181,61,69,,,,flip
+1,d99eff33-9860-4c47-a43a-bf3615ed0e49,MB1 is Yuki a boy,is Yuki a boy,Yes he is,13,9,1,267x181,61,69,,,,flip
+1,e7c9a6f0-4f16-4be6-ba6f-2165a9fb8947,B2 is the bird bad?,is the bird bad?,"Yes, the bird is bad",16,20,2,257x159; 301x162,43,46,85c7f64d-c791-4c71-865d-6e01605fba24,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,ebaa844d-b979-4549-85f2-2c3e29bca1ea,B2 Is yuki brave,"Is Yuki brave?   
+ゆきは ゆうかん？","Yes, he is brave",27,16,2,214x159; 311x168,35,46,34442dda-dfb7-4d1c-a500-77d7370f6952,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,6bede00b-e59a-48ab-aa93-1923b39af3fe,B2 Is yuki brave (Copy),"Is Yuki brave?   
+ゆきは ゆうかん？","Yes, he is brave",27,16,1,214x159,35,46,34442dda-dfb7-4d1c-a500-77d7370f6952,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,74cb3700-9463-4a39-bba5-e0255052e6fc,B3 What is his name? kage,What is his name?,His name is Kage,17,16,2,257x159; 401x117,43,46,d786b19a-85f2-41b5-b935-e84a2f1d1bee,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,8db3f821-39ac-4de2-a371-6a79aea9e79d,B3 What is this?,What is this?,It is a treasure chest,13,22,2,257x159; 309x188,43,46,3fcdc956-6543-44ec-b49f-a623aeef97dd,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,b72c95b2-5c55-49a5-9fdb-f2542d155d49,B3 What is inside?,What is inside?,It is an armor,15,14,2,243x147; 257x159,43,46,30c7ce0e-b61a-4853-9a47-be4b885f48fd,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,c8a78912-9c5c-4b4f-9dcc-b6be717a155e,B3 What is inside? (Copy),What is inside?,It is an armor,15,14,0,,43,46,30c7ce0e-b61a-4853-9a47-be4b885f48fd,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,5f2a818e-6952-4c88-bce8-f5f7c0788114,B3 What is inside? (Copy) (Copy),What is inside?,It is an armor,15,14,0,,43,46,30c7ce0e-b61a-4853-9a47-be4b885f48fd,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,5baa819c-a499-4c6d-b4b2-2d81f1517062,B4 Yuki is super...,Yuki is super...,Strong,16,6,2,186x130; 330x260,43,46,4b3f2ed5-3975-4bc0-aadf-e97ba93eae68,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,f5cb21de-2f89-4535-a860-4b450b9498b4,B4 Mia is super... (Copy),Mia is super...,Fast,15,4,2,165x97; 308x259,43,46,e07a1b7b-37ac-4353-96ba-5362c5ade7a2,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,9586c1bc-c2ca-4a7c-b07b-200eb2bbf911,B4 What Power do you want?,What Power do you want?,,23,0,2,236x113; 331x208,43,46,6db010a6-edc7-4013-8fd7-ac3aad9ecf23,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,e0bcf3a2-d643-4db1-bf1e-4c66d8293793,B6 is yuki upset,Is Yuki upset?,Yes he is. ,14,11,3,266x157; 325x183; 514x177,43,46,24a8f905-0afa-4ced-897d-91ff5478eb40,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,7ca27e78-f94c-4019-9c71-2e8dcc46c7a4,B6 Yuki made a mistake?,Yuki made a mistake?,Yes he did,20,10,2,266x157; 380x187,43,46,46305ca0-e6a2-403c-a014-1374b489346a,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+1,c270a496-0384-4c59-ac31-c4d8798151ac,B7 What is that shadow?,What is that shadow?,It is a Dragon,20,14,2,266x157; 335x177,43,46,52518ddd-83c7-4b42-9953-08eb80583584,,e6715334-c03c-42a3-9577-4097bd900f1e,flip
+2,1f962c95-33c0-42bc-b6d0-2b58c636c15c,Feather card ,What is this clue?,It is a Bird Feather,18,20,2,308x139; 522x166,41,45,,,,flip
+2,161ff638-9a27-47cd-9d47-0dbd03617fcd,branch,What is this clue?,It is a Broken Branch,18,21,2,308x139; 313x143,41,45,,,,zoom-in
+2,7aea7358-f44a-462d-b30f-88c94d6eed72,foot print,What is this clue?,It is a Foot Print,18,18,2,308x139; 453x215,41,45,,,,pop
+2,7a4b93ae-95dc-4e57-9b6a-99525bc41b03,map,What is this clue?,It is a Map ,18,12,2,308x139; 330x130,41,45,,,,pop
+2,1fd9993c-351e-48e6-90d4-2980126e2bfa,IT IS A ,It is a .....,It's a .....,13,12,2,320x166; 363x90,61,63,,,,
+2,28163f59-94f3-4f08-a681-7472fd4d080b,Luma,What animal is Luma?,It is a Fox,20,11,2,308x139; 343x134,41,45,,,,fade
+2,f1200edc-8c0b-43df-b169-da8541b5dedb,Sound ,What sound was on the test?,It is a Water sound,27,19,2,308x139; 378x108,41,45,,,,fade
+2,73d21d88-f48f-4506-9ee9-c25a6dc26598,Light color,What color is the light?,It is a Blue Light,24,18,2,308x139; 338x118,41,45,,,,fade
+2,62fd3a80-8767-4563-8566-bd67dda680fb,Shard,What is this?,It is a Shard,13,13,2,210x166; 308x139,41,45,,,,fade
+2,cf988bd1-84dd-4b02-bbec-b5c4cbf312a9,Bird nest ,What is this?,It is a Bird Nest,13,17,2,308x139; 381x103,41,45,,,,fade
+3,e7970182-c66d-4190-82c3-4b2e1b091909,Who followed the shard?,Who followed the shard?,THEY followed the shard,23,23,2,221x125; 378x131,34,31,,,,
+3,c8849c20-d006-452d-ba04-34a408988a94,Yuki wanted to go in. ,Yuki wanted to go in. ,HE wanted to go in ,22,19,2,164x132; 305x164,34,31,,,,
+3,0af958e2-14bf-4864-8f61-bd2f5b7b1bfc,I,I,person 1 - singular ,1,20,2,243x178; 99x85,34,31,,,,
+3,ce33fda7-b48b-4891-b6b6-e2a64ac8614e,You s,You,person 2 - singular ,3,20,2,241x180; 69x80,34,31,,,,
+3,3649a3e4-68b7-4031-9d9d-9678713e123a,"He, She, It","He, She, It",person 3 - singular ,11,20,2,110x80; 244x177,34,31,,,,
+3,98e0be66-4331-433c-a9a6-f9ecd80784cc,We,We,person 1 - plural ,2,18,2,244x207; 81x80,34,31,,,,
+3,bfb1b5e4-f817-4ff4-834c-dbaa11a2d57c,You p,You,person 2 - plural ,3,18,2,255x202; 96x80,34,31,,,,
+3,7810b2ba-2f5b-415b-8e21-611daa99cc6f,They,They,person 3 - plural ,4,18,2,240x198; 85x91,34,31,,,,
+3,dd2ec37e-cad3-4d19-85ae-dfbb30ab3ea8,Kage was not sure ,Kage was not sure ,HE was not sure ,18,16,2,190x120; 274x138,34,31,,,,
+3,d2825e8b-ea00-4839-b7f7-6be4b7deec3a,The kids found a castle,The kids found a castle,They found a castle,23,19,2,190x120; 313x129,34,31,,,,
+3,91b011ab-d8a0-4b0d-9eee-e075fc554477,the group went in the castle,"Carefully, the group went in the castle",They went in the castle,39,23,2,190x120; 383x136,34,31,,,,
+3,c81ddd81-907c-4817-8ed4-3af54f60c64f,The castle was scary ,The castle was scary ,IT was scary,21,12,2,201x115; 309x127,34,31,,,,
+3,06f25fda-36bf-4aef-8072-bdbfa909ad2b,The little cathedral,The little cathedral was a spider,IT was a spider,33,15,2,266x126; 269x118,34,31,,,,
+3,d048c7e1-f4c3-4399-8298-7a532308dcd5,Yuki was not scared,Yuki was not scared,HE was not scared,19,17,2,245x135; 280x120,34,31,,,,
+3,73bd0a7f-8716-4507-b1c8-d0e339d8ffc6,Mia fell down,Mia fell down,SHE fell down,13,13,2,245x135; 255x90,34,31,,,,
+3,12b05695-1021-4f0c-b9d6-df6dcc436181,THEY wanted to save HER,Yuki and Kage wanted to save Mia,THEY wanted to save HER,32,23,2,245x135; 402x209,34,31,,,,
+3,698c4e46-838a-4542-8aad-2c988e09bc50,Mia not hurt,Was Mia hurt?,"No, SHE was not hurt",13,20,2,245x135; 257x102,34,31,,,,
+3,a33a7a6d-3341-4855-9f0b-8ebaa534a0e5,The spider is big,The spider is big,IT is big,17,9,2,245x135; 291x110,34,31,,,,
+3,fdf3c813-3063-46f5-b973-70f447f6c084,Is Arachne a monster?,Is Arachne a monster?,"No, HE is not a monster",21,23,2,245x135; 263x125,34,31,,,,
+3,76c28cbf-7784-45b6-8ac1-5e8c3de9b82e,The spider is scary,The spider is scary,IT is scary,19,11,2,245x135; 346x102,34,31,,,,
+3,bb46be6c-ed94-4231-9dad-a2897e9106d2,Mia and Arachne leave together,Mia and Arachne leave together,THEY leave together,30,19,2,245x135; 328x160,34,31,,,,
+3,75414645-476a-4569-9034-7ab7c7adc102,Kage also has superpowers and armor,Kage also has superpowers and armor,HE also has superpowers and armor,35,33,2,245x135; 365x172,34,31,,,,
+3,758f0de9-e6f4-436c-b629-d7c01032e03f,They all meet ,The kids and the spider all meet again,THEY all meet again,38,19,2,245x135; 300x123,34,31,,,,
+3,df12e0f8-1e23-4736-a473-9f1dfb8b0c34,Arachne gives them the Echo Stone ,Arachne gives them the Echo Stone ,HE gives them the Echo Stone ,34,29,2,245x135; 339x114,34,31,,,,
+3,912e35c4-1d27-429b-9b04-929056879297,The Dragon controls the birds,The Dragon controls the birds,IT controls the birds,29,21,2,245x135; 331x108,34,31,,,,
+3,6202b564-e7e7-4178-ad55-eeb1ddd624c4,The kids say goodbye and leave ,The kids say goodbye and leave,THEY say goodbye and leave,30,26,2,245x135; 303x128,34,31,,,,
+3,1df41390-6b9e-418f-b585-ff7df540f6c8,The kids see a feather and the kids follow the feather ,The kids see a feather and the kids follow the feather ,THEY see a feather and THEY follow IT,55,37,2,245x135; 417x157,34,31,,,,
+4,db1f9090-3061-4b97-bbbc-234e5e763437,...ing,ing,,3,0,5,123x94; 177x129; 182x117; 183x108; 186x100,55,55,,,,
+4,7ac63d73-4f81-44d4-8b7b-1e2718f5142f,verb,ACTION,walk,6,4,2,335x129; 94x98,60,60,,,,
+4,dbffea43-9ab0-413c-a8d6-ce15b667c471,VERBing,ACTION+ing,WALKING,10,7,2,129x99; 391x134,60,60,,,,
+4,1a84ce53-1aaf-4df5-9f75-b89107d39998,talk,ACTION,talk,6,4,2,121x82; 314x141,60,60,,,,
+4,4c9c13fd-d0b6-4275-a8f5-7bb3593d1f87,look,ACTION,look,6,4,2,121x82; 305x146,60,60,,,,
+4,83658f4e-ffcf-4e26-918a-8a88d32dcf44,TALKING,ACTION+ing,TALKING,10,7,2,129x99; 383x166,60,60,,,,
+4,034faf67-227b-489e-9b2c-b1a33a951820,LOOKING,ACTION+ing,LOOKING,10,7,2,129x99; 375x174,60,60,,,,
+4,945216b7-66bf-4314-8a6a-b307b3cb672b,run,ACTION,run,6,3,2,121x82; 321x160,60,60,,,,
+4,c0dcdddd-d862-47c5-8108-341b4374b498,RUNNING,ACTION+ing,RUNNING,10,7,2,129x99; 373x136,60,60,,,,
+4,28b28e9f-8371-453c-9072-c0b233300ca3,What is Mia doing?,What is Mia doing?,,18,0,5,156x82; 411x171; 602x80; 632x80; 646x80,60,60,,,,
+4,8780215a-3528-4fcb-8c9b-4898bffbb81c,Mia is walking,ACTION+ing,Mia is walking,10,14,2,129x99; 433x84,60,60,,,,
+4,b819f0ca-fa8d-49c5-a703-1704242c2d8a,What is Yuki doing? ,What is Yuki doing?,,19,0,5,156x82; 385x153; 613x80; 649x80; 650x80,60,60,,,,
+4,cd714e3b-cda6-4483-9aff-b3e4cb8d3eaa,Yuki is walking,ACTION+ing,Yuki is walking,10,15,2,129x99; 458x80,60,60,,,,
+4,a4c04626-cd66-46ac-bf8e-72dd947411a8,What is Kage doing,What is Kage doing?,,19,0,5,156x82; 376x154; 624x80; 669x80; 677x80,60,60,,,,
+4,bc4d7352-4e1a-4cae-99ad-40478706f762,Kage is walking,ACTION+ing,Kage is walking,10,15,2,129x99; 456x92,60,60,,,,
+4,abe987d2-73f6-441d-98f5-5d70e063a0db,Mia is running,ACTION+ing,Mia is running,10,14,2,129x99; 421x96,60,60,,,,
+4,6c2d532f-8174-4d62-9a48-230f42677b3f,Yuki is running,ACTION+ing,Yuki is running,10,15,2,129x99; 444x92,60,60,,,,
+4,f8ee248a-5f0d-45fc-880f-654959964db9,Kage is running,ACTION+ing,Kage is running,10,15,2,129x99; 496x89,60,60,,,,
+4,f8a72fca-229c-4109-a850-d106b1a98baf,What are the kids doing?,What are the kids doing?,,24,0,6,388x194; 733x80; 738x80; 748x80; 753x80; 762x80,60,60,,,,
+4,9021ac65-2353-4008-9073-b3eb88497a43,What is Mirai doing?,What is Mirai doing?,,20,0,5,379x173; 617x80; 625x80; 657x80; 720x80,60,60,,,,
+4,c51a4a18-9991-4339-a856-3d558711450c,talk small,?,talk,1,4,9,104x107; 113x80; 118x80; 120x80; 120x91; 120x95; 123x94; 125x102; 99x80,28,36,,,,
+4,4181ca56-e0cc-45dd-aae8-dcdb53669686,look small,?,look,1,4,2,123x94; 86x80,28,36,,,,
+4,d8333d37-6a9c-463a-aaf6-8f015f93779e,run small,?,run,1,3,4,118x86; 123x94; 127x106; 130x86,28,36,,,,
+4,a390e9d5-cfad-429d-b89c-b5ec96fff64a,walk small,?,walk,1,4,3,105x85; 111x97; 123x94,28,36,,,,
+5,c2cd986d-2409-4205-9ead-e7c049d96779,What is happening?,???????????,What is happening?,11,18,2,324x137; 362x173,28,28,,,,
+5,98c4eba2-2cda-4c42-8925-188a60a229ec,Kids walk to the volcano,Kids walk to the volcano,,24,0,2,344x175; 429x108,28,28,,,,
+5,df8007df-8efa-4a49-8531-03300a6f9f5f,Kids look at volcano,Kids look at the volcano,,24,0,3,362x173; 365x122; 406x136,28,28,,,,
+5,5e4fd614-05b8-4063-a840-85900001c7ca,Kage is curious ,Kage is curious,,15,0,2,177x103; 326x131,28,28,,,,
+5,4b8921c6-858b-4ca6-b28b-abc5243d7ad3,Kage is cute,Kage is cute,,12,0,3,138x99; 302x137; 324x149,28,28,,,,
+5,f67a03ea-d799-48b1-a529-93f60aa5e496,Kids meet Luma,Kids meet Luma,,14,0,3,177x103; 334x133; 406x137,28,28,,,,
+5,3a9a1bec-5e49-4d74-b9a4-a60a5e8cac64,Kids talk to Luma,Kids talk to Luma,,17,0,2,154x104; 356x139,28,28,,,,
+5,bb59e13f-29de-4f8d-a57d-3898be242758,They walk to the cave ,They walk to the cave ,,22,0,2,177x103; 335x100,28,28,,,,
+5,6ceffad3-b744-4959-95a1-3f8bfbdd86b1,They find the cave,They find the cave,,18,0,3,154x104; 283x105; 319x104,28,28,,,,
+5,8d27fbc8-9d56-46fa-a509-0cb36962f679,They walk in the cave,They walk in the cave,,21,0,2,154x104; 310x91,28,28,,,,
+5,235df07b-2d8f-4e07-9218-83932cd2efa3,The Rat King is behind,The Rat King is behind,,22,0,3,177x103; 382x120; 397x119,28,28,,,,
+5,0bc90786-9df0-49b9-902c-4adbabf0919f,The Rat King send rats,The Rat King send rats,,22,0,2,154x104; 366x129,28,28,,,,
+5,8d97cb49-dabb-466e-8ab0-d7d92b609541,The kids are ready,The kids are ready,,18,0,2,154x104; 289x114,28,28,,,,
+5,353662fd-1310-4f8a-9f31-c8f6d067251f,It's full of rats,It's full of rats,,17,0,2,177x103; 348x105,28,28,,,,
+5,efa05934-bb8b-41ef-933f-9047caa58937,Luma sends bubble,Luma sends bubble,,17,0,3,154x104; 302x96; 337x113,28,28,,,,
+5,ab28ff2c-2b5e-4e41-9d03-518da5f67628,The rats are trapped,The rats are trapped,,20,0,2,154x104; 316x92,28,28,,,,
+5,ef0fb4a8-37ae-4e9f-8c1a-cf40852efce7,Kage saves Luma,Kage saves Luma,,15,0,2,177x103; 362x125,28,28,,,,
+5,241aac0e-13f3-473d-b5f6-3e417e0114cf,They play bowling,They play bowling,,17,0,3,154x104; 341x106; 385x135,28,28,,,,
+5,28168c92-5c44-4de2-8337-0e764f828c1c,The Rat King runs away,The Rat King runs away,,22,0,2,154x104; 371x98,28,28,,,,
+5,e9ab0c56-e2c2-4deb-ad57-e51e294e1e67,Mirai's brother is a prisoner,Mirai's brother is a prisoner,,29,0,2,177x103; 439x104,28,28,,,,
+5,2a99a806-fc18-417e-bf24-55b7a4e15c8f,Baby bird is a prisoner,Baby bird is a prisoner,,23,0,2,154x104; 432x92,28,28,,,,
+5,1002a8d3-1ec0-46e7-ac98-6b21d94f0b02,"Rat King says ""I'm sorry""","Rat King says ""I'm sorry""",,25,0,3,154x104; 409x99; 413x89,28,28,,,,
+6,c232e4dd-c766-4742-bcf1-2054b0a1d286,Why is Mia angry?,Why is Mia angry?,Because Mirai is a traitor,17,26,2,174x80; 318x96,28,28,,,,
+6,133e551c-d51d-4462-b465-e8fb96fd6168,Because Mirai is cute,Because Mirai is cute,Wrong,21,5,2,174x80; 346x233,28,28,,,,
+6,fa431a4d-7b42-410d-ace0-8648d3275b3f,Because Mirai is a rabbit,Because Mirai is a rabbit,Wrong,25,5,2,174x80; 375x227,28,28,,,,
+6,a99b7408-ffdd-42c9-a453-c2e261a11dec,Because Mirai is a traitor,Because Mirai is a traitor,Correct ,26,8,2,174x80; 381x214,28,28,,,,
+6,543f02b8-0748-4f9a-8779-c5cfb3b74d47,Why does the Dragon attack the kids?,Why does the Dragon attack the kids?,Because he want to keep the heart of the forest,36,47,2,174x80; 493x174,28,28,,,,
+6,103390f9-5754-4c7c-98f0-11cd8b7457ee,Because he wants to play with the kids,Because he wants to play with the kids,Wrong,38,5,2,174x80; 299x199,28,28,,,,
+6,26f8b2da-355e-4e92-83c5-b3265d34ab46,Because he wants to keep the Heart of the forest,Because he wants to keep the Heart of the forest,Wrong,48,5,1,345x180,28,28,,,,
+6,52e24e0e-a618-4670-b5a4-19efca8915b2,Because he wants to keep the Heart of the Forest,Because he wants to keep the Heart of the Forest,Correct ,48,8,1,174x80,28,28,,,,
+6,9736e814-6d77-4bc1-826e-d29f8df4d8f0,Because he wants to eat pizza,Because he wants to eat pizza,Wrong,29,5,2,174x80; 370x203,28,28,,,,
+6,b4ee7f30-e912-4cfd-8f51-b05156e2f29e,Why is the first world strange?,Why is the first world strange?,Because it's made of clay,31,25,2,174x80; 475x174,28,28,,,,
+6,9a08566e-725c-43b4-b669-a26632145797,Because it's made of cookies,Because it's made of cookies,Wrong,28,5,2,174x80; 297x186,28,28,,,,
+6,31adfca8-268b-4baa-9074-a085d784dea7,Because it's underwater,Because it's underwater,Wrong,23,5,2,174x80; 295x194,28,28,,,,
+6,95c4da73-7368-44b7-96a7-ed803bec9c6d,Because it's made of clay,Because it's made of clay,Correct ,25,8,2,174x80; 300x167,28,28,,,,
+6,7c4e58f5-a0e1-46f4-9ea0-c9cd071be963,Why can they erase the second world?,Why can they erase the second world?,Because it's made of pencil ,36,28,2,174x80; 479x188,28,28,,,,
+6,b5ee1d70-1418-4fd0-b8bc-7988b68a4878,Because it's made of pencil ,Because it's made of pencil ,Correct ,28,8,2,174x80; 277x225,28,28,,,,
+6,8732d75b-fea2-4b3c-ae1a-432e2baaf903,Because it's made of cookies (Copy),Because it's made of cake,Wrong,25,5,2,174x80; 323x191,28,28,,,,
+6,0b178b1e-4bbf-4a55-ad1e-8c8728069e58,Because it's in the forest,Because it's in the forest,Wrong,26,5,2,174x80; 313x239,28,28,,,,
+6,bfc35d1a-7253-4841-af0d-79efbc78c906,Why is the last world blocky?,Why is the last world blocky?,Because it's a game world,29,25,2,174x80; 526x192,28,28,,,,
+6,b020c8eb-ea83-4327-b092-bdceb6576f4e,Because it's a game world,Because it's a game world,Correct ,25,8,2,174x80; 329x192,28,28,,,,
+6,981e9198-94a4-4f46-aac0-b6e99197585d,Because it's in space,Because it's in space,Wrong,21,5,2,174x80; 341x203,28,28,,,,
+6,8f87e090-a46b-4d80-9bb8-e6f7c3b377e1,Because it's made from from chocolate ,Because it's made from from chocolate ,Wrong,38,5,2,174x80; 326x196,28,28,,,,
+6,d020b9d6-4d9a-4ed4-9e55-f54ae60bd701,Why,Why,Because it's a game world,3,25,2,174x80; 313x114,42,28,,,,
+6,9836878e-7e1c-434f-ad0a-0c0ce8822e40,Because ,Because ,Correct ,8,8,2,174x80; 314x129,41,28,,,,

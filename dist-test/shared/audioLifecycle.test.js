@@ -66,3 +66,29 @@ function handle(id, active = true) {
     strict_1.default.equal(coordinator.get("monitor"), undefined);
     strict_1.default.equal(monitorRoute.disposeCalls, 1);
 });
+(0, node_test_1.default)('overlapping changes cannot orphan an output sink', async () => {
+    const coordinator = new audioLifecycle_1.AudioRouteCoordinator();
+    const old = handle('old');
+    const first = handle('first');
+    const last = handle('last');
+    coordinator.seed('mix', old);
+    let finishFirst;
+    const pending = coordinator.replace('mix', () => new Promise(resolve => { finishFirst = resolve; }));
+    await coordinator.replace('mix', async () => last);
+    finishFirst(first);
+    await pending;
+    strict_1.default.equal(coordinator.get('mix'), last);
+    strict_1.default.equal(first.disposeCalls, 1);
+    strict_1.default.equal(old.disposeCalls, 1);
+    coordinator.restart();
+    strict_1.default.equal(last.disposeCalls, 1);
+});
+(0, node_test_1.default)('removing a route also cancels its pending replacement', async () => {
+    const coordinator = new audioLifecycle_1.AudioRouteCoordinator();
+    const candidate = handle('candidate');
+    const pending = coordinator.replace('mix', async () => candidate);
+    coordinator.remove('mix');
+    await pending;
+    strict_1.default.equal(coordinator.get('mix'), undefined);
+    strict_1.default.equal(candidate.disposeCalls, 1);
+});

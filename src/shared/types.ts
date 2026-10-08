@@ -1,6 +1,6 @@
 import type { AudioSettingsV1 } from "./audioSettings";
 
-export type TransitionType = 'fade' | 'crossfade' | 'fade-black' | 'cinematic' | 'pixel' | 'blur' | 'card-slide';
+export type TransitionType = 'none' | 'fade' | 'crossfade' | 'fade-black' | 'cinematic' | 'pixel' | 'blur' | 'card-slide';
 
 export type MediaType = 'image' | 'video' | 'audio';
 
@@ -48,6 +48,7 @@ export interface MarkerStroke {
 }
 
 export interface AssetItem {
+  binId?: string;
   id: string;
   relativePath: string;
   filename: string;
@@ -73,6 +74,7 @@ export interface BreakMedia {
 }
 
 export interface Section {
+  cardPlacementId?: string;
   id: string;
   name: string;
   type?: 'section' | 'break'; // Defaults to 'section'
@@ -103,6 +105,7 @@ export interface Section {
 }
 
 export interface Slide {
+  cardPlacementId?: string;
   id: string;
   assetId: string;
   sectionId: string;
@@ -188,10 +191,12 @@ export interface AudioCue {
 }
 
 export interface BoostSceneItemBase {
+  cardPlacementId?: string;
   bCardInstances?: BCardInstance[];
 }
 
 export interface SlideRefItem extends BoostSceneItemBase {
+  independentCopyOf?: string;
   id: string;
   type: 'slideRef';
   slideId: string;
@@ -230,7 +235,13 @@ export interface ACardRefItem extends BoostSceneItemBase {
   aCardId: string;
 }
 
-export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem | ACardRefItem;
+export interface CardActivityRefItem extends BoostSceneItemBase {
+  id: string;
+  type: 'cardActivityRef';
+  engine: 'card-v2';
+  placementId: string;
+}
+export type SequenceItem = SlideRefItem | BreakRefItem | PromptCardItem | MiniGameItem | ACardRefItem | CardActivityRefItem;
 export type StoryReferenceItem = ACardRefItem;
 
 export interface BoostPack {
@@ -377,6 +388,9 @@ export interface MovementConfig {
 }
 
 export interface ProjectData {
+  mediaBins?: MediaBin[];
+  /** Optional authored module. Opening legacy content must never create it. */
+  cardsV2?: import('./cardsV2').CardsV2Module;
   version: ProjectSchemaVersion;
   createdAt: string;
   updatedAt: string;
@@ -397,6 +411,8 @@ export interface ProjectData {
 }
 
 export interface ProjectState {
+  /** In-memory open/create candidate; never stored in project.json. */
+  activationToken?: string;
   folderPath: string;
   data: ProjectData;
   lastSavedAt?: string;
@@ -482,9 +498,13 @@ export interface RelicSystem {
 }
 
 export interface ImportResult {
+  importedBins?: MediaBin[];
+  failures?: { name: string; reason: string }[];
   importedAssets: AssetItem[];
   createdSlides: Slide[];
 }
+
+export interface MediaBin { id: string; name: string; parentId?: string; }
 
 // --- NEW SYSTEM (Phase 1): ACards and BCards ---
 

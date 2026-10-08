@@ -25,6 +25,7 @@ export function applyMediaImportToProjectData(
     ...data,
     slides: [...data.slides, ...createdSlides],
     assets: [...data.assets, ...importedAssets],
+    ...(result.importedBins?.length ? { mediaBins: [...(data.mediaBins ?? []), ...result.importedBins] } : {}),
   };
 
   if (targetSection?.type !== "break" || createdSlides.length === 0) {

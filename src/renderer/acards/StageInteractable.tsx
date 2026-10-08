@@ -1,23 +1,30 @@
+import { LogicalFrameScaleContext } from '../StaticScene';
 import React, { useCallback, useRef } from 'react';
 import { Rnd } from 'react-rnd';
-import { BCardInstance, BCardTeachState } from '../../shared/types';
-import { useCardSystem } from '../store/CardStore';
+import { BCard, BCardInstance, BCardTeachState } from '../../shared/types';
+import { useOptionalCardSystem } from '../store/CardStore';
 import { BCardFace } from './BCardFace';
 
 interface StageInteractableProps {
     instance: BCardInstance;
+    card?: BCard;
+    passive?: boolean;
     teachState?: BCardTeachState;
     resolveImageUrl: (imageId: string) => string | null;
     onClick?: (instanceId: string, bCardId: string) => void;
     isSelected?: boolean;
     mode?: 'edit' | 'teach';
     stageSize: { w: number; h: number };
-    movementAnimation?: { durationMs: number; easing: string; key: number } | null;
+    movementAnimation?: { durationMs: number; easing: string; key: number; startedAt?: number } | null;
     onInstanceChange?: (instanceId: string, updates: Partial<BCardInstance>) => void;
 }
 
+function PassiveCardPosition({ style, children, position, size, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onLostPointerCapture, onClick }: React.ComponentProps<typeof Rnd>) {
+    return <div onPointerCancel={onPointerCancel} onLostPointerCapture={onLostPointerCapture} onClick={onClick} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} style={{ ...style, position: 'absolute', left: 0, top: 0, width: size?.width, height: size?.height, transform: `translate(${position?.x ?? 0}px, ${position?.y ?? 0}px)` }}>{children}</div>;
+}
+
 export function StageInteractable({
-    instance,
+    instance, card, passive = false,
     teachState,
     resolveImageUrl,
     onClick,
@@ -27,11 +34,23 @@ export function StageInteractable({
     movementAnimation = null,
     onInstanceChange,
 }: StageInteractableProps) {
+    const Positioner = passive || mode === "teach" ? PassiveCardPosition : Rnd;
+    const pointerDrag = useRef<{ pointerId: number; x: number; y: number; startX: number; startY: number; update: (updates: Partial<BCardInstance>) => void } | null>(null);
     const DRAG_CLICK_SUPPRESS_PX = 3;
     const dragStartRef = useRef<{ x: number; y: number } | null>(null);
     const suppressNextClickRef = useRef(false);
-    const { bCardLibrary } = useCardSystem();
-    const bCard = bCardLibrary[instance.bCardId];
+    const store = useOptionalCardSystem();
+    const bCard = card ?? store?.bCardLibrary[instance.bCardId];
+    React.useContext(LogicalFrameScaleContext);
+    const hostRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = React.useState(1);
+    React.useLayoutEffect(() => {
+      const el = hostRef.current; if (!el) return;
+      const update = () => setScale(el.getBoundingClientRect().width / Math.max(1, el.clientWidth));
+      update(); const observer = new ResizeObserver(update); observer.observe(el);
+      window.addEventListener("resize", update);
+      return () => { observer.disconnect(); window.removeEventListener("resize", update); };
+    });
 
     const handleUpdate = useCallback((partialUpdate: Partial<BCardInstance>) => {
         onInstanceChange?.(instance.id, partialUpdate);
@@ -60,17 +79,48 @@ export function StageInteractable({
     ].filter(Boolean).join(' ');
 
     return (
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-            <Rnd
+        <div ref={hostRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+            <Positioner
+                            onClick={() => {
+                                if (suppressNextClickRef.current) {
+                                    suppressNextClickRef.current = false;
+                                    return;
+                                }
+                                !passive && onClick && onClick(instance.id, instance.bCardId);
+                            }}
+                onPointerDown={(event: React.PointerEvent<HTMLDivElement>) => {
+                    if (passive || mode !== 'teach' || !onInstanceChange || event.button !== 0) return;
+                    pointerDrag.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, startX: clampedX, startY: clampedY, update: handleUpdate };
+                    suppressNextClickRef.current = false;
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                }}
+                onPointerMove={(event: React.PointerEvent<HTMLDivElement>) => {
+                    const start = pointerDrag.current;
+                    if (!start || start.pointerId !== event.pointerId || !onInstanceChange) return;
+                    const dx = event.clientX-start.x, dy = event.clientY-start.y;
+                    if (Math.hypot(dx,dy) <= DRAG_CLICK_SUPPRESS_PX && !suppressNextClickRef.current) return;
+                    suppressNextClickRef.current = true;
+                    const host = hostRef.current;
+                    const actualScale = host ? host.getBoundingClientRect().width / Math.max(1, host.clientWidth) : 1;
+                    const x = Math.max(0, Math.min(pw-instance.size.width, start.startX+dx/actualScale));
+                    const y = Math.max(0, Math.min(ph-instance.size.height, start.startY+dy/actualScale));
+                    start.update({ position: { x: (x+instance.size.width/2)/pw*100, y: (y+instance.size.height/2)/ph*100 } });
+                }}
+                onPointerCancel={() => { pointerDrag.current = null; }}
+                onLostPointerCapture={() => { pointerDrag.current = null; }}
+                onPointerUp={(event: React.PointerEvent<HTMLDivElement>) => {
+                    if (pointerDrag.current?.pointerId === event.pointerId) { pointerDrag.current = null; event.currentTarget.releasePointerCapture(event.pointerId); }
+                }}
+                scale={scale}
                 style={{
                     zIndex: instance.zIndex,
                     borderRadius: '12px',
                     boxSizing: 'border-box',
-                    pointerEvents: 'auto',
+                    pointerEvents: passive ? 'none' : 'auto',
                     cursor: 'grab',
                     border: isSelected ? '1px solid rgba(0,255,213,0.55)' : '1px solid rgba(255,255,255,0.15)',
                     boxShadow: isSelected ? '0 0 0 1px rgba(0,255,213,0.25), 0 0 22px rgba(0,255,213,0.35)' : '0 4px 14px rgba(0,0,0,0.25)',
-                    transition: movementAnimation ? `transform ${movementAnimation.durationMs}ms ${movementAnimation.easing}` : undefined,
+                    transition: movementAnimation ? `transform ${Math.max(0, movementAnimation.durationMs - (movementAnimation.startedAt ? Date.now() - movementAnimation.startedAt : 0))}ms ${movementAnimation.easing}` : undefined,
                 }}
                 bounds="parent"
                 size={{
@@ -81,13 +131,16 @@ export function StageInteractable({
                     x: clampedX,
                     y: clampedY,
                 }}
-                onDragStart={(_, data) => {
-                    dragStartRef.current = { x: data.x, y: data.y };
+                onDragStart={(event) => {
+                    const point = "touches" in event ? event.touches[0] : event;
+                    dragStartRef.current = { x: point.clientX, y: point.clientY };
                 }}
                 onDragStop={(e, d) => {
                     if (dragStartRef.current) {
-                        const movedX = Math.abs(d.x - dragStartRef.current.x);
-                        const movedY = Math.abs(d.y - dragStartRef.current.y);
+                        const point = "changedTouches" in e ? e.changedTouches[0] : e;
+                        const movedX = Math.abs(point.clientX - dragStartRef.current.x);
+                        const movedY = Math.abs(point.clientY - dragStartRef.current.y);
+                        if (movedX <= DRAG_CLICK_SUPPRESS_PX && movedY <= DRAG_CLICK_SUPPRESS_PX) { dragStartRef.current = null; return; }
                         if (movedX > DRAG_CLICK_SUPPRESS_PX || movedY > DRAG_CLICK_SUPPRESS_PX) {
                             suppressNextClickRef.current = true;
                         }
@@ -115,8 +168,8 @@ export function StageInteractable({
                         }
                     });
                 }}
-                disableDragging={mode !== 'edit' || !onInstanceChange}
-                enableResizing={mode === 'edit' && !!onInstanceChange}
+                disableDragging={passive || !onInstanceChange}
+                enableResizing={!passive && mode === 'edit' && !!onInstanceChange}
                 minWidth={60}
                 minHeight={80}
             >
@@ -131,13 +184,7 @@ export function StageInteractable({
                         <div
                             className={wrapperClasses}
                             style={{ width: '100%', height: '100%', position: 'relative', borderRadius: '12px', overflow: 'hidden' }}
-                            onClick={() => {
-                                if (suppressNextClickRef.current) {
-                                    suppressNextClickRef.current = false;
-                                    return;
-                                }
-                                onClick && onClick(instance.id, instance.bCardId);
-                            }}
+
                         >
                             <div className={`bcard-body ${isFlipped ? 'flipped' : ''}`}>
                                 <BCardFace side="front" config={bCard.front} resolveImageUrl={resolveImageUrl} />
@@ -158,10 +205,10 @@ export function StageInteractable({
                         border: '2px dashed #f44',
                         boxSizing: 'border-box'
                     }}>
-                        Missing BCard
+                        Card unavailable
                     </div>
                 )}
-            </Rnd>
+            </Positioner>
         </div>
     );
 }

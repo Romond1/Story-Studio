@@ -1,0 +1,29 @@
+[
+  {
+    "episode": 3,
+    "primary": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 3\\STORY STUDIO\\ep3 raw\\project.json",
+    "variant": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 3\\STORY STUDIO\\test 3\\project.json",
+    "differingTopLevelKeys": [
+      "updatedAt"
+    ],
+    "aLibrariesEqual": true,
+    "bLibrariesEqual": true,
+    "boostEqual": true
+  },
+  {
+    "episode": 4,
+    "primary": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 4\\STORY STUDIO\\project.json",
+    "variant": "D:\\AI\\SET OUT\\TWIN STAR\\EPISODE 4\\test SS\\project.json",
+    "differingTopLevelKeys": [
+      "updatedAt",
+      "sections",
+      "boostPack",
+      "badgeConfig",
+      "slides",
+      "sparkStudents"
+    ],
+    "aLibrariesEqual": true,
+    "bLibrariesEqual": true,
+    "boostEqual": false
+  }
+]

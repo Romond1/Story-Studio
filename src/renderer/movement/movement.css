@@ -252,7 +252,7 @@
   overflow: hidden;
   background: radial-gradient(circle at center, rgba(255, 255, 255, calc(0.16 * var(--movement-overlay-opacity, 0.72))), rgba(0, 0, 0, calc(0.12 * var(--movement-overlay-opacity, 0.72))) 56%, transparent 72%);
   animation: movementFadeOut 360ms ease-in forwards;
-  animation-delay: calc(var(--movement-duration, 3s) - 360ms);
+  animation-delay: calc(var(--movement-duration, 3s) - 360ms - var(--movement-elapsed, 0ms));
 }
 
 .movement-overlay-card {
@@ -274,7 +274,7 @@
   margin-top: 12px;
   color: #eaf8ff;
   font-weight: 800;
-  font-size: clamp(1.6rem, 4vw, 3.4rem);
+  font-size: clamp(1.6rem, calc(4 * var(--movement-vw, 1vw)), 3.4rem);
   line-height: 1;
   text-shadow: 0 3px 18px rgba(0, 0, 0, 0.7);
 }
@@ -283,14 +283,14 @@
   margin-top: 8px;
   color: #fff4c7;
   font-weight: 800;
-  font-size: clamp(1.3rem, 3.5vw, 3rem);
+  font-size: clamp(1.3rem, calc(3.5 * var(--movement-vw, 1vw)), 3rem);
   line-height: 1.05;
   text-shadow: 0 3px 14px rgba(0, 0, 0, 0.72);
 }
 
 .movement-burst-rings {
   position: absolute;
-  width: min(76vw, 720px);
+  width: min(calc(76 * var(--movement-vw, 1vw)), 720px);
   aspect-ratio: 1;
   border-radius: 50%;
   background:
@@ -302,7 +302,7 @@
 }
 
 .movement-color-gem {
-  width: clamp(70px, 13vw, 150px);
+  width: clamp(70px, calc(13 * var(--movement-vw, 1vw)), 150px);
   aspect-ratio: 1;
   margin: 0 auto;
   border-radius: 22px;
@@ -312,8 +312,8 @@
 }
 
 .movement-gif-frame {
-  width: clamp(128px, 22vw, 260px);
-  height: clamp(128px, 22vw, 260px);
+  width: clamp(128px, calc(22 * var(--movement-vw, 1vw)), 260px);
+  height: clamp(128px, calc(22 * var(--movement-vw, 1vw)), 260px);
   margin: 0 auto;
   display: grid;
   place-items: center;
@@ -334,8 +334,8 @@
 .movement-runner,
 .movement-hero,
 .movement-body-icon {
-  width: clamp(96px, 16vw, 180px);
-  height: clamp(96px, 16vw, 180px);
+  width: clamp(96px, calc(16 * var(--movement-vw, 1vw)), 180px);
+  height: clamp(96px, calc(16 * var(--movement-vw, 1vw)), 180px);
   margin: 0 auto;
   display: grid;
   place-items: center;
@@ -401,4 +401,10 @@
 @keyframes movementGifFloat {
   from { transform: translateY(8px) scale(0.98); }
   to { transform: translateY(-10px) scale(1.04); }
+}
+
+/* Seek deterministic CSS visuals to Core event time; GIF decoders cannot seek. */
+.movement-overlay-card, .movement-burst-rings, .movement-color-gem,
+.movement-gif-frame, .movement-runner, .movement-hero, .movement-body-icon {
+  animation-delay: calc(-1 * var(--movement-elapsed, 0ms));
 }

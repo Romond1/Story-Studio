@@ -1,0 +1,26 @@
+.card-placement-inspector {display:flex;flex-direction:column;gap:10px;min-width:0;padding:12px;color:#dce7f7;background:#171d27;font-size:12px;box-sizing:border-box;}
+.card-placement-inspector p {margin:0;line-height:1.5;}
+.cpi-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.cpi-heading strong {font-size:13px;color:#c4d9fa;}
+.card-placement-inspector button {min-height:30px;font-size:12px;white-space:normal;}
+.cpi-field {display:flex!important;flex-direction:column;gap:4px;margin:0!important;min-width:0;color:#b9cbe3;}
+.cpi-field input:not([type=checkbox]):not([type=color]),.cpi-field select,.cpi-field textarea {width:100%;min-width:0;max-width:100%;box-sizing:border-box;border:1px solid #46546a;border-radius:5px;background:#101722;color:#e3edfc;padding:6px;font:inherit;}
+.cpi-field textarea {resize:vertical;min-height:80px;line-height:1.5;}
+.cpi-field input[type=color] {width:48px;height:30px;}
+.cpi-field select,.cpi-field input {min-height:30px;}
+.cpi-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.cpi-tabs,.cpi-actions {display:flex;flex-wrap:wrap;gap:5px;}
+.cpi-tabs button[aria-selected=true] {background:#35547a;border-color:#87b9fa;color:#fff;}
+.cpi-sharing,.cpi-notice {padding:9px;border:1px solid #516685;border-radius:6px;background:#1b293d;}
+.cpi-sharing button {margin-top:6px;}
+.cpi-muted {color:#a6b7ce;font-size:11px;}
+.cpi-section {border-top:1px solid #364354;padding-top:8px;}
+.cpi-section summary {cursor:pointer;color:#c4d9fa;font-size:12px;min-height:28px;}
+.cpi-section[open] {display:flex;flex-direction:column;gap:9px;}
+.cpi-check {display:flex;align-items:center;gap:6px;line-height:1.4;margin:0!important;}
+.cpi-preview {height:140px;display:flex;align-items:center;justify-content:center;padding:8px;background:#101722;border:1px solid #364354;border-radius:6px;}
+.cpi-preview .card-v2-scene {width:100%;height:100%;}
+.cpi-footer {padding-top:10px;border-top:1px solid #364354;}
+.cpi-remove {color:#ffb1b1;}
+.card-placement-inspector :is(button,input,select,textarea,summary):focus-visible {outline:2px solid #87b9fa;outline-offset:2px;}
+@media(max-width:400px) {.cpi-grid {grid-template-columns:minmax(0,1fr);}}

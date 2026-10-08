@@ -1,7 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.expectedAudioOutputFlow = expectedAudioOutputFlow;
 exports.deriveAudioEngineState = deriveAudioEngineState;
 exports.deriveAudioWarnings = deriveAudioWarnings;
+// Source meters are after source gain/mute. The monitor excludes the microphone
+// unless explicitly enabled, and does not follow the broadcast master gain.
+function expectedAudioOutputFlow(settings, source) {
+    return {
+        monitorExpected: settings.monitoringEnabled && !settings.muted.monitor && settings.volumes.monitor > 0
+            && (source.mediaFlowing || (settings.microphoneMonitorEnabled && source.microphoneFlowing)),
+        mixExpected: !settings.muted.mix && settings.volumes.mix > 0 && source.masterFlowing,
+    };
+}
 function deriveAudioEngineState(input) {
     if (input.reconnecting)
         return "reconnecting";
@@ -19,12 +29,9 @@ function deriveAudioWarnings(state) {
     if (state.selectedDevicesMissing.length > 0) {
         add("missing-device", "error", "Saved audio device is missing", `Reconnect or replace: ${state.selectedDevicesMissing.join(", ")}.`);
     }
-    if (state.masterFlowing && !state.mixFlowing) {
-        add("mix-output-silent", "error", "Master audio is present but Mix Output is silent", "Test or reconnect the Mix/Virtual Output route.");
-    }
-    if (state.masterFlowing && !state.monitorFlowing) {
-        add("monitor-output-silent", "warning", "Master audio is present but Monitor Output is silent", "Check monitor mute, monitoring state, and the selected device.");
-    }
+    // Signal detection is informational, not engine health. Independent analyser
+    // windows and gains can cross the silence threshold at different times; neither
+    // silence nor an upstream meter proves that a physical output has failed.
     if (state.activeMicrophoneStreams > 1) {
         add("duplicate-microphone-stream", "error", "Multiple microphone streams are active", "Restart the audio engine before teaching.");
     }

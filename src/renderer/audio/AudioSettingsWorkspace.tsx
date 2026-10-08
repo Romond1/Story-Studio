@@ -164,7 +164,7 @@ function DeviceSelect({
         <span>{selectedState?.sampleRate ? `${selectedState.sampleRate} Hz` : "Rate unavailable"}</span>
         <span>{selectedState?.channelCount ? `${selectedState.channelCount} ch` : "Channels unavailable"}</span>
         <span>{(active ?? selectedState?.active) ? "Stream active" : "Stream inactive"}</span>
-        <span>{(flowing ?? selectedState?.flowing) ? "Samples flowing" : "No samples detected"}</span>
+        <span title="Signal activity only. Silence during pauses or while muted is normal.">{(flowing ?? selectedState?.flowing) ? "Audio detected" : "No audio detected"}</span>
       </div>
     </div>
   );
@@ -352,19 +352,6 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
             </Section>
           </div>
 
-          {snapshot.warnings.length > 0 && (
-            <Section title="Warnings" className="audio-warnings-section">
-              <div className="audio-warning-list">
-                {snapshot.warnings.map((warning) => (
-                  <div key={warning.id} className={`audio-warning audio-warning--${warning.severity}`}>
-                    <strong>{warning.label}</strong>
-                    <span>{warning.detail}</span>
-                  </div>
-                ))}
-              </div>
-            </Section>
-          )}
-
           <Section title="Testing and recovery" description="Test one route at a time before opening Zoom.">
             <div className="audio-action-row">
               <button type="button" onClick={() => controller.testMicrophone()}>Test Microphone</button>
@@ -435,6 +422,18 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
               </dl>
             )}
           </section>
+
+          <Section title="Warnings" className="audio-warnings-section">
+            <div className="audio-warning-list" role="region" aria-label="Audio warnings">
+              {snapshot.warnings.length === 0 && <p>No audio warnings.</p>}
+              {snapshot.warnings.map((warning) => (
+                <div key={warning.id} className={`audio-warning audio-warning--${warning.severity}`}>
+                  <strong>{warning.label}</strong>
+                  <span>{warning.detail}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
         </div>
       </div>
     </div>

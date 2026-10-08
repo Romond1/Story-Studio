@@ -1,0 +1,29 @@
+
+> story-studio@1.0.0 build:renderer
+> vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 184 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/renderer/counter.html                             0.50 kB │ gzip:   0.30 kB
+dist/renderer/present.html                             0.62 kB │ gzip:   0.34 kB
+dist/renderer/index.html                               0.66 kB │ gzip:   0.33 kB
+dist/renderer/assets/jingle-CcsxfFlx.mp3             172.20 kB
+dist/renderer/assets/touch_head-Ci7XU97b.gif       1,266.23 kB
+dist/renderer/assets/touch_nose-CQwO4mh6.gif       1,464.79 kB
+dist/renderer/assets/touch_color-BvPzw3EM.gif      2,244.75 kB
+dist/renderer/assets/hero_pose_yuki-BGnRlw7m.gif   2,537.21 kB
+dist/renderer/assets/hero_pose_mia-B42ZlbNQ.gif    4,728.31 kB
+dist/renderer/assets/run-D4HmEjGJ.gif              5,376.55 kB
+dist/renderer/assets/present-CLK8TZyC.css              0.34 kB │ gzip:   0.25 kB
+dist/renderer/assets/counter-i7KkxKf4.css             11.89 kB │ gzip:   3.31 kB
+dist/renderer/assets/MovementOverlay-TEXx_xV-.css     50.83 kB │ gzip:  10.74 kB
+dist/renderer/assets/main-BXBwu7Qe.css                56.64 kB │ gzip:  12.06 kB
+dist/renderer/assets/counter-D322j8EM.js              12.87 kB │ gzip:   3.46 kB
+dist/renderer/assets/present-DGhYdvIn.js              14.81 kB │ gzip:   5.06 kB
+dist/renderer/assets/MovementOverlay-DltIMl1U.js     121.31 kB │ gzip:  38.39 kB
+dist/renderer/assets/client-Dvu4Firv.js              144.18 kB │ gzip:  46.25 kB
+dist/renderer/assets/main-gtMPVelz.js                440.41 kB │ gzip: 114.66 kB
+✓ built in 2.12s

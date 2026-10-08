@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { BCardInstance, BCardTeachState } from '../../shared/types';
+import { BCardLibrary, BCardInstance, BCardTeachState } from '../../shared/types';
 import { StageInteractable } from './StageInteractable';
 import './acard.css';
 
@@ -7,6 +7,8 @@ export type BCardOverlayClickAction = 'none' | 'flip' | 'blur' | 'cover' | 'zoom
 
 interface BCardInstanceLayerProps {
     instances: BCardInstance[];
+    cards?: BCardLibrary;
+    passive?: boolean;
     mode: 'edit' | 'teach';
     resolveImageUrl: (imageId: string) => string | null;
     selectedInstanceId?: string | null;
@@ -26,7 +28,7 @@ const DEFAULT_TEACH_STATE: BCardTeachState = {
 };
 
 export function BCardInstanceLayer({
-    instances,
+    instances, cards, passive = false,
     mode,
     resolveImageUrl,
     selectedInstanceId = null,
@@ -100,6 +102,8 @@ export function BCardInstanceLayer({
                     <StageInteractable
                         key={instance.id}
                         instance={instance}
+                        card={cards?.[instance.bCardId]}
+                        passive={passive}
                         teachState={getState(instance.id)}
                         resolveImageUrl={resolveImageUrl}
                         onClick={(instanceId) => {

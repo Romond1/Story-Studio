@@ -1,0 +1,49 @@
+.edit-topbar-hidden { display: none !important; }
+.teach-header { display:flex; align-items:center; gap:12px; padding:10px 14px; background:#171d27; border-bottom:1px solid #384354; min-width:0; flex-wrap:wrap; }
+.teach-header > span:first-of-type { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.teach-header strong { color:#c2ddff; }
+.teach-workspace.content { grid-template-columns:minmax(320px,var(--teach-preview)) 12px minmax(360px,var(--teach-controls)); grid-template-rows:minmax(0,1fr) 10px var(--teach-navigator-height,176px); overflow:hidden; }
+.teach-preview-off { display:contents; }
+.teach-preview-region { grid-column:1; grid-row:1; position:relative; min-width:0; min-height:0; background:#11151c; overflow:hidden; }
+.teach-preview-viewport { overflow:hidden; background:#08090c; }
+.teach-preview-viewport > .stage-wrap { position:absolute !important; inset:0; padding:0; display:block; overflow:hidden; }
+.teach-preview-viewport .stage-controls { display:none !important; }
+.teach-preview-viewport .stage { position:absolute; inset:0; border:0; border-radius:0; }
+.teach-workspace > .sidebar, .teach-workspace > .audio-sidebar { display:none; }
+.teach-workspace.teach-secondary-open > .sidebar.teach-secondary-eligible { display:block; position:absolute; z-index:40000; top:10px; bottom:calc(var(--teach-navigator-height,176px) + 20px); right:14px; width:min(440px,48%); background:#171d27; border:1px solid #647994; box-shadow:0 10px 30px #000a; padding-top:44px; }
+.teach-divider { grid-column:2; grid-row:1; background:#263343; cursor:col-resize; touch-action:none; position:relative; }
+.teach-divider::after { content:''; position:absolute; width:3px; height:42px; border-radius:4px; background:#8fa8c7; left:4px; top:calc(50% - 21px); }
+.teach-divider:hover,.teach-divider:focus-visible { background:#4a6d97; outline:2px solid #9acbff; outline-offset:-2px; }
+.teach-control-region { grid-column:3; grid-row:1; overflow:auto; min-width:0; padding:14px; background:#121720; display:flex; flex-direction:column; gap:12px; }
+.teach-control-card { border:1px solid #364354; background:#1b2330; border-radius:8px; padding:12px; min-width:0; }
+.teach-control-card h3 { font-size:14px; margin:0 0 10px; color:#d6e6fa; }
+.teach-context { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; overflow-wrap:anywhere; }
+.teach-context span,.teach-spatial-tools p { color:#adbed3; font-size:12px; }
+.teach-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.teach-actions button[aria-pressed=true] { background:#35547a; border-color:#87b9fa; }
+.teach-control-region button { min-height:32px; }
+.teach-spatial-tools { position:relative; z-index:2; }
+.teach-spatial-tools .draw-panel { position:static !important; width:100% !important; margin-top:10px; box-sizing:border-box; }
+.teach-board-tools:empty { display:none; }
+.teach-control-card .media-transport { flex-wrap:wrap; }
+.teach-workspace > .teach-navigator { grid-column:1 / -1; grid-row:3; min-width:0; }
+@media(max-width:900px) {
+ .teach-workspace.content { grid-template-columns:minmax(280px,var(--teach-preview)) 10px minmax(300px,var(--teach-controls)); grid-template-rows:minmax(0,1fr) 10px var(--teach-navigator-height,176px); }
+ .teach-control-region { padding:9px; }
+ .teach-header { gap:7px; padding:7px; font-size:12px; }
+}
+@media(max-width:620px) {
+ .teach-workspace.content { overflow:auto; grid-template-columns:minmax(280px,1fr); grid-template-rows:320px auto 10px var(--teach-navigator-height,176px); }
+ .teach-preview-region { grid-column:1;grid-row:1; }
+ .teach-divider { display:none; }
+ .teach-control-region { grid-column:1;grid-row:2;overflow:visible; }
+ .teach-workspace > .teach-navigator {grid-column:1;grid-row:4;}
+}
+.teach-secondary-close { position:absolute; right:26px; top:17px; z-index:40001; }
+
+.teach-navigator-divider { grid-column:1 / -1; grid-row:2; position:relative; background:#263343; cursor:row-resize; touch-action:none; }
+.teach-navigator-divider::after { content:''; position:absolute; height:3px; width:48px; top:3px; left:calc(50% - 24px); background:#8fa8c7; border-radius:4px; }
+.teach-navigator-divider:hover,.teach-navigator-divider:focus-visible { background:#4a6d97; outline:2px solid #9acbff; outline-offset:-2px; }
+@media(max-width:620px) { .teach-navigator-divider { grid-row:3; } }
+
+

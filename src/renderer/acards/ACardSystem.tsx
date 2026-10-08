@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ACardStageRenderer } from './ACardStageRenderer';
-import { TeachStateProvider, useTeachState } from './TeachStateProvider';
+import type { CardBinding } from '../useCardRuntime';
+import { emptyCardState } from '../../shared/cardRuntime';
 import { TeachActionToolbar } from './TeachActionToolbar';
 import { ACardEditor } from './ACardEditor';
 import { useCardSystem } from '../store/CardStore';
@@ -9,6 +10,7 @@ import { AssetItem, BCardInstance } from '../../shared/types';
 
 interface ACardSystemProps {
     aCardId: string;
+    runtime: CardBinding;
     mode: 'teach' | 'edit';
     resolveImageUrl: (imageId: string) => string | null;
     assets?: AssetItem[];
@@ -20,18 +22,21 @@ interface ShuffleConfig {
     acceleration: number;
 }
 
-function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHost }: ACardSystemProps) {
+export function ACardSystem({ aCardId, mode, resolveImageUrl, assets, teachPanelHost, runtime }: ACardSystemProps) {
     const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
     const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
     const [shuffleConfig, setShuffleConfig] = useState<ShuffleConfig>({ durationMs: 900, acceleration: 0.3 });
     const [clickAction, setClickAction] = useState<'none' | 'flip' | 'blur' | 'cover' | 'zoom'>('flip');
-    const [movementAnimation, setMovementAnimation] = useState<{ durationMs: number; easing: string; key: number } | null>(null);
-    const { states, toggleState, resetState } = useTeachState();
+
+    const states = runtime.state.states;
+    const toggleState = runtime.toggle;
+    const resetState = (id: string) => runtime.setState(id, emptyCardState());
     const { aCardLibrary, updateACard } = useCardSystem();
     const aCard = aCardLibrary[aCardId];
 
     const updateInstance = (instanceId: string, updates: Partial<BCardInstance>) => {
         if (!aCard) return;
+        if (mode === 'teach') { runtime.move(instanceId, updates); return; }
         updateACard({
             ...aCard,
             bCardInstances: aCard.bCardInstances.map((inst) =>
@@ -61,59 +66,10 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
         setSelectedInstanceId(instanceId);
     };
 
-    const buildNonOverlappingPositions = (instances: BCardInstance[]) => {
-        if (stageSize.w <= 0 || stageSize.h <= 0) return null;
-        const placed: { id: string; x: number; y: number; width: number; height: number }[] = [];
-        const margin = 8;
-        const sorted = [...instances].sort((a, b) => (b.size.width * b.size.height) - (a.size.width * a.size.height));
-        const result = new Map<string, { x: number; y: number }>();
-
-        const overlaps = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) =>
-            !(a.x + a.width + margin < b.x || b.x + b.width + margin < a.x || a.y + a.height + margin < b.y || b.y + b.height + margin < a.y);
-
-        for (const inst of sorted) {
-            let found = false;
-            const maxX = Math.max(0, stageSize.w - inst.size.width);
-            const maxY = Math.max(0, stageSize.h - inst.size.height);
-
-            for (let i = 0; i < 350; i++) {
-                const x = Math.random() * maxX;
-                const y = Math.random() * maxY;
-                const rect = { id: inst.id, x, y, width: inst.size.width, height: inst.size.height };
-                if (!placed.some(p => overlaps(rect, p))) {
-                    placed.push(rect);
-                    result.set(inst.id, {
-                        x: ((x + inst.size.width / 2) / stageSize.w) * 100,
-                        y: ((y + inst.size.height / 2) / stageSize.h) * 100,
-                    });
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                result.set(inst.id, inst.position);
-            }
-        }
-        return result;
-    };
-
     const handleShuffle = () => {
-        if (!aCard || aCard.bCardInstances.length < 2) return;
-        const nextPositions = buildNonOverlappingPositions(aCard.bCardInstances);
-        if (!nextPositions) return;
-
-        const nextInstances = aCard.bCardInstances.map(inst => ({
-            ...inst,
-            position: nextPositions.get(inst.id) || inst.position,
-        }));
-
-        setMovementAnimation({
-            durationMs: shuffleConfig.durationMs,
-            easing: getEasingFromAcceleration(shuffleConfig.acceleration),
-            key: Date.now(),
-        });
-        updateACard({ ...aCard, bCardInstances: nextInstances });
+        if (!aCard || stageSize.w <= 0 || stageSize.h <= 0) return;
+        runtime.shuffle({ width: stageSize.w, height: stageSize.h }, { durationMs: shuffleConfig.durationMs, easing: getEasingFromAcceleration(shuffleConfig.acceleration), key: Date.now(), startedAt: Date.now() });
+        if (mode === "edit") updateACard({ ...aCard, bCardInstances: runtime.state.instances });
     };
 
     const bCardToolsContent = useMemo(() => {
@@ -153,13 +109,15 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
             >
                 <ACardStageRenderer
                     aCardId={aCardId}
+                    card={aCard && mode === 'teach' ? { ...aCard, bCardInstances: runtime.state.instances } : aCard}
+                    startedAt={runtime.state.startedAt}
                     teachStates={states}
                     resolveImageUrl={resolveImageUrl}
                     onInstanceClick={(instanceId) => handleInstanceClick(instanceId)}
                     selectedInstanceId={selectedInstanceId}
                     mode={mode}
                     onStageSizeChange={setStageSize}
-                    movementAnimation={movementAnimation}
+                    movementAnimation={runtime.state.movement}
                     onInstanceChange={updateInstance}
                 />
             </div>
@@ -186,14 +144,5 @@ function ACardSystemInner({ aCardId, mode, resolveImageUrl, assets, teachPanelHo
 
             {mode === 'teach' && teachPanelHost && bCardToolsContent && createPortal(bCardToolsContent, teachPanelHost)}
         </div>
-    );
-}
-
-// Wrapper injects the volatile TeachState context
-export function ACardSystem(props: ACardSystemProps) {
-    return (
-        <TeachStateProvider>
-            <ACardSystemInner {...props} />
-        </TeachStateProvider>
     );
 }

@@ -1,0 +1,24 @@
+{
+  "errors": [],
+  "overflow": false,
+  "timelineItems": 17,
+  "geometry": {
+    "x": 0,
+    "y": 178.015625,
+    "width": 856.796875,
+    "height": 481.9375
+  },
+  "savedTags": [
+    "workspace-test"
+  ],
+  "transition": "crossfade",
+  "bubbles": 1,
+  "trim": {
+    "inSec": 1.517441688153878,
+    "outSec": 10
+  },
+  "breakDrag": {
+    "dx": 60,
+    "dy": 30
+  }
+}

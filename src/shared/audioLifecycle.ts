@@ -10,6 +10,7 @@ export interface RouteHandle {
 export class AudioRouteCoordinator {
   private generation = 0;
   private routes = new Map<AudioOutputRoute, RouteHandle>();
+  private requests = new Map<AudioOutputRoute, object>();
 
   get(route: AudioOutputRoute): RouteHandle | undefined {
     return this.routes.get(route);
@@ -20,6 +21,7 @@ export class AudioRouteCoordinator {
   }
 
   remove(route: AudioOutputRoute): void {
+    this.requests.delete(route);
     const current = this.routes.get(route);
     if (!current) return;
     this.routes.delete(route);
@@ -29,26 +31,30 @@ export class AudioRouteCoordinator {
   async replace(
     route: AudioOutputRoute,
     create: () => Promise<RouteHandle>,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const generation = this.generation;
-    const previous = this.routes.get(route);
+    const request = {};
+    this.requests.set(route, request);
     const candidate = await create();
 
-    if (generation !== this.generation) {
+    if (generation !== this.generation || this.requests.get(route) !== request) {
       candidate.dispose();
-      return;
+      return false;
     }
     if (!candidate.active) {
       candidate.dispose();
       throw new Error(`${route} route did not become active`);
     }
 
+    const previous = this.routes.get(route);
     this.routes.set(route, candidate);
     previous?.dispose();
+    return true;
   }
 
   restart(): void {
     this.generation += 1;
+    this.requests.clear();
     this.routes.forEach((route) => route.dispose());
     this.routes.clear();
   }

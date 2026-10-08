@@ -82,3 +82,26 @@ test("removing a colliding route disposes it exactly once", () => {
   assert.equal(coordinator.get("monitor"), undefined);
   assert.equal(monitorRoute.disposeCalls, 1);
 });
+
+test('overlapping changes cannot orphan an output sink', async () => {
+  const coordinator = new AudioRouteCoordinator();
+  const old = handle('old'); const first = handle('first'); const last = handle('last');
+  coordinator.seed('mix', old);
+  let finishFirst!: (route: RouteHandle) => void;
+  const pending = coordinator.replace('mix', () => new Promise(resolve => { finishFirst = resolve; }));
+  await coordinator.replace('mix', async () => last);
+  finishFirst(first); await pending;
+  assert.equal(coordinator.get('mix'), last);
+  assert.equal(first.disposeCalls, 1);
+  assert.equal(old.disposeCalls, 1);
+  coordinator.restart();
+  assert.equal(last.disposeCalls, 1);
+});
+
+test('removing a route also cancels its pending replacement', async () => {
+  const coordinator = new AudioRouteCoordinator(); const candidate = handle('candidate');
+  const pending = coordinator.replace('mix', async () => candidate);
+  coordinator.remove('mix'); await pending;
+  assert.equal(coordinator.get('mix'), undefined);
+  assert.equal(candidate.disposeCalls, 1);
+});

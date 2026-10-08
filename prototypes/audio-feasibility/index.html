@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Story Studio — Audio feasibility</title>
+<style>
+:root{color-scheme:dark;--bg:#141820;--panel:#202733;--text:#eef2f8;--muted:#bac7da;--line:#65758d;--accent:#b6d8ff}
+*{box-sizing:border-box}body{font:16px/1.5 system-ui;margin:0;background:var(--bg);color:var(--text)}main{max-width:960px;margin:auto;padding:24px}h1{font-size:24px}h2{font-size:18px;margin-top:0}p{color:var(--muted)}section{padding:20px;margin:16px 0;background:var(--panel);border:1px solid var(--line);border-radius:8px}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}label{display:grid;gap:6px;flex:1;min-width:200px}button,select,input{font:inherit;max-width:100%;padding:9px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--text)}button{cursor:pointer}button:hover{border-color:var(--accent)}button:disabled{opacity:.55;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent)}.stop{background:#602c35}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}output{display:block;min-height:24px;color:var(--accent)}.clip{margin-top:14px}.clip label{min-width:0;width:100%}@media(max-width:500px){main{padding:12px}section{padding:14px}.row>*{width:100%}}
+</style></head><body><main>
+<h1>Audio feasibility · Phase 1A</h1>
+<p>Isolated test of Web Audio → stream destination → audio element → Windows playback endpoint. Nothing is saved or sent over the network. Choose your virtual playback endpoint before starting.</p>
+<section><h2>1. Choose devices</h2><div class="row">
+<label>Playback endpoint<select id="output"><option value="">System default (not virtual-device proof)</option></select></label>
+<label>Physical microphone<select id="mic"><option value="">System default</option></select></label>
+<button id="devices">Allow device labels / refresh</button></div>
+<p>Device labels may require microphone permission. Select a physical microphone as input, not the cable’s capture endpoint, to avoid a feedback loop.</p>
+<div class="row"><button id="start">Start route</button><button id="stop" class="stop">Stop all / release microphone</button></div></section>
+<section><h2>2. Add sources</h2><div class="row"><button data-source id="startMic">Start microphone</button><button id="stopMic">Stop microphone</button><button data-source id="tone">Start 440 Hz tone</button><button id="stopTone">Stop tone</button></div>
+<div id="clips"></div><p>Music loops; dialogue and SFX play once. These sources mix simultaneously. Audio extracted from a video can test the video-equivalent signal without moving production video ownership.</p></section>
+<section><h2>3. Observe this producer</h2><output id="message" role="status">Ready. No microphone is active.</output><pre id="diagnostics"></pre><p>Levels measure this browser’s graph only. Confirm reception separately in a recorder or conferencing application using the paired capture device. After Stop, verify silence there. A producer crash must be tested separately.</p></section>
+</main><script type="module" src="./ui.mjs"></script></body></html>
