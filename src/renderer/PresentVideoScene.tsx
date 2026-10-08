@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { PresentApi, PresentEnvelope, PresentTarget } from '../shared/presentationSnapshot';
-import { localPreviewVideoSdp, localLessonAudioSdp, type MediaPlaybackStatus } from '../shared/presentationMedia';
+import { localPreviewVideoSdp, localLessonAudioSdp, type MediaPlaybackStatus, type MediaIntent } from '../shared/presentationMedia';
 import { clampVideoTimeToTrim, getEffectiveVideoTrim, shouldStopAtTrimOut } from '../shared/videoTrim';
 import { LocalMediaPeer } from './presentationMediaBridge';
 import { LogicalSceneFrame, PassiveOverlays, PassiveDrawings, overlayGraphic } from './StaticScene';
@@ -9,34 +9,18 @@ import { PassiveActivities } from './ActivityScene';
 import { TransitionLayers } from './TransitionLayers';
 
 /** Source-only graph: this renderer has no audible destination or mixer. */
-export function PresentVideoScene({ envelope, target, api }: { envelope: PresentEnvelope; target: Extract<PresentTarget, { kind: 'video' }>; api: PresentApi }) {
+export function PresentVideoSource({ envelope, target, api, readiness = 'ready' }: { envelope: PresentEnvelope; target: { src: string; media: MediaIntent }; api: PresentApi; readiness?: 'loading' | 'ready' | 'error' }) {
   const video = useRef<HTMLVideoElement>(null);
   const live = useRef({ envelope, target }); live.current = { envelope, target };
   const graph = useRef<{ context: AudioContext; source: MediaElementAudioSourceNode; stream: MediaStreamAudioDestinationNode }>();
   const link = useRef<LocalMediaPeer>();
   const receiverReady = useRef(false), metadata = useRef(false);
   const [failed, setFailed] = useState(false);
-  const [, redraw] = useState(0);
-  const assets = [...new Set([
-    ...(target.scene?.overlays ?? []).map(overlayGraphic).filter((src): src is string => !!src),
-    ...Object.values(target.activity?.images ?? {}), ...(target.activity?.break?.thumbnails.map(t => t.src) ?? []),
-    ...(target.activity?.break?.background?.match(/^url\(['"]?(media:\/\/.*?)['"]?\)$/)?.[1] ? [target.activity.break.background.match(/^url\(['"]?(media:\/\/.*?)['"]?\)$/)![1]] : []),
-  ])];
-  const assetKey = JSON.stringify(assets);
-  const readiness = useRef({ key: assetKey, state: new SceneReadiness(assets) });
-  if (readiness.current.key !== assetKey) readiness.current = { key: assetKey, state: new SceneReadiness(assets) };
+  const readinessRef = useRef(readiness); readinessRef.current = readiness;
   const reportReadiness = () => {
-    if (!metadata.current || !receiverReady.current || !video.current || video.current.readyState < 2 || video.current.seeking || live.current.target.media.rendererGeneration !== live.current.envelope.rendererGeneration || readiness.current.state.state === 'loading') return;
-    api.reportApplied(live.current.envelope.generation, live.current.envelope.sequence, failed || readiness.current.state.state === 'error');
+    if (!metadata.current || !receiverReady.current || !video.current || video.current.readyState < 2 || video.current.seeking || live.current.target.media.rendererGeneration !== live.current.envelope.rendererGeneration || readinessRef.current === 'loading') return;
+    api.reportApplied(live.current.envelope.generation, live.current.envelope.sequence, failed || readinessRef.current === 'error');
   };
-  useEffect(() => {
-    const owner = readiness.current;
-    const images = assets.map(src => { const image = new Image();
-      const settle = (error: boolean) => { if (readiness.current !== owner) return; owner.state.settle(src, error); redraw(n => n + 1); reportReadiness(); };
-      image.onload = () => settle(false); image.onerror = () => settle(true); image.src = src; return image;
-    });
-    return () => { images.forEach(image => { image.onload = null; image.onerror = null; }); };
-  }, [assetKey]);
   const status = (state: MediaPlaybackStatus['state'], message?: string) => {
     const media = live.current.target.media; const element = video.current;
     if (!element || media.rendererGeneration !== live.current.envelope.rendererGeneration) return;
@@ -132,18 +116,40 @@ export function PresentVideoScene({ envelope, target, api }: { envelope: Present
   }, []);
   useEffect(() => {
     reportReadiness();
-  }, [envelope, failed]);
-  const scene = target.scene;
-  return <LogicalSceneFrame frame={scene?.frame ?? { width: 1280, height: 720 }}>
-    <TransitionLayers event={envelope.snapshot?.transition} heightFraction={scene?.imageHeightFraction ?? 1}>
-      <div style={{ position: 'absolute', inset: 0, transformOrigin: '0 0', transform: `translate(${scene?.viewport?.pan.x ?? 0}px, ${scene?.viewport?.pan.y ?? 0}px) scale(${scene?.viewport?.zoom ?? 1})` }}>
-        <video ref={video} src={target.src} playsInline preload="auto" style={{ position: 'absolute', inset: 0, display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
+  }, [envelope, failed, readiness]);
+  return <><video ref={video} src={target.src} playsInline preload="auto" style={{ position: 'absolute', inset: 0, display: 'block', width: '100%', height: '100%', objectFit: 'contain' }}
           onLoadedMetadata={() => { metadata.current = true; status('loading'); reportReadiness(); void apply(); }}
           onLoadedData={reportReadiness} onSeeked={reportReadiness}
           onPlay={() => status('playing')} onPause={() => status('paused')} onEnded={() => status('ended')}
           onError={() => { setFailed(true); reportError('This video could not be played.'); }} />
-        {failed && <p>This video could not be played.</p>}
-        <PassiveOverlays overlays={scene?.overlays ?? []} onGraphicError={src => { readiness.current.state.settle(src, true); redraw(n => n + 1); reportReadiness(); }} />
+        {failed && <p>This video could not be played.</p>}</>;
+}
+
+/** Legacy composition uses the same decoder leaf as the new scene renderer. */
+export function PresentVideoScene({ envelope, target, api }: { envelope: PresentEnvelope; target: Extract<PresentTarget, { kind: 'video' }>; api: PresentApi }) {
+  const [, redraw] = useState(0);
+  const assets = [...new Set([
+    ...(target.scene?.overlays ?? []).map(overlayGraphic).filter((src): src is string => !!src),
+    ...Object.values(target.activity?.images ?? {}), ...(target.activity?.break?.thumbnails.map(t => t.src) ?? []),
+    ...(target.activity?.break?.background?.match(/^url\(['"]?(media:\/\/.*?)['"]?\)$/)?.[1] ? [target.activity.break.background.match(/^url\(['"]?(media:\/\/.*?)['"]?\)$/)![1]] : []),
+  ])];
+  const assetKey = JSON.stringify(assets);
+  const readiness = useRef({ key: assetKey, state: new SceneReadiness(assets) });
+  if (readiness.current.key !== assetKey) readiness.current = { key: assetKey, state: new SceneReadiness(assets) };
+  useEffect(() => {
+    const owner = readiness.current;
+    const images = assets.map(src => { const image = new Image();
+      const settle = (error: boolean) => { if (readiness.current !== owner) return; owner.state.settle(src, error); redraw(n => n + 1); };
+      image.onload = () => settle(false); image.onerror = () => settle(true); image.src = src; return image;
+    });
+    return () => { images.forEach(image => { image.onload = null; image.onerror = null; }); };
+  }, [assetKey]);
+  const scene = target.scene;
+  return <LogicalSceneFrame frame={scene?.frame ?? { width: 1280, height: 720 }}>
+    <TransitionLayers event={envelope.snapshot?.transition} heightFraction={scene?.imageHeightFraction ?? 1}>
+      <div style={{ position: 'absolute', inset: 0, transformOrigin: '0 0', transform: `translate(${scene?.viewport?.pan.x ?? 0}px, ${scene?.viewport?.pan.y ?? 0}px) scale(${scene?.viewport?.zoom ?? 1})` }}>
+        <PresentVideoSource envelope={envelope} target={target} api={api} readiness={readiness.current.state.state} />
+        <PassiveOverlays overlays={scene?.overlays ?? []} onGraphicError={src => { readiness.current.state.settle(src, true); redraw(n => n + 1); }} />
       </div>
     </TransitionLayers>
     {target.activity && <PassiveActivities scene={target.activity} />}

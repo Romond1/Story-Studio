@@ -8,8 +8,10 @@ import type { StaticScene } from './staticScene';
 import type { OverlayItem } from './types';
 import { resolveImageAdjustments } from './imageAdjustments';
 import { parseCardV2RenderPlan, type CardV2RenderPlan } from './cardV2Render';
+import { parseScenePlan, type ScenePlan } from './lesson/projection';
 /** Student-safe projection only. Control remains the sole lesson authority. */
 export type PresentTarget =
+  | { kind: 'scene'; occurrenceId: string; plan: ScenePlan; media?: MediaIntent }
   | { kind: 'cards-v2'; occurrenceId: string; plan: CardV2RenderPlan }
   | { kind: 'prompt'; occurrenceId: string; title: string; body: string; scene: StaticScene; activity: ActivityScene }
   | { kind: 'video'; occurrenceId: string; src: string; scene?: StaticScene; activity?: ActivityScene; media: MediaIntent }
@@ -42,6 +44,12 @@ export function parsePresentSnapshot(value: unknown): PresentSnapshot | null {
   if (cardsV2 === null) return null;
   const target = value.target;
   if (!id(target.occurrenceId)) return null;
+  if (target.kind === 'scene') {
+    const plan = parseScenePlan(target.plan);
+    const media = target.media === undefined ? undefined : parseMediaIntent(target.media);
+    if (!plan || media === null || (plan.background.mediaType === 'video' && !media) || (media && plan.background.mediaType !== 'video')) return null;
+    return { sessionId: value.sessionId, revision: value.revision, target: { kind: 'scene', occurrenceId: target.occurrenceId, plan, ...(media ? { media } : {}) } };
+  }
   if (target.kind === 'cards-v2') {
     const plan = parseCardV2RenderPlan(target.plan);
     return plan ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'cards-v2', occurrenceId: target.occurrenceId, plan }, ...(movement ? { movement } : {}), ...(rewards ? { rewards } : {}) } : null;

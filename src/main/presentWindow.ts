@@ -68,9 +68,10 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
     if (!fromControl && !authorized(event, present)) return;
     const packet = parseMediaPacket(value);
     const target = relay.envelope.snapshot?.target;
-    if (!mediaRuntime.available || !packet || target?.kind !== 'video' || !packetMatches(packet, target.media, mediaRuntime.generation)) return;
+    const media = target?.kind === 'video' || target?.kind === 'scene' ? target.media : undefined;
+    if (!mediaRuntime.available || !packet || !media || !packetMatches(packet, media, mediaRuntime.generation)) return;
     if (fromControl ? !['answer','ice','receiver-ready'].includes(packet.type) : !['offer','ice','status'].includes(packet.type)) return;
-    if (packet.status && packet.status.epoch !== target.media.epoch) return;
+    if (packet.status && packet.status.epoch !== media.epoch) return;
     const destination = fromControl ? present : getControl();
     if (destination && !destination.isDestroyed() && !destination.webContents.isDestroyed()) destination.webContents.send('present:media-signal', packet);
   });
@@ -134,7 +135,8 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
     if (!authorized(event, present)) return;
     if (generation !== relay.envelope.generation || sequence !== relay.envelope.sequence) return;
     const mediaTarget = relay.envelope.snapshot?.target;
-    if (mediaTarget?.kind === 'video' && mediaTarget.media.rendererGeneration !== mediaRuntime.generation) return;
+    const activeMedia = mediaTarget?.kind === 'video' || mediaTarget?.kind === 'scene' ? mediaTarget.media : undefined;
+    if (activeMedia && activeMedia.rendererGeneration !== mediaRuntime.generation) return;
     status = { ...status, detail: error === true ? (typeof detail === 'string' ? detail.slice(0, 2048) : 'Some lesson content could not be displayed.') : undefined };
     reportStatus(error === true ? 'error' : 'ready');
     // Readiness only: never a lesson command or revision mutation.

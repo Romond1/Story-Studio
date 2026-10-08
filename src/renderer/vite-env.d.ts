@@ -4,9 +4,17 @@ import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterS
 import type { AudioSettingsV1 } from '../shared/audioSettings';
 import type { PresentSnapshot } from '../shared/presentationSnapshot';
 import type { PresentStatus } from '../shared/presentStatus';
+import type { LessonProject, LessonProjectState } from '../shared/lesson/model';
 
 declare global {
   interface Window {
+    lessonApi: {
+      createProject: () => Promise<LessonProjectState | null>;
+      openProject: () => Promise<LessonProjectState | null>;
+      openProjectByPath: (folderPath: string) => Promise<LessonProjectState | null>;
+      activateProject: (token: string) => void;
+      saveProject: (data: LessonProject, mode: 'save' | 'saveAs', expectedFolder: string) => Promise<{ lastSavedAt: string; folderPath: string } | null>;
+    };
     appApi: {
       getPresentMediaRuntime: () => Promise<import('../shared/presentationMedia').MediaRuntime>;
       onPresentMediaRuntime: (callback: (runtime: import('../shared/presentationMedia').MediaRuntime) => void) => () => void;

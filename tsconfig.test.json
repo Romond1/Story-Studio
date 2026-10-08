@@ -13,6 +13,18 @@
     "types": ["node"]
   },
   "include": [
+    "src/shared/lessonCapacity.test.ts",
+    "src/shared/lessonRewardControls.test.ts",
+    "src/shared/lessonRewards.test.ts",
+    "src/shared/lessonCardSets.test.ts",
+    "src/shared/lessonAudio.test.ts",
+    "src/shared/lessonLifecycle.test.ts",
+    "src/shared/lessonSession.test.ts",
+    "src/shared/lessonDomain.test.ts",
+    "src/shared/lessonProjection.test.ts",
+    "src/shared/lesson/lesson.test.ts",
+    "src/shared/lessonPersistence.test.ts",
+    "src/shared/lessonValidation.test.ts",
     "src/shared/cardAuthoring.test.ts",
     "src/shared/editSelection.test.ts",
     "src/shared/editAudioIsolation.test.ts",

@@ -1,0 +1,50 @@
+import type { AssetItem, MediaBin, MarkerStroke } from '../types';
+import type { CardDefinition, CardGeometry, CardSet } from '../cardsV2';
+import type { SceneViewport } from '../teachingScene';
+
+export type SequenceKind = 'story' | 'activation';
+export type Rect = CardGeometry;
+export interface SceneEntry { id: string; sceneId: string; section: string }
+export interface SceneBackground { color: string; assetId?: string }
+interface ObjectBase { id: string; box: Rect; visible: boolean }
+export interface SceneCard extends ObjectBase {
+  kind: 'card'; cardId: string; initialFaceId: string; initiallyConcealed: boolean;
+  interaction: 'cycle' | 'reveal' | 'manual';
+}
+export interface SceneText extends ObjectBase {
+  kind: 'text' | 'bubble'; text: string; fontSize: number; color: string;
+  bubbleDefId?: string; align: 'left' | 'center' | 'right';
+}
+export interface SceneImage extends ObjectBase { kind: 'image'; assetId: string }
+export type SceneObject = SceneCard | SceneText | SceneImage;
+export interface SceneAudio { id: string; assetId: string; volume: number; loop: boolean; autoplay: boolean }
+export interface LessonScene {
+  id: string; title: string; frame: { width: number; height: number };
+  background: SceneBackground; objects: SceneObject[]; drawings: MarkerStroke[];
+  audio: SceneAudio[]; transition: { kind: 'none' | 'fade'; durationMs: number };
+  viewport: SceneViewport; notes: string;
+}
+export interface LessonProject {
+  format: 'story-studio-scene'; version: 1; id: string; title: string;
+  createdAt: string; updatedAt: string; assets: AssetItem[]; mediaBins: MediaBin[];
+  scenes: Record<string, LessonScene>; sequences: Record<SequenceKind, SceneEntry[]>;
+  cards: Record<string, CardDefinition>; library: string[]; cardSets: CardSet[];
+}
+export interface LessonProjectState { data: LessonProject; folderPath: string; lastSavedAt: string; activationToken: string }
+export interface LessonLocation { sequence: SequenceKind; entryId: string }
+export interface EditorSelection { sequence: SequenceKind; entryId: string | null; objectId: string | null }
+export interface CardLiveState { faceId: string; concealed: boolean; box?: Rect }
+export interface LessonSession {
+  id: string; revision: number; visit: number; cursor: LessonLocation | null;
+  storyReturn: LessonLocation | null; cards: Record<string, CardLiveState>;
+  drawings: MarkerStroke[]; viewport: SceneViewport;
+  /** Teaching-only scores and visuals; never part of a saved lesson document. */
+  rewards?: import('./rewards').LessonRewardState;
+}
+export const makeId = () => globalThis.crypto.randomUUID();
+export const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+export function sceneAt(project: LessonProject, location: LessonLocation | EditorSelection | null): LessonScene | undefined {
+  if (!location?.entryId) return undefined;
+  const entry = project.sequences[location.sequence].find(item => item.id === location.entryId);
+  return entry && project.scenes[entry.sceneId];
+}

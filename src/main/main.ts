@@ -32,6 +32,8 @@ import { normalizeSparkStudents } from '../shared/sparkRewards';
 import { installPresentWindow } from './presentWindow';
 import { LegacyCardPersistence } from './legacyCardPersistence';
 import { assertCardsV2 } from '../shared/cardsV2';
+import { installLessonPersistence } from './lessonPersistence';
+import type { LessonProject, LessonProjectState } from '../shared/lesson/model';
 
 const PROJECT_FILENAME = 'project.json';
 const TEMP_PROJECT_FILENAME = 'project.tmp.json';
@@ -54,7 +56,9 @@ protocol.registerSchemesAsPrivileged([
 let mainWindow: BrowserWindow | null = null;
 let creatingMainWindow = false;
 let currentProjectFolder: string | null = null;
-let pendingProject: { token: string; folderPath: string; cards: LegacyCardPersistence } | null = null;
+let activeProjectFormat: 'legacy' | 'lesson' | null = null;
+let activeLessonId: string | null = null;
+let pendingProject: { token: string; folderPath: string; format: 'legacy' | 'lesson'; id?: string; cards?: LegacyCardPersistence } | null = null;
 const loadedCardBaselines = new WeakMap<ProjectState, LegacyCardPersistence>();
 let activeCardPersistence: LegacyCardPersistence | null = null;
 let projectWriteInProgress = false;
@@ -75,7 +79,7 @@ function handleProjectImport(channel: string, handler: Parameters<typeof ipcMain
 function prepareProject(project: ProjectState): ProjectState {
   const activationToken = randomUUID();
   pendingProject = {
-    token: activationToken, folderPath: project.folderPath,
+    token: activationToken, folderPath: project.folderPath, format: 'legacy',
     cards: loadedCardBaselines.get(project) || new LegacyCardPersistence(project.data, project.data),
   };
   return { ...project, activationToken };
@@ -83,24 +87,34 @@ function prepareProject(project: ProjectState): ProjectState {
 
 // In-memory commit only: synchronous acknowledgement lets the renderer commit its
 // prepared document in the same turn, without an asynchronous edit/switch gap.
-ipcMain.on('project:activate', (event, token: unknown) => {
+function activateProjectCandidate(token: unknown, format: 'legacy' | 'lesson'): string | null {
   if (projectImportsInProgress) {
-    event.returnValue = 'Project is importing assets. Please wait and open again.';
-    return;
+    return 'Project is importing assets. Please wait and open again.';
   }
   if (projectWriteInProgress) {
-    event.returnValue = 'Project is saving. Please wait and try again.';
-    return;
+    return 'Project is saving. Please wait and try again.';
   }
-  if (!pendingProject || pendingProject.token !== token) {
-    event.returnValue = 'Project candidate expired. Please open the project again.';
-    return;
+  if (!pendingProject || pendingProject.token !== token || pendingProject.format !== format) {
+    return 'Project candidate expired. Please open the project again.';
   }
   currentProjectFolder = pendingProject.folderPath;
-  activeCardPersistence = pendingProject.cards;
+  activeProjectFormat = pendingProject.format;
+  activeLessonId = pendingProject.id ?? null;
+  activeCardPersistence = pendingProject.cards ?? null;
   pendingProject = null;
-  event.returnValue = null;
+  return null;
+}
+ipcMain.on('project:activate', (event, token: unknown) => {
+  event.returnValue = activateProjectCandidate(token, 'legacy');
 });
+
+async function withProjectWrite<T>(operation: () => Promise<T>): Promise<T> {
+  if (projectImportsInProgress) throw new Error('Project is importing assets. Save after importing finishes.');
+  if (projectWriteInProgress) throw new Error('Project is saving. Please wait and try again.');
+  projectWriteInProgress = true;
+  try { return await operation(); }
+  finally { projectWriteInProgress = false; }
+}
 
 const imageExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
 const videoExts = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi']);
@@ -110,6 +124,11 @@ async function importMediaFiles(filePaths: string[]): Promise<ImportResult | nul
   if (!currentProjectFolder) throw new Error('Create or open a project first');
   if (!filePaths.length) return null;
   const folder = currentProjectFolder;
+  if (activeProjectFormat === 'lesson') {
+    // Import assets once; scene creation belongs to the new authoring commands.
+    const result = await importProjectMedia(folder, filePaths, '');
+    return { ...result, createdSlides: [] };
+  }
   const sectionId=(await loadProject(folder)).data.sections[0]?.id ?? randomUUID();
   return importProjectMedia(folder,filePaths,sectionId);
 }
@@ -185,10 +204,10 @@ async function copyProjectFolder(sourceFolder: string, targetFolder: string): Pr
   }
 }
 
-async function writeProjectAtomic(folder: string, data: ProjectData, createOnly = false): Promise<string> {
-  if (data.cardsV2 !== undefined) assertCardsV2(data.cardsV2);
+async function writeProjectAtomic(folder: string, data: ProjectData | LessonProject, createOnly = false): Promise<string> {
+  if ('cardsV2' in data && data.cardsV2 !== undefined) assertCardsV2(data.cardsV2);
   const now = new Date().toISOString();
-  const finalData: ProjectData = { ...data, updatedAt: now };
+  const finalData = { ...data, updatedAt: now };
   const tmpPath = path.join(folder, `.project-${randomUUID()}.tmp`);
   const finalPath = projectPath(folder);
   const serialized = JSON.stringify(finalData, null, 2);
@@ -215,6 +234,9 @@ async function writeProjectAtomic(folder: string, data: ProjectData, createOnly 
 async function loadProject(folder: string): Promise<ProjectState> {
   const raw = await fs.readFile(projectPath(folder), 'utf8');
   const parsed = JSON.parse(raw) as ProjectData;
+  if (parsed && typeof parsed === 'object' && 'format' in parsed) {
+    throw new Error('This project uses a new or unsupported format. Open scene lessons in the new lesson workspace.');
+  }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)
     || !Array.isArray(parsed.slides) || !Array.isArray(parsed.assets)) {
     throw new Error('Invalid project.json: expected a project with slides and assets arrays.');
@@ -885,6 +907,13 @@ handleProjectImport('project:import-dropped-media', async (_, filePaths: string[
 async function saveProject(data: ProjectData, mode: SaveMode, expectedFolder: string) {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
   if (expectedFolder !== currentProjectFolder) throw new Error('Active project changed. Save cancelled; please try again.');
+  if (activeProjectFormat !== 'legacy' || (data && typeof data === 'object' && 'format' in data)) {
+    throw new Error('Cannot save legacy data over a project with a different format.');
+  }
+  const onDisk = JSON.parse(await fs.readFile(projectPath(currentProjectFolder), 'utf8'));
+  if (!onDisk || typeof onDisk !== 'object' || 'format' in onDisk || !Array.isArray(onDisk.slides) || !Array.isArray(onDisk.assets)) {
+    throw new Error('The project format on disk changed. Open the intended legacy project again before saving.');
+  }
   const sourceFolder = currentProjectFolder;
   const authoredData = activeCardPersistence ? activeCardPersistence.forSave(data) : data;
 
@@ -919,14 +948,23 @@ async function saveProject(data: ProjectData, mode: SaveMode, expectedFolder: st
 }
 
 ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'save', expectedFolder: string) => {
-  if (projectImportsInProgress) throw new Error('Project is importing assets. Save after importing finishes.');
-  if (projectWriteInProgress) throw new Error('Project is saving. Please wait and try again.');
-  projectWriteInProgress = true;
-  try {
-    return await saveProject(data, mode, expectedFolder);
-  } finally {
-    projectWriteInProgress = false;
-  }
+  return withProjectWrite(() => saveProject(data, mode, expectedFolder));
+});
+
+installLessonPersistence({
+  getWindow,
+  getActive: () => ({ folderPath: currentProjectFolder, format: activeProjectFormat, id: activeLessonId }),
+  prepare: (project): LessonProjectState => {
+    const activationToken = randomUUID();
+    pendingProject = { token: activationToken, folderPath: project.folderPath, format: 'lesson', id: project.data.id };
+    return { ...project, activationToken };
+  },
+  activate: token => activateProjectCandidate(token, 'lesson'),
+  adoptSavedFolder: folderPath => { currentProjectFolder = folderPath; pendingProject = null; },
+  withWrite: withProjectWrite,
+  ensureFolderIsEmpty,
+  copyProjectFolder,
+  writeAtomic: writeProjectAtomic,
 });
 
 ipcMain.handle('settings:get-student-roster', async (): Promise<StudentRosterSettings> => {

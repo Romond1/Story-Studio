@@ -3,6 +3,7 @@ import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterS
 import type { AudioSettingsV1 } from '../shared/audioSettings';
 import type { PresentSnapshot } from '../shared/presentationSnapshot';
 import type { PresentStatus } from '../shared/presentStatus';
+import type { LessonProject, LessonProjectState } from '../shared/lesson/model';
 
 let latestDroppedFilePaths: string[] = [];
 
@@ -74,6 +75,17 @@ const api = {
 };
 
 contextBridge.exposeInMainWorld('appApi', api);
+contextBridge.exposeInMainWorld('lessonApi', {
+  createProject: (): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:create'),
+  openProject: (): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:open'),
+  openProjectByPath: (folderPath: string): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:open-path', folderPath),
+  activateProject: (token: string): void => {
+    const error = ipcRenderer.sendSync('lesson:activate', token);
+    if (error) throw new Error(error);
+  },
+  saveProject: (data: LessonProject, mode: 'save' | 'saveAs', expectedFolder: string): Promise<{ lastSavedAt: string; folderPath: string } | null> =>
+    ipcRenderer.invoke('lesson:save', data, mode, expectedFolder),
+});
 contextBridge.exposeInMainWorld('api', {
   importBubbleTemplate: () => ipcRenderer.invoke('import-bubble-template')
 });

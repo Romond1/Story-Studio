@@ -2,3 +2,7 @@ node_modules
 dist
 release
 .superpowers/
+dist-test/
+.tmp-rebuild-*
+.tmp-reconstruction-tests/
+output/

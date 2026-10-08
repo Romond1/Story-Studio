@@ -3,7 +3,9 @@ import { RewardSurface } from './RewardScene';
 import type { RewardPresentation } from '../shared/rewardPresentation';
 import { MovementSurface } from './movement/MovementOverlay';
 import { TransitionLayers } from './TransitionLayers';
-import { PresentVideoScene } from './PresentVideoScene';
+import { PresentVideoScene, PresentVideoSource } from './PresentVideoScene';
+import { SceneSurface } from './lesson/SceneSurface';
+import { sceneImageSources } from '../shared/lesson/projection';
 import { StudentSceneBoundary } from './StudentSceneBoundary';
 import type { ActivityScene } from '../shared/activityScene';
 import { PassiveActivities } from './ActivityScene';
@@ -73,8 +75,8 @@ function Present() {
     } else if (rewardReady && cardsReady) api.reportApplied(envelope.generation, envelope.sequence);
   }, [envelope, baseStatus, rewardReady, rewardError, cardsReady, cardsError]);
   return <main ref={surface} className="present-surface" style={{ position: 'relative' }}>
-    <StudentSceneBoundary recoveryKey={JSON.stringify([envelope?.generation, envelope?.snapshot?.sessionId, envelope?.snapshot?.rewards?.final?.id, rewardSources, cardOverlay, target?.occurrenceId, target && "src" in target ? target.src : null, target && "activity" in target ? [activityAssets(target.activity), target.activity?.boards.map(b => ({ ...b.card, bCardInstances: b.card.bCardInstances.map(i => ({ id: i.id, bCardId: i.bCardId })) })), target.activity?.cards, target.activity?.break] : null])} onError={message => envelope && reportBase(envelope.generation, envelope.sequence, true, message)}>
-    {target?.kind === 'cards-v2' ? <PresentCardV2Scene key={target.occurrenceId} plan={target.plan} envelope={envelope!} report={reportBase} /> : target?.kind === 'image' ? <PresentImageScene key={JSON.stringify([envelope!.generation, target.occurrenceId, target.src, target.scene?.overlays.map(overlayGraphic), activityAssets(target.activity)])} envelope={envelope!} target={target} report={reportBase} />
+    <StudentSceneBoundary recoveryKey={JSON.stringify([envelope?.generation, envelope?.snapshot?.sessionId, envelope?.snapshot?.rewards?.final?.id, rewardSources, cardOverlay, target?.occurrenceId, target?.kind === 'scene' ? target.plan : null, target && "src" in target ? target.src : null, target && "activity" in target ? [activityAssets(target.activity), target.activity?.boards.map(b => ({ ...b.card, bCardInstances: b.card.bCardInstances.map(i => ({ id: i.id, bCardId: i.bCardId })) })), target.activity?.cards, target.activity?.break] : null])} onError={message => envelope && reportBase(envelope.generation, envelope.sequence, true, message)}>
+    {target?.kind === 'scene' ? <PresentLessonScene key={target.occurrenceId} target={target} envelope={envelope!} report={reportBase} /> : target?.kind === 'cards-v2' ? <PresentCardV2Scene key={target.occurrenceId} plan={target.plan} envelope={envelope!} report={reportBase} /> : target?.kind === 'image' ? <PresentImageScene key={JSON.stringify([envelope!.generation, target.occurrenceId, target.src, target.scene?.overlays.map(overlayGraphic), activityAssets(target.activity)])} envelope={envelope!} target={target} report={reportBase} />
       : target?.kind === 'video' ? <PresentVideoScene key={JSON.stringify([envelope!.generation, target.media.identity, target.src])} target={target} envelope={envelope!} api={{...api,reportApplied:reportBase}} />
       : target?.kind === 'prompt' || target?.kind === 'break' || target?.kind === 'board' ? <PresentActivityScene key={JSON.stringify([target.occurrenceId, activityAssets(target.activity)])} target={target} envelope={envelope!} report={reportBase} />
       : target?.kind === 'badge' ? null : <p>{target?.kind === 'unsupported' ? 'This activity is available in the teaching window.' : 'Waiting for the lesson.'}</p>}
@@ -83,6 +85,20 @@ function Present() {
     </StudentSceneBoundary>
     <MovementSurface presentation={envelope?.snapshot?.movement ?? null} />
   </main>;
+}
+export function PresentLessonScene({ target, envelope, report }: { target: Extract<PresentTarget, { kind: 'scene' }>; envelope: PresentEnvelope; report: PresentApi['reportApplied'] }) {
+  const sources = sceneImageSources(target.plan);
+  const sourceKey = JSON.stringify(sources);
+  const ready = useRef({ key: sourceKey, state: new SceneReadiness(sources) });
+  if (ready.current.key !== sourceKey) ready.current = { key: sourceKey, state: new SceneReadiness(sources) };
+  const [, refresh] = useState(0);
+  usePreloadAssets(sources, (src, error) => { ready.current.state.settle(src, error); refresh(value => value + 1); }, sourceKey);
+  const status = ready.current.state.state;
+  useEffect(() => {
+    if (status === 'error' || (!target.media && status === 'ready')) report(envelope.generation, envelope.sequence, status === 'error', status === 'error' ? 'Scene image could not be displayed.' : undefined);
+  }, [envelope.generation, envelope.sequence, target.media, status]);
+  return <SceneSurface plan={target.plan} surface="present" video={target.media && target.plan.background.src
+    ? <PresentVideoSource key={JSON.stringify([target.media.identity, target.plan.background.src])} envelope={envelope} target={{ src: target.plan.background.src, media: target.media }} api={{ ...api, reportApplied: report }} readiness={status} /> : undefined} />;
 }
 function PresentCardV2Scene({ plan, envelope, report }: { plan: CardV2RenderPlan; envelope: PresentEnvelope; report: PresentApi['reportApplied'] }) {
   const sources = collectCardV2RenderImages(plan);
