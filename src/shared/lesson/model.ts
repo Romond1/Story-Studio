@@ -34,10 +34,17 @@ export interface LessonProjectState { data: LessonProject; folderPath: string; l
 export interface LessonLocation { sequence: SequenceKind; entryId: string }
 export interface EditorSelection { sequence: SequenceKind; entryId: string | null; objectId: string | null }
 export interface CardLiveState { faceId: string; concealed: boolean; box?: Rect }
+export interface SceneLiveState {
+  sceneId: string; cards: Record<string, CardLiveState>; drawings: MarkerStroke[]; viewport: SceneViewport;
+  drawingUndo?: MarkerStroke[][]; drawingRedo?: MarkerStroke[][];
+}
 export interface LessonSession {
   id: string; revision: number; visit: number; cursor: LessonLocation | null;
   storyReturn: LessonLocation | null; cards: Record<string, CardLiveState>;
   drawings: MarkerStroke[]; viewport: SceneViewport;
+  /** Runtime only, keyed by sequence and stable entry ID, never by scene ID. */
+  scenes?: Record<string, SceneLiveState>;
+  drawingUndo?: MarkerStroke[][]; drawingRedo?: MarkerStroke[][];
   /** Teaching-only scores and visuals; never part of a saved lesson document. */
   rewards?: import('./rewards').LessonRewardState;
 }

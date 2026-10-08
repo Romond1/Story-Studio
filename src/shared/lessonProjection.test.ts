@@ -5,7 +5,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { createLesson, createScene, insertScene, addCard, addText, removeObject, putObject, duplicateObject } from './lesson/commands';
-import { createSession, navigate, cardAction } from './lesson/session';
+import { createSession, navigate, cardAction, resetScene } from './lesson/session';
 import { projectScene, parseScenePlan, type ScenePlan } from './lesson/projection';
 import { parsePresentSnapshot } from './presentationSnapshot';
 import { fitLogicalFrame } from './staticScene';
@@ -48,7 +48,7 @@ test('current authored changes, duplication and deletion immediately feed the st
   assert.equal(Object.keys(removed.cards).length, 2);
   const concealed = projectScene(f.project, f.sceneId, cardAction(f.project, shown, f.cardId, 'conceal'));
   assert.equal(JSON.stringify(concealed).includes('Answer'), false);
-  const reset = projectScene(f.project, f.sceneId, navigate(f.project, shown, shown.cursor));
+  const reset = projectScene(f.project, f.sceneId, resetScene(f.project, shown));
   assert.ok(JSON.stringify(reset).includes('Question'));
 });
 
