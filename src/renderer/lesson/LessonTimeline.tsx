@@ -4,10 +4,14 @@ import { timelineDensity, timelineZoom } from '../../shared/lessonTimeline';
 import { LESSON_ASSET_DRAG, LESSON_ENTRY_DRAG, lessonMediaUrl } from './LessonMediaPool';
 import { projectScene } from '../../shared/lesson/projection';
 import { SceneSurface } from './SceneSurface';
+import { addSection, renameSection, moveEntryToSection, insertBreak } from '../../shared/lesson/sections';
+import { createScene, insertScene } from '../../shared/lesson/commands';
 
 export interface LessonTimelineProps {
   project: LessonProject; sequence: SequenceKind; selectedEntryId: string | null; live: LessonLocation | null;
   readOnly?: boolean;
+  onProjectChange?: (project: LessonProject) => void;
+  onCardDrop?: (objectId: string, entryId: string) => void;
   onSelect: (entryId: string) => void;
   onAdd: (assetIds?: string[], beforeEntryId?: string) => void;
   onReorder: (entryId: string, beforeEntryId?: string) => void;
@@ -18,12 +22,20 @@ export interface LessonTimelineProps {
 
 /** Both lesson sequences use this same structural timeline. */
 export function LessonTimeline(p: LessonTimelineProps) {
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [zoom, setZoom] = useState(1);
   const [dropId, setDropId] = useState<string | null>(null);
   const strip = useRef<HTMLDivElement>(null);
   const pan = useRef<{ x: number; scroll: number } | null>(null);
   const anchor = useRef<{ id: string; fraction: number; pointer: number } | null>(null);
   const entries = p.project.sequences[p.sequence];
+  const sections = p.project.sections?.filter(s => s.sequence === p.sequence) ?? [];
+  const addWithin = (sectionId: string, isBreak: boolean) => {
+    if (!p.onProjectChange) return;
+    const added = isBreak ? insertBreak(p.project, p.sequence, undefined, sectionId) : insertScene(p.project, p.sequence, createScene());
+    p.onProjectChange(isBreak ? added.project : moveEntryToSection(added.project, p.sequence, added.entryId, sectionId)); p.onSelect(added.entryId);
+  };
+  useEffect(() => { const cancel = () => { pan.current = null; setDropId(null); }; window.addEventListener('blur', cancel); return () => window.removeEventListener('blur', cancel); }, []);
   const selectedIndex = entries.findIndex(entry => entry.id === p.selectedEntryId);
   const selected = entries[selectedIndex];
   const density = timelineDensity(zoom);
@@ -78,29 +90,31 @@ export function LessonTimeline(p: LessonTimelineProps) {
   const slot = (beforeId?: string) => <button className={`lesson-timeline-slot${dropId === (beforeId ?? 'end') ? ' is-drop' : ''}`} aria-label={beforeId ? 'Insert scene here' : 'Add scene at end'} title="Add a blank scene, or drop media here"
     onClick={() => p.onAdd(undefined, beforeId)} onDragOver={event => accept(event, beforeId)} onDrop={event => drop(event, beforeId)}>+</button>;
   return <nav className="lesson-timeline" aria-label={`${p.sequence === 'story' ? 'Story' : 'Activation'} timeline`} data-density={density} style={{ '--lesson-tile-width': `${Math.round(156 * zoom)}px` } as CSSProperties}>
-    <header className="lesson-timeline-toolbar"><strong>{p.sequence === 'story' ? 'Story' : 'Activation'} · {entries.length} scenes</strong>{!p.readOnly && <><button onClick={() => p.onAdd()}>+ Scene</button>
+    <header className="lesson-timeline-toolbar"><strong>{p.sequence === 'story' ? 'Story' : 'Activation'} · {entries.length} scenes</strong>{!p.readOnly && <><button onClick={() => p.onAdd()}>+ Scene</button>{p.onProjectChange && <><button onClick={() => { const added = insertBreak(p.project, p.sequence, selected?.id, selected?.sectionId); p.onProjectChange!(added.project); p.onSelect(added.entryId); }}>+ Break</button><button onClick={() => { const name = window.prompt('Section name', 'New section'); if (name?.trim()) p.onProjectChange!(addSection(p.project, p.sequence, name).project); }}>+ Section</button><label>Section <select aria-label="Move scene to section" disabled={!selected} value={selected?.sectionId ?? ''} onChange={event => { if (selected) p.onProjectChange!(moveEntryToSection(p.project, p.sequence, selected.id, event.target.value || undefined)); }}><option value="">Ungrouped</option>{sections.map(section => <option key={section.id} value={section.id}>{section.name}</option>)}</select></label></>}
       <div className="lesson-actions"><button disabled={selectedIndex <= 0} onClick={() => { if (selected) p.onReorder(selected.id, entries[selectedIndex - 1].id); }} aria-label="Move scene earlier">←</button><button disabled={selectedIndex < 0 || selectedIndex >= entries.length - 1} onClick={() => { if (selected) p.onReorder(selected.id, entries[selectedIndex + 2]?.id); }} aria-label="Move scene later">→</button>
         <button disabled={!selected} onClick={() => { if (selected) p.onCopy(selected.id, false); }}>Duplicate scene</button>
-        <details className="lesson-timeline-menu"><summary aria-label="More scene actions">More</summary><div><button disabled={!selected} onClick={() => { if (selected) p.onCopy(selected.id, true); }}>Reuse linked scene</button><button disabled={!selected} onClick={() => { if (!selected) return; const name = window.prompt('Section label (leave blank for no section)', selected.section); if (name !== null) p.onSection(selected.id, name.trim()); }}>Section label…</button><button className="lesson-danger" disabled={!selected} onClick={() => { if (selected) p.onDelete(selected.id); }}>Remove scene</button></div></details>
+        <details className="lesson-timeline-menu"><summary aria-label="More scene actions">More</summary><div><button disabled={!selected} onClick={() => { if (selected) p.onCopy(selected.id, true); }}>Reuse linked scene</button><button className="lesson-danger" disabled={!selected} onClick={() => { if (selected) p.onDelete(selected.id); }}>Remove scene</button></div></details>
       </div></>}
       <label className="lesson-timeline-zoom"><span>Timeline zoom</span><input type="range" min=".45" max="2.6" step=".05" value={zoom} onChange={event => changeZoom(Number(event.target.value))} /><output>{Math.round(zoom * 100)}%</output></label>
     </header>
     <div className="lesson-timeline-strip" ref={strip} onDragEnd={() => setDropId(null)} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropId(null); }}
       onPointerDown={event => { if (event.button !== 1) return; event.preventDefault(); pan.current = { x: event.clientX, scroll: event.currentTarget.scrollLeft }; event.currentTarget.setPointerCapture(event.pointerId); }}
       onPointerMove={event => { if (pan.current) event.currentTarget.scrollLeft = pan.current.scroll + pan.current.x - event.clientX; }}
-      onPointerUp={event => { pan.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }} onLostPointerCapture={() => { pan.current = null; }} onAuxClick={event => { if (event.button === 1) event.preventDefault(); }}>
+      onPointerUp={event => { pan.current = null; if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }} onPointerCancel={() => { pan.current = null; setDropId(null); }} onLostPointerCapture={() => { pan.current = null; }} onAuxClick={event => { if (event.button === 1) event.preventDefault(); }}>
+      <div className="lesson-section-navigation" style={{ display: 'flex', gap: 8, alignItems: 'start' }}>{sections.map(section => <div key={section.id} className="lesson-section-group" data-section-id={section.id}><button aria-expanded={!collapsed.has(section.id)} onClick={() => setCollapsed(previous => { const next = new Set(previous); if (next.has(section.id)) next.delete(section.id); else next.add(section.id); return next; })}>{collapsed.has(section.id) ? '+' : '−'} {section.name} ({entries.filter(e => e.sectionId === section.id).length})</button><button disabled={!entries.some(e => e.sectionId === section.id)} onClick={() => { const first = entries.find(e => e.sectionId === section.id); if (first) { setCollapsed(previous => { const next = new Set(previous); next.delete(section.id); return next; }); p.onSelect(first.id); } }}>Go to section</button>{!p.readOnly && p.onProjectChange && <><button onClick={() => { const name = window.prompt('Section name', section.name); if (name?.trim()) p.onProjectChange!(renameSection(p.project, section.id, name)); }}>Rename</button><button onClick={() => addWithin(section.id, false)}>+ Scene</button><button onClick={() => addWithin(section.id, true)}>+ Break</button></>}</div>)}</div>
       {entries.map((entry, index) => {
+        if (entry.sectionId && collapsed.has(entry.sectionId)) return null;
         const scene = p.project.scenes[entry.sceneId];
         const asset = p.project.assets.find(item => item.id === scene?.background.assetId);
         const isEdit = entry.id === p.selectedEntryId, isLive = p.live?.sequence === p.sequence && p.live.entryId === entry.id;
         const linked = Object.values(p.project.sequences).flat().filter(item => item.sceneId === entry.sceneId).length > 1;
-        return <div key={entry.id} className="lesson-timeline-pair">{!p.readOnly && slot(entry.id)}<div className="lesson-timeline-entry"><span className="lesson-section-label">{entry.section !== entries[index - 1]?.section ? entry.section || 'Lesson' : '\u00a0'}</span><button className={`lesson-timeline-item${isEdit ? ' is-edit' : ''}${isLive ? ' is-live' : ''}${dropId === entry.id ? ' drop-before' : ''}`} data-entry-id={entry.id}
+        return <div key={entry.id} className="lesson-timeline-pair">{!p.readOnly && slot(entry.id)}<div className="lesson-timeline-entry"><span className="lesson-section-label">{entry.sectionId ? sections.find(s => s.id === entry.sectionId)?.name : entry.section || 'Ungrouped'}</span><button className={`lesson-timeline-item${isEdit ? ' is-edit' : ''}${isLive ? ' is-live' : ''}${dropId === entry.id ? ' drop-before' : ''}`} data-entry-id={entry.id}
           aria-label={`${index + 1}. ${scene?.title || 'Missing scene'}${linked ? ', shared scene' : ''}`} aria-current={isEdit ? 'step' : undefined} draggable={!p.readOnly} onClick={() => p.onSelect(entry.id)}
           onDragStart={event => { event.dataTransfer.setData(LESSON_ENTRY_DRAG, entry.id); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={event => accept(event, target(event, index))} onDrop={event => drop(event, target(event, index))}
           onKeyDown={event => { if (event.key === 'ArrowLeft' && index > 0) { event.preventDefault(); p.onSelect(entries[index - 1].id); } if (event.key === 'ArrowRight' && index < entries.length - 1) { event.preventDefault(); p.onSelect(entries[index + 1].id); } }}>
           <span className="lesson-timeline-markers">{isEdit && !p.readOnly && <b className="lesson-edit-marker">EDIT</b>}{isLive && <b className="lesson-live-marker">LIVE</b>}</span>
           {density !== 'overview' && <span className="lesson-timeline-thumb" style={{ background: scene?.background.color ?? '#0a0a0a', aspectRatio: scene ? `${scene.frame.width}/${scene.frame.height}` : undefined }}>{density === 'frame' && scene ? <SceneSurface plan={projectScene(p.project, scene.id, undefined, id => { const item = p.project.assets.find(value => value.id === id); return item && lessonMediaUrl(item.relativePath, p.project.id); })!} surface="present" video={asset?.mediaType === 'video' ? <video src={lessonMediaUrl(asset.relativePath, p.project.id)} muted preload="metadata" /> : undefined} /> : asset?.mediaType === 'image' ? <img src={lessonMediaUrl(asset.relativePath, p.project.id)} alt="" draggable={false} /> : asset?.mediaType === 'video' ? <video src={lessonMediaUrl(asset.relativePath, p.project.id)} muted preload="metadata" /> : <span>{scene?.objects.length ? `${scene.objects.length} objects` : 'Blank scene'}</span>}</span>}
-          <strong>{scene?.title || 'Missing scene'}</strong><small>{index + 1}{linked ? ' · Shared' : ''}{asset ? ` · ${asset.mediaType}` : ''}</small>
+          <strong>{entry.kind === 'break' ? 'Break · ' : ''}{scene?.title || 'Missing scene'}</strong><small>{index + 1}{linked ? ' · Shared' : ''}{asset ? ` · ${asset.mediaType}` : ''}</small>
           {(density === 'detail' || density === 'frame') && scene && <span className="lesson-timeline-details">{scene.objects.filter(object => object.kind === 'card').length} cards · {scene.objects.filter(object => object.kind === 'bubble' || object.kind === 'text').length} text · {scene.audio.length} audio{scene.transition.kind === 'fade' ? ' · Fade' : ''}</span>}
         </button></div></div>;
       })}{!p.readOnly && slot()}{!entries.length && <p className="lesson-timeline-empty">{p.readOnly ? 'This sequence has no scenes yet.' : 'Drop media here, or add a blank scene.'}</p>}

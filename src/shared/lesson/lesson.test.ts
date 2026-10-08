@@ -127,3 +127,5 @@ test('format validation rejects legacy, broken references and invalid geometry',
   delete invalid.cards[Object.keys(invalid.cards)[0]]; assert.throws(() => parseLessonProject(invalid));
   assert.deepEqual(parseLessonProject(added), added);
 });
+
+import './sections.test';

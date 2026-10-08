@@ -4,7 +4,8 @@ import type { SceneViewport } from '../teachingScene';
 
 export type SequenceKind = 'story' | 'activation';
 export type Rect = CardGeometry;
-export interface SceneEntry { id: string; sceneId: string; section: string }
+export interface SceneEntry { id: string; sceneId: string; section: string; sectionId?: string; kind?: 'scene' | 'break' }
+export interface LessonSection { id: string; name: string; sequence: SequenceKind }
 export interface SceneBackground { color: string; assetId?: string }
 interface ObjectBase { id: string; box: Rect; visible: boolean }
 export interface SceneCard extends ObjectBase {
@@ -28,6 +29,7 @@ export interface LessonProject {
   format: 'story-studio-scene'; version: 1; id: string; title: string;
   createdAt: string; updatedAt: string; assets: AssetItem[]; mediaBins: MediaBin[];
   scenes: Record<string, LessonScene>; sequences: Record<SequenceKind, SceneEntry[]>;
+  sections?: LessonSection[];
   cards: Record<string, CardDefinition>; library: string[]; cardSets: CardSet[];
 }
 export interface LessonProjectState { data: LessonProject; folderPath: string; lastSavedAt: string; activationToken: string }

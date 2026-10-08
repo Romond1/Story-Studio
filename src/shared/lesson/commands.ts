@@ -26,7 +26,8 @@ export function insertScene(project: LessonProject, sequence: SequenceKind, scen
   if (project.sequences[sequence].length >= LESSON_LIMITS.entriesPerSequence) throw new Error(`${sequence === 'story' ? 'Story' : 'Activation'} can contain at most ${LESSON_LIMITS.entriesPerSequence} scene entries. Remove an entry before adding another.`);
   if (!project.scenes[scene.id] && Object.keys(project.scenes).length >= LESSON_LIMITS.scenes) throw new Error(`This lesson can contain at most ${LESSON_LIMITS.scenes} scenes. Reuse a linked scene or start another lesson.`);
   assertObjectCapacity(scene, 0);
-  const entry = { id: makeId(), sceneId: scene.id, section: '' };
+  const before = project.sequences[sequence].find(item => item.id === beforeEntryId);
+  const entry = { id: makeId(), sceneId: scene.id, section: before?.section ?? '', ...(before?.sectionId ? { sectionId: before.sectionId } : {}) };
   const entries = [...project.sequences[sequence]];
   const index = beforeEntryId ? entries.findIndex(item => item.id === beforeEntryId) : -1;
   entries.splice(index < 0 ? entries.length : index, 0, entry);
@@ -42,7 +43,8 @@ export function reorderEntry(project: LessonProject, sequence: SequenceKind, ent
   if (!entry) return project;
   const entries = project.sequences[sequence].filter(item => item.id !== entryId);
   const index = beforeEntryId ? entries.findIndex(item => item.id === beforeEntryId) : -1;
-  entries.splice(index < 0 ? entries.length : index, 0, entry);
+  const destination = index >= 0 ? entries[index] : entries[entries.length - 1];
+  entries.splice(index < 0 ? entries.length : index, 0, { ...entry, sectionId: destination?.sectionId, section: destination?.section ?? '' });
   return { ...project, sequences: { ...project.sequences, [sequence]: entries } };
 }
 export function fitBox(box: Rect, frame: LessonScene['frame']): Rect {

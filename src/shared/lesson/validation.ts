@@ -1,6 +1,7 @@
 import { assertCardsV2 } from '../cardsV2';
 import { clone, type LessonProject } from './model';
 import { LESSON_LIMITS } from './limits';
+import { migrateSections } from './sections';
 
 const record = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
 const text = (value: unknown, max = 65536): value is string => typeof value === 'string' && value.length <= max;
@@ -37,10 +38,18 @@ export function parseLessonProject(value: unknown): LessonProject {
   check(p.library.every((cardId: unknown) => owns(p.cards, cardId)), 'library reference');
   for (const card of Object.values(p.cards) as any[]) for (const face of card.faces) check(!face.imageAssetId || asset(face.imageAssetId, 'image'), 'card image reference');
   check(record(p.scenes) && Object.keys(p.scenes).length <= LESSON_LIMITS.scenes && record(p.sequences), 'scenes/sequences');
+  if (p.sections !== undefined) {
+    check(list(p.sections) && unique(p.sections), 'sections');
+    for (const section of p.sections) check(text(section.name, 500) && section.name.trim().length && ['story', 'activation'].includes(section.sequence), 'section identity');
+  }
   for (const sequence of ['story', 'activation']) {
     const entries = p.sequences[sequence];
     check(list(entries, LESSON_LIMITS.entriesPerSequence) && unique(entries), 'sequence entries');
-    for (const entry of entries) check(owns(p.scenes, entry.sceneId) && text(entry.section, 500), 'scene reference');
+    for (const entry of entries) {
+      check(owns(p.scenes, entry.sceneId) && text(entry.section, 500), 'scene reference');
+      check(entry.kind === undefined || ['scene', 'break'].includes(entry.kind), 'entry kind');
+      check(entry.sectionId === undefined || id(entry.sectionId) && p.sections?.some((s: any) => s.id === entry.sectionId && s.sequence === sequence), 'section reference');
+    }
   }
   const allEntries = [...p.sequences.story, ...p.sequences.activation]; check(unique(allEntries), 'global entry identity');
   for (const [key, scene] of Object.entries(p.scenes) as [string, any][]) {
@@ -67,5 +76,5 @@ export function parseLessonProject(value: unknown): LessonProject {
       for (const point of stroke.points) check(record(point) && number(point.x, -40000, 40000) && number(point.y, -40000, 40000) && number(point.t, 0, Number.MAX_SAFE_INTEGER), 'drawing point');
     }
   }
-  return clone(value as LessonProject);
+  return migrateSections(clone(value as LessonProject));
 }
