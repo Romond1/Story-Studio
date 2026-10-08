@@ -1,3 +1,4 @@
+import { blocksMouseNavigation } from '../shared/mouseNavigation';
 import { importProjectMedia, detectMediaType } from './mediaImportService';
 // src/main/main.ts
 import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
@@ -754,6 +755,13 @@ function createMainWindow(): void {
       backgroundThrottling: false,
       nodeIntegration: false
     }
+  });
+
+  mainWindow.on('app-command', (event, command) => {
+    if (blocksMouseNavigation(!!currentProjectFolder, command)) event.preventDefault();
+  });
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (blocksMouseNavigation(!!currentProjectFolder, input.key)) event.preventDefault();
   });
 
   installPresentWindow(() => mainWindow);

@@ -1,3 +1,5 @@
+import { useWorkspaceLayout } from './WorkspaceLayout';
+import { useLessonMouseSafety } from './useLessonMouseSafety';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addCard, addObject, addText, copyScene, createScene, duplicateObject, fitBox, insertCardSet, insertScene, layerObject, putCard, putObject, putScene, removeEntry, removeObject, reorderEntry } from '../../shared/lesson/commands';
 import { clone, makeId, sceneAt, type EditorSelection, type LessonProject, type LessonProjectState, type LessonScene, type LessonSession, type SequenceKind } from '../../shared/lesson/model';
@@ -28,6 +30,8 @@ const emptySelection = (): EditorSelection => ({ sequence: 'story', entryId: nul
 export function LessonApp() {
   const [file, setFile] = useState<LessonProjectState | null>(null);
   const [project, setProject] = useState<LessonProject | null>(null);
+  useLessonMouseSafety(!!project);
+  const layout = useWorkspaceLayout();
   const latest = useRef(project); latest.current = project;
   const history = useRef(new ProjectHistory<LessonProject>());
   const [selection, setSelection] = useState<EditorSelection>(emptySelection);
@@ -183,9 +187,10 @@ export function LessonApp() {
     {error && <div className="lesson-error" role="alert">{error}<button onClick={() => setError('')}>Dismiss</button></div>}
     {!project ? <main className="lesson-welcome"><h1>A lesson, from Story to Activation.</h1><p>Create a project, import your media, then add cards and bubbles directly to the scene.</p><div className="lesson-toolbar"><button onClick={() => void load('new')} disabled={busy}>Create a new lesson</button><button onClick={() => void load('open')} disabled={busy}>Open a scene lesson</button></div><details><summary>Earlier projects</summary><p>Episodes created with the previous editor open in Legacy mode. Scene lessons use a separate format.</p><button onClick={() => { window.location.search = '?legacy=1'; }}>Open Legacy mode</button></details></main> : <>
       <nav className="lesson-phase-tabs" aria-label="Lesson phases"><button aria-pressed={currentSequence === 'story'} onClick={() => selectPhase('story')}>Story</button><button aria-pressed={currentSequence === 'activation'} onClick={() => selectPhase('activation')}>Activation</button><button disabled title="Planned for a future version">Language · Coming later</button><button disabled title="Planned for a future version">Final Boss · Coming later</button><span>{mode === 'edit' ? 'Edit' : 'Live'} / {currentSequence === 'story' ? 'Story' : 'Activation'} / {displayed?.title ?? 'Choose a scene'}</span></nav>
-      <div className="lesson-workspace">
+      <div className="lesson-workspace" style={layout.style}>
         <main className="lesson-main">
           {mode === 'edit' && <LessonMediaPool project={project} onImport={importMedia} onInsert={addScenes} onChange={apply} />}
+          {mode === 'edit' && layout.splitter('pool')}
           <div className="lesson-toolbar lesson-canvas-tools">
             {mode === 'edit' ? <><button onClick={() => addScenes()}>Add scene</button><button disabled={!editScene} onClick={() => add('card')}>Add Card</button><button disabled={!editScene} onClick={() => add('bubble')}>Add Bubble</button><button disabled={!editScene} onClick={() => add('text')}>Add Text</button><button disabled={!editScene} aria-pressed={drawing} onClick={() => setDrawing(!drawing)}>Draw</button><button disabled={!object} onClick={duplicateSelected}>Duplicate</button><button disabled={!object} onClick={removeSelected}>Delete</button><button disabled={!history.current.canUndo || busy} onClick={() => historyStep('undo')}>Undo</button><button disabled={!history.current.canRedo || busy} onClick={() => historyStep('redo')}>Redo</button><button disabled={!editScene} onClick={() => { if (selection.entryId) setSession(old => navigate(project, old, { sequence: selection.sequence, entryId: selection.entryId! })); }}>Show in Present</button></>
               : <><button onClick={() => setSession(old => stepScene(project, old, -1))}>Previous scene</button><button onClick={() => setSession(old => stepScene(project, old, 1))}>Next scene</button>{session.cursor?.sequence === 'activation' ? <button onClick={() => setSession(old => exitActivation(project, old))}>Return to Story</button> : <button disabled={!project.sequences.activation.length} onClick={() => setSession(old => startActivation(project, old))}>Start Activation</button>}<button onClick={() => { if (session.cursor) setSession(old => navigate(project, old, old.cursor)); }}>Reset scene</button></>}
@@ -204,6 +209,7 @@ export function LessonApp() {
               : <div className="lesson-empty"><h2>{mode === 'edit' ? 'Build your sequence' : 'Choose a scene to teach'}</h2><p>{mode === 'edit' ? 'Import media and drag it into the timeline, or add a blank scene.' : 'Select a scene in the timeline below.'}</p></div>}
           </div>
           {mode === 'teach' && videoAsset && <div className="lesson-toolbar"><button onClick={() => void media.command('play')}>Play video</button><button onClick={() => void media.command('pause')}>Pause video</button><button onClick={() => void media.command('replay')}>Replay video</button><label>Video position<input aria-label="Video position" type="range" min="0" max={media.status?.durationSec || 1} step=".1" value={media.status?.positionSec ?? 0} onChange={e => void media.command('seek', Number(e.target.value))} /></label><span>{media.error ?? (media.available ? media.status?.state ?? 'Ready' : 'Open Present to play video')}</span></div>}
+          {layout.splitter('timeline')}
           <LessonTimeline project={project} sequence={currentSequence} selectedEntryId={mode === 'edit' ? selection.entryId : session.cursor?.entryId ?? null} live={session.cursor} readOnly={mode === 'teach'}
             onSelect={entryId => { setDrawing(false); if (mode === 'edit') setSelection(old => ({ ...old, entryId, objectId: null })); else setSession(old => navigate(project, old, { sequence: currentSequence, entryId })); }} onAdd={addScenes}
             onReorder={(id, before) => apply(reorderEntry(project, selection.sequence, id, before))}
@@ -211,6 +217,7 @@ export function LessonApp() {
             onCopy={duplicateEntry} onSection={(id, section) => apply({ ...project, sequences: { ...project.sequences, [selection.sequence]: project.sequences[selection.sequence].map(entry => entry.id === id ? { ...entry, section } : entry) } })} />
           {mode === 'edit' && selection.sequence === 'story' && selection.entryId && <div className="lesson-toolbar"><button onClick={() => duplicateEntry(selection.entryId!, true, 'activation')}>Reuse in Activation · linked</button><button onClick={() => duplicateEntry(selection.entryId!, false, 'activation')}>Copy to Activation · independent</button></div>}
         </main>
+        {layout.splitter('inspector')}
         {mode === 'edit' ? <div className="lesson-side"><label>Lesson title<input value={project.title} onChange={e => apply({ ...project, title: e.target.value })} /></label>
           {editScene && Object.values(project.sequences).flat().filter(entry => entry.sceneId === editScene.id).length > 1 && <p className="lesson-shared-note">Shared scene: changes appear wherever this scene is reused. Use an independent copy to edit separately.</p>}
           <SceneInspector project={project} scene={editScene} object={object} onSelectObject={id => setSelection(old => ({ ...old, objectId: id }))} onPreviewFace={previewFace} onSceneChange={changeScene} onObjectChange={item => editScene && apply(putObject(project, editScene.id, item))} onCardChange={card => apply(putCard(project, card))} onDelete={removeSelected} onDuplicate={duplicateSelected} onLayer={direction => editScene && object && apply(layerObject(project, editScene.id, object.id, direction))}

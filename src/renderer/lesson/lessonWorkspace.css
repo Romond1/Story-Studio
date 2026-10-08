@@ -203,3 +203,33 @@
   .lesson-status { flex-wrap: wrap; gap: 4px 12px; }
   .lesson-status > span:last-child { flex-basis: 100%; }
 }
+
+/* Local workspace dimensions never alter the authored logical scene. */
+.lesson-main:has(> .lesson-pool) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 30vw) 6px minmax(0, 1fr); grid-template-rows: auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
+.lesson-main:has(> .lesson-pool) > .lesson-canvas-tools { grid-column: 3; }
+.lesson-main:has(> .lesson-pool) > .lesson-canvas { grid-column: 3; min-height: 100px; }
+.lesson-main:has(> .lesson-pool) > .lesson-timeline { grid-row: 4; }
+.lesson-main > .lesson-timeline { height: min(var(--workspace-timeline, 220px), 36vh); min-height: 0; flex: 0 0 min(var(--workspace-timeline, 220px), 36vh); display: flex; flex-direction: column; overflow: hidden; }
+.lesson-timeline-strip { min-height: 0; flex: 1; }
+.lesson-side { width: clamp(250px, var(--workspace-inspector, 330px), 38vw); flex-shrink: 0; min-width: 0; }
+.lesson-splitter { background: var(--lesson-bg); touch-action: none; z-index: 5; flex-shrink: 0; }
+.lesson-splitter:hover, .lesson-splitter:focus-visible { background: var(--lesson-accent); }
+.lesson-splitter-pool { grid-column: 2; grid-row: 1 / 3; cursor: col-resize; }
+.lesson-splitter-inspector { width: 6px; cursor: col-resize; }
+.lesson-splitter-timeline { height: 6px; grid-column: 1 / -1; grid-row: 3; cursor: row-resize; }
+.lesson-inspector > section, .lesson-teach-controls > section { padding: 14px 12px; margin: 8px 6px; border: 1px solid var(--lesson-border); border-radius: 7px; background: var(--lesson-input); }
+.lesson-inspector > section:nth-of-type(even), .lesson-teach-controls > section:nth-of-type(even) { background: var(--lesson-raised); }
+.lesson-side h3 { font-size: 14px; font-weight: 700; letter-spacing: .02em; margin-bottom: 12px; }
+.lesson-side details { border: 1px solid var(--lesson-border); border-radius: 6px; margin: 8px 0; padding: 8px; }
+.lesson-side summary { font-weight: 650; cursor: pointer; padding: 4px; }
+.lesson-side details[open] > summary { margin-bottom: 10px; border-bottom: 1px solid var(--lesson-border); padding-bottom: 8px; }
+.lesson-side label { margin-bottom: 8px; }
+.lesson-app { overscroll-behavior-x: none; }
+.lesson-inspector .lesson-inspector-section { background: var(--lesson-input); margin: 10px 8px; border-left: 3px solid #506078; }
+.lesson-inspector .lesson-inspector-section:nth-of-type(even) { background: var(--lesson-raised); }
+.lesson-inspector .lesson-panel-heading { position: sticky; top: 0; z-index: 4; background: var(--lesson-surface); border-bottom: 2px solid var(--lesson-border); padding: 14px 12px; }
+@media (max-width: 700px) {
+  .lesson-side { width: 100%; max-width: none; }
+  .lesson-splitter-pool, .lesson-splitter-inspector { display: none; }
+  .lesson-main > .lesson-timeline { height: var(--workspace-timeline, 220px); flex-basis: var(--workspace-timeline, 220px); }
+}

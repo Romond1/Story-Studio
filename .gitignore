@@ -6,3 +6,4 @@ dist-test/
 .tmp-rebuild-*
 .tmp-reconstruction-tests/
 output/
+.tmp-usability-*
