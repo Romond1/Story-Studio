@@ -15,7 +15,7 @@
     "build": "npm run build:renderer && npm run build:main && electron-builder",
     "build:renderer": "vite build",
     "build:main": "tsc -p tsconfig.main.json",
-    "test": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/*.test.js",
+    "test": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/*.test.js dist-test/shared/lesson/*.test.js",
     "check:audio": "npm test && npm run build:renderer && npm run build:main",
     "check:release": "npm run check:audio",
     "test:counter": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/counterGame.test.js"

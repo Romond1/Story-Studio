@@ -13,6 +13,7 @@
     "types": ["node"]
   },
   "include": [
+    "src/shared/lessonPointer.test.ts",
     "src/shared/mouseNavigation.test.ts",
     "src/shared/lessonCapacity.test.ts",
     "src/shared/lessonRewardControls.test.ts",

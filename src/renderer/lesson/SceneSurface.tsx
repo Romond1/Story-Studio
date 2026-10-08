@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { fitBox } from '../../shared/lesson/commands';
+import type { SceneViewport } from '../../shared/teachingScene';
+import { zoomAtPoint, strokeTouches } from '../../shared/lessonPointer';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import type { ScenePlan, SceneObjectPlan } from '../../shared/lesson/projection';
 import type { Rect } from '../../shared/lesson/model';
 import type { MarkerStroke } from '../../shared/types';
 import { CardV2Scene } from '../cardsV2/CardV2Scene';
-import { LogicalSceneFrame, PassiveDrawings } from '../StaticScene';
+import { LogicalFrameScaleContext, LogicalSceneFrame, PassiveDrawings } from '../StaticScene';
 import { RewardScene } from '../RewardScene';
 import { BUBBLE_LIBRARY } from '../../shared/bubbleDefs';
 import './SceneSurface.css';
@@ -12,6 +15,11 @@ export interface SceneSurfaceProps {
   plan: ScenePlan; surface: 'edit' | 'teach' | 'present'; selectedObjectId?: string | null;
   onSelect?: (id: string | null) => void; onGeometryChange?: (id: string, box: Rect) => void;
   onInteract?: (id: string) => void; video?: React.ReactNode;
+  occurrenceKey?: string;
+  onViewportChange?: (viewport: SceneViewport) => void;
+  onContextMenu?: (point: { x: number; y: number; objectId: string | null }) => void;
+  onCardDrop?: (objectId: string, entryId: string) => void;
+  erasableStrokeIds?: string[]; drawingTool?: 'pen' | 'highlighter' | 'eraser'; onErase?: (ids: string[]) => void;
   drawing?: boolean; onDraw?: (stroke: MarkerStroke) => void; drawColor?: string; drawSize?: number;
 }
 
@@ -57,61 +65,122 @@ function ObjectVisual({ object }: { object: SceneObjectPlan }) {
     fontSize: object.fontSize, color: object.color, textAlign: object.align, whiteSpace: 'pre-wrap', overflow: 'hidden', overflowWrap: 'anywhere' }}>{object.text}</div>;
 }
 
+function ResizeHandle({ zoom, onPointerDown }: { zoom: number; onPointerDown: (event: React.PointerEvent) => void }) {
+  const scale = Math.max(.01, useContext(LogicalFrameScaleContext) * zoom), size = 16 / scale;
+  return <button className="lesson-object-resize" aria-label="Resize object" onPointerDown={onPointerDown} style={{ width: size, height: size, minWidth: size, minHeight: size, right: -size / 2, bottom: -size / 2, borderWidth: 2 / scale }} />;
+}
+
 /** All surfaces use this composition. Interactions never choose a different renderer or coordinate frame. */
 export function SceneSurface({ plan, surface, selectedObjectId, onSelect, onGeometryChange, onInteract, video,
-  drawing = false, onDraw, drawColor = '#ffcc33', drawSize = 6 }: SceneSurfaceProps) {
-  const content = useRef<HTMLDivElement>(null);
-  const gesture = useRef<{ id: string; point: { x: number; y: number }; original: Rect; box: Rect; resize: boolean }>();
+  drawing = false, onDraw, drawColor = '#ffcc33', drawSize = 6, drawingTool = 'pen', onErase,
+  onViewportChange, onContextMenu, onCardDrop, occurrenceKey, erasableStrokeIds }: SceneSurfaceProps) {
+  const host = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);
+  const gesture = useRef<{ id: string; point: { x: number; y: number }; screen: { x: number; y: number }; original: Rect; box: Rect; resize: boolean; moved: boolean }>();
+  const pan = useRef<{ x: number; y: number; scale: number; viewport: SceneViewport }>();
   const [draft, setDraft] = useState<{ id: string; box: Rect } | null>(null);
   const stroke = useRef<MarkerStroke>();
+  const erased = useRef<Set<string> | null>(null);
+  const [erasedIds, setErasedIds] = useState<string[]>([]);
   const [drawDraft, setDrawDraft] = useState<MarkerStroke | null>(null);
+  const suppressClick = useRef(false);
+  const clear = () => { gesture.current = undefined; pan.current = undefined; stroke.current = undefined; erased.current = null; setDraft(null); setDrawDraft(null); setErasedIds([]); };
+  const cancelGesture = () => {
+    const active = gesture.current;
+    if (active?.moved && surface === 'teach') onGeometryChange?.(active.id, active.original);
+    if (pan.current) onViewportChange?.(pan.current.viewport);
+    if (active || pan.current || stroke.current || erased.current) suppressClick.current = true;
+    clear();
+  };
+  const cancelRef = useRef(cancelGesture); cancelRef.current = cancelGesture;
   useEffect(() => {
-    gesture.current = undefined; stroke.current = undefined; setDraft(null); setDrawDraft(null);
+    clear(); suppressClick.current = false;
     if (surface !== 'edit' && plan.transition.kind === 'fade') content.current?.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: plan.transition.durationMs });
-  }, [plan.sceneId, surface]);
-  const point = (event: React.PointerEvent) => {
+  }, [plan.sceneId, surface, occurrenceKey]);
+  useEffect(() => { const cancel = () => cancelRef.current(); window.addEventListener('blur', cancel); return () => window.removeEventListener('blur', cancel); }, []);
+  const point = (event: { clientX: number; clientY: number }) => {
     const bounds = content.current?.getBoundingClientRect();
     return bounds && bounds.width > 0 && bounds.height > 0 ? { x: (event.clientX - bounds.left) * plan.frame.width / bounds.width, y: (event.clientY - bounds.top) * plan.frame.height / bounds.height } : null;
   };
+  useEffect(() => {
+    const node = host.current; if (!node || surface === 'present') return;
+    const wheel = (event: WheelEvent) => {
+      if (!event.altKey || !onViewportChange) return;
+      event.preventDefault(); event.stopPropagation();
+      const position = point(event); if (position) onViewportChange(zoomAtPoint(plan.viewport, position, plan.viewport.zoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12)));
+    };
+    node.addEventListener('wheel', wheel, { passive: false }); return () => node.removeEventListener('wheel', wheel);
+  }, [plan.viewport, plan.frame, surface, onViewportChange]);
   const begin = (event: React.PointerEvent, object: SceneObjectPlan, resize = false) => {
-    if (surface !== 'edit' || !onGeometryChange || event.button !== 0) return;
+    if (drawing || !onGeometryChange || event.button !== 0 || surface === 'present' || (surface === 'teach' && (object.kind !== 'card' || resize))) return;
     const position = point(event); if (!position) return;
-    event.preventDefault(); event.stopPropagation(); onSelect?.(object.id);
-    event.currentTarget.setPointerCapture(event.pointerId);
-    gesture.current = { id: object.id, point: position, original: object.box, box: object.box, resize };
+    event.preventDefault(); event.stopPropagation(); (event.currentTarget as HTMLElement).focus(); onSelect?.(object.id); suppressClick.current = false;
+    host.current?.setPointerCapture(event.pointerId);
+    gesture.current = { id: object.id, point: position, screen: { x: event.clientX, y: event.clientY }, original: object.box, box: object.box, resize, moved: false };
+  };
+  const eraseAt = (position: { x: number; y: number }) => {
+    if (!erased.current) return;
+    for (const item of plan.drawings) if ((!erasableStrokeIds || erasableStrokeIds.includes(item.id)) && strokeTouches(item, position, drawSize)) erased.current.add(item.id);
+    setErasedIds([...erased.current]);
   };
   const move = (event: React.PointerEvent) => {
+    if (pan.current) {
+      const start = pan.current;
+      onViewportChange?.({ zoom: start.viewport.zoom, pan: { x: Math.max(-40000, Math.min(40000, start.viewport.pan.x + (event.clientX - start.x) / start.scale)), y: Math.max(-40000, Math.min(40000, start.viewport.pan.y + (event.clientY - start.y) / start.scale)) } }); return;
+    }
     const position = point(event); if (!position) return;
+    if (erased.current) { eraseAt(position); return; }
     if (stroke.current) {
       stroke.current = { ...stroke.current, points: [...stroke.current.points, { ...position, t: Date.now() }] };
       setDrawDraft(stroke.current); return;
     }
     const active = gesture.current; if (!active) return;
+    if (!active.moved && Math.hypot(event.clientX - active.screen.x, event.clientY - active.screen.y) < 5) return;
+    active.moved = true; suppressClick.current = true;
     const dx = position.x - active.point.x, dy = position.y - active.point.y;
     active.box = active.resize ? { ...active.original, width: Math.max(24, active.original.width + dx), height: Math.max(24, active.original.height + dy) }
       : { ...active.original, x: active.original.x + dx, y: active.original.y + dy };
+    active.box = fitBox(active.box, plan.frame);
     setDraft({ id: active.id, box: active.box });
+    if (surface === 'teach') onGeometryChange?.(active.id, active.box);
   };
   const finish = (event: React.PointerEvent, commit: boolean) => {
-    const active = gesture.current, drawn = stroke.current;
-    gesture.current = undefined; stroke.current = undefined; setDraft(null); setDrawDraft(null);
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (!commit) { cancelGesture(); if (host.current?.hasPointerCapture(event.pointerId)) host.current.releasePointerCapture(event.pointerId); return; }
+    const active = gesture.current, drawn = stroke.current, removed = erased.current;
+    const destination = active?.moved && !active.resize && surface === 'edit' ? document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-entry-id]')?.dataset.entryId : undefined;
     if (commit && drawn?.points.length) onDraw?.(drawn);
-    if (commit && active && JSON.stringify(active.box) !== JSON.stringify(active.original)) onGeometryChange?.(active.id, active.box);
+    if (commit && removed?.size) onErase?.([...removed]);
+    if (active) {
+      if (commit && active.moved) { if (destination && onCardDrop && plan.objects.find(item => item.id === active.id)?.kind === 'card') onCardDrop(active.id, destination); else onGeometryChange?.(active.id, active.box); }
+      else if (commit && !active.moved && surface === 'teach') { onInteract?.(active.id); suppressClick.current = true; }
+    }
+    clear();
+    if (host.current?.hasPointerCapture(event.pointerId)) host.current.releasePointerCapture(event.pointerId);
   };
-  return <div className="lesson-scene-surface" data-scene-surface={surface} data-scene-id={plan.sceneId}>
+  return <div ref={host} className="lesson-scene-surface" data-scene-surface={surface} data-scene-id={plan.sceneId}
+    onPointerDownCapture={event => {
+      if (surface === 'present') return;
+      suppressClick.current = false;
+      if (event.button === 1 && onViewportChange) {
+        event.preventDefault(); event.stopPropagation();
+        const bounds = content.current?.getBoundingClientRect(); if (!bounds?.width) return;
+        clear(); pan.current = { x: event.clientX, y: event.clientY, scale: bounds.width / plan.frame.width / plan.viewport.zoom, viewport: plan.viewport };
+        host.current?.setPointerCapture(event.pointerId);
+      }
+    }}
+    onPointerMove={move} onPointerUp={event => finish(event, true)} onPointerCancel={event => finish(event, false)} onLostPointerCapture={cancelGesture}
+    onAuxClick={event => { if (surface !== 'present' && event.button === 1) event.preventDefault(); }}
+    onClickCapture={event => { if (suppressClick.current) { event.stopPropagation(); suppressClick.current = false; } }}
+    onContextMenu={event => { if (surface === 'present' || !onContextMenu) return; event.preventDefault(); cancelGesture(); const id = (event.target as HTMLElement).closest<HTMLElement>('[data-scene-object]')?.dataset.sceneObject ?? null; onSelect?.(id); onContextMenu({ x: event.clientX, y: event.clientY, objectId: id }); }}>
     <LogicalSceneFrame frame={plan.frame} transparent>
       <div ref={content} className="lesson-scene-content" style={{ background: plan.background.color,
         transform: `translate(${plan.viewport.pan.x}px, ${plan.viewport.pan.y}px) scale(${plan.viewport.zoom})`, transformOrigin: '0 0' }}
-        onPointerMove={move} onPointerUp={event => finish(event, true)} onPointerCancel={event => finish(event, false)}
-        onLostPointerCapture={() => { gesture.current = undefined; stroke.current = undefined; setDraft(null); setDrawDraft(null); }}
         onPointerDown={event => {
-          if (surface === 'present') return;
-          if (drawing && onDraw && event.button === 0) {
+          if (surface === 'present' || event.button !== 0) return;
+          if (drawing && onDraw) {
             const position = point(event); if (!position) return;
-            event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId);
-            stroke.current = { id: crypto.randomUUID(), size: drawSize, color: drawColor, opacity: 1, rainbow: false, points: [{ ...position, t: Date.now() }] };
-            setDrawDraft(stroke.current);
+            event.preventDefault(); host.current?.setPointerCapture(event.pointerId);
+            if (drawingTool === 'eraser') { erased.current = new Set(); eraseAt(position); }
+            else { stroke.current = { id: crypto.randomUUID(), size: drawSize, color: drawColor, opacity: drawingTool === 'highlighter' ? .3 : 1, rainbow: false, points: [{ ...position, t: Date.now() }] }; setDrawDraft(stroke.current); }
           } else if (event.target === event.currentTarget) onSelect?.(null);
         }}>
         <div className="lesson-scene-background" data-scene-background={plan.background.mediaType ?? 'color'}>
@@ -128,11 +197,11 @@ export function SceneSurface({ plan, surface, selectedObjectId, onSelect, onGeom
               aria-label={`${surface === 'edit' ? 'Select' : 'Interact with'} ${object.kind}`} onPointerDown={event => begin(event, object)}
               onClick={() => { onSelect?.(object.id); if (surface === 'teach') onInteract?.(object.id); }}
               onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(object.id); if (surface === 'teach') onInteract?.(object.id); } }}>
-              {active && onGeometryChange && <button className="lesson-object-resize" aria-label="Resize object" onPointerDown={event => begin(event, object, true)} />}
+              {active && onGeometryChange && <ResizeHandle zoom={plan.viewport.zoom} onPointerDown={event => begin(event, object, true)} />}
             </div>}
           </div>;
         })}
-        <PassiveDrawings frame={plan.frame} markers={normalizedSceneDrawings([...plan.drawings, ...(drawDraft ? [drawDraft] : [])], plan.frame)} />
+        <PassiveDrawings frame={plan.frame} markers={normalizedSceneDrawings([...plan.drawings.filter(item => !erasedIds.includes(item.id)), ...(drawDraft ? [drawDraft] : [])], plan.frame)} />
       </div>
       {plan.rewards && <div data-lesson-rewards="true" style={{ position: 'absolute', inset: 0, zIndex: 30000, pointerEvents: 'none' }}><RewardScene presentation={plan.rewards} /></div>}
     </LogicalSceneFrame>

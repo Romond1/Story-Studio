@@ -233,3 +233,56 @@
   .lesson-splitter-pool, .lesson-splitter-inspector { display: none; }
   .lesson-main > .lesson-timeline { height: var(--workspace-timeline, 220px); flex-basis: var(--workspace-timeline, 220px); }
 }
+/* Compact tools share the canvas column; timeline and media retain full height. */
+.lesson-main:has(> .lesson-pool) { grid-template-rows: auto auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
+.lesson-main > .lesson-pool, .lesson-splitter-pool { grid-row: 1 / 4; }
+.lesson-main:has(> .lesson-pool) > .lesson-canvas { grid-row: 3; }
+.lesson-drawing-row { grid-column: 3; grid-row: 2; }
+.lesson-main:has(> .lesson-pool) > .lesson-timeline { grid-row: 5; }
+.lesson-splitter-timeline { grid-row: 4; }
+.lesson-drawing-tools { gap: 4px; padding: 4px 8px; }
+.lesson-drawing-tools button { font-size: 12px; min-height: 28px; padding: 3px 7px; }
+.lesson-drawing-tools label, .lesson-edit-view label { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+.lesson-drawing-tools input[type="color"] { width: 34px; height: 28px; }
+.lesson-drawing-tools input[type="range"] { width: 65px; }
+.lesson-drawing-tools small { color: var(--lesson-muted); font-size: 11px; }
+.lesson-edit-view { padding: 3px 8px; }
+.lesson-edit-view input { max-width: 120px; }
+.lesson-edit-view button { min-height: 26px; font-size: 12px; }
+.lesson-menu-backdrop, .lesson-dialog-backdrop { position: fixed; inset: 0; z-index: 10000; }
+.lesson-context-menu { position: fixed; z-index: 10001; width: 240px; max-height: min(470px, 100vh); overflow: auto; padding: 6px; border: 1px solid var(--lesson-border); border-radius: 8px; background: var(--lesson-surface); box-shadow: 0 12px 40px #0008; display: flex; flex-direction: column; gap: 3px; }
+.lesson-context-menu button { text-align: left; }
+.lesson-dialog-backdrop { display: flex; align-items: center; justify-content: center; background: #0008; }
+.lesson-dialog { width: min(520px, 95vw); max-height: 85vh; overflow: auto; padding: 22px; background: var(--lesson-surface); border: 1px solid var(--lesson-border); border-radius: 10px; }
+.lesson-dialog button { margin: 6px 6px 0 0; }
+.lesson-dialog label { display: grid; gap: 8px; }
+.lesson-section-navigation { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px 8px; background: var(--lesson-bg); max-height: 80px; overflow: auto; }
+.lesson-section-group { display: flex; align-items: center; gap: 4px; border: 1px solid var(--lesson-border); border-left: 3px solid #7789a3; border-radius: 6px; padding: 3px; }
+.lesson-section-group button { min-height: 25px; font-size: 12px; padding: 2px 6px; }
+.lesson-section-group.is-collapsed { opacity: .75; }
+.lesson-timeline-item.is-break { border-color: #b4a477; background: #332f25; }
+.lesson-timeline-item .lesson-break-marker { color: #edda9e; }
+@media (max-width: 700px) { .lesson-drawing-row { width: 100%; } }
+/* Preserve labels at every timeline height; thumbnails yield space before text. */
+.lesson-timeline-toolbar { flex-wrap: nowrap; flex-shrink: 0; overflow-x: auto; min-height: 46px; padding: 5px 8px; }
+.lesson-timeline-toolbar > * { flex-shrink: 0; }
+.lesson-timeline-toolbar > label:not(.lesson-timeline-zoom) { max-width: 180px; }
+.lesson-section-navigation { flex-wrap: nowrap; flex-shrink: 0; max-height: 44px; overflow-x: auto; overflow-y: hidden; }
+.lesson-section-group { flex-shrink: 0; }
+.lesson-timeline-entry { min-height: 0; }
+.lesson-timeline-item { flex: 1; min-height: 66px !important; overflow: hidden; gap: 3px; }
+.lesson-timeline-item > strong, .lesson-timeline-item > small { flex-shrink: 0; }
+.lesson-timeline-item > strong { min-height: 16px; -webkit-line-clamp: 1; }
+.lesson-timeline-thumb { flex: 1 1 60px; min-height: 0; max-height: 125px; }
+.lesson-timeline-markers { position: absolute; top: 4px; left: 4px; min-height: 0; z-index: 1; }
+.lesson-timeline-strip { overflow-y: auto; }
+.lesson-timeline > footer { flex-shrink: 0; }
+.lesson-timeline-item.is-break { border-color: #b4a477 !important; }
+.lesson-section-form { display: flex; gap: 6px; align-items: center; padding: 6px; flex-shrink: 0; }
+.lesson-section-form label { display: flex; gap: 6px; align-items: center; }
+.lesson-timeline[data-density="overview"] .lesson-timeline-item { padding-top: 22px !important; }
+@media (min-width: 701px) and (max-width: 1100px) {
+  .lesson-main:has(> .lesson-pool) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 23vw) 6px minmax(0, 1fr); }
+  .lesson-canvas-tools { flex-wrap: nowrap; overflow-x: auto; }
+  .lesson-canvas-tools button { flex-shrink: 0; }
+}

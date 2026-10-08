@@ -1,0 +1,11 @@
+PASS Sections create/rename/collapse/navigation; ungrouped scenes and distinct editable Break
+PASS All three splitters preserve authored Card geometry and scene aspect; local layout saved
+PASS Edit and timeline use middle-pan; drawing does not intercept it; empty left-drag never pans
+PASS Short click flips once; live drag does not flip and mirrors Present throughout movement; focus loss cancels
+PASS Every drawing tool allows middle-pan; draw/erase/undo/redo, wheel zoom and occurrence state survive navigation
+PASS Teach contextual menu, explicit scene reset and passive student-safe Present
+PASS Context Copy to Scene across phases, independent content, keyboard copy/paste and safe canvas-to-timeline copy
+PASS Explicit Move to Scene supports undo; resize gestures cannot become cross-scene copies
+PASS Mouse navigation events blocked while native text editing remains available
+PASS Authored save/reopen excludes temporary teaching state; a new teaching session starts fresh
+Disposable lesson: D:\Temp\story-usability-y1AfZ6\Disposable-lesson

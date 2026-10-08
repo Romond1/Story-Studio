@@ -49,3 +49,9 @@ npm run build:main
 ```
 
 `scripts/reconstruction-smoke.cjs` runs actual Electron Control/Present acceptance against generated image/video media and a disposable project. It requires FFmpeg and Playwright; set `STORY_STUDIO_PLAYWRIGHT` to a Playwright package directory if it is supplied by an external runtime. Run after both builds. Evidence is written to `docs/reconstruction-evidence/`; the temporary sample path is printed. Physical microphone and virtual-device routing need verification on the teaching machine.
+
+## Authoring and teaching usability
+
+Middle-mouse drag pans the Edit/Teach canvas and timeline with every tool; Alt+wheel zooms. Left-drag selects/manipulates or draws, and right-click opens the mode's context menu. Teaching changes survive scene navigation until Reset Scene or New teaching session.
+
+Sections, editable review Breaks, local resizable panels, a drawing toolbox and independent Card copy/move between scenes are available. See [verification and manual acceptance](docs/authoring-teaching-verification.md) and the disposable lesson in `docs/usability-demo`.

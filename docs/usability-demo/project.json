@@ -1,0 +1,481 @@
+{
+  "format": "story-studio-scene",
+  "version": 1,
+  "id": "f52ff318-d0c8-4ddf-b035-0d4a8043c903",
+  "title": "Authoring and Teaching demonstration",
+  "createdAt": "2026-10-08T15:20:17.915Z",
+  "updatedAt": "2026-10-08T15:20:28.624Z",
+  "assets": [
+    {
+      "id": "review-skyblue",
+      "relativePath": "assets/review-skyblue.png",
+      "filename": "review-skyblue.png",
+      "originalName": "review-skyblue.png",
+      "mediaType": "image",
+      "sizeBytes": 571,
+      "importedAt": "2026-10-08T15:20:18.390Z"
+    },
+    {
+      "id": "review-orange",
+      "relativePath": "assets/review-orange.png",
+      "filename": "review-orange.png",
+      "originalName": "review-orange.png",
+      "mediaType": "image",
+      "sizeBytes": 628,
+      "importedAt": "2026-10-08T15:20:18.430Z"
+    }
+  ],
+  "mediaBins": [],
+  "cards": {
+    "04a99fec-d664-4809-9945-bbff61f611c1": {
+      "id": "04a99fec-d664-4809-9945-bbff61f611c1",
+      "label": "New card",
+      "tags": [],
+      "style": {
+        "preset": "classroom",
+        "fit": "auto"
+      },
+      "faces": [
+        {
+          "id": "7c558f01-bbb1-47f1-b050-04389da381b7",
+          "label": "Prompt",
+          "layout": "text",
+          "text": "Question face"
+        },
+        {
+          "id": "309bdc2b-298d-48eb-9c74-7ab5255de6b5",
+          "label": "Answer",
+          "layout": "text",
+          "text": "Answer face"
+        }
+      ]
+    },
+    "43c113c4-853d-4b5d-8b6c-a0eb1f090219": {
+      "id": "43c113c4-853d-4b5d-8b6c-a0eb1f090219",
+      "label": "New card",
+      "tags": [],
+      "style": {
+        "preset": "classroom",
+        "fit": "auto"
+      },
+      "faces": [
+        {
+          "id": "313531bd-5419-4b7d-a78f-0fdee5f8efe8",
+          "label": "Prompt",
+          "layout": "text",
+          "text": "Type a question"
+        },
+        {
+          "id": "740908a5-6fc3-4539-ab78-33712cd967fb",
+          "label": "Answer",
+          "layout": "text",
+          "text": "Type an answer"
+        }
+      ]
+    },
+    "582efe6b-f3ce-4e98-971a-442b65bb798a": {
+      "id": "582efe6b-f3ce-4e98-971a-442b65bb798a",
+      "label": "New card",
+      "tags": [],
+      "style": {
+        "preset": "classroom",
+        "fit": "auto"
+      },
+      "faces": [
+        {
+          "id": "0cb173d1-7be7-4016-9392-1b69593129f1",
+          "label": "Prompt",
+          "layout": "text",
+          "text": "Independent destination content"
+        },
+        {
+          "id": "1473504f-9379-4445-9695-119730938a82",
+          "label": "Answer",
+          "layout": "text",
+          "text": "Answer face"
+        }
+      ]
+    },
+    "492ec64b-90fb-4d9c-8f32-54da1c5b13c4": {
+      "id": "492ec64b-90fb-4d9c-8f32-54da1c5b13c4",
+      "label": "New card",
+      "tags": [],
+      "style": {
+        "preset": "classroom",
+        "fit": "auto"
+      },
+      "faces": [
+        {
+          "id": "9386cc95-b94d-49c4-8b4c-ff5e0d0e8173",
+          "label": "Prompt",
+          "layout": "text",
+          "text": "Question face"
+        },
+        {
+          "id": "be2ab158-9d82-4be5-960f-83957ba90e01",
+          "label": "Answer",
+          "layout": "text",
+          "text": "Answer face"
+        }
+      ]
+    },
+    "9a854c88-9194-41c3-b256-d7811f6f1218": {
+      "id": "9a854c88-9194-41c3-b256-d7811f6f1218",
+      "label": "New card",
+      "tags": [],
+      "style": {
+        "preset": "classroom",
+        "fit": "auto"
+      },
+      "faces": [
+        {
+          "id": "e20cc4dc-59a1-4e4a-87df-b061a26c91a1",
+          "label": "Prompt",
+          "layout": "text",
+          "text": "Question face"
+        },
+        {
+          "id": "c573f831-6503-45e1-8634-ef50ec61bbab",
+          "label": "Answer",
+          "layout": "text",
+          "text": "Answer face"
+        }
+      ]
+    }
+  },
+  "library": [],
+  "cardSets": [],
+  "scenes": {
+    "503a4536-4845-46a1-b7b0-f2ac785248a8": {
+      "id": "503a4536-4845-46a1-b7b0-f2ac785248a8",
+      "title": "Question",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [
+        {
+          "kind": "card",
+          "id": "f54524fd-b7da-4e7b-a16b-98c5cd78144f",
+          "cardId": "04a99fec-d664-4809-9945-bbff61f611c1",
+          "initialFaceId": "7c558f01-bbb1-47f1-b050-04389da381b7",
+          "initiallyConcealed": false,
+          "interaction": "cycle",
+          "visible": true,
+          "box": {
+            "width": 360,
+            "height": 230,
+            "x": 80,
+            "y": 90
+          }
+        },
+        {
+          "kind": "card",
+          "id": "2cfcf0a7-98ae-4cae-a178-b77ad39b8967",
+          "cardId": "43c113c4-853d-4b5d-8b6c-a0eb1f090219",
+          "initialFaceId": "313531bd-5419-4b7d-a78f-0fdee5f8efe8",
+          "initiallyConcealed": false,
+          "interaction": "cycle",
+          "visible": true,
+          "box": {
+            "width": 360,
+            "height": 230,
+            "x": 750,
+            "y": 220
+          }
+        },
+        {
+          "kind": "bubble",
+          "id": "612ca250-9c82-4fac-ab90-3b79a6874bf9",
+          "visible": true,
+          "text": "What happens next?",
+          "fontSize": 32,
+          "color": "#182331",
+          "align": "center",
+          "box": {
+            "width": 360,
+            "height": 170,
+            "x": 120,
+            "y": 350
+          }
+        }
+      ],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "638e1d77-b91b-4f0e-b735-d36c377910d7": {
+      "id": "638e1d77-b91b-4f0e-b735-d36c377910d7",
+      "title": "Practice",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [
+        {
+          "kind": "card",
+          "id": "f83456d2-ad23-4c7f-9524-abe62fb9ceef",
+          "cardId": "492ec64b-90fb-4d9c-8f32-54da1c5b13c4",
+          "initialFaceId": "9386cc95-b94d-49c4-8b4c-ff5e0d0e8173",
+          "initiallyConcealed": false,
+          "interaction": "cycle",
+          "visible": true,
+          "box": {
+            "width": 360,
+            "height": 230,
+            "x": 80,
+            "y": 90
+          }
+        }
+      ],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "878c8bb2-e06a-495d-b658-9a38564c9eba": {
+      "id": "878c8bb2-e06a-495d-b658-9a38564c9eba",
+      "title": "Break",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [
+        {
+          "kind": "text",
+          "id": "f12dcf05-a8bd-4db2-8966-dd02f806ec84",
+          "visible": true,
+          "text": "Review together",
+          "fontSize": 52,
+          "color": "#ffffff",
+          "align": "center",
+          "box": {
+            "x": 160,
+            "y": 170,
+            "width": 960,
+            "height": 100
+          }
+        },
+        {
+          "kind": "bubble",
+          "id": "7c32dfb9-43af-43a8-8316-0d6794d3c151",
+          "visible": true,
+          "text": "What do you remember? Share one idea with the class.",
+          "fontSize": 32,
+          "color": "#182331",
+          "align": "center",
+          "box": {
+            "x": 230,
+            "y": 330,
+            "width": 820,
+            "height": 170
+          }
+        },
+        {
+          "id": "break-image-0",
+          "kind": "image",
+          "assetId": "review-skyblue",
+          "visible": true,
+          "box": {
+            "width": 320,
+            "height": 160,
+            "x": 270,
+            "y": 540
+          }
+        },
+        {
+          "id": "break-image-1",
+          "kind": "image",
+          "assetId": "review-orange",
+          "visible": true,
+          "box": {
+            "width": 320,
+            "height": 160,
+            "x": 670,
+            "y": 540
+          }
+        }
+      ],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "903bd7c1-b36c-41ff-8aa7-24144af93823": {
+      "id": "903bd7c1-b36c-41ff-8aa7-24144af93823",
+      "title": "Ungrouped ending",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [
+        {
+          "kind": "card",
+          "id": "d286a057-438d-4d62-84d3-37208253373f",
+          "cardId": "9a854c88-9194-41c3-b256-d7811f6f1218",
+          "initialFaceId": "e20cc4dc-59a1-4e4a-87df-b061a26c91a1",
+          "initiallyConcealed": false,
+          "interaction": "cycle",
+          "visible": true,
+          "box": {
+            "width": 360,
+            "height": 230,
+            "x": 80,
+            "y": 90
+          }
+        }
+      ],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    },
+    "e1ac6f48-5750-4214-a1eb-8beba91ea242": {
+      "id": "e1ac6f48-5750-4214-a1eb-8beba91ea242",
+      "title": "Activation destination",
+      "frame": {
+        "width": 1280,
+        "height": 720
+      },
+      "background": {
+        "color": "#172332"
+      },
+      "objects": [
+        {
+          "kind": "card",
+          "id": "5bf00f31-584b-4eb3-af42-9048e3d720a7",
+          "cardId": "582efe6b-f3ce-4e98-971a-442b65bb798a",
+          "initialFaceId": "0cb173d1-7be7-4016-9392-1b69593129f1",
+          "initiallyConcealed": false,
+          "interaction": "cycle",
+          "visible": true,
+          "box": {
+            "width": 360,
+            "height": 230,
+            "x": 80,
+            "y": 90
+          }
+        }
+      ],
+      "drawings": [],
+      "audio": [],
+      "transition": {
+        "kind": "none",
+        "durationMs": 400
+      },
+      "viewport": {
+        "zoom": 1,
+        "pan": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      "notes": ""
+    }
+  },
+  "sequences": {
+    "story": [
+      {
+        "id": "df92d67c-6e3a-49c4-980e-4922253d7885",
+        "sceneId": "503a4536-4845-46a1-b7b0-f2ac785248a8",
+        "section": "Discover",
+        "sectionId": "6ed92d18-591b-4619-84a1-08ca09c6afb3"
+      },
+      {
+        "id": "da6cc200-9d46-4af9-8562-a261cfae7959",
+        "sceneId": "638e1d77-b91b-4f0e-b735-d36c377910d7",
+        "section": "Reflect",
+        "sectionId": "03eb667f-f96c-4bff-8b8f-48623af236ba"
+      },
+      {
+        "id": "1c73bee7-b4a8-4b2d-b59b-5800fd29e3d5",
+        "sceneId": "878c8bb2-e06a-495d-b658-9a38564c9eba",
+        "section": "Reflect",
+        "kind": "break",
+        "sectionId": "03eb667f-f96c-4bff-8b8f-48623af236ba"
+      },
+      {
+        "id": "1848aeef-9ff9-473f-8c32-e192c1b5e145",
+        "sceneId": "903bd7c1-b36c-41ff-8aa7-24144af93823",
+        "section": ""
+      }
+    ],
+    "activation": [
+      {
+        "id": "c8bb5d20-5a8e-4902-8638-67eb840980e3",
+        "sceneId": "e1ac6f48-5750-4214-a1eb-8beba91ea242",
+        "section": ""
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "6ed92d18-591b-4619-84a1-08ca09c6afb3",
+      "name": "Discover",
+      "sequence": "story"
+    },
+    {
+      "id": "03eb667f-f96c-4bff-8b8f-48623af236ba",
+      "name": "Reflect",
+      "sequence": "story"
+    },
+    {
+      "id": "8aa80d59-f23f-409c-a7fc-b3a039a59211",
+      "name": "Empty section",
+      "sequence": "story"
+    }
+  ]
+}
