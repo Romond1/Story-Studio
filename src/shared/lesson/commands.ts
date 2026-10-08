@@ -43,8 +43,7 @@ export function reorderEntry(project: LessonProject, sequence: SequenceKind, ent
   if (!entry) return project;
   const entries = project.sequences[sequence].filter(item => item.id !== entryId);
   const index = beforeEntryId ? entries.findIndex(item => item.id === beforeEntryId) : -1;
-  const destination = index >= 0 ? entries[index] : entries[entries.length - 1];
-  entries.splice(index < 0 ? entries.length : index, 0, { ...entry, sectionId: destination?.sectionId, section: destination?.section ?? '' });
+  entries.splice(index < 0 ? entries.length : index, 0, entry);
   return { ...project, sequences: { ...project.sequences, [sequence]: entries } };
 }
 export function fitBox(box: Rect, frame: LessonScene['frame']): Rect {
@@ -189,4 +188,17 @@ export function copyScene(project: LessonProject, sceneId: string, destination: 
     project = addObject(project, scene.id, object);
   }
   return { project, entryId: added.entryId };
+}
+
+/** Duplicate a timeline occurrence, preserving its Break type and same-sequence group. */
+export function duplicateEntry(project: LessonProject, sourceSequence: SequenceKind, sourceEntryId: string, destination: SequenceKind, linked = false): { project: LessonProject; entryId: string } {
+  const source = project.sequences[sourceSequence].find(e => e.id === sourceEntryId);
+  if (!source) throw new Error('Scene entry no longer exists.');
+  const added = copyScene(project, source.sceneId, destination, linked);
+  const entries = added.project.sequences[destination].filter(e => e.id !== added.entryId);
+  const newEntry = added.project.sequences[destination].find(e => e.id === added.entryId)!;
+  const sameSequence = sourceSequence === destination;
+  const index = sameSequence ? entries.findIndex(e => e.id === sourceEntryId) + 1 : entries.length;
+  entries.splice(index, 0, { ...newEntry, kind: source.kind, section: sameSequence ? source.section : '', ...(sameSequence && source.sectionId ? { sectionId: source.sectionId } : {}) });
+  return { ...added, project: { ...added.project, sequences: { ...added.project.sequences, [destination]: entries } } };
 }

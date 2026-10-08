@@ -4,4 +4,5 @@ export const LESSON_LIMITS = {
   cards: 2000,
   scenes: 2000,
   entriesPerSequence: 2000,
+  sections: 4000,
 } as const;

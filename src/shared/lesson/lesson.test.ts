@@ -128,4 +128,3 @@ test('format validation rejects legacy, broken references and invalid geometry',
   assert.deepEqual(parseLessonProject(added), added);
 });
 
-import './sections.test';

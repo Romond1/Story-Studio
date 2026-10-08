@@ -1,5 +1,6 @@
 import { makeId, type LessonProject, type SequenceKind } from './model';
 import { createScene, insertScene } from './commands';
+import { LESSON_LIMITS } from './limits';
 
 /** Preserve sequence and audio exactly while upgrading old display labels. */
 export function migrateSections(project: LessonProject): LessonProject {
@@ -20,6 +21,7 @@ export function migrateSections(project: LessonProject): LessonProject {
 }
 export function addSection(project: LessonProject, sequence: SequenceKind, name = 'New section') {
   project = migrateSections(project);
+  if ((project.sections?.length ?? 0) >= LESSON_LIMITS.sections) throw new Error(`This lesson can contain at most ${LESSON_LIMITS.sections} sections.`);
   const sectionId = makeId();
   return { project: { ...project, sections: [...(project.sections ?? []), { id: sectionId, name: name.trim().slice(0, 500) || 'New section', sequence }] }, sectionId };
 }
@@ -40,7 +42,12 @@ export function moveEntryToSection(project: LessonProject, sequence: SequenceKin
   return { ...project, sequences: { ...project.sequences, [sequence]: entries } };
 }
 export function insertBreak(project: LessonProject, sequence: SequenceKind, beforeEntryId?: string, sectionId?: string) {
-  const added = insertScene(project, sequence, createScene('Break'), beforeEntryId);
+  const scene = createScene('Break');
+  scene.objects = [
+    { kind: 'text', id: makeId(), visible: true, text: 'Review together', fontSize: 52, color: '#ffffff', align: 'center', box: { x: 160, y: 170, width: 960, height: 100 } },
+    { kind: 'bubble', id: makeId(), visible: true, text: 'What do you remember? Share one idea with the class.', fontSize: 32, color: '#182331', align: 'center', box: { x: 230, y: 330, width: 820, height: 170 } },
+  ];
+  const added = insertScene(project, sequence, scene, beforeEntryId);
   const inherited = sectionId ?? project.sequences[sequence].find(e => e.id === beforeEntryId)?.sectionId;
   let next = { ...added.project, sequences: { ...added.project.sequences, [sequence]: added.project.sequences[sequence].map(e => e.id === added.entryId ? { ...e, kind: 'break' as const } : e) } };
   if (inherited) next = moveEntryToSection(next, sequence, added.entryId, inherited, beforeEntryId);

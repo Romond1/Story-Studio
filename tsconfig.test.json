@@ -24,6 +24,7 @@
     "src/shared/lessonDomain.test.ts",
     "src/shared/lessonProjection.test.ts",
     "src/shared/lesson/lesson.test.ts",
+    "src/shared/lesson/sections.test.ts",
     "src/shared/lessonPersistence.test.ts",
     "src/shared/lessonValidation.test.ts",
     "src/shared/cardAuthoring.test.ts",

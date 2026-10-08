@@ -39,7 +39,7 @@ export function parseLessonProject(value: unknown): LessonProject {
   for (const card of Object.values(p.cards) as any[]) for (const face of card.faces) check(!face.imageAssetId || asset(face.imageAssetId, 'image'), 'card image reference');
   check(record(p.scenes) && Object.keys(p.scenes).length <= LESSON_LIMITS.scenes && record(p.sequences), 'scenes/sequences');
   if (p.sections !== undefined) {
-    check(list(p.sections) && unique(p.sections), 'sections');
+    check(list(p.sections, LESSON_LIMITS.sections) && unique(p.sections), 'sections');
     for (const section of p.sections) check(text(section.name, 500) && section.name.trim().length && ['story', 'activation'].includes(section.sequence), 'section identity');
   }
   for (const sequence of ['story', 'activation']) {
