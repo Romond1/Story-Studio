@@ -1,0 +1,186 @@
+{
+  "sourceDirectory": "D:\\AI\\SET OUT\\TWIN STAR\\GAME\\Final Boss Hero",
+  "capturedFrom": "Working source; HEAD f0aa8a1 with local gameplay/editor changes",
+  "files": [
+    {
+      "source": "src/App.tsx",
+      "bytes": 1391,
+      "sha256": "9456b6423e0d87a12736a3edf681d0983d5ce9535b506eced53a28a1a6345d10"
+    },
+    {
+      "source": "src/main.tsx",
+      "bytes": 242,
+      "sha256": "806173917b12038a05079d5d10bee3b6679a7222e4c95bfc41ff737f0979b0a6"
+    },
+    {
+      "source": "src/styles.css",
+      "bytes": 146151,
+      "sha256": "4c1b1c0471912adf121313ee62d5c4d18cef7c265f360b8f2aad7bc700118438"
+    },
+    {
+      "source": "src/animations/cardMotion.ts",
+      "bytes": 3491,
+      "sha256": "26c3b553ca673572aef7e90c5d9921a08fc4711b80afbf1eebe4e96d1e37ba47"
+    },
+    {
+      "source": "src/animations/pointerTilt.ts",
+      "bytes": 3295,
+      "sha256": "5f2d97266a74e37da1b987e1b6cbcc273c65e588f1aedf3b4659cf068d364d3b"
+    },
+    {
+      "source": "src/animations/scoreFeedback.ts",
+      "bytes": 2353,
+      "sha256": "07ddeff046776b29fd9f5fc0a57c85e9a82fbd708bc6c9bc386ba72f1bdcb2d6"
+    },
+    {
+      "source": "src/animations/screenShake.ts",
+      "bytes": 1283,
+      "sha256": "d511a05c12e59e6c997a8119618be1ef07feabd4c5515339fb17882a356dee05"
+    },
+    {
+      "source": "src/battle/battleSystem.ts",
+      "bytes": 4312,
+      "sha256": "0bca8e42c76aed624ab52dd73831304c592196110fc7e2bcdab4c162d566f154"
+    },
+    {
+      "source": "src/components/BattleIntroScreen.tsx",
+      "bytes": 6125,
+      "sha256": "223a5425f1b8c83a31f467311b71c830d1db4dd1bbe5c3053759ea5707a2bacb"
+    },
+    {
+      "source": "src/components/BattleShell.tsx",
+      "bytes": 65089,
+      "sha256": "4d5732ec6350fc82c6fc8ca12846b6bc052fd9d051dbed25302837a7849395db"
+    },
+    {
+      "source": "src/components/Dice3D.tsx",
+      "bytes": 2294,
+      "sha256": "a4112959434e2920593fefed7c07e7e23e927ed67cd3b41758dfb0d9d00b460d"
+    },
+    {
+      "source": "src/components/EditModeShell.tsx",
+      "bytes": 100322,
+      "sha256": "acf7ea002eb3df99d9e6e1c0410cc127de03ccd0f5c84438f5d54c4d8d7eb2f8"
+    },
+    {
+      "source": "src/components/VFXLayer.tsx",
+      "bytes": 5635,
+      "sha256": "37d3f1f8c3c9a99f6050caac6e7b1ad418eeddf520ee34bc106cb43807dc1078"
+    },
+    {
+      "source": "src/components/zoomMath.ts",
+      "bytes": 1891,
+      "sha256": "9bade74d3bac96b58f1e863e654d8a89a8a0a484427d5b659c7cfc114728a1e5"
+    },
+    {
+      "source": "src/components/__tests__/VFXLayer.test.tsx",
+      "bytes": 1294,
+      "sha256": "9def4ba1bca52f44f052e1c26395c9f75c0b3c1e0aeb01f0166c9ecd3596051c"
+    },
+    {
+      "source": "src/components/__tests__/zoomMath.test.ts",
+      "bytes": 1521,
+      "sha256": "29ac905468bb2ff96a9dacf022f249702d8a028e2886990066eb489d861c06fe"
+    },
+    {
+      "source": "src/data/sampleData.ts",
+      "bytes": 8302,
+      "sha256": "58598bf3f1c0a3ba82a5b53939f0654f26f3015fc8783975624a40221a0f6f32"
+    },
+    {
+      "source": "src/miniGames/registry.ts",
+      "bytes": 760,
+      "sha256": "4b3db737917d75368bb6dffa128c75e79b53d76304e06620baca866f002783c2"
+    },
+    {
+      "source": "src/miniGames/types.ts",
+      "bytes": 842,
+      "sha256": "6cee34de17170c5b296464f30521ff9f5c1d713ec67e4868552da3837424799c"
+    },
+    {
+      "source": "src/miniGames/plugins/boardDash.tsx",
+      "bytes": 30733,
+      "sha256": "5ba6201ab2d8e0077df9e4b4537e8597eb17f439407002501e9d2b91f5280843"
+    },
+    {
+      "source": "src/miniGames/plugins/laneBattle.tsx",
+      "bytes": 26512,
+      "sha256": "be35cb61af87117ac4c058179dd3d7beae5934ef2d3ad495365a468b952b122f"
+    },
+    {
+      "source": "src/miniGames/plugins/matchPairs.tsx",
+      "bytes": 22357,
+      "sha256": "2cd8c36f9ac27c7644e2fb32a189a9cd9d39015b5593f1e386a014203b2f56c1"
+    },
+    {
+      "source": "src/miniGames/plugins/memoryReveal.tsx",
+      "bytes": 21878,
+      "sha256": "08ce084254ce391969972c6b72bb5af8d11d82ae14f8951609efdafebc588b21"
+    },
+    {
+      "source": "src/miniGames/plugins/openBox.tsx",
+      "bytes": 20577,
+      "sha256": "3e37281d52582ebc2799f95893810ea441199aa6a9c7d777015497ac473a3c64"
+    },
+    {
+      "source": "src/miniGames/plugins/__tests__/memoryReveal.test.tsx",
+      "bytes": 2418,
+      "sha256": "ed215b01c9769bbd5d3a879337537d6b7e9b7b7aab3446451f117359f42e9feb"
+    },
+    {
+      "source": "src/store/battleStore.ts",
+      "bytes": 72009,
+      "sha256": "9633ae0dfeedd725a474b91f1f6994f01d313f07a0d0ed8f6f9c06c48bb9ec6f"
+    },
+    {
+      "source": "src/test/setup.ts",
+      "bytes": 251,
+      "sha256": "f36614440539572964b59f522d758e76269b4cf2fa5945c9e0c76e9c271c6784"
+    },
+    {
+      "source": "src/types/game.ts",
+      "bytes": 6361,
+      "sha256": "44d9aaf28fc65384c602c56b2432c1d3e5c7701b79c15e778e136ee31e367712"
+    },
+    {
+      "source": "src/types/projectFile.ts",
+      "bytes": 778,
+      "sha256": "0dbfc3801f67156728f8386802b636a7e8d8a2c7480246870d8d8acbd190425d"
+    },
+    {
+      "source": "public/board-dash/back3.png",
+      "bytes": 299240,
+      "sha256": "f108eed7b00d71227f7b93e88f3ff18daae84fee0af653ee3a40c4ac756a0e5f"
+    },
+    {
+      "source": "public/board-dash/bonus.png",
+      "bytes": 277413,
+      "sha256": "785f0bdd5ec4241806376e10245e392b9b8a67f3fd172d9a24b9ce2896272a96"
+    },
+    {
+      "source": "public/board-dash/finish.png",
+      "bytes": 286182,
+      "sha256": "007d798b555e8668c0b1d13c103f56462bb8fe065b8327bdac8c3a193af22f62"
+    },
+    {
+      "source": "public/board-dash/move.png",
+      "bytes": 275380,
+      "sha256": "e0108759428a9dfdeeb2e23ae99e807d9780d7a98aa0161a8e8c49618392440d"
+    },
+    {
+      "source": "public/board-dash/roll-again.png",
+      "bytes": 307597,
+      "sha256": "86b59dc01b0a5438a454a4b7bbed250aef44aa683dec907fa5bf2c20c96e3536"
+    },
+    {
+      "source": "public/board-dash/start.png",
+      "bytes": 270861,
+      "sha256": "4b99884d018011a3150f2a15fbb6dc8df0dd5af9c5f9102b398bb5118100dd6f"
+    },
+    {
+      "source": "public/board-dash/steal.png",
+      "bytes": 278318,
+      "sha256": "bb235bebe0c2cf528ff92fdc53d57c9f83b8ad9fff9754b67fec179e66c93e65"
+    }
+  ]
+}

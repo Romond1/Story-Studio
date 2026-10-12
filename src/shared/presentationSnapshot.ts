@@ -9,8 +9,10 @@ import type { OverlayItem } from './types';
 import { resolveImageAdjustments } from './imageAdjustments';
 import { parseCardV2RenderPlan, type CardV2RenderPlan } from './cardV2Render';
 import { parseScenePlan, type ScenePlan } from './lesson/projection';
+import { parseGameSession, type GameInputPacket } from './gameHost';
 /** Student-safe projection only. Control remains the sole lesson authority. */
 export type PresentTarget =
+  | { kind: 'game'; occurrenceId: string; gameId: string; instanceId: string }
   | { kind: 'scene'; occurrenceId: string; plan: ScenePlan; media?: MediaIntent }
   | { kind: 'cards-v2'; occurrenceId: string; plan: CardV2RenderPlan }
   | { kind: 'prompt'; occurrenceId: string; title: string; body: string; scene: StaticScene; activity: ActivityScene }
@@ -21,6 +23,7 @@ export type PresentTarget =
 export interface PresentSnapshot { sessionId: string; revision: number; target: PresentTarget; cardsV2?: CardV2RenderPlan; transition?: SceneTransitionEvent; movement?: MovementPresentation; rewards?: RewardPresentation }
 export interface PresentEnvelope { generation: number; sequence: number; snapshot: PresentSnapshot | null; rendererGeneration?: number }
 export interface PresentApi {
+  subscribeGameInput(listener: (packet: GameInputPacket) => void): () => void;
   reportViewport?: (viewport: { width: number; height: number }) => void;
   subscribeMedia(listener: (packet: MediaPacket) => void): () => void;
   sendMedia(packet: MediaPacket): void;
@@ -44,6 +47,10 @@ export function parsePresentSnapshot(value: unknown): PresentSnapshot | null {
   if (cardsV2 === null) return null;
   const target = value.target;
   if (!id(target.occurrenceId)) return null;
+  if (target.kind === 'game') {
+    const game = parseGameSession(target);
+    return game ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'game', occurrenceId: target.occurrenceId, ...game } } : null;
+  }
   if (target.kind === 'scene') {
     const plan = parseScenePlan(target.plan);
     const media = target.media === undefined ? undefined : parseMediaIntent(target.media);

@@ -1,0 +1,27 @@
+.game-host { flex: 1; min-height: 0; overflow: auto; padding: clamp(20px, 4vw, 48px); background: var(--studio-bg); }
+.game-host-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.game-host h1 { font-size: 28px; margin-bottom: 0; }
+.game-host h2 { font-size: 20px; margin-bottom: 12px; }
+.game-host p { line-height: 1.6; }
+.game-host-eyebrow { color: var(--studio-cyan); text-transform: uppercase; font-size: 11px; letter-spacing: .16em; margin-bottom: 6px; }
+.game-host-intro, .game-host-muted, .game-session-panel > p { color: var(--studio-muted); }
+.game-library { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 360px)); gap: 20px; }
+.game-library-card, .game-session-panel, .game-library-empty { border: 1px solid var(--studio-border); border-radius: var(--studio-radius); padding: 24px; background: var(--studio-panel-fill); }
+.game-host-icon { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--studio-creative-fill); color: var(--studio-cyan); font-size: 26px; margin-bottom: 20px; }
+.game-session-panel { max-width: 860px; }
+.game-session-heading { display: flex; align-items: center; gap: 16px; }
+.game-session-heading .game-host-icon { margin-bottom: 0; }
+.game-session-heading h2 { margin-bottom: 2px; }
+.game-session-heading p { color: var(--studio-cyan); margin-bottom: 0; }
+.game-session-panel > p { margin: 20px 0; }
+.game-host-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.game-keyboard { padding: 20px; margin-top: 24px; background: var(--studio-input); border: 1px solid var(--studio-border); border-radius: var(--studio-radius-small); cursor: pointer; }
+.game-keyboard > p { margin: 8px 0; }
+.game-keyboard dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 20px 0; }
+.game-keyboard dt { color: var(--studio-muted); font-size: 12px; margin-bottom: 6px; }
+.game-keyboard dd { color: var(--studio-violet); margin: 0; font-weight: 600; }
+.game-host-notice { color: var(--studio-muted); margin: 20px 0 0; }
+.game-host-instructions { margin: 20px 0; color: var(--studio-muted); }
+.game-host-instructions h3 { color: var(--studio-text); font-size: 16px; }
+.game-keyboard dd { overflow-wrap: anywhere; }
+@media (max-width: 620px) { .game-host-heading { align-items: flex-start; flex-wrap: wrap; } .game-keyboard dl { grid-template-columns: repeat(2, 1fr); } .game-library-card, .game-session-panel, .game-library-empty { padding: 20px; } }

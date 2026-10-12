@@ -1,0 +1,164 @@
+{
+  "observations": [
+    {
+      "name": "selection-return",
+      "before": {
+        "currentTime": 1.8,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 1.8,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "e6ed2050-7ad9-46c4-a36f-138b856752ff",
+      "intent": {
+        "identity": "c43f1dd9-a15e-4103-b98d-b08e6dbfd059:f1215d7b-985a-49cb-851b-ab6aa277e2da:1:video-regression",
+        "epoch": 8,
+        "bridgeEpoch": 8,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 1.8,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "launch-return",
+      "before": {
+        "currentTime": 1.888,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 1.888,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "e6ed2050-7ad9-46c4-a36f-138b856752ff",
+      "intent": {
+        "identity": "c43f1dd9-a15e-4103-b98d-b08e6dbfd059:f1215d7b-985a-49cb-851b-ab6aa277e2da:1:video-regression",
+        "epoch": 14,
+        "bridgeEpoch": 14,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 1.888,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "restart-return",
+      "before": {
+        "currentTime": 1.986075,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 1.986075,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "e6ed2050-7ad9-46c4-a36f-138b856752ff",
+      "intent": {
+        "identity": "c43f1dd9-a15e-4103-b98d-b08e6dbfd059:f1215d7b-985a-49cb-851b-ab6aa277e2da:1:video-regression",
+        "epoch": 20,
+        "bridgeEpoch": 20,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 1.986075,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "edit-launch-return",
+      "before": {
+        "currentTime": 2.064351,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 2.06435,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "e6ed2050-7ad9-46c4-a36f-138b856752ff",
+      "intent": {
+        "identity": "c43f1dd9-a15e-4103-b98d-b08e6dbfd059:f1215d7b-985a-49cb-851b-ab6aa277e2da:1:video-regression",
+        "epoch": 27,
+        "bridgeEpoch": 27,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 2.064351,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "game-selection-return",
+      "before": {
+        "currentTime": 2.06435,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 2.06435,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "e6ed2050-7ad9-46c4-a36f-138b856752ff",
+      "intent": {
+        "identity": "c43f1dd9-a15e-4103-b98d-b08e6dbfd059:f1215d7b-985a-49cb-851b-ab6aa277e2da:1:video-regression",
+        "epoch": 31,
+        "bridgeEpoch": 31,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 2.06435,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "selection-relaunch-return",
+      "before": {
+        "currentTime": 2.06435,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 2.06435,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "e6ed2050-7ad9-46c4-a36f-138b856752ff",
+      "intent": {
+        "identity": "c43f1dd9-a15e-4103-b98d-b08e6dbfd059:f1215d7b-985a-49cb-851b-ab6aa277e2da:1:video-regression",
+        "epoch": 34,
+        "bridgeEpoch": 34,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 2.06435,
+        "volume": 1,
+        "enabled": true
+      }
+    }
+  ],
+  "failures": [],
+  "errors": [],
+  "sampleProject": "D:\\Temp\\story-game-media-c9hN7R\\Disposable video lesson",
+  "originalLessonsTouched": false
+}

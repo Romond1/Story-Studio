@@ -5,6 +5,7 @@ import { LessonApp } from './lesson/LessonApp';
 import './styles.css';
 import './relics/relics.css';
 import './audio/audio.css';
+import './studioTheme.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

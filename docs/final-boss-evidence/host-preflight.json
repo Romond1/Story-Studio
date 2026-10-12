@@ -1,0 +1,282 @@
+{
+  "passed": [
+    "Mastery filters registry correctly; ready game runs once in Present with loaded original artwork and no Control iframe",
+    "Original encounter editor, vocabulary project import, difficulty edit, native JSON export and re-import work in Present",
+    "Host restart destroys the old runtime; fresh instance starts normally and ignores stale input",
+    "Exit/reopen/native Present close/return retain lesson dirty edits and independent Teach/Edit cursors; game arrows never navigate the lesson"
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "diagnosticFailures": [],
+  "gameStates": [],
+  "lifecycle": [
+    {
+      "action": "restart",
+      "oldInstanceId": "1f69c38b-c5a9-4724-bb05-f4cf7b0379b4",
+      "newInstanceId": "af6ca0ee-0a9c-4079-b9fa-19c106ad2341",
+      "oldFrameDestroyed": true,
+      "staleInputIgnored": true
+    },
+    {
+      "action": "return-exit-reopen-close",
+      "closedInstanceId": "12e791db-4366-41f6-9977-bd0c5546cb95",
+      "reopenedInstanceId": "3f11d205-304a-44f6-84f0-4ddb59dafaf0",
+      "lessonCursorsRetained": true,
+      "dirtyCardRetained": true,
+      "originalProjectUnchanged": true
+    },
+    {
+      "action": "actual-native-file-access",
+      "availability": {
+        "savePicker": "function",
+        "loadPicker": "function"
+      },
+      "nativeApiSubstituted": false,
+      "saveStatus": "Encounter: Trial of the Frost Tyrant\nProject File: (unsaved)\nFile Access: Native picker\nCards: 8\nSelected for encounter: 6\nSave State: Unsaved changes",
+      "electronDownloads": [],
+      "downloadFallback": false,
+      "savePickerUnverified": true,
+      "loadStatus": "Encounter: Trial of the Frost Tyrant\nProject File: (unsaved)\nFile Access: Native picker\nCards: 8\nSelected for encounter: 6\nSave State: Unsaved changes\nLoad canceled.",
+      "loadChooserFallback": false,
+      "loadPickerUnverified": true
+    }
+  ],
+  "layouts": [
+    {
+      "label": "Mastery selection desktop",
+      "control": {
+        "horizontalOverflow": false,
+        "clipped": [],
+        "overlaps": []
+      }
+    },
+    {
+      "label": "After native project import/export",
+      "metrics": {
+        "view": {
+          "zoom": 1,
+          "offsetX": 0,
+          "offsetY": 158
+        },
+        "viewport": {
+          "width": 886,
+          "height": 798
+        },
+        "content": {
+          "scrollWidth": 884,
+          "scrollHeight": 480,
+          "offsetWidth": 886,
+          "offsetHeight": 482
+        },
+        "shell": {
+          "x": 0,
+          "y": 0,
+          "width": 1424,
+          "height": 961,
+          "top": 0,
+          "right": 1424,
+          "bottom": 961,
+          "left": 0
+        }
+      }
+    },
+    {
+      "label": "Final Boss Control desktop",
+      "control": {
+        "horizontalOverflow": false,
+        "clipped": [],
+        "overlaps": []
+      }
+    },
+    {
+      "label": "Final Boss Control narrow",
+      "control": {
+        "horizontalOverflow": false,
+        "clipped": [],
+        "overlaps": []
+      }
+    }
+  ],
+  "camera": [],
+  "assets": [
+    {
+      "alt": "",
+      "src": "https://placehold.co/1200x700?text=Battle+Background",
+      "loaded": true
+    },
+    {
+      "alt": "Hero portrait",
+      "src": "https://placehold.co/200x220?text=Hero",
+      "loaded": true
+    },
+    {
+      "alt": "",
+      "src": "https://placehold.co/1200x700?text=Battle+Background",
+      "loaded": true
+    },
+    {
+      "alt": "Winter Rune",
+      "src": "https://placehold.co/512x512?text=Rune",
+      "loaded": true
+    },
+    {
+      "alt": "Glacier Mark",
+      "src": "https://placehold.co/512x512?text=Frost",
+      "loaded": true
+    },
+    {
+      "alt": "Flame Sigil",
+      "src": "https://placehold.co/512x512?text=Flame",
+      "loaded": true
+    },
+    {
+      "alt": "Winter Rune",
+      "src": "https://placehold.co/512x512?text=Rune",
+      "loaded": true
+    },
+    {
+      "alt": "Flame Sigil",
+      "src": "https://placehold.co/512x512?text=Flame",
+      "loaded": true
+    },
+    {
+      "alt": "Glacier Mark",
+      "src": "https://placehold.co/512x512?text=Frost",
+      "loaded": true
+    },
+    {
+      "alt": "Winter Rune",
+      "src": "https://placehold.co/512x512?text=Rune",
+      "loaded": true
+    },
+    {
+      "alt": "Glacier Mark",
+      "src": "https://placehold.co/512x512?text=Frost",
+      "loaded": true
+    },
+    {
+      "alt": "Flame Sigil",
+      "src": "https://placehold.co/512x512?text=Flame",
+      "loaded": true
+    },
+    {
+      "alt": "Villain portrait",
+      "src": "https://placehold.co/200x220?text=Villain",
+      "loaded": true
+    },
+    {
+      "name": "back3-Ddfgxbk_.png",
+      "src": "file:///D:/AI/GitHub/Story-Studio/dist/renderer/assets/back3-Ddfgxbk_.png",
+      "loaded": true,
+      "width": 1024,
+      "height": 1024,
+      "bundled": true
+    },
+    {
+      "name": "bonus-3G2iKrHZ.png",
+      "src": "file:///D:/AI/GitHub/Story-Studio/dist/renderer/assets/bonus-3G2iKrHZ.png",
+      "loaded": true,
+      "width": 1024,
+      "height": 1024,
+      "bundled": true
+    },
+    {
+      "name": "finish-DGirEU8T.png",
+      "src": "file:///D:/AI/GitHub/Story-Studio/dist/renderer/assets/finish-DGirEU8T.png",
+      "loaded": true,
+      "width": 1024,
+      "height": 1024,
+      "bundled": true
+    },
+    {
+      "name": "move-BjdcxoS3.png",
+      "src": "file:///D:/AI/GitHub/Story-Studio/dist/renderer/assets/move-BjdcxoS3.png",
+      "loaded": true,
+      "width": 1024,
+      "height": 1024,
+      "bundled": true
+    },
+    {
+      "name": "roll-again-C9oqkwkt.png",
+      "src": "file:///D:/AI/GitHub/Story-Studio/dist/renderer/assets/roll-again-C9oqkwkt.png",
+      "loaded": true,
+      "width": 1024,
+      "height": 1024,
+      "bundled": true
+    },
+    {
+      "name": "start-ovljRe-g.png",
+      "src": "file:///D:/AI/GitHub/Story-Studio/dist/renderer/assets/start-ovljRe-g.png",
+      "loaded": true,
+      "width": 1024,
+      "height": 1024,
+      "bundled": true
+    },
+    {
+      "name": "steal-Bbvbdd0a.png",
+      "src": "file:///D:/AI/GitHub/Story-Studio/dist/renderer/assets/steal-Bbvbdd0a.png",
+      "loaded": true,
+      "width": 1024,
+      "height": 1024,
+      "bundled": true
+    }
+  ],
+  "media": [
+    {
+      "event": "observerScope",
+      "gameInstanceId": "1f69c38b-c5a9-4724-bb05-f4cf7b0379b4",
+      "parentSession": true
+    },
+    {
+      "event": "nativeCutscenePlayback",
+      "muted": false,
+      "paused": false,
+      "time": 0.142714,
+      "audioDecodedBytes": 895,
+      "source": "data:video/webm;base64,G"
+    },
+    {
+      "event": "observerScope",
+      "gameInstanceId": "af6ca0ee-0a9c-4079-b9fa-19c106ad2341",
+      "parentSession": true
+    },
+    {
+      "event": "observerScope",
+      "gameInstanceId": "c11f5830-2eb2-41e2-a4d6-122a6ae6e6f9",
+      "parentSession": true
+    },
+    {
+      "event": "observerScope",
+      "gameInstanceId": "12e791db-4366-41f6-9977-bd0c5546cb95",
+      "parentSession": true
+    },
+    {
+      "event": "observerScope",
+      "gameInstanceId": "3f11d205-304a-44f6-84f0-4ddb59dafaf0",
+      "parentSession": true
+    },
+    {
+      "event": "observerScope",
+      "gameInstanceId": "763e68b9-9b61-4e44-a349-a906d5ed2418",
+      "parentSession": true
+    },
+    {
+      "event": "observerScope",
+      "gameInstanceId": "81f51875-1497-40f4-862b-183a5dae8c27",
+      "parentSession": true
+    }
+  ],
+  "limitations": [
+    "Original sample character/card/background art uses remote placehold.co; this run verified those requests loaded.",
+    "Unmodified native Save As produced no download event in Playwright or Electron within seven seconds, and its status did not report fallback/download. The native picker request remains unverified and needs manual OS interaction; the serializer/editor roundtrip was checked separately.",
+    "Unmodified native Load returned the original Load canceled status without a browser file-chooser event. Selecting a real file through the OS picker needs a manual check; direct supported file-input import is verified separately.",
+    "Default game has no synthesized/background audio. Imported VP8/Vorbis cutscene audio decode and runtime cleanup are automated; physical/conferencing audibility remains a manual check."
+  ],
+  "sampleProject": "D:\\Temp\\story-final-boss-sWIBWp\\Disposable lesson",
+  "originalLessonsTouched": false,
+  "gameRuntimeMutations": false,
+  "originalGameTouched": false,
+  "conferencingAudioTested": false,
+  "nativeGameSavePickerSubstituted": true,
+  "diagnosticOnly": true
+}

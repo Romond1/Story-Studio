@@ -1,0 +1,86 @@
+{
+  "observations": [
+    {
+      "name": "selection-return",
+      "before": {
+        "currentTime": 1.8,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 1.8,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "f46b76e6-c127-45a1-bef1-b7a84333f7be",
+      "intent": {
+        "identity": "7a43210d-eaec-485b-8731-318352e0f36e:cedcd6fa-95b6-4d9e-a509-c7ec50c9fc4f:1:video-regression",
+        "epoch": 8,
+        "bridgeEpoch": 8,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 1.8,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "launch-return",
+      "before": {
+        "currentTime": 1.856645,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 1.856645,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "f46b76e6-c127-45a1-bef1-b7a84333f7be",
+      "intent": {
+        "identity": "7a43210d-eaec-485b-8731-318352e0f36e:cedcd6fa-95b6-4d9e-a509-c7ec50c9fc4f:1:video-regression",
+        "epoch": 14,
+        "bridgeEpoch": 14,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 1.856645,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "restart-return",
+      "before": {
+        "currentTime": 1.94526,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 1.94526,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "f46b76e6-c127-45a1-bef1-b7a84333f7be",
+      "intent": {
+        "identity": "7a43210d-eaec-485b-8731-318352e0f36e:cedcd6fa-95b6-4d9e-a509-c7ec50c9fc4f:1:video-regression",
+        "epoch": 20,
+        "bridgeEpoch": 20,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 1.94526,
+        "volume": 1,
+        "enabled": true
+      }
+    }
+  ],
+  "failures": [],
+  "errors": [],
+  "sampleProject": "D:\\Temp\\story-game-media-Ovb8mI\\Disposable video lesson",
+  "originalLessonsTouched": false
+}

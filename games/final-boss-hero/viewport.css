@@ -1,0 +1,126 @@
+/* Native DOM rendering keeps the original pointer, wheel and pan coordinates accurate. */
+html, body, #root { width: 100%; height: 100%; margin: 0; }
+body { overflow: hidden; }
+.game-load-error { margin: 40px; color: #f4f4f4; font-size: 20px; line-height: 1.5; }
+.battle-shell { grid-template-rows: auto minmax(0, 1fr); }
+/* These frames clip game visuals, but must not retain browser focus-scroll
+   offsets. Visible fighter/editor/narrow .battle-main scrolling stays native. */
+.battle-shell, .gameplay-area, .gameplay-zoom-viewport { overflow: clip; }
+.top-bar {
+  position: relative;
+  inset: auto;
+  margin: .45rem .75rem 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.top-chip { justify-self: start; max-width: 100%; }
+.top-chip h1 { overflow-wrap: anywhere; }
+.top-score-pill { position: static; transform: none; }
+.top-bar-actions { justify-content: flex-end; flex-wrap: wrap; }
+.top-bar-actions select { max-width: 100%; }
+.battle-main { grid-template-columns: 236px minmax(0, 1fr) 236px; padding-top: .55rem; }
+.fighter-panel, .center-column { min-width: 0; }
+.powerup-target-toggle, .powerup-target-buttons { flex-wrap: wrap; }
+.zoom-toolbar { max-width: calc(100% - .9rem); flex-wrap: wrap; justify-content: flex-end; }
+.zoom-toolbar-start-action, .mini-game-toolbar-actions { flex-wrap: wrap; }
+.stage-overlay { overflow-y: auto; align-items: start; scrollbar-width: thin; }
+.intermission-panel { min-height: 0; max-width: 100%; margin-block: auto; flex-shrink: 0; }
+.cutscene-panel { max-height: 100%; overflow-y: auto; }
+.edit-shell-header, .edit-header-actions { flex-wrap: wrap; }
+.edit-shell-body, .edit-shell-workspace, .editor-section { min-width: 0; }
+.edit-header-actions { justify-content: flex-end; }
+
+/* Setup uses fixed text and native scrolling, not game-card zoom. Bound its
+   existing scroll surface to the play viewport while retaining natural width. */
+.gameplay-zoom-layer:has(.battle-intro-screen) { width: 100%; height: 100%; }
+.gameplay-content-stage:has(.battle-intro-screen) { width: 100%; max-width: 100%; height: 100%; min-height: 0; }
+.battle-intro-screen { width: 100%; height: 100%; max-height: 100%; flex-shrink: 0; }
+.battle-intro-screen > * { flex-shrink: 0; }
+.battle-intro-hero-grid { grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); }
+.battle-intro-feature-row { grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr)); }
+.battle-intro-card-grid { grid-template-columns: repeat(auto-fit, minmax(min(134px, 100%), 1fr)); }
+.battle-intro-feature-body { grid-template-columns: 82px minmax(0, 1fr); }
+.battle-intro-screen strong, .battle-intro-screen p { overflow-wrap: anywhere; }
+
+/* Open Box has four columns. Keep a logical width for four maximum 152px
+   cards plus gaps so shrinking cards does not collapse its unscaled HUD.
+   Intrinsic row heights retain the original 110:148 portrait card ratio. */
+.gameplay-content-stage:has(.open-box-game) { width: max-content; max-width: none; min-height: 0; }
+.open-box-game { width: calc(640px * var(--play-area-zoom)); max-width: none; grid-template-rows: auto auto auto auto; }
+.open-box-grid-wrap, .open-box-grid { height: auto; }
+.open-box-tile { width: min(100%, var(--game-card-width)); height: auto; min-height: 0; aspect-ratio: 55 / 74; }
+
+/* Fixed-size tiles can make the original board wider than its flex column.
+   Measure the complete board, with space for its unchanged 3D projection,
+   rather than losing centered overflow to the left of the scroll width. */
+.gameplay-content-stage:has(.board-dash-game) { width: max-content; max-width: none; min-height: 0; padding-inline: calc(2rem * var(--play-area-zoom)); }
+.board-dash-game {
+  width: max-content;
+  padding-inline: calc((.4rem + var(--board-projection-inline, 0px)) * var(--play-area-zoom));
+  padding-bottom: calc((1rem + var(--board-projection-bottom, 0px)) * var(--play-area-zoom));
+}
+
+@media (max-width: 1380px) and (min-width: 981px) {
+  .battle-main { grid-template-columns: 190px minmax(0, 1fr) 190px; gap: .5rem; }
+  .fighter-panel { padding: .55rem; }
+}
+@media (max-width: 980px) and (min-width: 761px) {
+  .battle-main { grid-template-columns: 150px minmax(0, 1fr) 150px; grid-template-rows: minmax(0, 1fr); gap: .4rem; padding: .45rem; }
+  .fighter-panel, .center-column { order: initial; }
+  .fighter-panel { padding: .4rem; }
+  .top-bar { grid-template-columns: minmax(0, 1fr) auto; }
+  .top-bar-actions { grid-column: 1 / -1; }
+}
+@media (max-width: 980px) {
+  /* Keep both sides and the memory target visible together. Upstream's stacked
+     arena extends past the clipped zoom viewport on smaller Present windows. */
+  .memory-arena { grid-template-columns: minmax(0, .65fr) minmax(0, 1.3fr) minmax(0, .65fr); gap: .3rem; }
+  .memory-side, .memory-center { min-width: 0; padding: .3rem; }
+  .memory-side h4 { font-size: .62rem; letter-spacing: .04em; overflow-wrap: anywhere; }
+  .memory-target-banner { min-width: 0; padding: .25rem; font-size: .68rem; }
+  .memory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .memory-candidate-caption, .memory-card-caption { left: .1rem; right: .1rem; bottom: .1rem; padding: .1rem; }
+  .memory-candidate-caption strong, .memory-card-caption strong { font-size: .6rem; overflow-wrap: anywhere; }
+  .mini-game-hud { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mini-game-hud span { min-width: 0; padding-inline: .3rem; font-size: .65rem; white-space: normal; }
+  .mini-game-hud span::before { display: none; }
+  .lane-arena { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "hero villain" "board board"; }
+  .lane-hero-deck { grid-area: hero; min-width: 0; }
+  .lane-villain-deck { grid-area: villain; min-width: 0; }
+  .lane-board { grid-area: board; min-width: 0; }
+  .lane-hand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .2rem; }
+  .lane-board-inner { grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr) minmax(0, .7fr); gap: .25rem; }
+  .lane-play-slot { width: 100%; min-height: 0; aspect-ratio: 5 / 6; }
+  .lane-clash-card { min-height: 0; aspect-ratio: 5 / 4; }
+  .lane-card-value-overlay { width: 25px; height: 25px; font-size: 1rem; right: .2rem; top: .2rem; }
+}
+@media (max-width: 760px) {
+  .top-bar { grid-template-columns: minmax(0, 1fr) auto; gap: .4rem; margin-inline: .4rem; }
+  .top-bar-actions { grid-column: 1 / -1; justify-content: center; }
+  .top-score-pill { gap: .35rem; padding: .3rem .5rem; }
+  .top-score-pill div { min-width: 36px; }
+  .battle-main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(440px, calc(100dvh - 160px)) auto;
+    gap: .45rem;
+    padding: .45rem;
+    overflow-y: auto;
+    align-content: start;
+  }
+  .center-column { order: initial; grid-column: 1 / -1; grid-row: 1; min-height: 440px; }
+  .fighter-panel { order: initial; grid-row: 2; overflow: visible; }
+  .battle-intro-screen { padding: .65rem; }
+  .edit-shell-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .edit-shell-sidebar { display: flex; flex-wrap: wrap; gap: .35rem; }
+  .edit-shell-sidebar button { flex: 1 1 110px; }
+  .edit-shell-header { padding: .6rem; }
+  .edit-shell-status { max-height: 90px; overflow-y: auto; }
+}
+@media (max-width: 480px) {
+  .top-bar { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .top-chip { justify-self: center; }
+  .battle-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: 480px auto auto; }
+  .hero-panel { grid-row: 2; }
+  .villain-panel { grid-row: 3; }
+  .edit-header-title h1 { font-size: 1.2rem; }
+}

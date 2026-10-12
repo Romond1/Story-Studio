@@ -3,4 +3,7 @@ html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; back
 .present-surface { width: 100%; height: 100%; display: grid; place-items: center; color: #c7cad3; font-family: Inter, system-ui, Arial, sans-serif; }
 
 .present-surface p { max-width: 38rem; padding: 2rem; text-align: center; font-size: clamp(1rem, 2.3vw, 1.6rem); }
+.present-game { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: #08090c; }
+.present-game iframe { display: block; position: absolute; inset: 0; border: 0; }
+.present-game-loading { position: absolute; inset: 0; margin: auto; width: fit-content; height: fit-content; pointer-events: none; z-index: 1; }
 

@@ -1,0 +1,1271 @@
+{
+  "profiles": [
+    {
+      "dpr": 1,
+      "samples": [
+        {
+          "name": "960x600",
+          "outer": {
+            "width": 944,
+            "height": 561,
+            "dpr": 1,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 944,
+              "height": 561,
+              "layoutWidth": 944,
+              "layoutHeight": 561
+            }
+          },
+          "inner": {
+            "width": 944,
+            "height": 561,
+            "dpr": 1,
+            "transform": "none",
+            "columns": 3,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 198,
+                  "top": 18,
+                  "bottom": 494
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 88.65625,
+                    "right": 127.328125,
+                    "top": 268,
+                    "bottom": 322
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 42,
+                    "right": 80.65625,
+                    "top": 330,
+                    "bottom": 384
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 135.328125,
+                    "right": 174,
+                    "top": 330,
+                    "bottom": 384
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 88.65625,
+                    "right": 127.328125,
+                    "top": 392,
+                    "bottom": 446
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 746,
+                  "right": 926,
+                  "top": 18,
+                  "bottom": 510
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 816.65625,
+                    "right": 855.328125,
+                    "top": 284,
+                    "bottom": 338
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 770,
+                    "right": 808.65625,
+                    "top": 346,
+                    "bottom": 400
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 863.328125,
+                    "right": 902,
+                    "top": 346,
+                    "bottom": 400
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 816.65625,
+                    "right": 855.328125,
+                    "top": 408,
+                    "bottom": 462
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 944,
+              "height": 561
+            },
+            "board": {
+              "left": 239.3280792236328,
+              "right": 704.6719512939453,
+              "top": 121.82878875732422,
+              "bottom": 401.62483978271484
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 944,
+            "height": 561
+          },
+          "retainedInstanceId": "5696516f-efa0-4c73-b898-07186d2a6b88"
+        },
+        {
+          "name": "600x900",
+          "outer": {
+            "width": 584,
+            "height": 861,
+            "dpr": 1,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 584,
+              "height": 861,
+              "layoutWidth": 584,
+              "layoutHeight": 861
+            }
+          },
+          "inner": {
+            "width": 584,
+            "height": 861,
+            "dpr": 1,
+            "transform": "none",
+            "columns": 2,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 284,
+                  "top": 873.5,
+                  "bottom": 1317.5
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 122.890625,
+                    "right": 179.09375,
+                    "top": 1091.5,
+                    "bottom": 1145.5
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 58.6875,
+                    "right": 114.890625,
+                    "top": 1153.5,
+                    "bottom": 1207.5
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 187.09375,
+                    "right": 243.296875,
+                    "top": 1153.5,
+                    "bottom": 1207.5
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 122.890625,
+                    "right": 179.09375,
+                    "top": 1215.5,
+                    "bottom": 1269.5
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 300,
+                  "right": 566,
+                  "top": 873.5,
+                  "bottom": 1317.5
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 404.890625,
+                    "right": 461.09375,
+                    "top": 1091.5,
+                    "bottom": 1145.5
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 340.6875,
+                    "right": 396.890625,
+                    "top": 1153.5,
+                    "bottom": 1207.5
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 469.09375,
+                    "right": 525.296875,
+                    "top": 1153.5,
+                    "bottom": 1207.5
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 404.890625,
+                    "right": 461.09375,
+                    "top": 1215.5,
+                    "bottom": 1269.5
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 584,
+              "height": 861
+            },
+            "board": {
+              "left": 7.589984893798828,
+              "right": 576.4100532531738,
+              "top": 130.49697875976562,
+              "bottom": 467.479736328125
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 584,
+            "height": 861
+          },
+          "retainedInstanceId": "5696516f-efa0-4c73-b898-07186d2a6b88"
+        },
+        {
+          "name": "1920x1080",
+          "outer": {
+            "width": 1904,
+            "height": 1041,
+            "dpr": 1,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 1904,
+              "height": 1041,
+              "layoutWidth": 1904,
+              "layoutHeight": 1041
+            }
+          },
+          "inner": {
+            "width": 1904,
+            "height": 1041,
+            "dpr": 1,
+            "transform": "none",
+            "columns": 3,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 296.875,
+                  "top": 18,
+                  "bottom": 462
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 129.328125,
+                    "right": 185.53125,
+                    "top": 236,
+                    "bottom": 290
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 65.125,
+                    "right": 121.328125,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 193.53125,
+                    "right": 249.734375,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 129.328125,
+                    "right": 185.53125,
+                    "top": 360,
+                    "bottom": 414
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 1607.109375,
+                  "right": 1885.984375,
+                  "top": 18,
+                  "bottom": 462
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 1718.4375,
+                    "right": 1774.640625,
+                    "top": 236,
+                    "bottom": 290
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 1654.234375,
+                    "right": 1710.4375,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 1782.640625,
+                    "right": 1838.84375,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 1718.4375,
+                    "right": 1774.640625,
+                    "top": 360,
+                    "bottom": 414
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1904,
+              "height": 1041
+            },
+            "board": {
+              "left": 284.2757263183594,
+              "right": 1619.6929626464844,
+              "top": 201.52423095703125,
+              "bottom": 924.1895141601562
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 1904,
+            "height": 1041
+          },
+          "retainedInstanceId": "5696516f-efa0-4c73-b898-07186d2a6b88"
+        },
+        {
+          "name": "maximized",
+          "outer": {
+            "width": 1920,
+            "height": 1017,
+            "dpr": 1,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1017,
+              "layoutWidth": 1920,
+              "layoutHeight": 1017
+            }
+          },
+          "inner": {
+            "width": 1920,
+            "height": 1017,
+            "dpr": 1,
+            "transform": "none",
+            "columns": 3,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 299.3125,
+                  "top": 18,
+                  "bottom": 462
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 130.546875,
+                    "right": 186.75,
+                    "top": 236,
+                    "bottom": 290
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 66.34375,
+                    "right": 122.546875,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 194.75,
+                    "right": 250.953125,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 130.546875,
+                    "right": 186.75,
+                    "top": 360,
+                    "bottom": 414
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 1620.671875,
+                  "right": 1901.984375,
+                  "top": 18,
+                  "bottom": 462
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 1733.21875,
+                    "right": 1789.421875,
+                    "top": 236,
+                    "bottom": 290
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 1669.015625,
+                    "right": 1725.21875,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 1797.421875,
+                    "right": 1853.625,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 1733.21875,
+                    "right": 1789.421875,
+                    "top": 360,
+                    "bottom": 414
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1920,
+              "height": 1017
+            },
+            "board": {
+              "left": 317.1050720214844,
+              "right": 1602.8636169433594,
+              "top": 196.7743377685547,
+              "bottom": 896.0623626708984
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 1920,
+            "height": 1017
+          },
+          "retainedInstanceId": "5696516f-efa0-4c73-b898-07186d2a6b88"
+        }
+      ],
+      "scrollTopAfterWheel": 700,
+      "settingsReachable": true,
+      "keyboardCheck": {
+        "key": "ArrowDown",
+        "playerId": "player-2",
+        "beforeHead": {
+          "x": 13,
+          "y": 9
+        },
+        "afterHead": {
+          "x": 13,
+          "y": 10
+        },
+        "scrollBefore": 0,
+        "scrollAfter": 0,
+        "settingsNavigation": {
+          "pageDownScrollTop": 490,
+          "pageUpScrollTop": 1
+        },
+        "formArrowCaret": {
+          "before": 0,
+          "after": 1
+        }
+      },
+      "liveState": {
+        "coordinateSystem": "origin top-left, +x right, +y down",
+        "splashVisible": false,
+        "mode": "versus",
+        "phase": "collection",
+        "board": {
+          "width": 16,
+          "height": 12
+        },
+        "crystalsRemaining": 36,
+        "battleBombs": [],
+        "heroCrown": {
+          "settings": {
+            "enabled": false,
+            "frequency": "medium",
+            "expiresAfterMoves": 5,
+            "cosmeticDurationSeconds": 30,
+            "bonusValue": 3
+          },
+          "tile": null,
+          "challenge": null,
+          "nextTargetIndex": 0
+        },
+        "coop": null,
+        "coopPaused": false,
+        "activeTurn": "player-2",
+        "players": [
+          {
+            "id": "player-1",
+            "name": "Student",
+            "score": 0,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 0,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 2,
+                "y": 1
+              },
+              {
+                "x": 2,
+                "y": 2
+              }
+            ]
+          },
+          {
+            "id": "player-2",
+            "name": "Teacher",
+            "score": 0,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 0,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 13,
+                "y": 9
+              },
+              {
+                "x": 14,
+                "y": 9
+              }
+            ]
+          }
+        ],
+        "pendingPickup": null,
+        "pickupResolution": null,
+        "background": {
+          "imageLoaded": false,
+          "controls": {
+            "blur": 2,
+            "brightness": 1,
+            "overlay": 0.18,
+            "panelOpacity": 0.62,
+            "boardOpacity": 0.42
+          }
+        },
+        "resultOverlay": null
+      },
+      "errors": []
+    },
+    {
+      "dpr": 2,
+      "samples": [
+        {
+          "name": "960x600",
+          "outer": {
+            "width": 952,
+            "height": 581,
+            "dpr": 2,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 952,
+              "height": 581,
+              "layoutWidth": 952,
+              "layoutHeight": 581
+            }
+          },
+          "inner": {
+            "width": 952,
+            "height": 581,
+            "dpr": 2,
+            "transform": "none",
+            "columns": 3,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 198,
+                  "top": 18,
+                  "bottom": 494
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 88.6640625,
+                    "right": 127.328125,
+                    "top": 268,
+                    "bottom": 322
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 42,
+                    "right": 80.6640625,
+                    "top": 330,
+                    "bottom": 384
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 135.328125,
+                    "right": 174,
+                    "top": 330,
+                    "bottom": 384
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 88.6640625,
+                    "right": 127.328125,
+                    "top": 392,
+                    "bottom": 446
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 754,
+                  "right": 934,
+                  "top": 18,
+                  "bottom": 510
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 824.6640625,
+                    "right": 863.328125,
+                    "top": 284,
+                    "bottom": 338
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 778,
+                    "right": 816.6640625,
+                    "top": 346,
+                    "bottom": 400
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 871.328125,
+                    "right": 910,
+                    "top": 346,
+                    "bottom": 400
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 824.6640625,
+                    "right": 863.328125,
+                    "top": 408,
+                    "bottom": 462
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 952,
+              "height": 581
+            },
+            "board": {
+              "left": 227.47840881347656,
+              "right": 724.5138092041016,
+              "top": 124.44061279296875,
+              "bottom": 421.9102783203125
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 1904,
+            "height": 1162
+          },
+          "retainedInstanceId": "19cf245c-6d4a-407a-bf5e-31eac1244821"
+        },
+        {
+          "name": "600x900",
+          "outer": {
+            "width": 592,
+            "height": 881,
+            "dpr": 2,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 592,
+              "height": 881,
+              "layoutWidth": 592,
+              "layoutHeight": 881
+            }
+          },
+          "inner": {
+            "width": 592,
+            "height": 881,
+            "dpr": 2,
+            "transform": "none",
+            "columns": 2,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 288,
+                  "top": 878.5,
+                  "bottom": 1322.5
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 124.8984375,
+                    "right": 181.1015625,
+                    "top": 1096.5,
+                    "bottom": 1150.5
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 60.6953125,
+                    "right": 116.8984375,
+                    "top": 1158.5,
+                    "bottom": 1212.5
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 189.1015625,
+                    "right": 245.3046875,
+                    "top": 1158.5,
+                    "bottom": 1212.5
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 124.8984375,
+                    "right": 181.1015625,
+                    "top": 1220.5,
+                    "bottom": 1274.5
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 304,
+                  "right": 574,
+                  "top": 878.5,
+                  "bottom": 1322.5
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 410.8984375,
+                    "right": 467.1015625,
+                    "top": 1096.5,
+                    "bottom": 1150.5
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 346.6953125,
+                    "right": 402.8984375,
+                    "top": 1158.5,
+                    "bottom": 1212.5
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 475.1015625,
+                    "right": 531.3046875,
+                    "top": 1158.5,
+                    "bottom": 1212.5
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 410.8984375,
+                    "right": 467.1015625,
+                    "top": 1220.5,
+                    "bottom": 1274.5
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 592,
+              "height": 881
+            },
+            "board": {
+              "left": 6.683109283447266,
+              "right": 585.3168983459473,
+              "top": 131.3385467529297,
+              "bottom": 473.66685485839844
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 1184,
+            "height": 1762
+          },
+          "retainedInstanceId": "19cf245c-6d4a-407a-bf5e-31eac1244821"
+        },
+        {
+          "name": "1920x1080",
+          "outer": {
+            "width": 1912,
+            "height": 1061,
+            "dpr": 2,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 1912,
+              "height": 1061,
+              "layoutWidth": 1912,
+              "layoutHeight": 1061
+            }
+          },
+          "inner": {
+            "width": 1912,
+            "height": 1061,
+            "dpr": 2,
+            "transform": "none",
+            "columns": 3,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 298.09375,
+                  "top": 18,
+                  "bottom": 462
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 129.9453125,
+                    "right": 186.1484375,
+                    "top": 236,
+                    "bottom": 290
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 65.7421875,
+                    "right": 121.9453125,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 194.1484375,
+                    "right": 250.3515625,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 129.9453125,
+                    "right": 186.1484375,
+                    "top": 360,
+                    "bottom": 414
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 1613.8984375,
+                  "right": 1893.9921875,
+                  "top": 18,
+                  "bottom": 462
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 1725.84375,
+                    "right": 1782.046875,
+                    "top": 236,
+                    "bottom": 290
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 1661.640625,
+                    "right": 1717.84375,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 1790.046875,
+                    "right": 1846.25,
+                    "top": 298,
+                    "bottom": 352
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 1725.84375,
+                    "right": 1782.046875,
+                    "top": 360,
+                    "bottom": 414
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 1912,
+              "height": 1061
+            },
+            "board": {
+              "left": 267.3132629394531,
+              "right": 1644.6789855957031,
+              "top": 205.53602600097656,
+              "bottom": 947.8055572509766
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 3824,
+            "height": 2122
+          },
+          "retainedInstanceId": "19cf245c-6d4a-407a-bf5e-31eac1244821"
+        },
+        {
+          "name": "maximized",
+          "outer": {
+            "width": 960,
+            "height": 509,
+            "dpr": 2,
+            "transform": "none",
+            "horizontalOverflow": false,
+            "iframe": {
+              "x": 0,
+              "y": 0,
+              "width": 960,
+              "height": 509,
+              "layoutWidth": 960,
+              "layoutHeight": 509
+            }
+          },
+          "inner": {
+            "width": 960,
+            "height": 509,
+            "dpr": 2,
+            "transform": "none",
+            "columns": 3,
+            "boardPanelTop": 18,
+            "playerCards": [
+              {
+                "name": "Student",
+                "bounds": {
+                  "left": 18,
+                  "right": 198,
+                  "top": 18,
+                  "bottom": 494
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 88.6640625,
+                    "right": 127.328125,
+                    "top": 268,
+                    "bottom": 322
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 42,
+                    "right": 80.6640625,
+                    "top": 330,
+                    "bottom": 384
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 135.328125,
+                    "right": 174,
+                    "top": 330,
+                    "bottom": 384
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 88.6640625,
+                    "right": 127.328125,
+                    "top": 392,
+                    "bottom": 446
+                  }
+                ]
+              },
+              {
+                "name": "Teacher",
+                "bounds": {
+                  "left": 762,
+                  "right": 942,
+                  "top": 18,
+                  "bottom": 510
+                },
+                "buttons": [
+                  {
+                    "name": "UP",
+                    "left": 832.6640625,
+                    "right": 871.328125,
+                    "top": 284,
+                    "bottom": 338
+                  },
+                  {
+                    "name": "LEFT",
+                    "left": 786,
+                    "right": 824.6640625,
+                    "top": 346,
+                    "bottom": 400
+                  },
+                  {
+                    "name": "RIGHT",
+                    "left": 879.328125,
+                    "right": 918,
+                    "top": 346,
+                    "bottom": 400
+                  },
+                  {
+                    "name": "DOWN",
+                    "left": 832.6640625,
+                    "right": 871.328125,
+                    "top": 408,
+                    "bottom": 462
+                  }
+                ]
+              }
+            ],
+            "viewport": {
+              "x": 0,
+              "y": 0,
+              "width": 960,
+              "height": 509
+            },
+            "board": {
+              "left": 287.73486328125,
+              "right": 672.25732421875,
+              "top": 115.35836029052734,
+              "bottom": 349.37068939208984
+            },
+            "horizontalOverflow": false,
+            "scrollbar": {
+              "width": "none",
+              "webkitDisplay": "none",
+              "webkitWidth": "auto",
+              "allocatedWidth": 0
+            }
+          },
+          "screenshotPixels": {
+            "width": 1920,
+            "height": 1018
+          },
+          "retainedInstanceId": "19cf245c-6d4a-407a-bf5e-31eac1244821"
+        }
+      ],
+      "scrollTopAfterWheel": 700,
+      "settingsReachable": true,
+      "keyboardCheck": {
+        "key": "ArrowDown",
+        "playerId": "player-2",
+        "beforeHead": {
+          "x": 13,
+          "y": 9
+        },
+        "afterHead": {
+          "x": 13,
+          "y": 10
+        },
+        "scrollBefore": 0,
+        "scrollAfter": 0,
+        "settingsNavigation": {
+          "pageDownScrollTop": 506,
+          "pageUpScrollTop": 49
+        },
+        "formArrowCaret": {
+          "before": 0,
+          "after": 1
+        }
+      },
+      "liveState": {
+        "coordinateSystem": "origin top-left, +x right, +y down",
+        "splashVisible": false,
+        "mode": "versus",
+        "phase": "collection",
+        "board": {
+          "width": 16,
+          "height": 12
+        },
+        "crystalsRemaining": 36,
+        "battleBombs": [],
+        "heroCrown": {
+          "settings": {
+            "enabled": false,
+            "frequency": "medium",
+            "expiresAfterMoves": 5,
+            "cosmeticDurationSeconds": 30,
+            "bonusValue": 3
+          },
+          "tile": null,
+          "challenge": null,
+          "nextTargetIndex": 0
+        },
+        "coop": null,
+        "coopPaused": false,
+        "activeTurn": "player-2",
+        "players": [
+          {
+            "id": "player-1",
+            "name": "Student",
+            "score": 0,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 0,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 2,
+                "y": 1
+              },
+              {
+                "x": 2,
+                "y": 2
+              }
+            ]
+          },
+          {
+            "id": "player-2",
+            "name": "Teacher",
+            "score": 0,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 0,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 13,
+                "y": 9
+              },
+              {
+                "x": 14,
+                "y": 9
+              }
+            ]
+          }
+        ],
+        "pendingPickup": null,
+        "pickupResolution": null,
+        "background": {
+          "imageLoaded": false,
+          "controls": {
+            "blur": 2,
+            "brightness": 1,
+            "overlay": 0.18,
+            "panelOpacity": 0.62,
+            "boardOpacity": 0.42
+          }
+        },
+        "resultOverlay": null
+      },
+      "errors": []
+    }
+  ],
+  "errors": [],
+  "gameStateInjected": false,
+  "originalLessonsTouched": false
+}

@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { createLesson } from './lesson/commands';
 import { parseLessonProject } from './lesson/validation';
 import { ProjectHistory } from './projectHistory';
+import { mergeLessonMediaImport } from './lesson/mediaImport';
 
 /** Exercise the actual root callbacks across async IPC, without a second implementation. */
 function harness() {
@@ -21,8 +22,8 @@ function harness() {
   const state = { project, file: { folderPath: 'source', data: project }, error: '', notice: '', busy: false };
   const latest = { current: project }, operationRef = { current: false };
   const context: any = {
-    project, file: state.file, latest, history: { current: history }, busy: false, operationRef, operation: operationRef,
-    parseLessonProject, window: { lessonApi: {}, appApi: {} },
+    project, file: state.file, latest, history: { current: history }, busy: false, operationRef, operation: operationRef, activeBinId: '',
+    parseLessonProject, mergeLessonMediaImport, window: { lessonApi: {}, appApi: {} },
     setBusy: (value: boolean) => { state.busy = value; },
     setError: (value: string) => { state.error = value; },
     setNotice: (value: string) => { state.notice = value; },
@@ -75,4 +76,17 @@ test('lesson operations serialize immediately before React can publish a busy re
   const first = h.callbacks.save('save'), second = h.callbacks.save('save');
   pending.resolve({ folderPath: 'source', lastSavedAt: '2026-10-08' }); await Promise.all([first, second]);
   assert.equal(saves, 1);
+});
+
+test('image-dialog import captures the active bin before its asynchronous picker returns', async () => {
+  const h = harness(), pending = deferred<any>();
+  h.context.activeBinId = 'chosen';
+  h.latest.current = { ...h.state.project, mediaBins: [{ id: 'chosen', name: 'Chosen' }, { id: 'other', name: 'Other' }] };
+  h.context.window.appApi.importMedia = () => pending.promise;
+  const importing = h.callbacks.importMedia('files');
+  h.context.activeBinId = 'other';
+  pending.resolve({ importedAssets: [{ id: 'image', mediaType: 'image', filename: 'image.png', originalName: 'image.png', relativePath: 'assets/image.png', sizeBytes: 2, importedAt: '2026-10-09' }], createdSlides: [] });
+  await importing;
+  assert.equal(h.state.error, '');
+  assert.equal(h.state.project.assets[0].binId, 'chosen');
 });

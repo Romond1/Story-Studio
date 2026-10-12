@@ -13,6 +13,9 @@
     "types": ["node"]
   },
   "include": [
+    "src/shared/camera.test.ts",
+    "src/shared/gameHost.test.ts",
+    "src/shared/lesson/mediaImport.test.ts",
     "src/shared/lesson/sectionContainers.test.ts",
     "src/shared/lessonObjectSelection.test.ts",
     "src/shared/lessonPointer.test.ts",

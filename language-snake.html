@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Language Snake · Story Studio</title>
+  </head>
+  <body>
+    <div id="game-stage"><div id="game-viewport" tabindex="0" role="region" aria-label="Language Snake playfield and settings"><div id="root"></div></div></div>
+    <script>
+      // Report loading failures even when the module entry cannot initialize.
+      window.addEventListener('error', function (event) {
+        if (event.target !== window && !(event.target instanceof HTMLScriptElement)) return;
+        var instanceId = new URLSearchParams(location.search).get('instanceId');
+        if (!instanceId || window.parent === window) return;
+        window.parent.postMessage({ channel: 'story-studio-game', type: 'error', instanceId: instanceId, detail: event.message || 'Language Snake failed to load. Use Restart to try again.' }, location.origin === 'null' ? '*' : location.origin);
+      }, true);
+    </script>
+    <script type="module" src="/games/language-snake/main.jsx"></script>
+  </body>
+</html>

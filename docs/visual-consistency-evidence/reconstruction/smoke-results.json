@@ -1,0 +1,16 @@
+{
+  "passed": [
+    "Create/import/direct Card and Bubble/save",
+    "Actual Present composition, no tools, face/conceal/reveal",
+    "Existing student spark and badge visuals in Present, session-only totals, no student tools",
+    "Same Activation editor, independent scene/Card copies, pointer move and resize",
+    "Edit deletion reaches Present; undo/redo; independent Edit cursor; stable Story return",
+    "Present owns live video; teacher consumes muted received frames; overlays remain visible",
+    "Active Story tab and Teach keyboard undo preserve the live lesson and authored objects",
+    "Activation video with overlays and return to the stored Story video",
+    "4:3 logical frame, authored drawing/transition, save and reopen complete lesson"
+  ],
+  "errors": [],
+  "sampleProject": "D:\\Temp\\story-scene-acceptance-f3ud0f\\Episode-7",
+  "originalLessonsTouched": false
+}

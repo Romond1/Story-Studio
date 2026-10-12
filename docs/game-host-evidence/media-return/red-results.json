@@ -1,0 +1,99 @@
+{
+  "observations": [
+    {
+      "name": "selection-return",
+      "before": {
+        "currentTime": 1.8,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 0,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "c1ada811-c9d8-47dd-8b41-54df81dd4372",
+      "intent": {
+        "identity": "d09f37ef-2835-451a-929c-0d70065cd1d5:3ac0351e-eed7-43bb-8ef5-18ebeeceba25:1:video-regression",
+        "epoch": 8,
+        "bridgeEpoch": 8,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 0,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "launch-return",
+      "before": {
+        "currentTime": 1.8,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 0,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "c1ada811-c9d8-47dd-8b41-54df81dd4372",
+      "intent": {
+        "identity": "d09f37ef-2835-451a-929c-0d70065cd1d5:3ac0351e-eed7-43bb-8ef5-18ebeeceba25:1:video-regression",
+        "epoch": 15,
+        "bridgeEpoch": 15,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 0,
+        "volume": 1,
+        "enabled": true
+      }
+    },
+    {
+      "name": "restart-return",
+      "before": {
+        "currentTime": 1.8,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "after": {
+        "currentTime": 0,
+        "paused": true,
+        "readyState": 4,
+        "duration": 8.003
+      },
+      "sceneId": "c1ada811-c9d8-47dd-8b41-54df81dd4372",
+      "intent": {
+        "identity": "d09f37ef-2835-451a-929c-0d70065cd1d5:3ac0351e-eed7-43bb-8ef5-18ebeeceba25:1:video-regression",
+        "epoch": 22,
+        "bridgeEpoch": 22,
+        "rendererGeneration": 3,
+        "playing": false,
+        "positionSec": 0,
+        "volume": 1,
+        "enabled": true
+      }
+    }
+  ],
+  "failures": [
+    {
+      "name": "selection-return",
+      "message": "AssertionError [ERR_ASSERTION]: selection-return: video position retained, before 1.8, after 0"
+    },
+    {
+      "name": "launch-return",
+      "message": "AssertionError [ERR_ASSERTION]: launch-return: video position retained, before 1.8, after 0"
+    },
+    {
+      "name": "restart-return",
+      "message": "AssertionError [ERR_ASSERTION]: restart-return: video position retained, before 1.8, after 0"
+    }
+  ],
+  "errors": [],
+  "sampleProject": "D:\\Temp\\story-game-media-K7kJK7\\Disposable video lesson",
+  "originalLessonsTouched": false
+}

@@ -24,22 +24,24 @@ export function lessonAssetUsage(project: LessonProject, assetId: string): numbe
 
 export interface LessonMediaPoolProps {
   project: LessonProject;
-  onImport: (kind: 'files' | 'folder' | 'drop', paths?: string[]) => Promise<void> | void;
+  onImport: (kind: 'files' | 'folder' | 'drop', paths?: string[], destinationBinId?: string) => Promise<void> | void;
   onInsert: (assetIds: string[]) => void;
   onChange: (project: LessonProject) => void;
+  binId: string;
+  onBinChange: (id: string) => void;
 }
 
-export function LessonMediaPool({ project, onImport, onInsert, onChange }: LessonMediaPoolProps) {
+export function LessonMediaPool({ project, onImport, onInsert, onChange, binId, onBinChange: setBinId }: LessonMediaPoolProps) {
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('all');
   const [usage, setUsage] = useState('all');
-  const [binId, setBinId] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [binsOpen, setBinsOpen] = useState(false);
   const [binName, setBinName] = useState<string | null>(null);
   const [anchorId, setAnchorId] = useState<string | null>(null);
   const bins = project.mediaBins;
@@ -64,7 +66,7 @@ export function LessonMediaPool({ project, onImport, onInsert, onChange }: Lesso
   const importMedia = async (kind: 'files' | 'folder' | 'drop', paths?: string[]) => {
     if (busy) return;
     setBusy(true); setError('');
-    try { await onImport(kind, paths); }
+    try { await onImport(kind, paths, activeBin || undefined); }
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Could not import media. Please try again.'); }
     finally { setBusy(false); }
   };
@@ -88,11 +90,14 @@ export function LessonMediaPool({ project, onImport, onInsert, onChange }: Lesso
     <header className="lesson-panel-heading"><button className="lesson-disclosure" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? '▾' : '▸'} Media Pool</button><button className="lesson-pool-import" disabled={busy} onClick={() => void importMedia('files')} title="Import images, videos or audio">{busy ? 'Importing…' : 'Import files'}</button></header>
     {open && <div className="lesson-panel-content">
       {error && <p className="lesson-error" role="alert">{error}</p>}
-      <div className="lesson-pool-search"><input aria-label="Search media" type="search" placeholder="Search media…" value={query} onChange={event => setQuery(event.target.value)} /><button aria-label="Media filters" aria-expanded={filtersOpen} title="Filters, folders and bins" onClick={() => setFiltersOpen(!filtersOpen)}>Filters{type !== 'all' || usage !== 'all' || activeBin ? ' •' : ''}</button></div>
+      <div className="lesson-pool-search"><input aria-label="Search media" type="search" placeholder="Search media…" value={query} onChange={event => setQuery(event.target.value)} /><button aria-label="Media filters" aria-expanded={filtersOpen} title="Filter media by type or usage" onClick={() => setFiltersOpen(!filtersOpen)}>Filters{type !== 'all' || usage !== 'all' ? ' •' : ''}</button><button aria-label="Media bins" aria-expanded={binsOpen} onClick={() => setBinsOpen(!binsOpen)}>Bin</button></div>
+      <div className="lesson-pool-destination" title={activeBin ? binPath(activeBin) : 'General media'}><span>Import to</span><strong>{activeBin ? binPath(activeBin) : 'General media'}</strong></div>
       {filtersOpen && <div className="lesson-pool-filters">
-      <div className="lesson-actions"><button disabled={busy} onClick={() => void importMedia('folder')}>Import folder</button><button onClick={() => { setType('all'); setUsage('all'); setBinId(''); setQuery(''); }}>Reset filters</button></div>
+      <div className="lesson-actions"><button disabled={busy} onClick={() => void importMedia('folder')}>Import folder</button><button onClick={() => { setType('all'); setUsage('all'); setQuery(''); }}>Reset filters</button></div>
       <div className="lesson-field-grid"><label className="lesson-field"><span>Type</span><select aria-label="Type" value={type} onChange={event => setType(event.target.value)}><option value="all">All types</option><option value="image">Images</option><option value="video">Videos</option><option value="audio">Audio</option></select></label><label className="lesson-field"><span>Usage</span><select aria-label="Usage" value={usage} onChange={event => setUsage(event.target.value)}><option value="all">All assets</option><option value="used">Used in scenes</option><option value="unused">Unused in scenes</option></select></label></div>
-      <div className="lesson-bin-row"><label className="lesson-field"><span>Bin</span><select aria-label="Bin" value={activeBin} onChange={event => setBinId(event.target.value)}><option value="">All media</option>{bins.map(bin => <option key={bin.id} value={bin.id}>{binPath(bin.id)}</option>)}</select></label><button onClick={() => setBinName('')}>New bin</button></div>
+      </div>}
+      {binsOpen && <div className="lesson-pool-filters">
+      <div className="lesson-bin-row"><label className="lesson-field"><span>Bin</span><select aria-label="Bin" value={activeBin} onChange={event => setBinId(event.target.value)}><option value="">General / all media</option>{bins.map(bin => <option key={bin.id} value={bin.id}>{binPath(bin.id)}</option>)}</select></label><button onClick={() => setBinName('')}>New bin</button></div>
       {binName !== null && <form className="lesson-pool-bin-form" onSubmit={event => { event.preventDefault(); if (!binName.trim()) return; const bin = { id: crypto.randomUUID(), name: binName.trim().slice(0, 200), ...(activeBin ? { parentId: activeBin } : {}) }; onChange({ ...project, mediaBins: [...bins, bin] }); setBinId(bin.id); setBinName(null); }}><input autoFocus aria-label="New bin name" value={binName} maxLength={200} onChange={event => setBinName(event.target.value)} /><button disabled={!binName.trim()}>Create bin</button><button type="button" onClick={() => setBinName(null)}>Cancel</button></form>}
       {selectedAssets.length > 0 && <label className="lesson-field"><span>Move selected media to bin</span><select value="" onChange={event => { const destination = event.target.value; onChange({ ...project, assets: project.assets.map(asset => selected.has(asset.id) ? { ...asset, binId: destination === 'root' ? undefined : destination } : asset) }); }}><option value="" disabled>Choose bin…</option><option value="root">Pool root</option>{bins.map(bin => <option key={bin.id} value={bin.id}>{binPath(bin.id)}</option>)}</select></label>}
       </div>}

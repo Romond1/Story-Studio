@@ -8,7 +8,10 @@ import type { LessonProject, LessonProjectState } from '../shared/lesson/model';
 
 declare global {
   interface Window {
+    cameraControl?: import('../shared/cameraProtocol').CameraControlApi;
+    cameraPresenter?: import('../shared/cameraProtocol').CameraPresenterApi;
     lessonApi: {
+      createDraft: (sequence: 'story' | 'activation') => Promise<LessonProjectState>;
       createProject: () => Promise<LessonProjectState | null>;
       openProject: () => Promise<LessonProjectState | null>;
       openProjectByPath: (folderPath: string) => Promise<LessonProjectState | null>;
@@ -16,6 +19,8 @@ declare global {
       saveProject: (data: LessonProject, mode: 'save' | 'saveAs', expectedFolder: string) => Promise<{ lastSavedAt: string; folderPath: string } | null>;
     };
     appApi: {
+      sendGameInput: (packet: import('../shared/gameHost').GameInputPacket) => void;
+      onGameEnded: (callback: (event: import('../shared/gameHost').GameEndedEvent) => void) => () => void;
       getPresentMediaRuntime: () => Promise<import('../shared/presentationMedia').MediaRuntime>;
       onPresentMediaRuntime: (callback: (runtime: import('../shared/presentationMedia').MediaRuntime) => void) => () => void;
       onPresentMediaPacket: (callback: (packet: import('../shared/presentationMedia').MediaPacket) => void) => () => void;
@@ -25,6 +30,7 @@ declare global {
       onPresentStatus: (callback: (status: PresentStatus) => void) => () => void;
       openPresent: () => Promise<void>;
       publishPresentSnapshot: (snapshot: PresentSnapshot) => Promise<boolean>;
+      launchGame: (snapshot: PresentSnapshot) => Promise<void>;
       createProject: () => Promise<ProjectState | null>;
       openProject: () => Promise<ProjectState | null>;
       openProjectByPath: (folderPath: string) => Promise<ProjectState | null>;

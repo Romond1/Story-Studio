@@ -1,6 +1,6 @@
 # Story Studio (Electron + React + TypeScript)
 
-Visual lesson authoring and live teaching with a shared Story/Activation scene editor.
+Visual lesson authoring and live teaching through Adventure → Discovery → Challenge → Mastery, with a shared Adventure/Discovery scene editor.
 
 ## Features
 - Project format is always:
@@ -10,7 +10,7 @@ Visual lesson authoring and live teaching with a shared Story/Activation scene e
 - `project.json` stores only relative paths + metadata (no base64/blobs).
 - Atomic save (unique temporary file, flush, then replace `project.json`). New projects require an empty folder and never replace an existing project file.
 - Undo/redo persistent lesson edits with Ctrl+Z / Ctrl+Shift+Z or the Undo/Redo buttons in Edit. History keeps up to 100 steps for the open project; Save retains it and opening another project resets it. Text fields keep native undo/cut. Live navigation, viewport, playback and drawing are separate from authored history.
-- New lessons use `format: "story-studio-scene", version: 1` with explicit scene objects and ordered Story/Activation sequences.
+- New lessons use `format: "story-studio-scene", version: 1` with explicit scene objects and ordered Adventure/Discovery sequences. Their serialized identifiers remain `story` and `activation` for saved-lesson compatibility.
 - Both phases share the Media Pool, timeline, canvas and selected-object Inspector. Add Cards or Bubbles directly; duplicate, delete, move, resize and reorder objects with undo/redo.
 - Cards have named faces and optional linked Library reuse. Optional Sets insert ordinary independent scene Cards.
 - Edit selection is separate from Live. Teach controls navigation, faces, drawing, viewport, scene audio and rewards. Present renders the same scene composition without teacher tools.
@@ -24,7 +24,7 @@ From the welcome screen, expand **Earlier projects** and choose **Open Legacy mo
 
 The complete pre-reconstruction application is preserved at commit `be7f47b`, branch `new-layout`, and tag `new-layout-checkpoint-2026-10-08`. The older `rebuild-from-v20.1` branch remains separate. To inspect the checkpoint without replacing this checkout, create a separate Git worktree at that tag.
 
-Language Game and Final Boss are disabled future phases. Badges are rewards, separate from Final Boss.
+Challenge offers Language Snake and Mastery offers Final Boss Hero through the shared Game Host. Choose a game and launch it to run its single interactive instance in Present; Control provides the game information, keyboard forwarding, restart and exit controls. Game sound uses Present's audio output. Badges remain separate lesson rewards.
 
 ## Run
 ```bash

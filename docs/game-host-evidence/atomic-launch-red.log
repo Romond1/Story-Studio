@@ -1,0 +1,42 @@
+[Present] Card content failed
+✔ game presentation accepts only a registered game identity without source or runtime state (1.7737ms)
+✔ card overlays whitelist active student faces on ordinary presentation targets (2.6999ms)
+✔ invalid card overlays are rejected without replacing the relay safe snapshot (1.0256ms)
+✔ Control namespaces card image URLs in standalone and overlay snapshots without mutating the plan (88.926ms)
+✔ Present waits for both the base scene and card overlay images before reporting readiness (124.4064ms)
+✔ snapshot projection strips teacher data and rejects invalid revisions or media (0.2405ms)
+✔ relay rejects duplicate/stale revisions and retired sessions while preserving full latest state (0.1411ms)
+✔ Control reset clears stale image and permits fresh renderer state; Present recovery uses latest full snapshot (0.2153ms)
+✖ Present lifecycle stays passive, recovers latest snapshot and rejects foreign IPC senders (32.021ms)
+✔ renderer revocation is applied even when snapshot sequence is unchanged (0.6007ms)
+✔ video projection accepts only whitelisted executable intent with local media (0.3471ms)
+✔ static scene whitelist preserves logical geometry, adjustments and visible student text only (0.4431ms)
+✔ logical frame preserves coordinates under resize and aspect changes (0.1879ms)
+✔ asset readiness cannot survive scene unmount or accept removed graphics (3.6696ms)
+✔ remounted scene requires fresh image and graphic events; removed assets cannot make it ready (0.3043ms)
+✔ drawing snapshots recover committed and transient strokes with logical viewport and no private fields (0.4427ms)
+✔ prompt projects only student text with canonical frame and passive activity (0.2378ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 16
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 628.6061
+
+✖ failing tests:
+
+test at dist-test\shared\presentationSnapshot.test.js:179:25
+✖ Present lifecycle stays passive, recovers latest snapshot and rejects foreign IPC senders (32.021ms)
+  AssertionError [ERR_ASSERTION]: game launch registers ownership atomically before opening Present
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\dist-test\shared\presentationSnapshot.test.js:355:22)
+      at async Test.run (node:internal/test_runner/test:1110:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

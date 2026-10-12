@@ -1,0 +1,30 @@
+✔ only implemented games are selectable in their supported sections (1.1789ms)
+✔ game sessions whitelist a registered identity instead of copied gameplay state (0.3471ms)
+✔ input packets preserve custom letter controls and reject executable, malformed or browser keys (0.6679ms)
+✔ Present alone mounts a game and gates forwarded input on the matching iframe readiness (106.9855ms)
+[Present] Card content failed
+✔ game presentation accepts only a registered game identity without source or runtime state (2.8515ms)
+✔ card overlays whitelist active student faces on ordinary presentation targets (4.9665ms)
+✔ invalid card overlays are rejected without replacing the relay safe snapshot (0.3432ms)
+✔ Control namespaces card image URLs in standalone and overlay snapshots without mutating the plan (111.8423ms)
+✔ Present waits for both the base scene and card overlay images before reporting readiness (128.6285ms)
+✔ snapshot projection strips teacher data and rejects invalid revisions or media (0.301ms)
+✔ relay rejects duplicate/stale revisions and retired sessions while preserving full latest state (0.1734ms)
+✔ Control reset clears stale image and permits fresh renderer state; Present recovery uses latest full snapshot (0.2005ms)
+✔ Present lifecycle stays passive, recovers latest snapshot and rejects foreign IPC senders (39.8413ms)
+✔ renderer revocation is applied even when snapshot sequence is unchanged (0.4122ms)
+✔ video projection accepts only whitelisted executable intent with local media (0.3382ms)
+✔ static scene whitelist preserves logical geometry, adjustments and visible student text only (0.4883ms)
+✔ logical frame preserves coordinates under resize and aspect changes (0.2455ms)
+✔ asset readiness cannot survive scene unmount or accept removed graphics (1.4633ms)
+✔ remounted scene requires fresh image and graphic events; removed assets cannot make it ready (0.2818ms)
+✔ drawing snapshots recover committed and transient strokes with logical viewport and no private fields (0.5243ms)
+✔ prompt projects only student text with canonical frame and passive activity (0.2419ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 640.3154

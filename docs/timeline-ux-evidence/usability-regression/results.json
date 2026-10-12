@@ -1,0 +1,17 @@
+{
+  "results": [
+    "Sections create/rename/collapse/navigation; ungrouped scenes and distinct editable Break",
+    "All three splitters preserve authored Card geometry and scene aspect; local layout saved",
+    "Edit and timeline use middle-pan; drawing does not intercept it; empty left-drag never pans",
+    "Short click flips once; live drag does not flip and mirrors Present throughout movement; focus loss cancels",
+    "Every drawing tool allows middle-pan; draw/erase/undo/redo, wheel zoom and occurrence state survive navigation",
+    "Teach contextual menu, explicit scene reset and passive student-safe Present",
+    "Context Copy to Scene across phases, independent content, keyboard copy/paste and safe canvas-to-timeline copy",
+    "Explicit Move to Scene supports undo; resize gestures cannot become cross-scene copies",
+    "Mouse navigation events blocked while native text editing remains available",
+    "Authored save/reopen excludes temporary teaching state; a new teaching session starts fresh"
+  ],
+  "errors": [],
+  "sampleProject": "D:\\Temp\\story-usability-gKepnK\\Disposable-lesson",
+  "originalLessonsTouched": false
+}

@@ -1,0 +1,45 @@
+
+> story-studio@1.0.0 build:renderer
+> vite build
+
+vite v6.4.1 building for production...
+transforming...
+✓ 2145 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/renderer/counter.html                                   0.50 kB │ gzip:   0.30 kB
+dist/renderer/present.html                                   0.61 kB │ gzip:   0.33 kB
+dist/renderer/index.html                                     0.65 kB │ gzip:   0.33 kB
+dist/renderer/language-snake.html                            1.23 kB │ gzip:   0.64 kB
+dist/renderer/assets/jingle-CcsxfFlx.mp3                   172.20 kB
+dist/renderer/assets/Intro screen BG image-DXuM3lol.png  1,040.67 kB
+dist/renderer/assets/Mastery-zENZf6Eg.png                1,109.32 kB
+dist/renderer/assets/Story-BnyBuAVE.png                  1,122.26 kB
+dist/renderer/assets/Game-BnmGhXEJ.png                   1,201.10 kB
+dist/renderer/assets/Settings-CuX5KJ7Z.png               1,221.57 kB
+dist/renderer/assets/Legacy-DxCbACgM.png                 1,263.87 kB
+dist/renderer/assets/touch_head-Ci7XU97b.gif             1,266.23 kB
+dist/renderer/assets/Activation-CvfGSiK-.png             1,272.74 kB
+dist/renderer/assets/Users-Bhd_WQYX.png                  1,316.07 kB
+dist/renderer/assets/touch_nose-CQwO4mh6.gif             1,464.79 kB
+dist/renderer/assets/touch_color-BvPzw3EM.gif            2,244.75 kB
+dist/renderer/assets/hero_pose_yuki-BGnRlw7m.gif         2,537.21 kB
+dist/renderer/assets/hero_pose_mia-B42ZlbNQ.gif          4,728.31 kB
+dist/renderer/assets/run-D4HmEjGJ.gif                    5,376.55 kB
+dist/renderer/assets/languageSnake-CaIZsbsg.css              0.51 kB │ gzip:   0.33 kB
+dist/renderer/assets/present-CWN-DkUh.css                    0.70 kB │ gzip:   0.37 kB
+dist/renderer/assets/counter-i7KkxKf4.css                   11.89 kB │ gzip:   3.31 kB
+dist/renderer/assets/gameHost-CimRU5en.css                  52.48 kB │ gzip:  11.10 kB
+dist/renderer/assets/main-DA1Xkq_V.css                     109.51 kB │ gzip:  20.88 kB
+dist/renderer/assets/counter-B-fE_hpF.js                    12.87 kB │ gzip:   3.46 kB
+dist/renderer/assets/present-CCh0tGH7.js                    19.34 kB │ gzip:   6.34 kB
+dist/renderer/assets/client-DhIe_4FL.js                    144.20 kB │ gzip:  46.27 kB
+dist/renderer/assets/gameHost-CrHp51f3.js                  149.67 kB │ gzip:  48.10 kB
+dist/renderer/assets/languageSnake-Dv8Fx7ye.js             220.30 kB │ gzip:  68.13 kB
+dist/renderer/assets/main-CzquULDn.js                      581.23 kB │ gzip: 154.89 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 9.29s

@@ -1,0 +1,677 @@
+{
+  "passed": [
+    "Beginning Game and empty Mastery use the reusable library without starting a runtime",
+    "Original mouse movement, Control keyboard forwarding, alternating turns, crystal growth, answer reveal and scoring; native WebAudio runs; singleton Present preserves the complete playfield at desktop and portrait sizes",
+    "Restart creates a fresh instance and disposes the old runtime; stale input is ignored; exit returns to selection and Beginning",
+    "Return restores Teach and Edit cursors, selected card, dirty edits and lesson projection; game arrows cannot navigate the lesson; desktop/narrow controls fit without overlap",
+    "Closing Present ends the run, reopening gets a fresh singleton runtime, and the dirty lesson survives close/reopen and Mastery navigation",
+    "Native Present reload ends the game, removes the runtime, and allows a fresh run while preserving dirty lesson state",
+    "Deliberate native Present renderer crash leaves Control and dirty lesson alive; crashed runtime is disposed and reopening starts a fresh singleton",
+    "A deliberately failed game HTML load reports a recoverable error, removes its iframe, and Restart restores a fresh original game without losing the lesson"
+  ],
+  "errors": [],
+  "visualAudits": [
+    {
+      "name": "Game selection desktop",
+      "viewport": {
+        "width": 1424,
+        "height": 935
+      },
+      "horizontalOverflow": false,
+      "clippedControls": [],
+      "overlaps": []
+    },
+    {
+      "name": "Game Control desktop",
+      "viewport": {
+        "width": 1424,
+        "height": 935
+      },
+      "horizontalOverflow": false,
+      "clippedControls": [],
+      "overlaps": []
+    },
+    {
+      "name": "Game Control narrow",
+      "viewport": {
+        "width": 374,
+        "height": 779
+      },
+      "horizontalOverflow": false,
+      "clippedControls": [],
+      "overlaps": []
+    }
+  ],
+  "gameStates": [
+    {
+      "name": "Original mechanics after genuine input",
+      "moves": 2,
+      "controlMoves": 1,
+      "initial": {
+        "coordinateSystem": "origin top-left, +x right, +y down",
+        "splashVisible": false,
+        "mode": "versus",
+        "phase": "collection",
+        "board": {
+          "width": 16,
+          "height": 12
+        },
+        "crystalsRemaining": 36,
+        "battleBombs": [],
+        "heroCrown": {
+          "settings": {
+            "enabled": false,
+            "frequency": "medium",
+            "expiresAfterMoves": 5,
+            "cosmeticDurationSeconds": 30,
+            "bonusValue": 3
+          },
+          "tile": null,
+          "challenge": null,
+          "nextTargetIndex": 0
+        },
+        "coop": null,
+        "coopPaused": false,
+        "activeTurn": "player-1",
+        "players": [
+          {
+            "id": "player-1",
+            "name": "Student",
+            "score": 0,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 0,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 2,
+                "y": 2
+              },
+              {
+                "x": 1,
+                "y": 2
+              }
+            ]
+          },
+          {
+            "id": "player-2",
+            "name": "Teacher",
+            "score": 0,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 0,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 13,
+                "y": 9
+              },
+              {
+                "x": 14,
+                "y": 9
+              }
+            ]
+          }
+        ],
+        "pendingPickup": null,
+        "pickupResolution": null,
+        "background": {
+          "imageLoaded": false,
+          "controls": {
+            "blur": 2,
+            "brightness": 1,
+            "overlay": 0.18,
+            "panelOpacity": 0.62,
+            "boardOpacity": 0.42
+          }
+        },
+        "resultOverlay": null
+      },
+      "final": {
+        "coordinateSystem": "origin top-left, +x right, +y down",
+        "splashVisible": false,
+        "mode": "versus",
+        "phase": "collection",
+        "board": {
+          "width": 16,
+          "height": 12
+        },
+        "crystalsRemaining": 35,
+        "battleBombs": [],
+        "heroCrown": {
+          "settings": {
+            "enabled": false,
+            "frequency": "medium",
+            "expiresAfterMoves": 5,
+            "cosmeticDurationSeconds": 30,
+            "bonusValue": 3
+          },
+          "tile": null,
+          "challenge": null,
+          "nextTargetIndex": 0
+        },
+        "coop": null,
+        "coopPaused": false,
+        "activeTurn": "player-1",
+        "players": [
+          {
+            "id": "player-1",
+            "name": "Student",
+            "score": 1,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 1,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 2,
+                "y": 3
+              },
+              {
+                "x": 2,
+                "y": 2
+              },
+              {
+                "x": 1,
+                "y": 2
+              }
+            ]
+          },
+          {
+            "id": "player-2",
+            "name": "Teacher",
+            "score": 0,
+            "crowns": 0,
+            "crownBonus": 0,
+            "finalTotal": 0,
+            "crownEffectActive": false,
+            "shield": 0,
+            "snake": [
+              {
+                "x": 13,
+                "y": 8
+              },
+              {
+                "x": 13,
+                "y": 9
+              }
+            ]
+          }
+        ],
+        "pendingPickup": null,
+        "pickupResolution": null,
+        "background": {
+          "imageLoaded": false,
+          "controls": {
+            "blur": 2,
+            "brightness": 1,
+            "overlay": 0.18,
+            "panelOpacity": 0.62,
+            "boardOpacity": 0.42
+          }
+        },
+        "resultOverlay": null
+      }
+    }
+  ],
+  "audioEvents": [
+    {
+      "event": "contextCreated",
+      "context": {
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "contextType": "realtime",
+        "contextState": "suspended",
+        "callbackBufferSize": 480,
+        "maxOutputChannelCount": 2,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "ce5398f9-c089-4979-a0ba-46a5e1aefbc6",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "AudioDestination",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 0,
+        "channelCount": 2,
+        "channelCountMode": "explicit",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "contextChanged",
+      "context": {
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "contextType": "realtime",
+        "contextState": "running",
+        "callbackBufferSize": 480,
+        "maxOutputChannelCount": 2,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "2d49d776-10e5-4c5b-904d-2fbeba4dedf8",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "d91b64e1-65c5-412a-9d11-b6d2f7262062",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "221b0fa9-6ef6-4d05-99e1-b326196ffb01",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "a15f8a17-8748-4edc-a01a-c520561738b8",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "178279f6-a132-4e86-bb7d-a776963ec6df",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "a530afac-c21b-4518-b892-d4e9d7790ff2",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "05d6ad9b-1636-4165-8b96-ca74836da686",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "400fa34b-7e6c-45d0-8cec-5f3f66e1d4f5",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "329bf8b5-3858-497e-8025-d28afa0857a4",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "f83e4383-3190-48ae-9e70-e8608f0329a2",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "d71621c1-018a-4ac6-a6ef-4ce678c1605a",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "e5eac143-4589-4eed-8975-51edd2837992",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "5f358523-48dd-4b80-964a-c398c181838c",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "c658a0d8-ec43-4193-90dc-fa17a9db1c4d",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "c97a2dde-e593-4c0e-8f05-b4dce58b8f51",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "d985a7b1-4ace-417f-b6d0-3872c95fcb5f",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "b257b802-be3f-4843-9f19-28c3eb266ffa",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "e048bb3d-ae12-4f89-a65d-e53f90bf82e1",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "31d02553-afb0-4644-868e-883dd390cb12",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "c44bb897-fe01-4f26-97b6-7f33054da976",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Oscillator",
+        "numberOfInputs": 0,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "audioNodeCreated",
+      "node": {
+        "nodeId": "e35450d6-364c-4fd1-95a6-0cb7b84f14ac",
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "nodeType": "Gain",
+        "numberOfInputs": 1,
+        "numberOfOutputs": 1,
+        "channelCount": 2,
+        "channelCountMode": "max",
+        "channelInterpretation": "speakers"
+      }
+    },
+    {
+      "event": "contextChanged",
+      "context": {
+        "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f",
+        "contextType": "realtime",
+        "contextState": "closed",
+        "callbackBufferSize": 480,
+        "maxOutputChannelCount": 2,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "event": "contextWillBeDestroyed",
+      "contextId": "f76a1c4a-4f73-4eb4-a97d-cb14de4b698f"
+    }
+  ],
+  "lifecycle": [
+    {
+      "operation": "reload",
+      "instanceId": "02632b72-0573-4351-a794-8b5682a1045f",
+      "freshInstanceId": "51196147-ee34-44e6-bffa-7ad1be43269c"
+    },
+    {
+      "operation": "crash",
+      "instanceId": "c1f3ebfb-576b-4395-b62b-3f2ee5e29971",
+      "freshInstanceId": "dc4d055e-40d0-467a-b1c6-f9c7467f7974",
+      "separateProcesses": true
+    },
+    {
+      "operation": "load failure",
+      "instanceId": "386078cd-f076-4067-b43e-ac3ebf405435",
+      "freshInstanceId": "2b9d0428-84c2-4e71-bbf8-c871b1e57a65",
+      "abortedHtmlRequests": 1
+    }
+  ],
+  "presentLayouts": [
+    {
+      "nativeSize": {
+        "width": 960,
+        "height": 600
+      },
+      "logical": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scale": 1,
+        "scrollTop": 0,
+        "columns": 3,
+        "board": {
+          "left": 162.32144165039062,
+          "right": 1100.6628723144531,
+          "top": 163.81353759765625,
+          "bottom": 693.9559326171875
+        },
+        "logicalViewport": {
+          "left": 0,
+          "right": 1280,
+          "top": 0,
+          "bottom": 800
+        }
+      },
+      "outer": {
+        "width": 944,
+        "height": 561,
+        "layoutWidth": 1280,
+        "layoutHeight": 800,
+        "frame": {
+          "left": 23.1875,
+          "right": 920.7875366210938,
+          "top": 0,
+          "bottom": 561,
+          "width": 897.6000366210938,
+          "height": 561
+        }
+      }
+    },
+    {
+      "nativeSize": {
+        "width": 600,
+        "height": 900
+      },
+      "logical": {
+        "innerWidth": 1280,
+        "innerHeight": 800,
+        "scale": 1,
+        "scrollTop": 0,
+        "columns": 3,
+        "board": {
+          "left": 162.32144165039062,
+          "right": 1100.6628723144531,
+          "top": 163.81353759765625,
+          "bottom": 693.9559326171875
+        },
+        "logicalViewport": {
+          "left": 0,
+          "right": 1280,
+          "top": 0,
+          "bottom": 800
+        }
+      },
+      "outer": {
+        "width": 584,
+        "height": 861,
+        "layoutWidth": 1280,
+        "layoutHeight": 800,
+        "frame": {
+          "left": 0,
+          "right": 584,
+          "top": 248,
+          "bottom": 613,
+          "width": 584,
+          "height": 365
+        }
+      }
+    }
+  ],
+  "cameraDrags": [
+    {
+      "scale": 0.45625,
+      "physicalDelta": 30,
+      "expectedLogicalDelta": 65.75342465753425,
+      "before": {
+        "x": 0,
+        "y": 0
+      },
+      "after": {
+        "x": 65.7534,
+        "y": 0
+      }
+    }
+  ],
+  "gameEndedEvents": [
+    {
+      "instanceId": "88b8ec03-cc30-4d76-8b63-85174feb6a57",
+      "reason": "closed"
+    },
+    {
+      "instanceId": "02632b72-0573-4351-a794-8b5682a1045f",
+      "reason": "reload"
+    },
+    {
+      "instanceId": "c1f3ebfb-576b-4395-b62b-3f2ee5e29971",
+      "reason": "crashed"
+    }
+  ],
+  "sampleProject": "D:\\Temp\\story-game-host-qjGpx1\\Disposable lesson",
+  "originalLessonsTouched": false,
+  "gameRuntimeMutations": false,
+  "audioObservation": "Read-only Chromium WebAudio protocol; physical audibility requires a manual listening check."
+}

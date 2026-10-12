@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { LessonProject, LessonSession, LessonScene } from '../../shared/lesson/model';
 import { cardAction, type CardAction } from '../../shared/lesson/session';
 import { LessonRewardControls } from './LessonRewardControls';
+import { CameraControls } from '../camera/CameraControls';
 
 export function LessonTeachControls({ project, scene, session, onSession, selectedId, onSelect, drawing, onDrawing, onPlayAudio, onStopAudio }: {
   project: LessonProject; scene?: LessonScene; session: LessonSession; onSession: Dispatch<SetStateAction<LessonSession>>;
@@ -16,6 +17,7 @@ export function LessonTeachControls({ project, scene, session, onSession, select
   const setViewport = (zoom: number, x: number, y: number) => onSession(current => ({ ...current, revision: current.revision + 1, viewport: { zoom, pan: { x, y } } }));
   return <aside className="lesson-teach-controls lesson-side" aria-label="Teaching controls">
     <h2>Live controls</h2><p>Changes here affect the student presentation.</p>
+    <CameraControls />
     <section><h3>Cards</h3>
       {!cards.length ? <p>No cards in this scene.</p> : <><label>Card<select value={selected?.id ?? ''} onChange={e => onSelect(e.target.value)}>{cards.map(object => <option key={object.id} value={object.id}>{object.kind === 'card' ? project.cards[object.cardId]?.label : ''}</option>)}</select></label>
       <label>Show face<select value={selected?.kind === 'card' ? session.cards[selected.id]?.faceId ?? selected.initialFaceId : ''} onChange={e => act({ faceId: e.target.value })}>{definition?.faces.map(face => <option key={face.id} value={face.id}>{face.label}</option>)}</select></label>

@@ -12,6 +12,8 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
         counter: path.resolve(__dirname, 'counter.html'),
         present: path.resolve(__dirname, 'present.html'),
+        languageSnake: path.resolve(__dirname, 'language-snake.html'),
+        finalBossHero: path.resolve(__dirname, 'final-boss-hero.html'),
       },
     },
   }

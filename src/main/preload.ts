@@ -1,4 +1,16 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
+import type { CameraControlApi, CameraState } from '../shared/cameraProtocol';
+
+const cameraControl: CameraControlApi = {
+  get: () => ipcRenderer.invoke('camera:control-get'),
+  set: settings => ipcRenderer.invoke('camera:set', settings),
+  subscribe: listener => {
+    const handle = (_event: Electron.IpcRendererEvent, state: CameraState) => listener(state);
+    ipcRenderer.on('camera:state', handle);
+    return () => ipcRenderer.removeListener('camera:state', handle);
+  },
+};
+contextBridge.exposeInMainWorld('cameraControl', cameraControl);
 import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
 import type { AudioSettingsV1 } from '../shared/audioSettings';
 import type { PresentSnapshot } from '../shared/presentationSnapshot';
@@ -18,6 +30,13 @@ let latestDroppedFilePaths: string[] = [];
 );
 
 const api = {
+  launchGame: (snapshot: PresentSnapshot): Promise<void> => ipcRenderer.invoke('present:launch-game', snapshot),
+  sendGameInput: (packet: import('../shared/gameHost').GameInputPacket): void => ipcRenderer.send('present:game-input', packet),
+  onGameEnded: (callback: (event: import('../shared/gameHost').GameEndedEvent) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, event: import('../shared/gameHost').GameEndedEvent) => callback(event);
+    ipcRenderer.on('present:game-ended', listener);
+    return () => ipcRenderer.removeListener('present:game-ended', listener);
+  },
   getPresentMediaRuntime: () => ipcRenderer.invoke('present:media-runtime'),
   onPresentMediaRuntime: (callback: (runtime: import('../shared/presentationMedia').MediaRuntime) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, runtime: import('../shared/presentationMedia').MediaRuntime) => callback(runtime);
@@ -76,6 +95,7 @@ const api = {
 
 contextBridge.exposeInMainWorld('appApi', api);
 contextBridge.exposeInMainWorld('lessonApi', {
+  createDraft: (sequence: 'story' | 'activation'): Promise<LessonProjectState> => ipcRenderer.invoke('lesson:draft', sequence),
   createProject: (): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:create'),
   openProject: (): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:open'),
   openProjectByPath: (folderPath: string): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:open-path', folderPath),

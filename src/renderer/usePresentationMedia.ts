@@ -4,7 +4,7 @@ import type { VideoTrimSettings } from '../shared/types';
 import { audioManager } from './audio/AudioManager';
 import { ControlMediaReceiver } from './presentationMediaBridge';
 
-export function usePresentationMedia(identity: string | null, audio: { enabled: boolean; volume: number }, trim: VideoTrimSettings | undefined, active: boolean, handoffPosition = 0) {
+export function usePresentationMedia(identity: string | null, audio: { enabled: boolean; volume: number }, trim: VideoTrimSettings | undefined, active: boolean, handoffPosition = 0, restoreHandoff = false) {
   const core = useRef(new PresentationMediaCore());
   const receiver = useRef<ControlMediaReceiver | null>(null);
   const runtime = useRef<MediaRuntime>({ generation: 0, available: false });
@@ -18,7 +18,7 @@ export function usePresentationMedia(identity: string | null, audio: { enabled: 
   const healthyNavigation = previous.current.active && active && previous.current.identity !== identity && !!identity && runtime.current.available;
   previous.current = { identity, active };
   core.current.configure(identity, runtime.current, audio, trim);
-  if (entering && core.current.intent) core.current.command('seek', handoffPosition);
+  if ((entering || restoreHandoff) && core.current.intent) core.current.command('seek', handoffPosition);
   if (healthyNavigation && core.current.intent) core.current.command('play');
   const intent = core.current.intent;
   const syncReceiver = (next: MediaIntent | null) => {

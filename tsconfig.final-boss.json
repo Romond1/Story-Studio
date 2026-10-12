@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
+    "types": ["vite/client"]
+  },
+  "include": ["games/final-boss-hero/main.tsx", "games/final-boss-hero/src"],
+  "exclude": ["games/final-boss-hero/src/**/__tests__/**", "games/final-boss-hero/src/test/**", "games/final-boss-hero/src/main.tsx"]
+}

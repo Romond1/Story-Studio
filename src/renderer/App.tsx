@@ -1009,7 +1009,7 @@ export function App() {
     startScale: number;
   } | null>(null);
   const [pendingAction, setPendingAction] = useState<
-    "create" | "open" | "close" | null
+    "create" | "open" | "close" | "home" | null
   >(null);
   const [pendingSectionDeleteId, setPendingSectionDeleteId] = useState<string | null>(null);
 
@@ -2740,8 +2740,12 @@ export function App() {
     setIsDirty(matchesRestore);
   };
 
-  const executePendingAction = async (action: "create" | "open" | "close") => {
+  const executePendingAction = async (action: "create" | "open" | "close" | "home") => {
     if (operationRef.current) return;
+    if (action === "home") {
+      window.location.search = "";
+      return;
+    }
     if (action === "close") {
       window.appApi.forceClose();
       return;
@@ -2800,6 +2804,16 @@ export function App() {
       setShowConfirmModal(true);
     } else {
       executePendingAction("create");
+    }
+  };
+
+  const onReturnToStudio = () => {
+    if (operationRef.current) return;
+    if (dirtyRef.current) {
+      setPendingAction("home");
+      setShowConfirmModal(true);
+    } else {
+      void executePendingAction("home");
     }
   };
 
@@ -4249,6 +4263,7 @@ export function App() {
             }}
           >
             <button onClick={() => setModernEdit(value => { const next = !value; try { localStorage.setItem('story-studio.edit-layout', next ? 'modern' : 'legacy'); } catch {} return next; })}>{modernEdit ? 'Legacy layout' : 'Modern workspace'}</button>
+            <button className="studio-return" onClick={onReturnToStudio}>Story Studio home</button>
             <button onClick={onCreateProject}>Create Project</button>
             <button onClick={onOpenProject}>Open Project</button>
             <button onClick={onImportMedia} disabled={!project}>
@@ -4349,6 +4364,7 @@ export function App() {
             </span>
           </header>
           {appMode === 'teach' && <header className="teach-header">
+            <button className="studio-return" onClick={onReturnToStudio}>Story Studio home</button>
             <strong>Teach workspace</strong><TeachQuickControls /><button title="Previous live target" disabled={!presentationTarget.capabilities.canNavigate} onClick={goToPrevSlide}>Previous</button><button title="Next live target" disabled={!presentationTarget.capabilities.canNavigate} onClick={goToNextSlide}>Next</button><span>{project?.folderPath.split(/[\\/]/).pop() || 'No lesson open'}</span>
             <PresentStatus />
             <button disabled={!project} onClick={() => void openPresent().catch(error => setError(String(error)))}>Open / Reopen Present</button>

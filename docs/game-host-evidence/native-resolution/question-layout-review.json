@@ -1,0 +1,216 @@
+{
+  "method": "Read-only Edge headless geometry harness reproducing the copied modal markup; RED omits the newly added flip class, GREEN uses the landed viewport.css and game-question-flip class. No production files, game state, or original source were changed.",
+  "viewportHeight": 800,
+  "sourceFiles": [
+    "games/language-snake/App.jsx",
+    "games/language-snake/viewport.css"
+  ],
+  "allGreenNoTextJudgmentOverlap": true,
+  "authoredLong390RedReproduced": true,
+  "observations": [
+    {
+      "name": "default-clue",
+      "prompt": "CLUE: They followed the glowing s__________ through the forest.",
+      "red": {
+        "width": 390,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 447.1875,
+        "judgmentTop": 472,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "block",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "absolute",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      },
+      "green": {
+        "width": 390,
+        "height": 800,
+        "faceHeight": 296.5625,
+        "textBottom": 447.1875,
+        "judgmentTop": 495.28125,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "grid",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "relative",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      }
+    },
+    {
+      "name": "default-unscramble",
+      "prompt": "UNSCRAMBLE: deeper / The / forest / into / shard / moving / is",
+      "red": {
+        "width": 390,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 427.640625,
+        "judgmentTop": 472,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "block",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "absolute",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      },
+      "green": {
+        "width": 390,
+        "height": 800,
+        "faceHeight": 257.46875,
+        "textBottom": 427.640625,
+        "judgmentTop": 475.734375,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "grid",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "relative",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      }
+    },
+    {
+      "name": "authored-long-prompt",
+      "prompt": "CLUE: They followed the glowing s__________ through the forest. What happened when they reached the old castle, and which character warned them to slow down?",
+      "red": {
+        "width": 390,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 603.5625,
+        "judgmentTop": 472,
+        "textOverlapsJudgment": true,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "block",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "absolute",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      },
+      "green": {
+        "width": 390,
+        "height": 800,
+        "faceHeight": 609.3125,
+        "textBottom": 681.21875,
+        "judgmentTop": 729.3125,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 955,
+        "flipDisplay": "grid",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "relative",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      }
+    },
+    {
+      "name": "default-clue",
+      "prompt": "CLUE: They followed the glowing s__________ through the forest.",
+      "red": {
+        "width": 600,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 399.546875,
+        "judgmentTop": 483,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "block",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "absolute",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      },
+      "green": {
+        "width": 600,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 399.546875,
+        "judgmentTop": 483,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "grid",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "relative",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      }
+    },
+    {
+      "name": "default-unscramble",
+      "prompt": "UNSCRAMBLE: deeper / The / forest / into / shard / moving / is",
+      "red": {
+        "width": 600,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 399.546875,
+        "judgmentTop": 483,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "block",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "absolute",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      },
+      "green": {
+        "width": 600,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 399.546875,
+        "judgmentTop": 483,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "grid",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "relative",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      }
+    },
+    {
+      "name": "authored-long-prompt",
+      "prompt": "CLUE: They followed the glowing s__________ through the forest. What happened when they reached the old castle, and which character warned them to slow down?",
+      "red": {
+        "width": 600,
+        "height": 800,
+        "faceHeight": 250,
+        "textBottom": 458.1875,
+        "judgmentTop": 483,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "block",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "absolute",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      },
+      "green": {
+        "width": 600,
+        "height": 800,
+        "faceHeight": 296.5625,
+        "textBottom": 458.1875,
+        "judgmentTop": 506.28125,
+        "textOverlapsJudgment": false,
+        "overlayScrollHeight": 800,
+        "flipDisplay": "grid",
+        "transformStyle": "preserve-3d",
+        "frontPosition": "relative",
+        "frontBackface": "hidden",
+        "backBackface": "hidden",
+        "backTransform": "matrix3d(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1)"
+      }
+    }
+  ]
+}

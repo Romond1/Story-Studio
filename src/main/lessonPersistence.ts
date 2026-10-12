@@ -1,8 +1,9 @@
 import { dialog, ipcMain, type BrowserWindow } from 'electron';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import type { LessonProject, LessonProjectState } from '../shared/lesson/model';
-import { createLesson } from '../shared/lesson/commands';
+import { createLesson, createScene, insertScene } from '../shared/lesson/commands';
 import { parseLessonProject } from '../shared/lesson/validation';
 
 type SaveMode = 'save' | 'saveAs';
@@ -29,6 +30,16 @@ async function readLesson(folder: string): Promise<LessonProject> {
 }
 
 export function installLessonPersistence(host: LessonPersistenceHost): void {
+  const drafts = new Set<string>();
+  ipcMain.handle('lesson:draft', (_, sequence: unknown) => host.withWrite(async () => {
+    if (sequence !== 'story' && sequence !== 'activation') throw new Error('Invalid lesson phase.');
+    const folderPath = await fs.mkdtemp(path.join(os.tmpdir(), 'story-studio-draft-'));
+    await fs.mkdir(path.join(folderPath, 'assets'));
+    const data = insertScene(createLesson(), sequence, createScene()).project;
+    const lastSavedAt = await host.writeAtomic(folderPath, data, true);
+    drafts.add(folderPath);
+    return { ...host.prepare({ folderPath, data, lastSavedAt }), isDraft: true };
+  }));
   const openPath = async (folderPath: unknown) => {
     if (typeof folderPath !== 'string' || !folderPath.trim()) throw new Error('Invalid project path.');
     const folder = path.resolve(folderPath);
@@ -77,7 +88,7 @@ export function installLessonPersistence(host: LessonPersistenceHost): void {
     const onDisk = await readLesson(active.folderPath);
     if (data.id !== active.id || onDisk.id !== active.id) throw new Error('Project identity changed. Open the intended lesson again before saving.');
 
-    if (mode === 'saveAs') {
+    if (mode === 'saveAs' || drafts.has(active.folderPath)) {
       const { canceled, filePaths } = await dialog.showOpenDialog(host.getWindow(), {
         title: 'Save Lesson As', properties: ['openDirectory', 'createDirectory'],
       });

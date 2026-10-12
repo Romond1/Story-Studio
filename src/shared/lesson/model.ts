@@ -32,7 +32,7 @@ export interface LessonProject {
   sections?: LessonSection[];
   cards: Record<string, CardDefinition>; library: string[]; cardSets: CardSet[];
 }
-export interface LessonProjectState { data: LessonProject; folderPath: string; lastSavedAt: string; activationToken: string }
+export interface LessonProjectState { data: LessonProject; folderPath: string; lastSavedAt: string; activationToken: string; isDraft?: boolean }
 export interface LessonLocation { sequence: SequenceKind; entryId: string }
 export interface EditorSelection { sequence: SequenceKind; entryId: string | null; objectId: string | null }
 export interface CardLiveState { faceId: string; concealed: boolean; box?: Rect }

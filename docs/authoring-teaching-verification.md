@@ -17,6 +17,14 @@ Scene audio remains scene-owned. Section-level music/settings and a cross-projec
 
 ## Verification performed
 
+### Follow-up verification — 2026-10-09
+
+The implementation was already committed at `1bfb10f` when the follow-up request arrived. A fresh run confirmed all 406 unit tests, the renderer and main builds, the renderer TypeScript check, all 10 Electron usability groups and all 9 Electron regression groups pass. A separate read-only review found no actionable defects in the corrected mouse handlers. No additional application source changes were needed. Desktop, compact and Present screenshots were inspected again.
+
+The usability screenshots and `results.json` were refreshed. The new disposable lesson is `D:\Temp\story-usability-5SDzjD\Disposable-lesson`; the reusable checked-in demo remains in `docs/usability-demo`. Fresh regression evidence is in `output/playwright/usability-regression-2026-10-09`. A recovery branch, `codex/usability-checkpoint-2026-10-09`, preserves the implementation commit. Physical wheel-tilt/driver behavior remains a manual acceptance item.
+
+### Full-pass results
+
 - `npm test`: **406 passed, 0 failed**. The test command now executes nested scene tests that were previously compiled but skipped by the top-level glob.
 - `npx tsc --noEmit -p tsconfig.json`: passed.
 - `npm run build:renderer`: passed, with the existing large-chunk advisory.

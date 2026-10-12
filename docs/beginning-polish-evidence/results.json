@@ -1,0 +1,20 @@
+{
+  "results": [
+    "Startup launcher: seven icons, four primary cards, responsive layout",
+    "Challenge and Mastery open shared game selection; Users opens its placeholder; all return",
+    "Settings opens and closes existing audio workspace",
+    "Direct blank Discovery supports cards and imports before Save; cancel preserves edits and first Save copies media",
+    "Discovery entry opens loaded lesson in Discovery Edit",
+    "Adventure entry resumes loaded lesson in Adventure Edit",
+    "File, folder, image-dialog and OS-file drop imports persist directly in active bin; Reset filters retains destination",
+    "General media import stays at root",
+    "Beginning navigation preserves unsaved scene edits and active bin",
+    "Present still opens from rebuilt workspace",
+    "Adventure tab recovers from an empty Discovery launch",
+    "Legacy uses explicit legacy entry route",
+    "Legacy home returns to the simplified Story Studio chooser",
+    "Legacy Edit home uses the existing unsaved-change guard; Cancel stays and Discard returns",
+    "Fresh Adventure entry opens a blank scene with immediate authoring"
+  ],
+  "errors": []
+}

@@ -1,0 +1,25 @@
+{
+  "results": [
+    "Atmospheric launcher, placeholders, hover, keyboard focus and mobile fit",
+    "Editor token contrast, selected media, creative hover, focus ring and quiet disabled states",
+    "Image dialog, audio settings, Teach, Discovery and passive student Present remain usable"
+  ],
+  "errors": [],
+  "contrast": {
+    "bodyText": 15.360256846189387,
+    "mutedText": 7.218477552633652,
+    "selectedText": 10.555457501044783,
+    "cyanLabel": 11.46628717107295,
+    "violetLabel": 7.786073626742482,
+    "presentText": 11.209763374771798
+  },
+  "focus": {
+    "outline": "solid",
+    "width": "2px"
+  },
+  "selected": "rgb(117, 228, 245)",
+  "disabled": {
+    "disabled": true,
+    "shadow": "none"
+  }
+}

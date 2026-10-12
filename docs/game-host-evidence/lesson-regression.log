@@ -1,0 +1,10 @@
+PASS Create/import/direct Card and Bubble/save
+PASS Actual Present composition, no tools, face/conceal/reveal
+PASS Existing student spark and badge visuals in Present, session-only totals, no student tools
+PASS Same Activation editor, independent scene/Card copies, pointer move and resize
+PASS Edit deletion reaches Present; undo/redo; independent Edit cursor; stable Story return
+PASS Present owns live video; teacher consumes muted received frames; overlays remain visible
+PASS Active Story tab and Teach keyboard undo preserve the live lesson and authored objects
+PASS Activation video with overlays and return to the stored Story video
+PASS 4:3 logical frame, authored drawing/transition, save and reopen complete lesson
+Disposable proof: D:\Temp\story-scene-acceptance-Z5f9Lq\Episode-7

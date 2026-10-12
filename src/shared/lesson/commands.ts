@@ -23,7 +23,7 @@ export function putScene(project: LessonProject, scene: LessonScene): LessonProj
   return { ...project, scenes: { ...project.scenes, [scene.id]: scene } };
 }
 export function insertScene(project: LessonProject, sequence: SequenceKind, scene = createScene(), beforeEntryId?: string): { project: LessonProject; entryId: string } {
-  if (project.sequences[sequence].length >= LESSON_LIMITS.entriesPerSequence) throw new Error(`${sequence === 'story' ? 'Story' : 'Activation'} can contain at most ${LESSON_LIMITS.entriesPerSequence} scene entries. Remove an entry before adding another.`);
+  if (project.sequences[sequence].length >= LESSON_LIMITS.entriesPerSequence) throw new Error(`${sequence === 'story' ? 'Adventure' : 'Discovery'} can contain at most ${LESSON_LIMITS.entriesPerSequence} scene entries. Remove an entry before adding another.`);
   if (!project.scenes[scene.id] && Object.keys(project.scenes).length >= LESSON_LIMITS.scenes) throw new Error(`This lesson can contain at most ${LESSON_LIMITS.scenes} scenes. Reuse a linked scene or start another lesson.`);
   assertObjectCapacity(scene, 0);
   const before = project.sequences[sequence].find(item => item.id === beforeEntryId);

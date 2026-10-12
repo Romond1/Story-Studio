@@ -1,9 +1,11 @@
 import { parsePresentViewport } from '../shared/teachWorkspace';
+import { installCameraBroadcast } from './cameraBroadcast';
 import { BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'node:path';
-import { PresentSnapshotRelay } from '../shared/presentationSnapshot';
+import { PresentSnapshotRelay, parsePresentSnapshot } from '../shared/presentationSnapshot';
 import type { PresentStatus } from '../shared/presentStatus';
 import { parseMediaPacket, packetMatches, type MediaRuntime } from '../shared/presentationMedia';
+import { parseGameInput, type GameEndedEvent } from '../shared/gameHost';
 
 let attachInstalledControl: (() => void) | null = null;
 /** Transitional transport. This module cannot change a lesson or issue Core commands. */
@@ -11,10 +13,26 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   if (attachInstalledControl) { attachInstalledControl(); return; }
   const relay = new PresentSnapshotRelay();
   let present: BrowserWindow | null = null;
+  const camera = installCameraBroadcast(getControl, () => present);
   let bounds: Electron.Rectangle | null = null;
   let openedBefore = false;
   let mediaRuntime: MediaRuntime = { generation: 0, available: false };
-  const envelope = () => ({ ...relay.envelope, rendererGeneration: mediaRuntime.generation });
+  let lastEndedGame: string | null = null;
+  const envelope = () => {
+    const value = relay.envelope;
+    const target = value.snapshot?.target;
+    // A closed/reloaded owner cannot be silently recreated from a retained snapshot.
+    const snapshot = target?.kind === 'game' && target.instanceId === lastEndedGame
+      ? { ...value.snapshot!, target: { kind: 'empty' as const, occurrenceId: `game-ended:${target.instanceId}` } } : value.snapshot;
+    return { ...value, snapshot, rendererGeneration: mediaRuntime.generation };
+  };
+  const gameEnded = (reason: GameEndedEvent['reason']) => {
+    const target = relay.envelope.snapshot?.target;
+    if (target?.kind !== 'game' || target.instanceId === lastEndedGame) return;
+    lastEndedGame = target.instanceId;
+    const control = getControl();
+    if (control && !control.isDestroyed() && !control.webContents.isDestroyed()) control.webContents.send('present:game-ended', { instanceId: target.instanceId, reason });
+  };
   const mediaLifecycle = (available: boolean, invalidate = true) => {
     mediaRuntime = { generation: mediaRuntime.generation + (invalidate ? 1 : 0), available };
     const control = getControl();
@@ -31,7 +49,7 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   const send = () => {
     if (present && !present.isDestroyed() && !present.webContents.isDestroyed()) present.webContents.send('present:snapshot', envelope());
   };
-  const reset = () => { mediaLifecycle(!!present && !present.isDestroyed()); relay.reset(); send(); if (present) reportStatus('connecting'); };
+  const reset = () => { camera.reset(); mediaLifecycle(!!present && !present.isDestroyed()); relay.reset(); send(); if (present) reportStatus('connecting'); };
   const attached = new WeakSet<BrowserWindow>();
   attachInstalledControl = () => {
     const control = getControl();
@@ -54,6 +72,14 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   };
   screen.on('display-removed', keepPresentReachable);
   screen.on('display-metrics-changed', keepPresentReachable);
+
+  ipcMain.on('present:game-input', (event, value: unknown) => {
+    if (!authorized(event, getControl())) return;
+    const packet = parseGameInput(value);
+    const target = relay.envelope.snapshot?.target;
+    if (!packet || target?.kind !== 'game' || packet.instanceId !== target.instanceId || packet.instanceId === lastEndedGame || !present || present.isDestroyed() || present.webContents.isDestroyed()) return;
+    present.webContents.send('present:game-input', packet);
+  });
 
   ipcMain.handle('present:media-runtime', event => {
     if (!authorized(event, getControl())) throw new Error('Only Control may request media runtime.');
@@ -89,8 +115,7 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
     return status;
   });
 
-  ipcMain.handle('present:open', async event => {
-    if (!authorized(event, getControl())) throw new Error('Present can only be opened by Control.');
+  const openPresent = async () => {
     if (present && !present.isDestroyed()) { present.show(); present.focus(); return; }
     const work = screen.getDisplayMatching(getControl()!.getBounds()).workArea;
     const reachable = bounds && screen.getAllDisplays().some(display => {
@@ -103,16 +128,18 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
       autoHideMenuBar: true, webPreferences: { preload: path.join(__dirname, 'presentPreload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
     present = window;
     let crashed = false;
+    let loaded = false;
     status = { ...status, needsReshare: openedBefore };
     openedBefore = true;
     reportStatus('connecting');
     window.setMenu(null);
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     window.webContents.on('will-navigate', event => event.preventDefault());
-    window.webContents.on('did-start-navigation', (_event, _url, inPlace, mainFrame) => { if (mainFrame && !inPlace) { mediaLifecycle(false); reportStatus('connecting'); } });
-    window.webContents.on('did-finish-load', () => { mediaLifecycle(true, false); send(); });
-    window.on('close', () => { bounds = window.getBounds(); });
-    window.on('closed', () => { if (present === window) { present = null; mediaLifecycle(false); reportStatus(crashed ? 'error' : 'closed'); } });
+    window.webContents.on('did-start-navigation', (_event, _url, inPlace, mainFrame) => { if (mainFrame && !inPlace) { if (loaded) gameEnded('reload'); loaded = false; mediaLifecycle(false); reportStatus('connecting'); } });
+    window.webContents.on('did-finish-load', () => { loaded = true; mediaLifecycle(true, false); send(); });
+    window.on('close', () => { camera.reset(); bounds = window.getBounds(); });
+    window.webContents.on('render-process-gone', () => camera.reset());
+    window.on('closed', () => { if (present === window) { gameEnded(crashed ? 'crashed' : 'closed'); present = null; mediaLifecycle(false); reportStatus(crashed ? 'error' : 'closed'); } });
     // Crashed Present never takes Control with it. Reopen creates a fresh renderer.
     window.webContents.on('render-process-gone', () => { crashed = true; if (!window.isDestroyed()) window.destroy(); });
     try {
@@ -120,6 +147,20 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
       if (devUrl) await window.loadURL(new URL('present.html', devUrl.endsWith('/') ? devUrl : `${devUrl}/`).href);
       else await window.loadFile(path.join(__dirname, '../../renderer/present.html'));
     } catch (error) { crashed = true; if (!window.isDestroyed()) window.destroy(); throw error; }
+  };
+  ipcMain.handle('present:open', async event => {
+    if (!authorized(event, getControl())) throw new Error('Present can only be opened by Control.');
+    await openPresent();
+  });
+  ipcMain.handle('present:launch-game', async (event, value: unknown) => {
+    if (!authorized(event, getControl())) throw new Error('Only Control may launch a game.');
+    const snapshot = parsePresentSnapshot(value);
+    if (snapshot?.target.kind !== 'game' || !relay.publish(snapshot)) throw new Error('The game session could not be registered. Try launching again.');
+    // Commit the instance identity before showing/creating its owner. A close
+    // event now always identifies the run Control just requested.
+    if (present) reportStatus('connecting');
+    send();
+    await openPresent();
   });
   ipcMain.handle('present:publish', (event, snapshot: unknown) => {
     if (!authorized(event, getControl())) throw new Error('Only Control may publish presentation state.');

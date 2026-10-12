@@ -1,0 +1,21 @@
+{
+  "profiles": [],
+  "errors": [],
+  "dpr": 1,
+  "keyboardCheck": {
+    "key": "ArrowDown",
+    "playerId": "player-2",
+    "beforeHead": {
+      "x": 13,
+      "y": 9
+    },
+    "afterHead": {
+      "x": 13,
+      "y": 10
+    },
+    "scrollBefore": 0,
+    "scrollAfter": 40
+  },
+  "message": "AssertionError [ERR_ASSERTION]: Direct Present movement arrows do not scroll the game viewport\n\n40 !== 0\n",
+  "stack": "AssertionError [ERR_ASSERTION]: Direct Present movement arrows do not scroll the game viewport\n\n40 !== 0\n\n    at D:\\AI\\GitHub\\Story-Studio\\scripts\\game-present-native-smoke.cjs:141:14"
+}

@@ -19,9 +19,9 @@ export interface SceneInspectorProps {
   onInsertSet?: (setId: string) => void;
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children, quiet = false }: { label: string; children: ReactNode; quiet?: boolean }) {
   const id = useId();
-  return <label className="lesson-field"><span id={id}>{label}</span>{Children.map(children, child =>
+  return <label className={`lesson-field${quiet ? ' lesson-field-quiet' : ''}`}><span id={id}>{label}</span>{Children.map(children, child =>
     isValidElement(child) && typeof child.type === 'string' && ['input', 'textarea', 'select'].includes(child.type)
       ? cloneElement(child as ReactElement<{ 'aria-labelledby'?: string }>, { 'aria-labelledby': id }) : child)}</label>;
 }
@@ -96,9 +96,9 @@ export function SceneInspector(p: SceneInspectorProps) {
     <p className="lesson-hint">{linkedInsert ? 'Face edits update every linked Card. Each placement keeps its own size and position.' : 'An independent copy can be edited without changing the original.'}</p>
     {libraryCards.length ? <Field label="Add Card from Library"><select disabled={!scene} value="" onChange={event => { if (event.target.value) p.onLibraryInsert(event.target.value, linkedInsert); }}><option value="">Choose a Card…</option>{libraryCards.map(item => <option key={item.id} value={item.id}>{item.label || 'Untitled Card'}</option>)}</select></Field> : <p className="lesson-empty">Your saved Cards will appear here.</p>}
     {(p.onSaveSet || p.onInsertSet) && <Section title="Sets and activities">
-      <p className="lesson-hint">Collect saved Cards into a reusable Set. Build an activity by placing the Set in any Story or Activation scene.</p>
+      <p className="lesson-hint">Collect saved Cards into a reusable Set. Build an activity by placing the Set in any Adventure or Discovery scene.</p>
       {p.onSaveSet && <>
-        <Field label="Set name"><input value={setName} maxLength={200} placeholder="For example, Story vocabulary" onChange={event => setSetName(event.target.value)} /></Field>
+        <Field label="Set name"><input value={setName} maxLength={200} placeholder="For example, Adventure vocabulary" onChange={event => setSetName(event.target.value)} /></Field>
         {libraryCards.length ? <fieldset className="lesson-set-cards"><legend>Choose saved Cards</legend>{libraryCards.map(item => <label key={item.id} className="lesson-check"><input type="checkbox" checked={setCards.has(item.id)} disabled={!setCards.has(item.id) && selectedSetCards.length >= 100} onChange={event => setSetCards(previous => { const next = new Set(previous); event.target.checked ? next.add(item.id) : next.delete(item.id); return next; })} /><span>{item.label || 'Untitled Card'}</span></label>)}</fieldset> : <p className="lesson-empty">Save a Card to the Library first, then include it in a Set.</p>}
         <button disabled={!setName.trim() || !selectedSetCards.length || selectedSetCards.length > 100} onClick={saveSet}>Save Set{selectedSetCards.length ? ` · ${selectedSetCards.length} Cards` : ''}</button>
       </>}
@@ -165,10 +165,10 @@ export function SceneInspector(p: SceneInspectorProps) {
         </Section>}
 
         {!object && <>
-          <Field label="Scene title"><input maxLength={200} value={scene.title} onChange={event => p.onSceneChange({ ...scene, title: event.target.value })} /></Field>
-          <Field label="Background media"><select value={scene.background.assetId ?? ''} onChange={event => p.onSceneChange({ ...scene, background: { ...scene.background, assetId: event.target.value || undefined } })}><option value="">Color only</option>{project.assets.filter(asset => asset.mediaType !== 'audio').map(asset => <option key={asset.id} value={asset.id}>{asset.originalName || asset.filename} · {asset.mediaType}</option>)}</select></Field>
+          <Field label="Scene title" quiet><input maxLength={200} value={scene.title} onChange={event => p.onSceneChange({ ...scene, title: event.target.value })} /></Field>
+          <Field label="Background media" quiet><select value={scene.background.assetId ?? ''} onChange={event => p.onSceneChange({ ...scene, background: { ...scene.background, assetId: event.target.value || undefined } })}><option value="">Color only</option>{project.assets.filter(asset => asset.mediaType !== 'audio').map(asset => <option key={asset.id} value={asset.id}>{asset.originalName || asset.filename} · {asset.mediaType}</option>)}</select></Field>
           <Field label="Background color"><input type="color" value={scene.background.color} onChange={event => p.onSceneChange({ ...scene, background: { ...scene.background, color: event.target.value } })} /></Field>
-          <Section title="Canvas size" open>
+          <Section title="Canvas size">
             <Field label="Canvas preset"><select value={`${scene.frame.width}x${scene.frame.height}`} onChange={event => { const [width, height] = event.target.value.split('x').map(Number); frame(width, height); }}><option value={`${scene.frame.width}x${scene.frame.height}`}>Current · {scene.frame.width} × {scene.frame.height}</option><option value="1280x720">Wide · 16:9</option><option value="1024x768">Standard · 4:3</option><option value="900x1200">Portrait · 3:4</option><option value="1080x1080">Square · 1:1</option></select></Field>
             <div className="lesson-field-grid"><NumberField label="Canvas width" value={scene.frame.width} min={320} max={10000} onChange={value => frame(value, scene.frame.height)} /><NumberField label="Canvas height" value={scene.frame.height} min={240} max={10000} onChange={value => frame(scene.frame.width, value)} /></div><p className="lesson-hint">All views use this canvas. Changing its size scales the object positions with it.</p>
           </Section>

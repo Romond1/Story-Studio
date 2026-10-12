@@ -1,0 +1,282 @@
+/* Teacher chrome only. Authored scenes and the Present renderer keep their own colors. */
+:root {
+  --studio-bg: #090f20;
+  --studio-surface: #111c32;
+  --studio-raised: #1a2943;
+  --studio-input: #0c1529;
+  --studio-border: #334461;
+  --studio-border-soft: #263650;
+  --studio-text: #edf4ff;
+  --studio-muted: #a7b8d0;
+  --studio-cyan: #75e4f5;
+  --studio-violet: #b4a3ff;
+  --studio-ink: #092032;
+  --studio-selected: #173c50;
+  --studio-creative-bg: #292741;
+  --studio-creative-border: #726396;
+  --studio-primary-border: #4f9fb7;
+  --studio-live: #79e6ba;
+  --studio-danger: #ffb1b5;
+  --studio-danger-bg: #382533;
+  --studio-danger-border: #98616f;
+  --studio-radius: 12px;
+  --studio-radius-small: 8px;
+  --studio-font: 'Segoe UI', Inter, system-ui, sans-serif;
+  --studio-header-fill: linear-gradient(115deg, #142a40, #191e39 68%, #221e3e);
+  --studio-panel-fill: linear-gradient(145deg, #17263c, #131d33 70%, #1d203c);
+  --studio-action-fill: linear-gradient(115deg, #1e4255, #26334c);
+  --studio-creative-fill: linear-gradient(115deg, #29344f, #302749);
+  --studio-hover-fill: linear-gradient(115deg, #24445b, #302d4c);
+  --studio-present-fill: linear-gradient(115deg, #8aebf5, #9fc7ff);
+  --studio-edge: inset 0 1px 0 #b4a3ff12, 0 1px 3px #03081650;
+  --studio-glow: 0 0 16px #64dff51c, inset 0 1px 0 #c9f8ff1a;
+  --studio-creative-glow: 0 0 16px #9a85ff1c, inset 0 1px 0 #d5c9ff1a;
+  --studio-selected-glow: inset 0 0 16px #75e4f50d, 0 0 0 1px #75e4f526;
+  --studio-focus-ring: 0 0 0 4px #75e4f52b;
+  --studio-dialog-shadow: 0 24px 80px #020612b3, 0 0 30px #816bda12;
+  --studio-backdrop: #050a18cc;
+  --studio-atmosphere: linear-gradient(180deg, #080f22a6, #0a1025c9 62%, #090f20f5), url('../../assets/Splash Screen/Intro screen BG image.png');
+  --studio-thumbnail-bg: #080e1e;
+  --studio-marquee: #75e4f526;
+}
+
+.lesson-app {
+  --lesson-bg: var(--studio-bg);
+  --lesson-surface: var(--studio-surface);
+  --lesson-raised: var(--studio-raised);
+  --lesson-input: var(--studio-input);
+  --lesson-border: var(--studio-border);
+  --lesson-text: var(--studio-text);
+  --lesson-muted: var(--studio-muted);
+  --lesson-accent: var(--studio-cyan);
+  --lesson-live: var(--studio-live);
+  --lesson-danger: var(--studio-danger);
+  font-family: var(--studio-font);
+}
+.lesson-app button, .lesson-app input, .lesson-app select, .lesson-app textarea { border-radius: var(--studio-radius-small); }
+.lesson-app button { box-shadow: var(--studio-edge); transition: border-color .15s, background-color .15s, box-shadow .15s; }
+.lesson-app button:hover:not(:disabled) { box-shadow: var(--studio-glow); }
+.lesson-app button[aria-pressed="true"], .lesson-app button[aria-selected="true"], .lesson-app .lesson-pool-asset.is-selected { background: var(--studio-selected); color: var(--studio-text); border-color: var(--studio-cyan); }
+.lesson-header { background: var(--studio-header-fill); gap: 9px; }
+.lesson-header strong { color: var(--studio-text); white-space: nowrap; }
+.lesson-header .lesson-toolbar button { font-size: 12px; padding: 5px 9px; }
+.lesson-phase-tabs { background: var(--studio-input); }
+.lesson-phase-tabs button { border-color: var(--studio-border); border-radius: var(--studio-radius); }
+.lesson-app .studio-primary, .lesson-canvas-tools > .studio-creative, .lesson-app .lesson-pool-import { border-color: var(--studio-primary-border); background: var(--studio-action-fill); }
+.lesson-canvas-tools > .studio-creative { min-height: 35px; }
+.lesson-panel-heading { background: var(--studio-panel-fill); }
+.lesson-app .lesson-pool .lesson-panel-heading { padding: 6px 8px; min-height: 38px; }
+.lesson-app .lesson-pool .lesson-panel-content { gap: 6px; padding: 7px; }
+.lesson-app .lesson-pool-search input { width: 0; padding: 5px 7px; font-size: 12px; }
+.lesson-app .lesson-pool-search button { padding: 4px 6px; min-height: 28px; }
+.lesson-pool-destination { display: flex; gap: 7px; align-items: baseline; min-height: 22px; font-size: 12px; flex: 0 0 auto; }
+.lesson-pool-destination span { color: var(--studio-muted); flex-shrink: 0; }
+.lesson-pool-destination strong { color: var(--studio-cyan); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.lesson-app .lesson-pool-filters { border-radius: var(--studio-radius); padding: 6px; gap: 6px; }
+.lesson-app .lesson-pool-filters button, .lesson-app .lesson-pool-filters select { font-size: 12px; min-height: 28px; padding: 4px 6px; }
+.lesson-app .lesson-pool-asset { min-height: 112px; border-radius: 9px; box-shadow: none; }
+.lesson-app .lesson-pool-thumb { border-radius: 5px; }
+.lesson-app .lesson-side > label { font-size: 12px; padding: 8px 12px; gap: 3px; }
+.lesson-app .lesson-side > label input, .lesson-app .lesson-field-quiet input, .lesson-app .lesson-field-quiet select { padding: 5px 7px; font-size: 12px; background: var(--studio-input); border-color: var(--studio-border-soft); }
+.lesson-app .lesson-field-quiet { font-size: 12px; gap: 3px; }
+.lesson-inspector-section { border: 1px solid var(--studio-border); border-radius: var(--studio-radius); margin-top: 5px; overflow: hidden; }
+.lesson-inspector-section > summary { padding: 10px 11px; background: var(--studio-panel-fill); color: var(--studio-text); font-size: 13px; font-weight: 600; }
+.lesson-inspector-section > div { padding: 10px; }
+.lesson-inspector-section[open] > summary { border-bottom: 1px solid var(--studio-border-soft); }
+.lesson-inspector .lesson-inspector-section { padding: 0; margin: 4px 0; border-left: 1px solid var(--studio-border); border-radius: var(--studio-radius); }
+.lesson-inspector .lesson-inspector-section:nth-of-type(even) { background: var(--studio-input); }
+.lesson-inspector .lesson-inspector-section[open] > summary { margin-bottom: 0; }
+.lesson-app .lesson-hint, .lesson-app .lesson-shared-note { color: var(--studio-muted); font-size: 12px; line-height: 1.5; }
+.lesson-timeline { background: var(--studio-surface); }
+.lesson-app .lesson-timeline button { box-shadow: none; }
+.lesson-app .audio-settings-workspace { background: var(--studio-bg); color: var(--studio-text); border-color: var(--studio-border); }
+
+.beginning { flex: 1; min-width: 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; padding: 28px max(24px, calc((100vw - 1140px) / 2)); background-color: var(--studio-bg); background-image: var(--studio-atmosphere); background-size: cover; background-position: center; background-repeat: no-repeat; }
+.beginning-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 18px; }
+.beginning-mark { color: var(--studio-cyan); font-size: 24px; }
+.beginning-brand-note { margin-left: auto; font-weight: 400; font-size: 12px; color: var(--studio-muted); }
+.beginning-intro { text-align: center; padding: 52px 0 30px; }
+.beginning .beginning-eyebrow { text-transform: uppercase; letter-spacing: .19em; color: var(--studio-cyan); font-size: 11px; font-weight: 600; margin-bottom: 12px; }
+.beginning h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.2; letter-spacing: -.025em; font-weight: 600; margin-bottom: 14px; }
+.beginning-intro > p:last-child { color: var(--studio-muted); font-size: 14px; }
+.beginning-primary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.lesson-app .beginning-card { display: flex; align-items: center; flex-direction: column; width: 100%; padding: 18px 10px 22px; border: 1px solid var(--studio-border); border-radius: 20px; background: var(--studio-panel-fill); text-align: center; }
+.lesson-app .beginning-card:hover { background: var(--studio-hover-fill); border-color: var(--studio-cyan); box-shadow: var(--studio-glow); }
+.beginning-card img { width: min(100%, 180px); aspect-ratio: 1; object-fit: contain; }
+.beginning-card-copy { display: flex; flex-direction: column; gap: 8px; }
+.beginning-card-copy strong { font-size: 20px; font-weight: 600; }
+.beginning-card-copy > span { font-size: 12px; color: var(--studio-muted); line-height: 1.5; }
+.beginning-secondary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; width: min(720px, 100%); margin: 30px auto 0; }
+.lesson-app .beginning-secondary .beginning-card { flex-direction: row; gap: 8px; padding: 10px 14px; border-radius: 14px; text-align: left; background: var(--studio-surface); }
+.beginning-secondary img { width: 54px; }
+.beginning-secondary .beginning-card-copy { gap: 2px; }
+.beginning-secondary strong { font-size: 14px; }
+.beginning-secondary .beginning-card-copy > span { font-size: 11px; }
+.beginning footer { margin: 30px auto 12px; text-align: center; color: var(--studio-muted); font-size: 12px; }
+.beginning-placeholder { max-width: 480px; text-align: center; margin: 50px auto; }
+.beginning-placeholder > img { width: 180px; }
+.beginning-placeholder > p:not(.beginning-eyebrow) { color: var(--studio-muted); line-height: 1.7; margin-bottom: 24px; }
+.beginning-placeholder h1:focus { outline: none; }
+@media (max-width: 850px) {
+  .beginning-primary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .beginning-intro { padding: 30px 0 20px; }
+  .beginning-card img { max-width: 136px; }
+  .beginning-brand-note { display: none; }
+}
+@media (max-width: 480px) {
+  .beginning { padding: 18px 16px; }
+  .lesson-app .beginning-card { padding: 10px 8px 16px; border-radius: 14px; }
+  .beginning-card-copy strong { font-size: 17px; }
+  .beginning-secondary { grid-template-columns: 1fr; gap: 8px; margin-top: 20px; }
+  .beginning-secondary img { width: 42px; }
+}
+@media (prefers-reduced-motion: reduce) { .lesson-app button { transition: none; } }
+
+/* Shared teacher controls. Keep scene contents and invisible canvas hit targets untouched. */
+.lesson-app :where(.lesson-header, .lesson-phase-tabs, .lesson-toolbar, .lesson-pool, .lesson-side, .lesson-timeline, .lesson-dialog, .lesson-context-menu, .audio-settings-workspace) button {
+  font-weight: 500;
+  background-color: var(--studio-input);
+  border-color: var(--studio-border);
+  color: var(--studio-text);
+}
+.lesson-app :where(button, select, input, textarea):focus-visible,
+.lesson-app summary:focus-visible {
+  outline: 2px solid var(--studio-cyan);
+  outline-offset: 2px;
+  box-shadow: var(--studio-focus-ring);
+}
+.lesson-app :where(input, textarea)::placeholder { color: var(--studio-muted); opacity: .85; }
+.lesson-app :where(select, input, textarea):hover:not(:disabled) { border-color: var(--studio-primary-border); }
+.lesson-app select option { background: var(--studio-input); color: var(--studio-text); }
+.lesson-app button:disabled { opacity: .46; box-shadow: none; cursor: default; }
+.lesson-app button:hover:not(:disabled):not(.lesson-disclosure) { background-color: var(--studio-raised); border-color: var(--studio-primary-border); }
+.lesson-app button[aria-pressed="true"], .lesson-app button[aria-selected="true"] {
+  background: var(--studio-selected); border-color: var(--studio-cyan); color: var(--studio-text); box-shadow: var(--studio-selected-glow);
+}
+.lesson-app button.studio-primary, .lesson-app button.lesson-pool-import {
+  background: var(--studio-action-fill); border-color: var(--studio-primary-border); color: var(--studio-text); box-shadow: var(--studio-glow);
+}
+.lesson-app button.studio-creative {
+  background: var(--studio-creative-fill); border-color: var(--studio-creative-border); color: var(--studio-text); box-shadow: var(--studio-creative-glow);
+}
+.lesson-app button.studio-creative:hover:not(:disabled) { border-color: var(--studio-violet); }
+.lesson-app button.studio-present {
+  background: var(--studio-present-fill); color: var(--studio-ink); border-color: var(--studio-cyan); font-weight: 700; box-shadow: var(--studio-glow);
+}
+.lesson-app button.studio-present:hover:not(:disabled) { background: var(--studio-cyan); color: var(--studio-ink); }
+.lesson-app :where(.studio-primary, .studio-creative, .lesson-pool-import):hover:not(:disabled) { background: var(--studio-hover-fill); box-shadow: var(--studio-glow); }
+.studio-brand { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; letter-spacing: -.025em; }
+.studio-brand > span { color: var(--studio-cyan); font-size: 22px; }
+.lesson-header { box-shadow: inset 0 1px 0 var(--studio-border), 0 3px 15px #03081630; }
+.lesson-header .lesson-project-title { color: var(--studio-muted); font-size: 13px; }
+.lesson-header .lesson-toolbar { gap: 5px; }
+.lesson-app .studio-home { color: var(--studio-muted); border-color: var(--studio-border-soft); background: var(--studio-input); }
+.lesson-phase-tabs { padding-block: 7px; gap: 9px; border-bottom-color: var(--studio-border); }
+.lesson-phase-tabs button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; padding: 4px 16px 4px 9px; font-weight: 600; }
+.lesson-phase-tabs button img { width: 30px; height: 30px; object-fit: contain; pointer-events: none; }
+.lesson-phase-tabs button[aria-pressed="true"] { background: var(--studio-action-fill); }
+.lesson-phase-tabs > span { color: var(--studio-muted); font-size: 12px; }
+.lesson-toolbar { background: var(--studio-surface); border-color: var(--studio-border-soft); }
+.lesson-canvas-tools { background: var(--studio-panel-fill); padding-block: 8px; }
+.lesson-drawing-row, .lesson-edit-view { background: var(--studio-surface); }
+.lesson-app .lesson-canvas { background: var(--studio-thumbnail-bg); }
+.lesson-app .lesson-object-hit:is(:focus-visible, .is-selected) { outline-color: var(--studio-cyan); }
+.lesson-pool, .lesson-side { background: var(--studio-surface); }
+.lesson-panel-heading { border-color: var(--studio-border); box-shadow: inset 0 1px 0 var(--studio-border-soft); }
+.lesson-disclosure { color: var(--studio-text); letter-spacing: .01em; }
+.lesson-pool .lesson-panel-content { background: var(--studio-surface); }
+.lesson-pool-destination { padding: 4px 6px; border-radius: 6px; background: var(--studio-input); border-left: 2px solid var(--studio-primary-border); }
+.lesson-app .lesson-pool-asset { background: var(--studio-input); border-color: var(--studio-border-soft); }
+.lesson-app .lesson-pool-asset:hover:not(:disabled) { border-color: var(--studio-primary-border); background: var(--studio-raised); }
+.lesson-app .lesson-pool-asset.is-selected { border-color: var(--studio-cyan); background: var(--studio-selected); box-shadow: var(--studio-selected-glow); }
+.lesson-app .lesson-pool-thumb { background: var(--studio-thumbnail-bg); }
+.lesson-app .lesson-pool-asset small { color: var(--studio-muted); }
+.lesson-app .lesson-pool-footer { border-top: 1px solid var(--studio-border-soft); padding-top: 5px; }
+.lesson-pool.is-drop { background: var(--studio-selected); box-shadow: inset 0 0 0 2px var(--studio-cyan); }
+.lesson-inspector .lesson-panel-heading { background: var(--studio-panel-fill); border-bottom: 1px solid var(--studio-border); }
+.lesson-inspector .lesson-panel-heading .lesson-disclosure { color: var(--studio-violet); }
+.lesson-inspector .lesson-inspector-section { border-color: var(--studio-border-soft); background: var(--studio-input); }
+.lesson-inspector .lesson-inspector-section > summary { background: var(--studio-panel-fill); color: var(--studio-muted); padding: 10px 11px; }
+.lesson-inspector .lesson-inspector-section[open] { border-color: var(--studio-border); }
+.lesson-inspector .lesson-inspector-section[open] > summary { color: var(--studio-text); border-left: 2px solid var(--studio-violet); padding-left: 9px; }
+.lesson-inspector .lesson-inspector-section > summary:hover { color: var(--studio-text); background: var(--studio-raised); }
+.lesson-inspector .lesson-subheading strong { color: var(--studio-violet); }
+.lesson-sharing { background: var(--studio-selected); color: var(--studio-text); }
+.lesson-teach-controls { background: var(--studio-surface); }
+.lesson-teach-controls > h2 { color: var(--studio-cyan); letter-spacing: -.02em; }
+.lesson-teach-controls > section { border-color: var(--studio-border); border-radius: var(--studio-radius); background: var(--studio-input); box-shadow: var(--studio-edge); }
+.lesson-teach-controls > section:nth-of-type(even) { background: var(--studio-panel-fill); }
+.lesson-teach-controls h3 { color: var(--studio-violet); }
+.lesson-app .lesson-status { background: var(--studio-bg); border-color: var(--studio-border-soft); color: var(--studio-muted); }
+
+/* Timeline framing changes only; dimensions, drag targets and hit areas are unchanged. */
+.lesson-app .lesson-timeline { background: var(--studio-input); border-top-color: var(--studio-border); }
+.lesson-timeline-toolbar { background: var(--studio-panel-fill); border-color: var(--studio-border-soft); }
+.lesson-timeline-toolbar > strong { color: var(--studio-violet); }
+.lesson-container-timeline .lesson-section-container { background: var(--studio-surface); border-color: var(--studio-border); border-radius: var(--studio-radius); }
+.lesson-section-header { background: var(--studio-panel-fill); border-color: var(--studio-border); }
+.lesson-section-title small { color: var(--studio-muted); }
+.lesson-container-timeline .lesson-timeline-item { background: var(--studio-input); border-color: var(--studio-border-soft) !important; border-radius: var(--studio-radius-small); }
+.lesson-container-timeline .lesson-timeline-item:hover { border-color: var(--studio-primary-border) !important; }
+.lesson-container-timeline .lesson-timeline-item:is(.is-selected, .is-edit) { background: var(--studio-selected); border-color: var(--studio-cyan) !important; }
+.lesson-app .lesson-timeline-item.is-live { box-shadow: inset 0 -3px 0 var(--studio-live); }
+.lesson-app .lesson-timeline-item.drop-before { box-shadow: -4px 0 0 var(--studio-cyan); }
+.lesson-timeline-thumb { border-radius: 5px; background: var(--studio-thumbnail-bg); }
+.lesson-section-add { border-color: var(--studio-border) !important; color: var(--studio-muted) !important; }
+.lesson-section-add:hover, .lesson-section-add.is-drop { border-color: var(--studio-cyan) !important; color: var(--studio-text) !important; background: var(--studio-selected) !important; }
+.lesson-section-container.is-drop { outline-color: var(--studio-cyan); background: var(--studio-selected); }
+.lesson-section-end { border-color: var(--studio-border); color: var(--studio-muted); }
+.lesson-timeline-marquee { border-color: var(--studio-cyan); background: var(--studio-marquee); }
+.lesson-app .lesson-timeline :focus-visible { box-shadow: var(--studio-focus-ring); }
+.lesson-edit-marker { background: var(--studio-cyan); color: var(--studio-ink); }
+.lesson-live-marker { background: var(--studio-live); color: var(--studio-ink); }
+
+/* Teacher dialogs and menus share the same surfaces; audio status colors retain meaning. */
+.lesson-app :is(.lesson-dialog, .lesson-context-menu, .lesson-timeline-context, .lesson-timeline-menu > div) {
+  background: var(--studio-panel-fill); border-color: var(--studio-border); border-radius: var(--studio-radius); box-shadow: var(--studio-dialog-shadow); color: var(--studio-text);
+}
+.lesson-dialog-backdrop { background: var(--studio-backdrop); }
+.lesson-dialog h2 { color: var(--studio-text); letter-spacing: -.02em; }
+.lesson-dialog p { color: var(--studio-muted); }
+.lesson-app .audio-settings-workspace {
+  --audio-accent: var(--studio-cyan);
+  --audio-surface: var(--studio-surface);
+  --audio-surface-raised: var(--studio-raised);
+  --audio-border: var(--studio-border);
+  --audio-muted: var(--studio-muted);
+  background: var(--studio-surface); border-color: var(--studio-primary-border); border-radius: 16px; box-shadow: var(--studio-dialog-shadow);
+}
+.lesson-app .audio-settings-backdrop { background: var(--studio-backdrop); }
+.lesson-app .audio-settings-header { background: var(--studio-header-fill); }
+.lesson-app .audio-settings-section, .lesson-app .audio-device-row { border-color: var(--studio-border-soft); }
+.lesson-app .audio-settings-section h3 { color: var(--studio-violet); }
+.lesson-app .audio-device-picker__trigger { background: var(--studio-input); border-color: var(--studio-border); }
+.lesson-app .audio-device-picker__trigger:hover:not(:disabled) { background: var(--studio-raised); border-color: var(--studio-cyan); }
+.lesson-app .audio-device-picker__menu { background: var(--studio-surface); border-color: var(--studio-border); box-shadow: var(--studio-dialog-shadow); }
+.lesson-app .audio-device-picker__menu button.is-selected { color: var(--studio-cyan); background: var(--studio-selected); }
+.lesson-app .audio-mixer-row, .lesson-app .audio-diagnostics dl div { border-color: var(--studio-border-soft); }
+.lesson-app .audio-mixer-row button.is-muted, .lesson-app .audio-danger-button { background: var(--studio-danger-bg); border-color: var(--studio-danger-border); color: var(--studio-danger); }
+.lesson-app .audio-meter__track { background: var(--studio-input); box-shadow: inset 0 0 0 1px var(--studio-border-soft); }
+.lesson-app .audio-toggle-list, .lesson-app .audio-stage-control-grid, .lesson-app .audio-meter__heading { color: var(--studio-text); }
+.lesson-app button:disabled { background-image: none; border-color: var(--studio-border-soft); box-shadow: none; }
+.lesson-app button.studio-present:disabled { background: var(--studio-input); color: var(--studio-muted); }
+.beginning-placeholder { padding: 24px; border: 1px solid var(--studio-border); border-radius: 24px; background: var(--studio-panel-fill); box-shadow: var(--studio-dialog-shadow); }
+.beginning-brand, .beginning-intro { text-shadow: 0 2px 16px var(--studio-bg); }
+.beginning footer { color: var(--studio-text); }
+@media (forced-colors: active) {
+  .lesson-app button:is([aria-pressed="true"], [aria-selected="true"]), .lesson-container-timeline .lesson-timeline-item:is(.is-edit, .is-selected) { outline: 2px solid Highlight; }
+}
+@media (max-width: 700px) {
+  .lesson-app .lesson-main > .lesson-pool { height: 290px; flex-basis: 290px; }
+}
+
+/* The product name is the home affordance; the chooser needs no promotional copy. */
+.lesson-app .studio-home-link { color: var(--studio-text); text-decoration: none; white-space: nowrap; border-radius: var(--studio-radius-small); padding: 4px 2px; }
+.lesson-app .studio-home-link:hover { color: var(--studio-cyan); }
+.lesson-app .studio-home-link:focus-visible { outline: 2px solid var(--studio-cyan); outline-offset: 3px; }
+.lesson-app .studio-home-link[aria-disabled="true"] { opacity: .46; cursor: default; }
+.beginning-intro { padding: clamp(30px, 7vh, 70px) 0 42px; }
+.beginning-intro h1 { font-size: clamp(34px, 4vw, 48px); margin: 0; }
+.app .studio-return { border: 1px solid var(--studio-primary-border); border-radius: var(--studio-radius-small); background: var(--studio-action-fill); color: var(--studio-text); }
+.app .studio-return:hover { border-color: var(--studio-cyan); }
+.app .studio-return:focus-visible { outline: 2px solid var(--studio-cyan); outline-offset: 2px; }

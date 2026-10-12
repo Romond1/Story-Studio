@@ -42,7 +42,7 @@ const STAGE_CONTROL_LABELS: Record<AudioStageControl, string> = {
 
 const BUS_LABELS: Record<AudioBusName, string> = {
   microphone: "Microphone",
-  media: "Media / Story",
+  media: "Media / Lesson",
   master: "Master Mix",
   monitor: "Monitor Output",
   mix: "Mix / Virtual Output",
@@ -344,7 +344,7 @@ export function AudioSettingsWorkspace({ open, onClose }: { open: boolean; onClo
             <Section title="Live meters" description="Follow the signal from source to physical output.">
               <div className="audio-meter-list">
                 <AudioMeter label="Microphone Input" reading={snapshot.meters.microphone} />
-                <AudioMeter label="Story / Media Audio" reading={snapshot.meters.media} />
+                <AudioMeter label="Lesson / Media Audio" reading={snapshot.meters.media} />
                 <AudioMeter label="Master Mix" reading={snapshot.meters.master} />
                 <AudioMeter label="Monitor Output" reading={snapshot.meters.monitor} />
                 <AudioMeter label="Mix / Virtual Output" reading={snapshot.meters.mix} />
