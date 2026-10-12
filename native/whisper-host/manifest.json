@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "whisperVersion": "1.8.2",
+  "platform": "win32-x64",
+  "file": "bin/win32-x64/whisper-host.exe",
+  "size": 208384,
+  "sha256": "01c3c1036b6ce00a8f702fc22c33bc09faca0e7ee5c6b93eb4b8ad94e98d69f3"
+}

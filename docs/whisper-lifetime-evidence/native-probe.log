@@ -1,0 +1,4 @@
+{"type":"ready","pid":33244,"metrics":{"dllLoadMs":89.7103,"modelLoadMs":314.7385,"backendInitMs":11.4544,"prepareMs":415.9249}}
+{"type":"result","id":1,"text":" Please open your books and look at the first picture.","metrics":{"inferenceMs":253.2812,"audioMs":4080}}
+{"type":"result","id":2,"text":" Please open your books and look at the first picture.","metrics":{"inferenceMs":145.2957,"audioMs":4080}}
+{"type":"probe-passed","pid":33244,"backend":"cuda","model":"base.en","cudaVerified":true}

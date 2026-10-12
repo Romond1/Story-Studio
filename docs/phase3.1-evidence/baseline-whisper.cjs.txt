@@ -1,0 +1,24 @@
+const {cached}=require('./cache.cjs');
+const fs=require('node:fs/promises');
+const path=require('node:path');
+const extract=require('extract-zip');
+const models={
+  'base.en':{hash:'a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002',size:147964211},
+  'small.en':{hash:'c6138d6d58ecc8322097e0f987c32f1be8bb0a18532a3f88f734d1bbf9c41e5d',size:487614201},
+};
+async function prepareSpeech(cache,model,status){
+  if(process.platform!=='win32'||process.arch!=='x64')throw new Error('Automatic whisper.cpp installation currently supports Windows x64 only.');
+  if(!models[model])throw new Error('Unsupported Whisper model');
+  const archive={name:'whisper.cpp v1.8.2 CPU runtime',hash:'b1514ebc099765e39fa37eb780b92a140a94c86bb0b3b3d98226b38825979732',size:3832432,url:'https://github.com/ggml-org/whisper.cpp/releases/download/v1.8.2/whisper-bin-x64.zip'};
+  await cached(cache,archive,status);
+  const runtime=path.join(cache,'whisper-1.8.2');
+  // Re-extract the verified archive, so a damaged executable/DLL is repaired too.
+  await extract(path.join(cache,archive.hash),{dir:runtime});
+  async function find(dir){for(const entry of await fs.readdir(dir,{withFileTypes:true})){const full=path.join(dir,entry.name);if(entry.isDirectory()){const found=await find(full);if(found)return found;}else if(entry.name==='whisper-cli.exe')return full;}}
+  const exe=await find(runtime);if(!exe)throw new Error('Whisper executable missing from official archive');
+  const name=`ggml-${model}.bin`;
+  const info={...models[model],name,url:`https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${name}`};
+  await cached(cache,info,status);
+  return {exe,modelPath:path.join(cache,info.hash)};
+}
+module.exports={prepareSpeech};

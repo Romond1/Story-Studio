@@ -1,0 +1,12 @@
+.translation-controls { display: grid; gap: 8px; }
+.translation-controls label { display: grid; gap: 4px; }
+.translation-controls textarea { width: 100%; min-height: 64px; box-sizing: border-box; resize: vertical; }
+.translation-controls .translation-check { display: flex; align-items: center; gap: 8px; }
+.translation-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.translation-controls details > label { margin-top: 8px; }
+.translation-controls p { margin: 0; font-size: 12px; }
+.translation-caption-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: flex; justify-content: center; padding: 3vh 4vw; box-sizing: border-box; overflow: hidden; }
+.translation-caption-top { align-items: flex-start; }
+.translation-caption-bottom { align-items: flex-end; }
+.translation-caption { max-width: 90%; max-height: 45%; overflow: hidden; padding: .45em .7em; border-radius: 10px; background: rgba(0,0,0,.86); color: white; text-align: center; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; font-family: 'Yu Gothic', 'Noto Sans JP', 'Meiryo', sans-serif; }
+.translation-caption rt { font-size: .5em; }

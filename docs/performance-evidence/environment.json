@@ -1,0 +1,149 @@
+{
+  "date": "2026-10-12T05:32:37.531Z",
+  "cpu": "Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz",
+  "logicalProcessors": 8,
+  "ramBytes": 51476811776,
+  "versions": {
+    "node": "20.19.1",
+    "acorn": "8.14.0",
+    "ada": "2.9.2",
+    "ares": "1.34.5",
+    "brotli": "1.0.9",
+    "cjs_module_lexer": "1.4.1",
+    "cldr": "44.1",
+    "icu": "74.2",
+    "llhttp": "8.1.2",
+    "modules": "132",
+    "napi": "9",
+    "nghttp2": "1.61.0",
+    "openssl": "0.0.0",
+    "simdutf": "6.0.3",
+    "tz": "2024b",
+    "undici": "6.21.2",
+    "unicode": "15.1",
+    "uv": "1.46.0",
+    "uvwasi": "0.0.21",
+    "v8": "13.2.152.41-electron.0",
+    "zlib": "1.3.0.1-motley",
+    "electron": "34.5.8",
+    "chrome": "132.0.6834.210"
+  },
+  "gpu": {
+    "auxAttributes": {
+      "amdSwitchable": false,
+      "canSupportThreadedTextureMailbox": false,
+      "directMLFeatureLevel": "Not supported",
+      "dx12FeatureLevel": "Not supported",
+      "glImplementationParts": "(gl=none,angle=none)",
+      "glResetNotificationStrategy": 0,
+      "hardwareSupportsVulkan": false,
+      "inProcessGpu": true,
+      "initializationTime": 0,
+      "isAsan": false,
+      "isClangCoverage": false,
+      "jpegDecodeAcceleratorSupported": false,
+      "optimus": false,
+      "overlayInfo": {
+        "bgra8OverlaySupport": "NONE",
+        "directComposition": false,
+        "nv12OverlaySupport": "NONE",
+        "p010OverlaySupport": "NONE",
+        "rgb10a2OverlaySupport": "NONE",
+        "supportsOverlays": false,
+        "yuy2OverlaySupport": "NONE"
+      },
+      "passthroughCmdDecoder": false,
+      "sandboxed": false,
+      "subpixelFontRendering": true,
+      "supportsD3dSharedImages": false,
+      "supportsDirectML": false,
+      "supportsDx12": false,
+      "supportsVulkan": false,
+      "targetCpuBits": 64,
+      "visibilityCallbackCallCount": 0,
+      "vulkanVersion": "Not supported"
+    },
+    "gpuDevice": [
+      {
+        "active": false,
+        "deviceId": 10114,
+        "driverVersion": "32.0.16.1088",
+        "gpuPreference": 2,
+        "revision": 161,
+        "subSysId": 1362105442,
+        "vendorId": 4318
+      },
+      {
+        "active": false,
+        "deviceId": 10114,
+        "driverVersion": "32.0.16.1088",
+        "gpuPreference": 0,
+        "revision": 161,
+        "subSysId": 1362105442,
+        "vendorId": 4318
+      },
+      {
+        "active": false,
+        "deviceId": 140,
+        "driverVersion": "10.0.19041.5794",
+        "gpuPreference": 0,
+        "revision": 0,
+        "subSysId": 0,
+        "vendorId": 5140
+      }
+    ]
+  },
+  "gpuStatus": {
+    "2d_canvas": "enabled",
+    "canvas_oop_rasterization": "enabled_on",
+    "direct_rendering_display_compositor": "disabled_off_ok",
+    "gpu_compositing": "enabled",
+    "multiple_raster_threads": "enabled_on",
+    "opengl": "enabled_on",
+    "rasterization": "enabled",
+    "raw_draw": "disabled_off_ok",
+    "skia_graphite": "disabled_off",
+    "video_decode": "enabled",
+    "video_encode": "enabled",
+    "vulkan": "disabled_off",
+    "webgl": "enabled",
+    "webgl2": "enabled",
+    "webgpu": "enabled",
+    "webnn": "disabled_off"
+  },
+  "displays": [
+    {
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "scale": 1,
+      "frequency": 60
+    },
+    {
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "scale": 1,
+      "frequency": 60
+    },
+    {
+      "size": {
+        "width": 1080,
+        "height": 1920
+      },
+      "scale": 1,
+      "frequency": 60
+    },
+    {
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "scale": 1,
+      "frequency": 60
+    }
+  ],
+  "mainPid": 43656
+}

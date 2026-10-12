@@ -1,0 +1,44 @@
+[
+  {
+    "ProcessId": 43688,
+    "ParentProcessId": 44944,
+    "Name": "electron.exe",
+    "CommandLine": "\"D:\\AI\\GitHub\\Story-Studio\\node_modules\\electron\\dist\\electron.exe\"  \"--inspect=0\" \"--remote-debugging-port=0\" \"D:\\AI\\GitHub\\Story-Studio\" \"--user-data-dir=D:\\Temp\\story-profile-mu96Ui\\profile\""
+  },
+  {
+    "ProcessId": 44628,
+    "ParentProcessId": 43688,
+    "Name": "electron.exe",
+    "CommandLine": "\"D:\\AI\\GitHub\\Story-Studio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --user-data-dir=\"D:\\Temp\\story-profile-mu96Ui\\profile\" --gpu-preferences=UAAAAAAAAADgAAAEAAAAAAAAAAAAAAAAAABgAAEAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAIAAAAAAAAAAgAAAAAAAAA --field-trial-handle=1992,i,2682352728086705383,9307210637355941571,262144 --disable-features=SpareRendererForSitePerProcess,WinDelaySpellcheckServiceInit,WinRetrieveSuggestionsOnlyOnDemand --variations-seed-version --mojo-platform-channel-handle=1976 /prefetch:2"
+  },
+  {
+    "ProcessId": 44964,
+    "ParentProcessId": 43688,
+    "Name": "electron.exe",
+    "CommandLine": "\"D:\\AI\\GitHub\\Story-Studio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --user-data-dir=\"D:\\Temp\\story-profile-mu96Ui\\profile\" --standard-schemes=media --secure-schemes=media --fetch-schemes=media --streaming-schemes=media --field-trial-handle=2468,i,2682352728086705383,9307210637355941571,262144 --disable-features=SpareRendererForSitePerProcess,WinDelaySpellcheckServiceInit,WinRetrieveSuggestionsOnlyOnDemand --variations-seed-version --mojo-platform-channel-handle=2464 /prefetch:3"
+  },
+  {
+    "ProcessId": 43280,
+    "ParentProcessId": 43688,
+    "Name": "electron.exe",
+    "CommandLine": "\"D:\\AI\\GitHub\\Story-Studio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\Temp\\story-profile-mu96Ui\\profile\" --standard-schemes=media --secure-schemes=media --fetch-schemes=media --streaming-schemes=media --app-path=\"D:\\AI\\GitHub\\Story-Studio\" --enable-sandbox --remote-debugging-port=0 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=4 --time-ticks-at-unix-epoch=-1791726621239234 --launch-time-ticks=57427035341 --field-trial-handle=2992,i,2682352728086705383,9307210637355941571,262144 --disable-features=SpareRendererForSitePerProcess,WinDelaySpellcheckServiceInit,WinRetrieveSuggestionsOnlyOnDemand --variations-seed-version --mojo-platform-channel-handle=2988 /prefetch:1"
+  },
+  {
+    "ProcessId": 29996,
+    "ParentProcessId": 43688,
+    "Name": "electron.exe",
+    "CommandLine": "\"D:\\AI\\GitHub\\Story-Studio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=audio --video-capture-use-gpu-memory-buffer --user-data-dir=\"D:\\Temp\\story-profile-mu96Ui\\profile\" --standard-schemes=media --secure-schemes=media --fetch-schemes=media --streaming-schemes=media --field-trial-handle=4004,i,2682352728086705383,9307210637355941571,262144 --disable-features=SpareRendererForSitePerProcess,WinDelaySpellcheckServiceInit,WinRetrieveSuggestionsOnlyOnDemand --variations-seed-version --mojo-platform-channel-handle=1660 /prefetch:8"
+  },
+  {
+    "ProcessId": 33796,
+    "ParentProcessId": 43688,
+    "Name": "electron.exe",
+    "CommandLine": "\"D:\\AI\\GitHub\\Story-Studio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=video_capture.mojom.VideoCaptureService --lang=en-US --service-sandbox-type=none --video-capture-use-gpu-memory-buffer --user-data-dir=\"D:\\Temp\\story-profile-mu96Ui\\profile\" --standard-schemes=media --secure-schemes=media --fetch-schemes=media --streaming-schemes=media --field-trial-handle=3988,i,2682352728086705383,9307210637355941571,262144 --disable-features=SpareRendererForSitePerProcess,WinDelaySpellcheckServiceInit,WinRetrieveSuggestionsOnlyOnDemand --variations-seed-version --mojo-platform-channel-handle=4136 /prefetch:8"
+  },
+  {
+    "ProcessId": 38960,
+    "ParentProcessId": 43688,
+    "Name": "electron.exe",
+    "CommandLine": "\"D:\\AI\\GitHub\\Story-Studio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\Temp\\story-profile-mu96Ui\\profile\" --standard-schemes=media --secure-schemes=media --fetch-schemes=media --streaming-schemes=media --app-path=\"D:\\AI\\GitHub\\Story-Studio\" --enable-sandbox --remote-debugging-port=0 --video-capture-use-gpu-memory-buffer --lang=en-US --device-scale-factor=1 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=8 --time-ticks-at-unix-epoch=-1791726621239234 --launch-time-ticks=57499466708 --field-trial-handle=3444,i,2682352728086705383,9307210637355941571,262144 --disable-features=SpareRendererForSitePerProcess,WinDelaySpellcheckServiceInit,WinRetrieveSuggestionsOnlyOnDemand --variations-seed-version --mojo-platform-channel-handle=4024 /prefetch:1"
+  }
+]

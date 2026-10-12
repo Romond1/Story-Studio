@@ -1,0 +1,6444 @@
+{
+  "baseline": true,
+  "cpu": "Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz",
+  "logicalProcessors": 8,
+  "results": [
+    {
+      "model": "base.en",
+      "execution": "cpu",
+      "trials": [
+        {
+          "phase": "first",
+          "fixture": 0,
+          "started": 1791800976966,
+          "finished": 1791800985675,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 515.3572000000004,
+            "speechPreprocessMs": 9.449099999999817,
+            "transcriptionMs": 6379.2065,
+            "whisperLoadMs": 229.38,
+            "whisperNativeTotalMs": 6297.73,
+            "whisperEncodeMs": 5615.49,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 351.49,
+            "workerWallMs": 1797.0511000000006,
+            "cpuMs": 2344,
+            "rssMB": 585.4609375,
+            "rssDeltaMB": 366.5703125,
+            "translationMs": 528.8437000000013,
+            "translationLoadMs": 1267.5446999999986,
+            "totalMs": 8704.070600000001
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 0,
+          "started": 1791800985677,
+          "finished": 1791800991284,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.5983000000014727,
+            "speechPreprocessMs": 7.560400000002119,
+            "transcriptionMs": 5557.665999999997,
+            "whisperLoadMs": 199.95,
+            "whisperNativeTotalMs": 5484.52,
+            "whisperEncodeMs": 4839.2,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 352.52,
+            "workerWallMs": 39.172499999996944,
+            "cpuMs": 47,
+            "rssMB": 580.5234375,
+            "rssDeltaMB": 0.11328125,
+            "translationMs": 39.07630000000063,
+            "translationLoadMs": 0,
+            "totalMs": 5606.617300000002
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 1,
+          "started": 1791800991285,
+          "finished": 1791800996853,
+          "transcript": "Mia and Oliver help the dragon find the blue key.",
+          "translation": "ミアとオリバーは、ドラゴンが青い鍵を見つけるのを手伝って助けてくれ。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.5645000000004075,
+            "speechPreprocessMs": 4.893599999999424,
+            "transcriptionMs": 5495.070200000002,
+            "whisperLoadMs": 198.04,
+            "whisperNativeTotalMs": 5320.82,
+            "whisperEncodeMs": 4708.21,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 321.22,
+            "workerWallMs": 66.09370000000126,
+            "cpuMs": 78,
+            "rssMB": 577.17578125,
+            "rssDeltaMB": 1.046875,
+            "translationMs": 66.02160000000003,
+            "translationLoadMs": 0,
+            "totalMs": 5568.274600000001
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 2,
+          "started": 1791800996855,
+          "finished": 1791801002529,
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1.1189999999987776,
+            "speechPreprocessMs": 4.211200000001554,
+            "transcriptionMs": 5616.561599999997,
+            "whisperLoadMs": 194.37,
+            "whisperNativeTotalMs": 5544.61,
+            "whisperEncodeMs": 4849.6,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 404.78,
+            "workerWallMs": 50.019899999999325,
+            "cpuMs": 47,
+            "rssMB": 577.37890625,
+            "rssDeltaMB": 0.03125,
+            "translationMs": 49.94839999999385,
+            "translationLoadMs": 0,
+            "totalMs": 5673.462900000002
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 3,
+          "started": 1791801002530,
+          "finished": 1791801009049,
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.5020999999978812,
+            "speechPreprocessMs": 3.8718000000008033,
+            "transcriptionMs": 6463.888800000001,
+            "whisperLoadMs": 191.15,
+            "whisperNativeTotalMs": 6383.14,
+            "whisperEncodeMs": 5770.38,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 332.81,
+            "workerWallMs": 49.10089999999764,
+            "cpuMs": 93,
+            "rssMB": 587.91796875,
+            "rssDeltaMB": 10.3046875,
+            "translationMs": 49.020299999996496,
+            "translationLoadMs": 0,
+            "totalMs": 6519.224699999999
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 4,
+          "started": 1791801009050,
+          "finished": 1791801014602,
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.2978999999977532,
+            "speechPreprocessMs": 3.002999999996973,
+            "transcriptionMs": 5496.767500000002,
+            "whisperLoadMs": 189.07,
+            "whisperNativeTotalMs": 5423.42,
+            "whisperEncodeMs": 4812.3,
+            "whisperDecodeMs": 10.77,
+            "whisperBatchDecodeMs": 320.07,
+            "workerWallMs": 49.986400000001595,
+            "cpuMs": 78,
+            "rssMB": 578.0234375,
+            "rssDeltaMB": 0.3515625,
+            "translationMs": 49.926100000004226,
+            "translationLoadMs": 0,
+            "totalMs": 5551.484799999998
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "time": 1791800977074,
+          "message": "Verifying whisper.cpp v1.8.2 CPU runtime…"
+        },
+        {
+          "time": 1791800977487,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791800984940,
+          "message": "Loading local translation model…"
+        },
+        {
+          "time": 1791800985146,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791800985678,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791800991245,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791800991286,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791800996787,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791800996856,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801002479,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801002530,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801009000,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801009050,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801014551,
+          "message": "Translating locally…"
+        }
+      ],
+      "readyIdleStart": 1791800966962,
+      "readyIdleEnd": 1791800976966,
+      "afterIdleStart": 1791801014602,
+      "afterIdleEnd": 1791801024608,
+      "disableMs": 0.2856000000028871,
+      "disabledAt": 1791801024608
+    },
+    {
+      "model": "base.en",
+      "execution": "gpu",
+      "trials": [
+        {
+          "phase": "first",
+          "fixture": 0,
+          "started": 1791801036123,
+          "finished": 1791801041304,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 2350.063399999999,
+            "speechPreprocessMs": 3.371100000003935,
+            "transcriptionMs": 889.5911999999953,
+            "whisperLoadMs": 329.13,
+            "whisperNativeTotalMs": 614.61,
+            "whisperEncodeMs": 123.29,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 88.46,
+            "workerWallMs": 1817.7118000000046,
+            "cpuMs": 2407,
+            "rssMB": 589.0546875,
+            "rssDeltaMB": 365.03125,
+            "translationMs": 519.0436000000045,
+            "translationLoadMs": 1298.3907000000036,
+            "totalMs": 5180.155700000003
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 0,
+          "started": 1791801041305,
+          "finished": 1791801042404,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.5102000000042608,
+            "speechPreprocessMs": 1.9161000000021886,
+            "transcriptionMs": 968.9899999999907,
+            "whisperLoadMs": 297.59,
+            "whisperNativeTotalMs": 582.24,
+            "whisperEncodeMs": 120.16,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 92.13,
+            "workerWallMs": 45.9091999999946,
+            "cpuMs": 78,
+            "rssMB": 590.7109375,
+            "rssDeltaMB": 0.109375,
+            "translationMs": 45.829100000002654,
+            "translationLoadMs": 0,
+            "totalMs": 1099.786699999997
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 1,
+          "started": 1791801042407,
+          "finished": 1791801043609,
+          "transcript": "Mia and Oliver help the dragon find the blue key.",
+          "translation": "ミアとオリバーは、ドラゴンが青い鍵を見つけるのを手伝って助けてくれ。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.275099999998929,
+            "speechPreprocessMs": 2.659800000008545,
+            "transcriptionMs": 1018.8597999999911,
+            "whisperLoadMs": 337.55,
+            "whisperNativeTotalMs": 628.62,
+            "whisperEncodeMs": 125.09,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 90.7,
+            "workerWallMs": 107.15119999999297,
+            "cpuMs": 110,
+            "rssMB": 590.87890625,
+            "rssDeltaMB": 0.12109375,
+            "translationMs": 107.07390000000305,
+            "translationLoadMs": 0,
+            "totalMs": 1201.7725999999966
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 2,
+          "started": 1791801043612,
+          "finished": 1791801044794,
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1.4014999999926658,
+            "speechPreprocessMs": 5.500499999994645,
+            "transcriptionMs": 989.8769000000029,
+            "whisperLoadMs": 340.01,
+            "whisperNativeTotalMs": 664.34,
+            "whisperEncodeMs": 133.35,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 106.49,
+            "workerWallMs": 61.33729999999923,
+            "cpuMs": 94,
+            "rssMB": 583.6953125,
+            "rssDeltaMB": 3.26953125,
+            "translationMs": 61.231299999999464,
+            "translationLoadMs": 0,
+            "totalMs": 1181.8738000000012
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 3,
+          "started": 1791801044801,
+          "finished": 1791801045995,
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.31689999999071006,
+            "speechPreprocessMs": 6.676300000006449,
+            "transcriptionMs": 982.2259999999951,
+            "whisperLoadMs": 343.9,
+            "whisperNativeTotalMs": 648,
+            "whisperEncodeMs": 134.94,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 89.59,
+            "workerWallMs": 76.81720000000496,
+            "cpuMs": 109,
+            "rssMB": 592.65234375,
+            "rssDeltaMB": 9.49609375,
+            "translationMs": 76.7216000000044,
+            "translationLoadMs": 0,
+            "totalMs": 1194.6437999999907
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 4,
+          "started": 1791801045997,
+          "finished": 1791801047138,
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 1.006100000013248,
+            "speechPreprocessMs": 3.742599999997765,
+            "transcriptionMs": 966.8828999999969,
+            "whisperLoadMs": 343.09,
+            "whisperNativeTotalMs": 648.23,
+            "whisperEncodeMs": 124.71,
+            "whisperDecodeMs": 17.42,
+            "whisperBatchDecodeMs": 88.96,
+            "workerWallMs": 57.713099999993574,
+            "cpuMs": 94,
+            "rssMB": 592.828125,
+            "rssDeltaMB": 0.05078125,
+            "translationMs": 57.61030000000028,
+            "translationLoadMs": 0,
+            "totalMs": 1139.9573999999993
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "time": 1791801036333,
+          "message": "Verifying whisper.cpp v1.8.2 CUDA runtime…"
+        },
+        {
+          "time": 1791801038591,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801040546,
+          "message": "Loading local translation model…"
+        },
+        {
+          "time": 1791801040784,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801041385,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801042358,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801042479,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801043502,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801043733,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801044731,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801044926,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801045918,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801046106,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801047078,
+          "message": "Translating locally…"
+        }
+      ],
+      "readyIdleStart": 1791801026110,
+      "readyIdleEnd": 1791801036123,
+      "afterIdleStart": 1791801047142,
+      "afterIdleEnd": 1791801057150,
+      "disableMs": 0.0635000000038417,
+      "disabledAt": 1791801057150
+    },
+    {
+      "model": "small.en",
+      "execution": "cpu",
+      "trials": [
+        {
+          "phase": "first",
+          "fixture": 0,
+          "started": 1791801068652,
+          "finished": 1791801092046,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1953.0332000000053,
+            "speechPreprocessMs": 4.48399999999674,
+            "transcriptionMs": 18832.87800000001,
+            "whisperLoadMs": 644.34,
+            "whisperNativeTotalMs": 18618.93,
+            "whisperEncodeMs": 16905.74,
+            "whisperDecodeMs": 36.78,
+            "whisperBatchDecodeMs": 908.24,
+            "workerWallMs": 2601.4763000000094,
+            "cpuMs": 2750,
+            "rssMB": 584.4375,
+            "rssDeltaMB": 504.609375,
+            "translationMs": 912.3080000000045,
+            "translationLoadMs": 1688.507500000007,
+            "totalMs": 23393.62610000001
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 0,
+          "started": 1791801092050,
+          "finished": 1791801110771,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 5.596799999999348,
+            "speechPreprocessMs": 6.074500000002445,
+            "transcriptionMs": 18675.2169,
+            "whisperLoadMs": 597.3,
+            "whisperNativeTotalMs": 18576.81,
+            "whisperEncodeMs": 17025.12,
+            "whisperDecodeMs": 24.83,
+            "whisperBatchDecodeMs": 819.75,
+            "workerWallMs": 32.47599999999511,
+            "cpuMs": 47,
+            "rssMB": 584.65625,
+            "rssDeltaMB": 0.2109375,
+            "translationMs": 32.38500000000931,
+            "translationLoadMs": 0,
+            "totalMs": 18720.791700000016
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 1,
+          "started": 1791801110771,
+          "finished": 1791801126610,
+          "transcript": "Mia and Oliver helped the dragon find the blue key.",
+          "translation": "ミアとオリバーはドラゴンが青い鍵を見つけるのを手伝した。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.5135000000009313,
+            "speechPreprocessMs": 3.0164000000222586,
+            "transcriptionMs": 15757.542399999977,
+            "whisperLoadMs": 1121.11,
+            "whisperNativeTotalMs": 15673.75,
+            "whisperEncodeMs": 13668.84,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 778.53,
+            "workerWallMs": 76.31629999997676,
+            "cpuMs": 109,
+            "rssMB": 585.03125,
+            "rssDeltaMB": 0.37109375,
+            "translationMs": 76.2445000000007,
+            "translationLoadMs": 0,
+            "totalMs": 15838.785600000003
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 1,
+            "words": 10,
+            "rate": 0.1
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 2,
+          "started": 1791801126611,
+          "finished": 1791801144356,
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.23240000000805594,
+            "speechPreprocessMs": 2.9694000000017695,
+            "transcriptionMs": 17701.003599999996,
+            "whisperLoadMs": 1031.39,
+            "whisperNativeTotalMs": 17614.22,
+            "whisperEncodeMs": 15552.5,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 904.27,
+            "workerWallMs": 38.772899999981746,
+            "cpuMs": 78,
+            "rssMB": 585.359375,
+            "rssDeltaMB": 0.265625,
+            "translationMs": 38.709600000001956,
+            "translationLoadMs": 0,
+            "totalMs": 17744.72769999999
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 3,
+          "started": 1791801144358,
+          "finished": 1791801163023,
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.2701999999990221,
+            "speechPreprocessMs": 3.0143000000098255,
+            "transcriptionMs": 18571.4908,
+            "whisperLoadMs": 960.97,
+            "whisperNativeTotalMs": 18321.26,
+            "whisperEncodeMs": 15087.96,
+            "whisperDecodeMs": 65.93,
+            "whisperBatchDecodeMs": 1870.04,
+            "workerWallMs": 84.84029999998165,
+            "cpuMs": 78,
+            "rssMB": 591.19140625,
+            "rssDeltaMB": 5.8203125,
+            "translationMs": 84.5682000000088,
+            "translationLoadMs": 0,
+            "totalMs": 18665
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 4,
+          "started": 1791801163026,
+          "finished": 1791801184061,
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 3.801500000001397,
+            "speechPreprocessMs": 3.2836999999999534,
+            "transcriptionMs": 20988.332599999994,
+            "whisperLoadMs": 1331.57,
+            "whisperNativeTotalMs": 20570.03,
+            "whisperEncodeMs": 18301.8,
+            "whisperDecodeMs": 29.08,
+            "whisperBatchDecodeMs": 791.02,
+            "workerWallMs": 37.39679999998771,
+            "cpuMs": 31,
+            "rssMB": 591.3671875,
+            "rssDeltaMB": 0.171875,
+            "translationMs": 37.326700000005076,
+            "translationLoadMs": 0,
+            "totalMs": 21034.13400000002
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "time": 1791801068849,
+          "message": "Verifying whisper.cpp v1.8.2 CPU runtime…"
+        },
+        {
+          "time": 1791801070606,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801090680,
+          "message": "Loading local translation model…"
+        },
+        {
+          "time": 1791801091134,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801092056,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801110738,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801110772,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801126534,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801126612,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801144317,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801144358,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801162938,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801163030,
+          "message": "Transcribing locally (CPU)…"
+        },
+        {
+          "time": 1791801184023,
+          "message": "Translating locally…"
+        }
+      ],
+      "readyIdleStart": 1791801058652,
+      "readyIdleEnd": 1791801068652,
+      "afterIdleStart": 1791801184062,
+      "afterIdleEnd": 1791801194062,
+      "disableMs": 0.04910000000381842,
+      "disabledAt": 1791801194062
+    },
+    {
+      "model": "small.en",
+      "execution": "gpu",
+      "trials": [
+        {
+          "phase": "first",
+          "fixture": 0,
+          "started": 1791801205580,
+          "finished": 1791801211621,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 2894.219299999997,
+            "speechPreprocessMs": 3.093399999983376,
+            "transcriptionMs": 1369.8461000000243,
+            "whisperLoadMs": 720.95,
+            "whisperNativeTotalMs": 1093.86,
+            "whisperEncodeMs": 144.12,
+            "whisperDecodeMs": 17.71,
+            "whisperBatchDecodeMs": 131.61,
+            "workerWallMs": 1701.3224000000046,
+            "cpuMs": 2421,
+            "rssMB": 589.515625,
+            "rssDeltaMB": 41.19140625,
+            "translationMs": 489.2462999999989,
+            "translationLoadMs": 1211.7837,
+            "totalMs": 6040.7788
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 0,
+          "started": 1791801211622,
+          "finished": 1791801213769,
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1.0249999999941792,
+            "speechPreprocessMs": 2.9852000000246335,
+            "transcriptionMs": 2026.1581000000006,
+            "whisperLoadMs": 1246.45,
+            "whisperNativeTotalMs": 1632.6,
+            "whisperEncodeMs": 159.99,
+            "whisperDecodeMs": 20.06,
+            "whisperBatchDecodeMs": 123.13,
+            "workerWallMs": 37.82289999999921,
+            "cpuMs": 47,
+            "rssMB": 591.29296875,
+            "rssDeltaMB": 0.1015625,
+            "translationMs": 37.70979999998235,
+            "translationLoadMs": 0,
+            "totalMs": 2147.343900000007
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 1,
+          "started": 1791801213770,
+          "finished": 1791801216443,
+          "transcript": "Mia and Oliver helped the dragon find the blue key.",
+          "translation": "ミアとオリバーはドラゴンが青い鍵を見つけるのを手伝した。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.3336999999883119,
+            "speechPreprocessMs": 3.9649000000208616,
+            "transcriptionMs": 2515.6760000000068,
+            "whisperLoadMs": 1270.43,
+            "whisperNativeTotalMs": 1865.9,
+            "whisperEncodeMs": 284.09,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 152.59,
+            "workerWallMs": 89.14029999999912,
+            "cpuMs": 110,
+            "rssMB": 591.4375,
+            "rssDeltaMB": 0.12890625,
+            "translationMs": 89.04780000000028,
+            "translationLoadMs": 0,
+            "totalMs": 2672.494000000006
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 1,
+            "words": 10,
+            "rate": 0.1
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 2,
+          "started": 1791801216444,
+          "finished": 1791801218725,
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.2318000000086613,
+            "speechPreprocessMs": 3.038299999985611,
+            "transcriptionMs": 2162.26430000001,
+            "whisperLoadMs": 1140.68,
+            "whisperNativeTotalMs": 1693.82,
+            "whisperEncodeMs": 273.82,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 144.49,
+            "workerWallMs": 41.34259999997448,
+            "cpuMs": 31,
+            "rssMB": 591.59375,
+            "rssDeltaMB": 0.15625,
+            "translationMs": 41.204200000007404,
+            "translationLoadMs": 0,
+            "totalMs": 2281.2262000000046
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 3,
+          "started": 1791801218727,
+          "finished": 1791801221666,
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.37660000001778826,
+            "speechPreprocessMs": 3.8968000000168104,
+            "transcriptionMs": 2778.444599999988,
+            "whisperLoadMs": 1427.95,
+            "whisperNativeTotalMs": 2256.22,
+            "whisperEncodeMs": 450.24,
+            "whisperDecodeMs": 20.53,
+            "whisperBatchDecodeMs": 192.84,
+            "workerWallMs": 70.52270000000135,
+            "cpuMs": 140,
+            "rssMB": 596.96484375,
+            "rssDeltaMB": 5.37109375,
+            "translationMs": 70.29780000000028,
+            "translationLoadMs": 0,
+            "totalMs": 2938.9879000000074
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "fixture": 4,
+          "started": 1791801221667,
+          "finished": 1791801223952,
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.44430000000284053,
+            "speechPreprocessMs": 3.3168000000005122,
+            "transcriptionMs": 2134.8996000000043,
+            "whisperLoadMs": 1155.52,
+            "whisperNativeTotalMs": 1766.06,
+            "whisperEncodeMs": 329.03,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 145.95,
+            "workerWallMs": 44.6646999999939,
+            "cpuMs": 47,
+            "rssMB": 597.1328125,
+            "rssDeltaMB": 0.02734375,
+            "translationMs": 44.59619999999995,
+            "translationLoadMs": 0,
+            "totalMs": 2284.448000000004
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "statuses": [
+        {
+          "time": 1791801205719,
+          "message": "Verifying whisper.cpp v1.8.2 CUDA runtime…"
+        },
+        {
+          "time": 1791801208544,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801210919,
+          "message": "Loading local translation model…"
+        },
+        {
+          "time": 1791801211131,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801211701,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801213731,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801213831,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801216353,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801216517,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801218684,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801218811,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801221596,
+          "message": "Translating locally…"
+        },
+        {
+          "time": 1791801221767,
+          "message": "Transcribing locally (NVIDIA CUDA)…"
+        },
+        {
+          "time": 1791801223907,
+          "message": "Translating locally…"
+        }
+      ],
+      "readyIdleStart": 1791801195566,
+      "readyIdleEnd": 1791801205580,
+      "afterIdleStart": 1791801223953,
+      "afterIdleEnd": 1791801233962,
+      "disableMs": 0.07360000000335276,
+      "disabledAt": 1791801233963
+    }
+  ],
+  "resources": [
+    {
+      "gpu": "24, 1429",
+      "time": 1791800967335,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1425",
+      "time": 1791800967914,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1425",
+      "time": 1791800968381,
+      "processes": []
+    },
+    {
+      "gpu": "50, 1425",
+      "time": 1791800968944,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1425",
+      "time": 1791800969411,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1425",
+      "time": 1791800969880,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1425",
+      "time": 1791800970348,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1425",
+      "time": 1791800970818,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1425",
+      "time": 1791800971286,
+      "processes": []
+    },
+    {
+      "gpu": "34, 1425",
+      "time": 1791800971752,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1425",
+      "time": 1791800972224,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1425",
+      "time": 1791800972691,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1425",
+      "time": 1791800973175,
+      "processes": []
+    },
+    {
+      "gpu": "48, 1427",
+      "time": 1791800973640,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1427",
+      "time": 1791800974108,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1427",
+      "time": 1791800974577,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1427",
+      "time": 1791800975061,
+      "processes": []
+    },
+    {
+      "gpu": "42, 1427",
+      "time": 1791800975529,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1434",
+      "time": 1791800975997,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1434",
+      "time": 1791800976464,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1434",
+      "time": 1791800976966,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1434",
+      "time": 1791800977434,
+      "processes": []
+    },
+    {
+      "gpu": "51, 1436",
+      "time": 1791800978054,
+      "processes": [
+        {
+          "cpuSeconds": 0.375,
+          "ramMB": 220.58984375,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 742.703125
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1434",
+      "time": 1791800978643,
+      "processes": [
+        {
+          "cpuSeconds": 1.125,
+          "ramMB": 233.5546875,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1434",
+      "time": 1791800979134,
+      "processes": [
+        {
+          "cpuSeconds": 2.09375,
+          "ramMB": 234.44921875,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1434",
+      "time": 1791800979619,
+      "processes": [
+        {
+          "cpuSeconds": 2.96875,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "49, 1436",
+      "time": 1791800980100,
+      "processes": [
+        {
+          "cpuSeconds": 3.828125,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1430",
+      "time": 1791800980568,
+      "processes": [
+        {
+          "cpuSeconds": 4.546875,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1430",
+      "time": 1791800981051,
+      "processes": [
+        {
+          "cpuSeconds": 5.421875,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1430",
+      "time": 1791800981535,
+      "processes": [
+        {
+          "cpuSeconds": 6.265625,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "55, 1440",
+      "time": 1791800982019,
+      "processes": [
+        {
+          "cpuSeconds": 7.171875,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1437",
+      "time": 1791800982501,
+      "processes": [
+        {
+          "cpuSeconds": 8.046875,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1437",
+      "time": 1791800982969,
+      "processes": [
+        {
+          "cpuSeconds": 8.9375,
+          "ramMB": 249.59765625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1437",
+      "time": 1791800983460,
+      "processes": [
+        {
+          "cpuSeconds": 9.8125,
+          "ramMB": 252.53515625,
+          "pid": 30380,
+          "name": "whisper-cli",
+          "privateMB": 748.5859375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1432",
+      "time": 1791800983945,
+      "processes": []
+    },
+    {
+      "gpu": "35, 1433",
+      "time": 1791800984423,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1431",
+      "time": 1791800984894,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1431",
+      "time": 1791800985375,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1431",
+      "time": 1791800985841,
+      "processes": [
+        {
+          "cpuSeconds": 0.046875,
+          "ramMB": 32.06640625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 151.02734375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1423",
+      "time": 1791800986328,
+      "processes": [
+        {
+          "cpuSeconds": 0.765625,
+          "ramMB": 233.53515625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1423",
+      "time": 1791800986810,
+      "processes": [
+        {
+          "cpuSeconds": 1.59375,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1423",
+      "time": 1791800987278,
+      "processes": [
+        {
+          "cpuSeconds": 2.484375,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1423",
+      "time": 1791800987764,
+      "processes": [
+        {
+          "cpuSeconds": 3.3125,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1423",
+      "time": 1791800988231,
+      "processes": [
+        {
+          "cpuSeconds": 4.125,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "47, 1423",
+      "time": 1791800988715,
+      "processes": [
+        {
+          "cpuSeconds": 4.984375,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1431",
+      "time": 1791800989184,
+      "processes": [
+        {
+          "cpuSeconds": 5.90625,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1431",
+      "time": 1791800989666,
+      "processes": [
+        {
+          "cpuSeconds": 6.78125,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1431",
+      "time": 1791800990135,
+      "processes": [
+        {
+          "cpuSeconds": 7.65625,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "48, 1431",
+      "time": 1791800990602,
+      "processes": [
+        {
+          "cpuSeconds": 8.515625,
+          "ramMB": 249.6015625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 748.59375
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1423",
+      "time": 1791800991087,
+      "processes": [
+        {
+          "cpuSeconds": 9.421875,
+          "ramMB": 297.17578125,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 786.74609375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1423",
+      "time": 1791800991554,
+      "processes": [
+        {
+          "cpuSeconds": 0.078125,
+          "ramMB": 39.06640625,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 151.046875
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1423",
+      "time": 1791800992022,
+      "processes": [
+        {
+          "cpuSeconds": 0.828125,
+          "ramMB": 233.53125,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "43, 1423",
+      "time": 1791800992508,
+      "processes": [
+        {
+          "cpuSeconds": 1.703125,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1423",
+      "time": 1791800992994,
+      "processes": [
+        {
+          "cpuSeconds": 2.625,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1423",
+      "time": 1791800993477,
+      "processes": [
+        {
+          "cpuSeconds": 3.484375,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1423",
+      "time": 1791800993958,
+      "processes": [
+        {
+          "cpuSeconds": 4.34375,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1423",
+      "time": 1791800994427,
+      "processes": [
+        {
+          "cpuSeconds": 5.25,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1423",
+      "time": 1791800994897,
+      "processes": [
+        {
+          "cpuSeconds": 6.140625,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1423",
+      "time": 1791800995383,
+      "processes": [
+        {
+          "cpuSeconds": 7.0625,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1423",
+      "time": 1791800995850,
+      "processes": [
+        {
+          "cpuSeconds": 7.984375,
+          "ramMB": 249.63671875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1423",
+      "time": 1791800996318,
+      "processes": [
+        {
+          "cpuSeconds": 8.890625,
+          "ramMB": 252.57421875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 748.59765625
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1423",
+      "time": 1791800996789,
+      "processes": [
+        {
+          "cpuSeconds": 9.75,
+          "ramMB": 297.7421875,
+          "pid": 7656,
+          "name": "whisper-cli",
+          "privateMB": 787.296875
+        }
+      ]
+    },
+    {
+      "gpu": "52, 1423",
+      "time": 1791800997270,
+      "processes": [
+        {
+          "cpuSeconds": 0.375,
+          "ramMB": 223.20703125,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 742.73046875
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1423",
+      "time": 1791800997735,
+      "processes": [
+        {
+          "cpuSeconds": 1.28125,
+          "ramMB": 233.59765625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1423",
+      "time": 1791800998221,
+      "processes": [
+        {
+          "cpuSeconds": 2.0625,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1423",
+      "time": 1791800998695,
+      "processes": [
+        {
+          "cpuSeconds": 2.921875,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "62, 1423",
+      "time": 1791800999196,
+      "processes": [
+        {
+          "cpuSeconds": 3.765625,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1423",
+      "time": 1791800999691,
+      "processes": [
+        {
+          "cpuSeconds": 4.609375,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1429",
+      "time": 1791801000172,
+      "processes": [
+        {
+          "cpuSeconds": 5.515625,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1429",
+      "time": 1791801000661,
+      "processes": [
+        {
+          "cpuSeconds": 6.359375,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "57, 1429",
+      "time": 1791801001125,
+      "processes": [
+        {
+          "cpuSeconds": 7.296875,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "20, 1432",
+      "time": 1791801001610,
+      "processes": [
+        {
+          "cpuSeconds": 8.203125,
+          "ramMB": 249.625,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 748.609375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1432",
+      "time": 1791801002083,
+      "processes": [
+        {
+          "cpuSeconds": 9.109375,
+          "ramMB": 296.07421875,
+          "pid": 26952,
+          "name": "whisper-cli",
+          "privateMB": 786.65234375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1431",
+      "time": 1791801002552,
+      "processes": []
+    },
+    {
+      "gpu": "62, 1434",
+      "time": 1791801003040,
+      "processes": [
+        {
+          "cpuSeconds": 0.59375,
+          "ramMB": 233.66015625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "20, 1431",
+      "time": 1791801003527,
+      "processes": [
+        {
+          "cpuSeconds": 1.53125,
+          "ramMB": 235.97265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1434",
+      "time": 1791801004009,
+      "processes": [
+        {
+          "cpuSeconds": 2.4375,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "19, 1434",
+      "time": 1791801004494,
+      "processes": [
+        {
+          "cpuSeconds": 3.359375,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "59, 1434",
+      "time": 1791801004976,
+      "processes": [
+        {
+          "cpuSeconds": 4.140625,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "19, 1434",
+      "time": 1791801005461,
+      "processes": [
+        {
+          "cpuSeconds": 5,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1434",
+      "time": 1791801005948,
+      "processes": [
+        {
+          "cpuSeconds": 5.859375,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1434",
+      "time": 1791801006434,
+      "processes": [
+        {
+          "cpuSeconds": 6.78125,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1436",
+      "time": 1791801006919,
+      "processes": [
+        {
+          "cpuSeconds": 7.671875,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "20, 1436",
+      "time": 1791801007404,
+      "processes": [
+        {
+          "cpuSeconds": 8.5625,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1434",
+      "time": 1791801007946,
+      "processes": [
+        {
+          "cpuSeconds": 9.3125,
+          "ramMB": 249.7265625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "20, 1434",
+      "time": 1791801008460,
+      "processes": [
+        {
+          "cpuSeconds": 10.140625,
+          "ramMB": 252.6640625,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 748.72265625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1436",
+      "time": 1791801008927,
+      "processes": [
+        {
+          "cpuSeconds": 11.078125,
+          "ramMB": 298.453125,
+          "pid": 27908,
+          "name": "whisper-cli",
+          "privateMB": 788.22265625
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1436",
+      "time": 1791801009393,
+      "processes": [
+        {
+          "cpuSeconds": 0.28125,
+          "ramMB": 214.59375,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 742.74609375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1434",
+      "time": 1791801009863,
+      "processes": [
+        {
+          "cpuSeconds": 1.203125,
+          "ramMB": 233.578125,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1434",
+      "time": 1791801010349,
+      "processes": [
+        {
+          "cpuSeconds": 2.109375,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1434",
+      "time": 1791801010834,
+      "processes": [
+        {
+          "cpuSeconds": 2.96875,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "40, 1433",
+      "time": 1791801011344,
+      "processes": [
+        {
+          "cpuSeconds": 3.8125,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1433",
+      "time": 1791801011822,
+      "processes": [
+        {
+          "cpuSeconds": 4.703125,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1433",
+      "time": 1791801012294,
+      "processes": [
+        {
+          "cpuSeconds": 5.671875,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "20, 1433",
+      "time": 1791801012768,
+      "processes": [
+        {
+          "cpuSeconds": 6.484375,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1433",
+      "time": 1791801013252,
+      "processes": [
+        {
+          "cpuSeconds": 7.34375,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "41, 1433",
+      "time": 1791801013735,
+      "processes": [
+        {
+          "cpuSeconds": 8.203125,
+          "ramMB": 249.63671875,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 748.625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1433",
+      "time": 1791801014202,
+      "processes": [
+        {
+          "cpuSeconds": 9.09375,
+          "ramMB": 288.90625,
+          "pid": 32196,
+          "name": "whisper-cli",
+          "privateMB": 784.98828125
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1432",
+      "time": 1791801014673,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1432",
+      "time": 1791801015140,
+      "processes": []
+    },
+    {
+      "gpu": "20, 1432",
+      "time": 1791801015612,
+      "processes": []
+    },
+    {
+      "gpu": "27, 1432",
+      "time": 1791801016094,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1432",
+      "time": 1791801016563,
+      "processes": []
+    },
+    {
+      "gpu": "27, 1432",
+      "time": 1791801017033,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1432",
+      "time": 1791801017499,
+      "processes": []
+    },
+    {
+      "gpu": "55, 1432",
+      "time": 1791801017966,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1432",
+      "time": 1791801018434,
+      "processes": []
+    },
+    {
+      "gpu": "29, 1432",
+      "time": 1791801018902,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1432",
+      "time": 1791801019388,
+      "processes": []
+    },
+    {
+      "gpu": "58, 1432",
+      "time": 1791801019853,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1437",
+      "time": 1791801020319,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1438",
+      "time": 1791801020775,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1439",
+      "time": 1791801021263,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1439",
+      "time": 1791801021732,
+      "processes": []
+    },
+    {
+      "gpu": "60, 1438",
+      "time": 1791801022200,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1438",
+      "time": 1791801022669,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1437",
+      "time": 1791801023136,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1437",
+      "time": 1791801023604,
+      "processes": []
+    },
+    {
+      "gpu": "60, 1435",
+      "time": 1791801024073,
+      "processes": []
+    },
+    {
+      "gpu": "20, 1434",
+      "time": 1791801024540,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1435",
+      "time": 1791801025007,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1435",
+      "time": 1791801025491,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1435",
+      "time": 1791801025963,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1435",
+      "time": 1791801026448,
+      "processes": []
+    },
+    {
+      "gpu": "47, 1441",
+      "time": 1791801026968,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1441",
+      "time": 1791801027495,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1440",
+      "time": 1791801027977,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1440",
+      "time": 1791801028459,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1440",
+      "time": 1791801028928,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1440",
+      "time": 1791801029399,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1440",
+      "time": 1791801029863,
+      "processes": []
+    },
+    {
+      "gpu": "20, 1440",
+      "time": 1791801030335,
+      "processes": []
+    },
+    {
+      "gpu": "20, 1440",
+      "time": 1791801030800,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1440",
+      "time": 1791801031264,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1438",
+      "time": 1791801031729,
+      "processes": []
+    },
+    {
+      "gpu": "27, 1436",
+      "time": 1791801032200,
+      "processes": []
+    },
+    {
+      "gpu": "42, 1434",
+      "time": 1791801032671,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1429",
+      "time": 1791801033137,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1429",
+      "time": 1791801033601,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1432",
+      "time": 1791801034075,
+      "processes": []
+    },
+    {
+      "gpu": "38, 1432",
+      "time": 1791801034543,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1432",
+      "time": 1791801035009,
+      "processes": []
+    },
+    {
+      "gpu": "18, 1432",
+      "time": 1791801035492,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1432",
+      "time": 1791801035960,
+      "processes": []
+    },
+    {
+      "gpu": "18, 1432",
+      "time": 1791801036428,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1432",
+      "time": 1791801036899,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1432",
+      "time": 1791801037384,
+      "processes": []
+    },
+    {
+      "gpu": "27, 1432",
+      "time": 1791801037855,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1432",
+      "time": 1791801038327,
+      "processes": []
+    },
+    {
+      "gpu": "19, 1432",
+      "time": 1791801038794,
+      "processes": [
+        {
+          "cpuSeconds": 0.140625,
+          "ramMB": 161.43359375,
+          "pid": 13932,
+          "name": "whisper-cli",
+          "privateMB": 125.12890625
+        }
+      ]
+    },
+    {
+      "gpu": "52, 1988",
+      "time": 1791801039269,
+      "processes": [
+        {
+          "cpuSeconds": 0.59375,
+          "ramMB": 403.1796875,
+          "pid": 13932,
+          "name": "whisper-cli",
+          "privateMB": 1408.13671875
+        }
+      ]
+    },
+    {
+      "gpu": "9, 1431",
+      "time": 1791801039754,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1430",
+      "time": 1791801040219,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1430",
+      "time": 1791801040686,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1430",
+      "time": 1791801041170,
+      "processes": []
+    },
+    {
+      "gpu": "6, 1430",
+      "time": 1791801041649,
+      "processes": [
+        {
+          "cpuSeconds": 0.046875,
+          "ramMB": 73.23046875,
+          "pid": 32128,
+          "name": "whisper-cli",
+          "privateMB": 120.80859375
+        }
+      ]
+    },
+    {
+      "gpu": "6, 1995",
+      "time": 1791801042120,
+      "processes": [
+        {
+          "cpuSeconds": 0.484375,
+          "ramMB": 401.75,
+          "pid": 32128,
+          "name": "whisper-cli",
+          "privateMB": 1403.15234375
+        }
+      ]
+    },
+    {
+      "gpu": "18, 1438",
+      "time": 1791801042608,
+      "processes": [
+        {
+          "cpuSeconds": 0,
+          "ramMB": 4.359375,
+          "pid": 33824,
+          "name": "whisper-cli",
+          "privateMB": 118.4921875
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1751",
+      "time": 1791801043073,
+      "processes": [
+        {
+          "cpuSeconds": 0.375,
+          "ramMB": 323.5546875,
+          "pid": 33824,
+          "name": "whisper-cli",
+          "privateMB": 604.9375
+        }
+      ]
+    },
+    {
+      "gpu": "10, 1438",
+      "time": 1791801043557,
+      "processes": [
+        {
+          "cpuSeconds": 0.8125,
+          "ramMB": 129.06640625,
+          "pid": 33824,
+          "name": "whisper-cli",
+          "privateMB": 119.51953125
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1436",
+      "time": 1791801044045,
+      "processes": [
+        {
+          "cpuSeconds": 0.21875,
+          "ramMB": 178.12890625,
+          "pid": 3484,
+          "name": "whisper-cli",
+          "privateMB": 143.90234375
+        }
+      ]
+    },
+    {
+      "gpu": "15, 1991",
+      "time": 1791801044528,
+      "processes": [
+        {
+          "cpuSeconds": 0.671875,
+          "ramMB": 431.0703125,
+          "pid": 3484,
+          "name": "whisper-cli",
+          "privateMB": 1442.69921875
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1433",
+      "time": 1791801045021,
+      "processes": [
+        {
+          "cpuSeconds": 0,
+          "ramMB": 1.98828125,
+          "pid": 30468,
+          "name": "whisper-cli",
+          "privateMB": 0.38671875
+        }
+      ]
+    },
+    {
+      "gpu": "6, 1746",
+      "time": 1791801045492,
+      "processes": [
+        {
+          "cpuSeconds": 0.4375,
+          "ramMB": 323.45703125,
+          "pid": 30468,
+          "name": "whisper-cli",
+          "privateMB": 604.6640625
+        }
+      ]
+    },
+    {
+      "gpu": "18, 1433",
+      "time": 1791801046026,
+      "processes": [
+        {
+          "cpuSeconds": null,
+          "ramMB": 100.2421875,
+          "pid": 30468,
+          "name": "whisper-cli",
+          "privateMB": 119.5234375
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1735",
+      "time": 1791801046489,
+      "processes": [
+        {
+          "cpuSeconds": 0.265625,
+          "ramMB": 264.75390625,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 249.16015625
+        }
+      ]
+    },
+    {
+      "gpu": "11, 1615",
+      "time": 1791801046971,
+      "processes": [
+        {
+          "cpuSeconds": 0.765625,
+          "ramMB": 449.0546875,
+          "pid": 32308,
+          "name": "whisper-cli",
+          "privateMB": 1466.31640625
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1421",
+      "time": 1791801047443,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1421",
+      "time": 1791801047901,
+      "processes": []
+    },
+    {
+      "gpu": "4, 1421",
+      "time": 1791801048386,
+      "processes": []
+    },
+    {
+      "gpu": "6, 1428",
+      "time": 1791801048852,
+      "processes": []
+    },
+    {
+      "gpu": "6, 1428",
+      "time": 1791801049321,
+      "processes": []
+    },
+    {
+      "gpu": "6, 1428",
+      "time": 1791801049791,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1438",
+      "time": 1791801050275,
+      "processes": []
+    },
+    {
+      "gpu": "6, 1431",
+      "time": 1791801050740,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1431",
+      "time": 1791801051209,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1431",
+      "time": 1791801051678,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1431",
+      "time": 1791801052144,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1430",
+      "time": 1791801052629,
+      "processes": []
+    },
+    {
+      "gpu": "5, 1431",
+      "time": 1791801053095,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1431",
+      "time": 1791801053565,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1431",
+      "time": 1791801054030,
+      "processes": []
+    },
+    {
+      "gpu": "20, 1431",
+      "time": 1791801054495,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1431",
+      "time": 1791801054961,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1431",
+      "time": 1791801055425,
+      "processes": []
+    },
+    {
+      "gpu": "27, 1431",
+      "time": 1791801055894,
+      "processes": []
+    },
+    {
+      "gpu": "46, 1431",
+      "time": 1791801056363,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1431",
+      "time": 1791801056828,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1431",
+      "time": 1791801057299,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1431",
+      "time": 1791801057781,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1431",
+      "time": 1791801058242,
+      "processes": []
+    },
+    {
+      "gpu": "20, 1431",
+      "time": 1791801058707,
+      "processes": []
+    },
+    {
+      "gpu": "44, 1431",
+      "time": 1791801059177,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1431",
+      "time": 1791801059644,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1431",
+      "time": 1791801060118,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1435",
+      "time": 1791801060585,
+      "processes": []
+    },
+    {
+      "gpu": "72, 1436",
+      "time": 1791801061048,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1436",
+      "time": 1791801061514,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1440",
+      "time": 1791801062001,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1483",
+      "time": 1791801062469,
+      "processes": []
+    },
+    {
+      "gpu": "47, 1483",
+      "time": 1791801062953,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1494",
+      "time": 1791801063425,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1494",
+      "time": 1791801063895,
+      "processes": []
+    },
+    {
+      "gpu": "30, 1496",
+      "time": 1791801064378,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1496",
+      "time": 1791801064866,
+      "processes": []
+    },
+    {
+      "gpu": "33, 1447",
+      "time": 1791801065345,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1480",
+      "time": 1791801065833,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1481",
+      "time": 1791801066314,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1479",
+      "time": 1791801066775,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1479",
+      "time": 1791801067262,
+      "processes": []
+    },
+    {
+      "gpu": "50, 1479",
+      "time": 1791801067744,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1477",
+      "time": 1791801068211,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1477",
+      "time": 1791801068747,
+      "processes": []
+    },
+    {
+      "gpu": "79, 1419",
+      "time": 1791801069342,
+      "processes": []
+    },
+    {
+      "gpu": "2, 1383",
+      "time": 1791801069829,
+      "processes": []
+    },
+    {
+      "gpu": "2, 1388",
+      "time": 1791801070298,
+      "processes": []
+    },
+    {
+      "gpu": "7, 1389",
+      "time": 1791801070765,
+      "processes": [
+        {
+          "cpuSeconds": 0.015625,
+          "ramMB": 3.84375,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1.38671875
+        }
+      ]
+    },
+    {
+      "gpu": "3, 1424",
+      "time": 1791801071232,
+      "processes": [
+        {
+          "cpuSeconds": 0.34375,
+          "ramMB": 296.1015625,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 475.83203125
+        }
+      ]
+    },
+    {
+      "gpu": "8, 1422",
+      "time": 1791801071712,
+      "processes": [
+        {
+          "cpuSeconds": 0.953125,
+          "ramMB": 602.765625,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1135.6328125
+        }
+      ]
+    },
+    {
+      "gpu": "6, 1422",
+      "time": 1791801072198,
+      "processes": [
+        {
+          "cpuSeconds": 1.78125,
+          "ramMB": 618.24609375,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "8, 1421",
+      "time": 1791801072737,
+      "processes": [
+        {
+          "cpuSeconds": 2.671875,
+          "ramMB": 618.25,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "11, 1380",
+      "time": 1791801073351,
+      "processes": [
+        {
+          "cpuSeconds": 3.65625,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "11, 1379",
+      "time": 1791801074012,
+      "processes": [
+        {
+          "cpuSeconds": 4.703125,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1369",
+      "time": 1791801074703,
+      "processes": [
+        {
+          "cpuSeconds": 5.9375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1369",
+      "time": 1791801075405,
+      "processes": [
+        {
+          "cpuSeconds": 7.25,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1368",
+      "time": 1791801075901,
+      "processes": [
+        {
+          "cpuSeconds": 8.5625,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "29, 1367",
+      "time": 1791801076366,
+      "processes": [
+        {
+          "cpuSeconds": 9.421875,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1372",
+      "time": 1791801076854,
+      "processes": [
+        {
+          "cpuSeconds": 10.28125,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "50, 1372",
+      "time": 1791801077346,
+      "processes": [
+        {
+          "cpuSeconds": 11.203125,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "35, 1372",
+      "time": 1791801077812,
+      "processes": [
+        {
+          "cpuSeconds": 12.0625,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "35, 1372",
+      "time": 1791801078277,
+      "processes": [
+        {
+          "cpuSeconds": 12.984375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "40, 1364",
+      "time": 1791801078748,
+      "processes": [
+        {
+          "cpuSeconds": 13.9375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "34, 1364",
+      "time": 1791801079249,
+      "processes": [
+        {
+          "cpuSeconds": 14.875,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "40, 1364",
+      "time": 1791801079715,
+      "processes": [
+        {
+          "cpuSeconds": 15.625,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1363",
+      "time": 1791801080184,
+      "processes": [
+        {
+          "cpuSeconds": 16.421875,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "41, 1363",
+      "time": 1791801080671,
+      "processes": [
+        {
+          "cpuSeconds": 17.328125,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1363",
+      "time": 1791801081136,
+      "processes": [
+        {
+          "cpuSeconds": 18.125,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "46, 1363",
+      "time": 1791801081620,
+      "processes": [
+        {
+          "cpuSeconds": 18.984375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1363",
+      "time": 1791801082104,
+      "processes": [
+        {
+          "cpuSeconds": 19.90625,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "40, 1363",
+      "time": 1791801082609,
+      "processes": [
+        {
+          "cpuSeconds": 20.84375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1363",
+      "time": 1791801083090,
+      "processes": [
+        {
+          "cpuSeconds": 21.609375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "40, 1363",
+      "time": 1791801083554,
+      "processes": [
+        {
+          "cpuSeconds": 22.4375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "36, 1360",
+      "time": 1791801084024,
+      "processes": [
+        {
+          "cpuSeconds": 23.25,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "39, 1360",
+      "time": 1791801084513,
+      "processes": [
+        {
+          "cpuSeconds": 24.15625,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1356",
+      "time": 1791801084996,
+      "processes": [
+        {
+          "cpuSeconds": 24.984375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "44, 1356",
+      "time": 1791801085482,
+      "processes": [
+        {
+          "cpuSeconds": 25.859375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "29, 1356",
+      "time": 1791801085963,
+      "processes": [
+        {
+          "cpuSeconds": 26.703125,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "41, 1355",
+      "time": 1791801086431,
+      "processes": [
+        {
+          "cpuSeconds": 27.609375,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1355",
+      "time": 1791801086912,
+      "processes": [
+        {
+          "cpuSeconds": 28.53125,
+          "ramMB": 642.3671875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "40, 1351",
+      "time": 1791801087380,
+      "processes": [
+        {
+          "cpuSeconds": 29.40625,
+          "ramMB": 646.76953125,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "29, 1351",
+      "time": 1791801087869,
+      "processes": [
+        {
+          "cpuSeconds": 30.296875,
+          "ramMB": 646.76953125,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "38, 1351",
+      "time": 1791801088348,
+      "processes": [
+        {
+          "cpuSeconds": 31.109375,
+          "ramMB": 646.76953125,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1144.44921875
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1350",
+      "time": 1791801088814,
+      "processes": [
+        {
+          "cpuSeconds": 32.03125,
+          "ramMB": 764.35546875,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1255.53515625
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1350",
+      "time": 1791801089296,
+      "processes": [
+        {
+          "cpuSeconds": 32.953125,
+          "ramMB": 764.5859375,
+          "pid": 31560,
+          "name": "whisper-cli",
+          "privateMB": 1255.84765625
+        }
+      ]
+    },
+    {
+      "gpu": "45, 1352",
+      "time": 1791801089780,
+      "processes": []
+    },
+    {
+      "gpu": "41, 1352",
+      "time": 1791801090249,
+      "processes": []
+    },
+    {
+      "gpu": "40, 1353",
+      "time": 1791801090742,
+      "processes": []
+    },
+    {
+      "gpu": "34, 1432",
+      "time": 1791801091256,
+      "processes": []
+    },
+    {
+      "gpu": "39, 1432",
+      "time": 1791801091754,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1432",
+      "time": 1791801092216,
+      "processes": [
+        {
+          "cpuSeconds": 0.03125,
+          "ramMB": 12.18359375,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 8.203125
+        }
+      ]
+    },
+    {
+      "gpu": "41, 1433",
+      "time": 1791801092687,
+      "processes": [
+        {
+          "cpuSeconds": 0.46875,
+          "ramMB": 405.890625,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 475.9765625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1409",
+      "time": 1791801093193,
+      "processes": [
+        {
+          "cpuSeconds": 1.140625,
+          "ramMB": 618.4140625,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "3, 1392",
+      "time": 1791801093893,
+      "processes": [
+        {
+          "cpuSeconds": 1.765625,
+          "ramMB": 618.4140625,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1073",
+      "time": 1791801094371,
+      "processes": [
+        {
+          "cpuSeconds": 2.796875,
+          "ramMB": 618.41796875,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "15, 1082",
+      "time": 1791801094875,
+      "processes": [
+        {
+          "cpuSeconds": 3.515625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "0, 1114",
+      "time": 1791801095857,
+      "processes": [
+        {
+          "cpuSeconds": 4.3125,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "9, 1133",
+      "time": 1791801096538,
+      "processes": [
+        {
+          "cpuSeconds": 5.46875,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1142",
+      "time": 1791801097045,
+      "processes": [
+        {
+          "cpuSeconds": 6.390625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1142",
+      "time": 1791801097528,
+      "processes": [
+        {
+          "cpuSeconds": 7.3125,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1143",
+      "time": 1791801098061,
+      "processes": [
+        {
+          "cpuSeconds": 8.203125,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "0, 1143",
+      "time": 1791801098625,
+      "processes": [
+        {
+          "cpuSeconds": 9.015625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1137",
+      "time": 1791801099136,
+      "processes": [
+        {
+          "cpuSeconds": 10.0625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1176",
+      "time": 1791801099600,
+      "processes": [
+        {
+          "cpuSeconds": 10.953125,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1176",
+      "time": 1791801100085,
+      "processes": [
+        {
+          "cpuSeconds": 11.859375,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "9, 1176",
+      "time": 1791801100553,
+      "processes": [
+        {
+          "cpuSeconds": 12.78125,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "15, 1176",
+      "time": 1791801101071,
+      "processes": [
+        {
+          "cpuSeconds": 13.765625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "12, 1141",
+      "time": 1791801101562,
+      "processes": [
+        {
+          "cpuSeconds": 14.625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "16, 1148",
+      "time": 1791801102024,
+      "processes": [
+        {
+          "cpuSeconds": 15.484375,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "15, 1150",
+      "time": 1791801102495,
+      "processes": [
+        {
+          "cpuSeconds": 16.421875,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1150",
+      "time": 1791801102978,
+      "processes": [
+        {
+          "cpuSeconds": 17.296875,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1150",
+      "time": 1791801103463,
+      "processes": [
+        {
+          "cpuSeconds": 18.25,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1140",
+      "time": 1791801103928,
+      "processes": [
+        {
+          "cpuSeconds": 19.140625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1145",
+      "time": 1791801104397,
+      "processes": [
+        {
+          "cpuSeconds": 20.03125,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1145",
+      "time": 1791801104867,
+      "processes": [
+        {
+          "cpuSeconds": 20.96875,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1145",
+      "time": 1791801105349,
+      "processes": [
+        {
+          "cpuSeconds": 21.890625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1145",
+      "time": 1791801105820,
+      "processes": [
+        {
+          "cpuSeconds": 22.859375,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1135",
+      "time": 1791801106289,
+      "processes": [
+        {
+          "cpuSeconds": 23.765625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1135",
+      "time": 1791801106777,
+      "processes": [
+        {
+          "cpuSeconds": 24.6875,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1135",
+      "time": 1791801107245,
+      "processes": [
+        {
+          "cpuSeconds": 25.640625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1135",
+      "time": 1791801107716,
+      "processes": [
+        {
+          "cpuSeconds": 26.5625,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1135",
+      "time": 1791801108183,
+      "processes": [
+        {
+          "cpuSeconds": 27.4375,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1135",
+      "time": 1791801108652,
+      "processes": [
+        {
+          "cpuSeconds": 28.34375,
+          "ramMB": 642.53125,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "29, 1142",
+      "time": 1791801109121,
+      "processes": [
+        {
+          "cpuSeconds": 29.265625,
+          "ramMB": 646.93359375,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1142",
+      "time": 1791801109600,
+      "processes": [
+        {
+          "cpuSeconds": 30.234375,
+          "ramMB": 646.93359375,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1144.58984375
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1142",
+      "time": 1791801110087,
+      "processes": [
+        {
+          "cpuSeconds": 31.15625,
+          "ramMB": 763.3984375,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1254.5234375
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1142",
+      "time": 1791801110560,
+      "processes": [
+        {
+          "cpuSeconds": 32.15625,
+          "ramMB": 763.82421875,
+          "pid": 28484,
+          "name": "whisper-cli",
+          "privateMB": 1255.18359375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1128",
+      "time": 1791801111166,
+      "processes": [
+        {
+          "cpuSeconds": 0.15625,
+          "ramMB": 74.359375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 475.83984375
+        }
+      ]
+    },
+    {
+      "gpu": "0, 1125",
+      "time": 1791801111793,
+      "processes": [
+        {
+          "cpuSeconds": 0.484375,
+          "ramMB": 296.609375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 475.83984375
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1139",
+      "time": 1791801112274,
+      "processes": [
+        {
+          "cpuSeconds": 1.234375,
+          "ramMB": 617.81640625,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1139",
+      "time": 1791801112742,
+      "processes": [
+        {
+          "cpuSeconds": 2.109375,
+          "ramMB": 618.25390625,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1140",
+      "time": 1791801113243,
+      "processes": [
+        {
+          "cpuSeconds": 2.9375,
+          "ramMB": 618.25390625,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1140",
+      "time": 1791801113721,
+      "processes": [
+        {
+          "cpuSeconds": 3.90625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1139",
+      "time": 1791801114192,
+      "processes": [
+        {
+          "cpuSeconds": 4.84375,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1139",
+      "time": 1791801114662,
+      "processes": [
+        {
+          "cpuSeconds": 5.765625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1139",
+      "time": 1791801115143,
+      "processes": [
+        {
+          "cpuSeconds": 6.671875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1139",
+      "time": 1791801115634,
+      "processes": [
+        {
+          "cpuSeconds": 7.609375,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "17, 1140",
+      "time": 1791801116101,
+      "processes": [
+        {
+          "cpuSeconds": 8.5625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1140",
+      "time": 1791801116573,
+      "processes": [
+        {
+          "cpuSeconds": 9.46875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1140",
+      "time": 1791801117045,
+      "processes": [
+        {
+          "cpuSeconds": 10.40625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1140",
+      "time": 1791801117510,
+      "processes": [
+        {
+          "cpuSeconds": 11.328125,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1140",
+      "time": 1791801117998,
+      "processes": [
+        {
+          "cpuSeconds": 12.265625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1140",
+      "time": 1791801118465,
+      "processes": [
+        {
+          "cpuSeconds": 13.1875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1139",
+      "time": 1791801118933,
+      "processes": [
+        {
+          "cpuSeconds": 14.125,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1139",
+      "time": 1791801119404,
+      "processes": [
+        {
+          "cpuSeconds": 15.046875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1139",
+      "time": 1791801119885,
+      "processes": [
+        {
+          "cpuSeconds": 16.015625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "35, 1139",
+      "time": 1791801120354,
+      "processes": [
+        {
+          "cpuSeconds": 16.953125,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1139",
+      "time": 1791801120824,
+      "processes": [
+        {
+          "cpuSeconds": 17.875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1145",
+      "time": 1791801121293,
+      "processes": [
+        {
+          "cpuSeconds": 18.75,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "75, 1145",
+      "time": 1791801121761,
+      "processes": [
+        {
+          "cpuSeconds": 19.6875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1145",
+      "time": 1791801122231,
+      "processes": [
+        {
+          "cpuSeconds": 20.65625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1148",
+      "time": 1791801122698,
+      "processes": [
+        {
+          "cpuSeconds": 21.546875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1148",
+      "time": 1791801123165,
+      "processes": [
+        {
+          "cpuSeconds": 22.484375,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1148",
+      "time": 1791801123633,
+      "processes": [
+        {
+          "cpuSeconds": 23.421875,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1148",
+      "time": 1791801124108,
+      "processes": [
+        {
+          "cpuSeconds": 24.390625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "34, 1148",
+      "time": 1791801124569,
+      "processes": [
+        {
+          "cpuSeconds": 25.265625,
+          "ramMB": 642.40234375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1149",
+      "time": 1791801125036,
+      "processes": [
+        {
+          "cpuSeconds": 26.171875,
+          "ramMB": 646.8046875,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1149",
+      "time": 1791801125505,
+      "processes": [
+        {
+          "cpuSeconds": 27.0625,
+          "ramMB": 646.8046875,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1144.46484375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1149",
+      "time": 1791801125975,
+      "processes": [
+        {
+          "cpuSeconds": 28,
+          "ramMB": 764.375,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1255.5546875
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1149",
+      "time": 1791801126460,
+      "processes": [
+        {
+          "cpuSeconds": 28.984375,
+          "ramMB": 765.37890625,
+          "pid": 12936,
+          "name": "whisper-cli",
+          "privateMB": 1256.81640625
+        }
+      ]
+    },
+    {
+      "gpu": "17, 1149",
+      "time": 1791801127132,
+      "processes": [
+        {
+          "cpuSeconds": 0.171875,
+          "ramMB": 111.21484375,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 475.953125
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1147",
+      "time": 1791801127664,
+      "processes": [
+        {
+          "cpuSeconds": 0.5,
+          "ramMB": 382.8203125,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 475.953125
+        }
+      ]
+    },
+    {
+      "gpu": "2, 1147",
+      "time": 1791801128157,
+      "processes": [
+        {
+          "cpuSeconds": 1.25,
+          "ramMB": 618.41796875,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1145",
+      "time": 1791801128643,
+      "processes": [
+        {
+          "cpuSeconds": 2.15625,
+          "ramMB": 618.4375,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "38, 1145",
+      "time": 1791801129112,
+      "processes": [
+        {
+          "cpuSeconds": 3,
+          "ramMB": 621.140625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1145",
+      "time": 1791801129581,
+      "processes": [
+        {
+          "cpuSeconds": 3.90625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1145",
+      "time": 1791801130049,
+      "processes": [
+        {
+          "cpuSeconds": 4.84375,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1145",
+      "time": 1791801130518,
+      "processes": [
+        {
+          "cpuSeconds": 5.75,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "35, 1145",
+      "time": 1791801131029,
+      "processes": [
+        {
+          "cpuSeconds": 6.671875,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1145",
+      "time": 1791801131512,
+      "processes": [
+        {
+          "cpuSeconds": 7.578125,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1145",
+      "time": 1791801132004,
+      "processes": [
+        {
+          "cpuSeconds": 8.515625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1180",
+      "time": 1791801132506,
+      "processes": [
+        {
+          "cpuSeconds": 9.46875,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "38, 1180",
+      "time": 1791801132968,
+      "processes": [
+        {
+          "cpuSeconds": 10.390625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1180",
+      "time": 1791801133437,
+      "processes": [
+        {
+          "cpuSeconds": 11.28125,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1180",
+      "time": 1791801133923,
+      "processes": [
+        {
+          "cpuSeconds": 12.25,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1180",
+      "time": 1791801134393,
+      "processes": [
+        {
+          "cpuSeconds": 13.1875,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1146",
+      "time": 1791801134861,
+      "processes": [
+        {
+          "cpuSeconds": 14.078125,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1146",
+      "time": 1791801135345,
+      "processes": [
+        {
+          "cpuSeconds": 15.015625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "36, 1142",
+      "time": 1791801135831,
+      "processes": [
+        {
+          "cpuSeconds": 15.953125,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "2, 1142",
+      "time": 1791801136397,
+      "processes": [
+        {
+          "cpuSeconds": 16.78125,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1140",
+      "time": 1791801137215,
+      "processes": [
+        {
+          "cpuSeconds": 17.265625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "4, 1140",
+      "time": 1791801137685,
+      "processes": [
+        {
+          "cpuSeconds": 18.40625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1140",
+      "time": 1791801138150,
+      "processes": [
+        {
+          "cpuSeconds": 19.375,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1140",
+      "time": 1791801138637,
+      "processes": [
+        {
+          "cpuSeconds": 20.234375,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1140",
+      "time": 1791801139103,
+      "processes": [
+        {
+          "cpuSeconds": 21.1875,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1140",
+      "time": 1791801139574,
+      "processes": [
+        {
+          "cpuSeconds": 22.0625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1140",
+      "time": 1791801140040,
+      "processes": [
+        {
+          "cpuSeconds": 22.984375,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1140",
+      "time": 1791801140512,
+      "processes": [
+        {
+          "cpuSeconds": 23.875,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1140",
+      "time": 1791801140977,
+      "processes": [
+        {
+          "cpuSeconds": 24.796875,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "26, 1140",
+      "time": 1791801141460,
+      "processes": [
+        {
+          "cpuSeconds": 25.765625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1140",
+      "time": 1791801141928,
+      "processes": [
+        {
+          "cpuSeconds": 26.703125,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1140",
+      "time": 1791801142395,
+      "processes": [
+        {
+          "cpuSeconds": 27.625,
+          "ramMB": 642.53515625,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1140",
+      "time": 1791801142862,
+      "processes": [
+        {
+          "cpuSeconds": 28.5625,
+          "ramMB": 646.9375,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1136",
+      "time": 1791801143349,
+      "processes": [
+        {
+          "cpuSeconds": 29.46875,
+          "ramMB": 646.9375,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1144.6015625
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1136",
+      "time": 1791801143820,
+      "processes": [
+        {
+          "cpuSeconds": 30.453125,
+          "ramMB": 764.5,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1255.984375
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1136",
+      "time": 1791801144288,
+      "processes": [
+        {
+          "cpuSeconds": 31.40625,
+          "ramMB": 764.94921875,
+          "pid": 33620,
+          "name": "whisper-cli",
+          "privateMB": 1256.14453125
+        }
+      ]
+    },
+    {
+      "gpu": "6, 1136",
+      "time": 1791801144944,
+      "processes": [
+        {
+          "cpuSeconds": 0.140625,
+          "ramMB": 44.32421875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 475.8359375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1135",
+      "time": 1791801145478,
+      "processes": [
+        {
+          "cpuSeconds": 0.578125,
+          "ramMB": 397.5,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 475.8359375
+        }
+      ]
+    },
+    {
+      "gpu": "0, 1135",
+      "time": 1791801145959,
+      "processes": [
+        {
+          "cpuSeconds": 1.359375,
+          "ramMB": 618.4296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1135",
+      "time": 1791801146426,
+      "processes": [
+        {
+          "cpuSeconds": 2.3125,
+          "ramMB": 618.4296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1135",
+      "time": 1791801146891,
+      "processes": [
+        {
+          "cpuSeconds": 3.171875,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1135",
+      "time": 1791801147359,
+      "processes": [
+        {
+          "cpuSeconds": 4.078125,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1135",
+      "time": 1791801147842,
+      "processes": [
+        {
+          "cpuSeconds": 4.96875,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1135",
+      "time": 1791801148313,
+      "processes": [
+        {
+          "cpuSeconds": 5.90625,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1135",
+      "time": 1791801148780,
+      "processes": [
+        {
+          "cpuSeconds": 6.78125,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "39, 1135",
+      "time": 1791801149247,
+      "processes": [
+        {
+          "cpuSeconds": 7.71875,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1135",
+      "time": 1791801149713,
+      "processes": [
+        {
+          "cpuSeconds": 8.65625,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1135",
+      "time": 1791801150196,
+      "processes": [
+        {
+          "cpuSeconds": 9.59375,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1135",
+      "time": 1791801150666,
+      "processes": [
+        {
+          "cpuSeconds": 10.53125,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1135",
+      "time": 1791801151137,
+      "processes": [
+        {
+          "cpuSeconds": 11.46875,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1135",
+      "time": 1791801151682,
+      "processes": [
+        {
+          "cpuSeconds": 12.296875,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1135",
+      "time": 1791801152412,
+      "processes": [
+        {
+          "cpuSeconds": 12.90625,
+          "ramMB": 642.5390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "11, 1133",
+      "time": 1791801152898,
+      "processes": [
+        {
+          "cpuSeconds": 13.8125,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        },
+        {
+          "cpuSeconds": 0,
+          "ramMB": 2.484375,
+          "pid": 27992,
+          "name": "whisper-host",
+          "privateMB": 0.41015625
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1133",
+      "time": 1791801153379,
+      "processes": [
+        {
+          "cpuSeconds": 14.734375,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1133",
+      "time": 1791801153859,
+      "processes": [
+        {
+          "cpuSeconds": 15.6875,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1133",
+      "time": 1791801154326,
+      "processes": [
+        {
+          "cpuSeconds": 16.640625,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1133",
+      "time": 1791801154811,
+      "processes": [
+        {
+          "cpuSeconds": 17.5625,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1132",
+      "time": 1791801155279,
+      "processes": [
+        {
+          "cpuSeconds": 18.5,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1132",
+      "time": 1791801155748,
+      "processes": [
+        {
+          "cpuSeconds": 19.390625,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1132",
+      "time": 1791801156215,
+      "processes": [
+        {
+          "cpuSeconds": 20.3125,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1132",
+      "time": 1791801156687,
+      "processes": [
+        {
+          "cpuSeconds": 21.25,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1132",
+      "time": 1791801157155,
+      "processes": [
+        {
+          "cpuSeconds": 22.1875,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1132",
+      "time": 1791801157620,
+      "processes": [
+        {
+          "cpuSeconds": 23.09375,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1132",
+      "time": 1791801158088,
+      "processes": [
+        {
+          "cpuSeconds": 24.015625,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1132",
+      "time": 1791801158560,
+      "processes": [
+        {
+          "cpuSeconds": 24.9375,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "34, 1137",
+      "time": 1791801159077,
+      "processes": [
+        {
+          "cpuSeconds": 25.890625,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1137",
+      "time": 1791801159559,
+      "processes": [
+        {
+          "cpuSeconds": 26.8125,
+          "ramMB": 642.54296875,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1133",
+      "time": 1791801160029,
+      "processes": [
+        {
+          "cpuSeconds": 27.6875,
+          "ramMB": 646.9453125,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1131",
+      "time": 1791801160498,
+      "processes": [
+        {
+          "cpuSeconds": 28.484375,
+          "ramMB": 646.9453125,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1144.609375
+        }
+      ]
+    },
+    {
+      "gpu": "20, 1131",
+      "time": 1791801160979,
+      "processes": [
+        {
+          "cpuSeconds": 29.359375,
+          "ramMB": 764.41015625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1255.67578125
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1131",
+      "time": 1791801161534,
+      "processes": [
+        {
+          "cpuSeconds": 29.921875,
+          "ramMB": 764.5,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1255.6796875
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1139",
+      "time": 1791801162043,
+      "processes": [
+        {
+          "cpuSeconds": 30.40625,
+          "ramMB": 764.50390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1255.6796875
+        }
+      ]
+    },
+    {
+      "gpu": "34, 1132",
+      "time": 1791801162603,
+      "processes": [
+        {
+          "cpuSeconds": 30.84375,
+          "ramMB": 764.50390625,
+          "pid": 34272,
+          "name": "whisper-cli",
+          "privateMB": 1255.6796875
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1132",
+      "time": 1791801163179,
+      "processes": []
+    },
+    {
+      "gpu": "3, 1122",
+      "time": 1791801164083,
+      "processes": [
+        {
+          "cpuSeconds": 0.125,
+          "ramMB": 47.421875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 475.91015625
+        }
+      ]
+    },
+    {
+      "gpu": "6, 1133",
+      "time": 1791801164697,
+      "processes": [
+        {
+          "cpuSeconds": 0.53125,
+          "ramMB": 404.24609375,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 475.91015625
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1133",
+      "time": 1791801165168,
+      "processes": [
+        {
+          "cpuSeconds": 1.296875,
+          "ramMB": 618.41015625,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1133",
+      "time": 1791801165652,
+      "processes": [
+        {
+          "cpuSeconds": 2.15625,
+          "ramMB": 618.41015625,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "29, 1132",
+      "time": 1791801166202,
+      "processes": [
+        {
+          "cpuSeconds": 2.96875,
+          "ramMB": 642.5078125,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1125",
+      "time": 1791801166804,
+      "processes": [
+        {
+          "cpuSeconds": 3.78125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "24, 1125",
+      "time": 1791801167417,
+      "processes": [
+        {
+          "cpuSeconds": 4.765625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "34, 1125",
+      "time": 1791801167937,
+      "processes": [
+        {
+          "cpuSeconds": 5.5625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1124",
+      "time": 1791801168538,
+      "processes": [
+        {
+          "cpuSeconds": 6.34375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1132",
+      "time": 1791801169114,
+      "processes": [
+        {
+          "cpuSeconds": 7.25,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1132",
+      "time": 1791801169633,
+      "processes": [
+        {
+          "cpuSeconds": 8.078125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1132",
+      "time": 1791801170223,
+      "processes": [
+        {
+          "cpuSeconds": 8.703125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1132",
+      "time": 1791801170807,
+      "processes": [
+        {
+          "cpuSeconds": 9.6875,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1131",
+      "time": 1791801171321,
+      "processes": [
+        {
+          "cpuSeconds": 10.59375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "40, 1131",
+      "time": 1791801171855,
+      "processes": [
+        {
+          "cpuSeconds": 11.421875,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1130",
+      "time": 1791801172407,
+      "processes": [
+        {
+          "cpuSeconds": 12.15625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "33, 1130",
+      "time": 1791801172937,
+      "processes": [
+        {
+          "cpuSeconds": 12.8125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1129",
+      "time": 1791801173539,
+      "processes": [
+        {
+          "cpuSeconds": 13.546875,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1129",
+      "time": 1791801174149,
+      "processes": [
+        {
+          "cpuSeconds": 14.4375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "20, 1129",
+      "time": 1791801174613,
+      "processes": [
+        {
+          "cpuSeconds": 15.328125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1129",
+      "time": 1791801175097,
+      "processes": [
+        {
+          "cpuSeconds": 16.234375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1129",
+      "time": 1791801175565,
+      "processes": [
+        {
+          "cpuSeconds": 17.203125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "36, 1126",
+      "time": 1791801176031,
+      "processes": [
+        {
+          "cpuSeconds": 18.078125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "27, 1125",
+      "time": 1791801176499,
+      "processes": [
+        {
+          "cpuSeconds": 18.984375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1122",
+      "time": 1791801176984,
+      "processes": [
+        {
+          "cpuSeconds": 19.90625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1122",
+      "time": 1791801177451,
+      "processes": [
+        {
+          "cpuSeconds": 20.71875,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1122",
+      "time": 1791801177920,
+      "processes": [
+        {
+          "cpuSeconds": 21.625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1122",
+      "time": 1791801178403,
+      "processes": [
+        {
+          "cpuSeconds": 22.5625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1122",
+      "time": 1791801178869,
+      "processes": [
+        {
+          "cpuSeconds": 23.484375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "18, 1121",
+      "time": 1791801179355,
+      "processes": [
+        {
+          "cpuSeconds": 24.421875,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "34, 1121",
+      "time": 1791801179822,
+      "processes": [
+        {
+          "cpuSeconds": 25.34375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "34, 1121",
+      "time": 1791801180301,
+      "processes": [
+        {
+          "cpuSeconds": 26.234375,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "25, 1121",
+      "time": 1791801180778,
+      "processes": [
+        {
+          "cpuSeconds": 27.140625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "31, 1127",
+      "time": 1791801181262,
+      "processes": [
+        {
+          "cpuSeconds": 28.015625,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "22, 1127",
+      "time": 1791801181726,
+      "processes": [
+        {
+          "cpuSeconds": 28.8125,
+          "ramMB": 642.51171875,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "36, 1136",
+      "time": 1791801182197,
+      "processes": [
+        {
+          "cpuSeconds": 29.671875,
+          "ramMB": 645.2734375,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "28, 1136",
+      "time": 1791801182664,
+      "processes": [
+        {
+          "cpuSeconds": 30.53125,
+          "ramMB": 646.9140625,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "32, 1139",
+      "time": 1791801183159,
+      "processes": [
+        {
+          "cpuSeconds": 31.375,
+          "ramMB": 629.17578125,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1144.53125
+        }
+      ]
+    },
+    {
+      "gpu": "21, 1139",
+      "time": 1791801183632,
+      "processes": [
+        {
+          "cpuSeconds": 32.3125,
+          "ramMB": 763.55078125,
+          "pid": 30904,
+          "name": "whisper-cli",
+          "privateMB": 1254.97265625
+        }
+      ]
+    },
+    {
+      "gpu": "30, 1139",
+      "time": 1791801184096,
+      "processes": []
+    },
+    {
+      "gpu": "8, 1139",
+      "time": 1791801184622,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1137",
+      "time": 1791801185094,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1138",
+      "time": 1791801185556,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1135",
+      "time": 1791801186190,
+      "processes": []
+    },
+    {
+      "gpu": "7, 1132",
+      "time": 1791801186759,
+      "processes": []
+    },
+    {
+      "gpu": "12, 1141",
+      "time": 1791801187251,
+      "processes": []
+    },
+    {
+      "gpu": "32, 1141",
+      "time": 1791801187718,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1140",
+      "time": 1791801188200,
+      "processes": []
+    },
+    {
+      "gpu": "30, 1137",
+      "time": 1791801188670,
+      "processes": []
+    },
+    {
+      "gpu": "20, 1137",
+      "time": 1791801189155,
+      "processes": []
+    },
+    {
+      "gpu": "29, 1137",
+      "time": 1791801189621,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1134",
+      "time": 1791801190091,
+      "processes": []
+    },
+    {
+      "gpu": "37, 1134",
+      "time": 1791801190561,
+      "processes": []
+    },
+    {
+      "gpu": "22, 1134",
+      "time": 1791801191028,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1130",
+      "time": 1791801191680,
+      "processes": []
+    },
+    {
+      "gpu": "2, 1126",
+      "time": 1791801192271,
+      "processes": []
+    },
+    {
+      "gpu": "0, 1130",
+      "time": 1791801192777,
+      "processes": []
+    },
+    {
+      "gpu": "3, 1129",
+      "time": 1791801193242,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1129",
+      "time": 1791801193712,
+      "processes": []
+    },
+    {
+      "gpu": "39, 1127",
+      "time": 1791801194196,
+      "processes": []
+    },
+    {
+      "gpu": "31, 1127",
+      "time": 1791801194679,
+      "processes": []
+    },
+    {
+      "gpu": "29, 1127",
+      "time": 1791801195141,
+      "processes": []
+    },
+    {
+      "gpu": "30, 1121",
+      "time": 1791801195605,
+      "processes": []
+    },
+    {
+      "gpu": "10, 1121",
+      "time": 1791801196219,
+      "processes": []
+    },
+    {
+      "gpu": "0, 1123",
+      "time": 1791801196713,
+      "processes": []
+    },
+    {
+      "gpu": "7, 1123",
+      "time": 1791801197180,
+      "processes": []
+    },
+    {
+      "gpu": "30, 1123",
+      "time": 1791801197649,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1123",
+      "time": 1791801198117,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1123",
+      "time": 1791801198583,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1121",
+      "time": 1791801199048,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1121",
+      "time": 1791801199520,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1121",
+      "time": 1791801199987,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1121",
+      "time": 1791801200456,
+      "processes": []
+    },
+    {
+      "gpu": "32, 1121",
+      "time": 1791801200922,
+      "processes": []
+    },
+    {
+      "gpu": "34, 1120",
+      "time": 1791801201388,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1120",
+      "time": 1791801201854,
+      "processes": []
+    },
+    {
+      "gpu": "28, 1120",
+      "time": 1791801202316,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1120",
+      "time": 1791801202787,
+      "processes": []
+    },
+    {
+      "gpu": "27, 1120",
+      "time": 1791801203254,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1120",
+      "time": 1791801203724,
+      "processes": []
+    },
+    {
+      "gpu": "27, 1119",
+      "time": 1791801204190,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1119",
+      "time": 1791801204653,
+      "processes": []
+    },
+    {
+      "gpu": "34, 1119",
+      "time": 1791801205119,
+      "processes": []
+    },
+    {
+      "gpu": "30, 1119",
+      "time": 1791801205589,
+      "processes": []
+    },
+    {
+      "gpu": "26, 1119",
+      "time": 1791801206075,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1119",
+      "time": 1791801206544,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1119",
+      "time": 1791801207008,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1119",
+      "time": 1791801207480,
+      "processes": []
+    },
+    {
+      "gpu": "24, 1119",
+      "time": 1791801207948,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1119",
+      "time": 1791801208415,
+      "processes": []
+    },
+    {
+      "gpu": "32, 1756",
+      "time": 1791801208902,
+      "processes": [
+        {
+          "cpuSeconds": 0.234375,
+          "ramMB": 246.7890625,
+          "pid": 33016,
+          "name": "whisper-cli",
+          "privateMB": 221.2890625
+        }
+      ]
+    },
+    {
+      "gpu": "11, 1756",
+      "time": 1791801209386,
+      "processes": [
+        {
+          "cpuSeconds": 0.71875,
+          "ramMB": 348.015625,
+          "pid": 33016,
+          "name": "whisper-cli",
+          "privateMB": 953.1640625
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1313",
+      "time": 1791801209854,
+      "processes": [
+        {
+          "cpuSeconds": 1.203125,
+          "ramMB": 453.69140625,
+          "pid": 33016,
+          "name": "whisper-cli",
+          "privateMB": 1988.4765625
+        }
+      ]
+    },
+    {
+      "gpu": "23, 1120",
+      "time": 1791801210321,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1120",
+      "time": 1791801210786,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1120",
+      "time": 1791801211277,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1120",
+      "time": 1791801211766,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1757",
+      "time": 1791801212442,
+      "processes": [
+        {
+          "cpuSeconds": 0.328125,
+          "ramMB": 264.86328125,
+          "pid": 27636,
+          "name": "whisper-cli",
+          "privateMB": 248.7265625
+        }
+      ]
+    },
+    {
+      "gpu": "9, 1759",
+      "time": 1791801212982,
+      "processes": [
+        {
+          "cpuSeconds": 0.765625,
+          "ramMB": 347.9609375,
+          "pid": 27636,
+          "name": "whisper-cli",
+          "privateMB": 952.77734375
+        }
+      ]
+    },
+    {
+      "gpu": "8, 2147",
+      "time": 1791801213444,
+      "processes": [
+        {
+          "cpuSeconds": 1.203125,
+          "ramMB": 401.7734375,
+          "pid": 27636,
+          "name": "whisper-cli",
+          "privateMB": 1798.86328125
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1122",
+      "time": 1791801213988,
+      "processes": [
+        {
+          "cpuSeconds": 0,
+          "ramMB": 2.88671875,
+          "pid": 25904,
+          "name": "whisper-cli",
+          "privateMB": 0.40625
+        }
+      ]
+    },
+    {
+      "gpu": "0, 1130",
+      "time": 1791801214485,
+      "processes": [
+        {
+          "cpuSeconds": 0.203125,
+          "ramMB": 176.7109375,
+          "pid": 25904,
+          "name": "whisper-cli",
+          "privateMB": 142.40625
+        }
+      ]
+    },
+    {
+      "gpu": "8, 1759",
+      "time": 1791801215005,
+      "processes": [
+        {
+          "cpuSeconds": 0.5625,
+          "ramMB": 347.984375,
+          "pid": 25904,
+          "name": "whisper-cli",
+          "privateMB": 952.953125
+        }
+      ]
+    },
+    {
+      "gpu": "11, 1758",
+      "time": 1791801215636,
+      "processes": [
+        {
+          "cpuSeconds": 0.875,
+          "ramMB": 347.984375,
+          "pid": 25904,
+          "name": "whisper-cli",
+          "privateMB": 952.953125
+        }
+      ]
+    },
+    {
+      "gpu": "1, 2147",
+      "time": 1791801216147,
+      "processes": [
+        {
+          "cpuSeconds": 1.328125,
+          "ramMB": 448.58203125,
+          "pid": 25904,
+          "name": "whisper-cli",
+          "privateMB": 1984.70703125
+        }
+      ]
+    },
+    {
+      "gpu": "11, 1122",
+      "time": 1791801216685,
+      "processes": [
+        {
+          "cpuSeconds": 0,
+          "ramMB": 2.50390625,
+          "pid": 31556,
+          "name": "whisper-cli",
+          "privateMB": 0.3984375
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1758",
+      "time": 1791801217366,
+      "processes": [
+        {
+          "cpuSeconds": 0.359375,
+          "ramMB": 269.4609375,
+          "pid": 31556,
+          "name": "whisper-cli",
+          "privateMB": 408.04296875
+        }
+      ]
+    },
+    {
+      "gpu": "6, 1760",
+      "time": 1791801218028,
+      "processes": [
+        {
+          "cpuSeconds": 0.875,
+          "ramMB": 347.95703125,
+          "pid": 31556,
+          "name": "whisper-cli",
+          "privateMB": 953.98046875
+        }
+      ]
+    },
+    {
+      "gpu": "0, 2148",
+      "time": 1791801218495,
+      "processes": [
+        {
+          "cpuSeconds": 1.3125,
+          "ramMB": 449.0859375,
+          "pid": 31556,
+          "name": "whisper-cli",
+          "privateMB": 1986.5390625
+        }
+      ]
+    },
+    {
+      "gpu": "1, 1123",
+      "time": 1791801219133,
+      "processes": [
+        {
+          "cpuSeconds": 0.046875,
+          "ramMB": 47.27734375,
+          "pid": 17104,
+          "name": "whisper-cli",
+          "privateMB": 120.76171875
+        }
+      ]
+    },
+    {
+      "gpu": "0, 1760",
+      "time": 1791801219788,
+      "processes": [
+        {
+          "cpuSeconds": 0.375,
+          "ramMB": 270.84765625,
+          "pid": 17104,
+          "name": "whisper-cli",
+          "privateMB": 410.05859375
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1768",
+      "time": 1791801220522,
+      "processes": [
+        {
+          "cpuSeconds": 0.859375,
+          "ramMB": 347.9765625,
+          "pid": 17104,
+          "name": "whisper-cli",
+          "privateMB": 953.734375
+        }
+      ]
+    },
+    {
+      "gpu": "5, 2036",
+      "time": 1791801221151,
+      "processes": [
+        {
+          "cpuSeconds": 1.203125,
+          "ramMB": 357.69140625,
+          "pid": 17104,
+          "name": "whisper-cli",
+          "privateMB": 1616.7421875
+        }
+      ]
+    },
+    {
+      "gpu": "19, 1133",
+      "time": 1791801221656,
+      "processes": [
+        {
+          "cpuSeconds": 1.671875,
+          "ramMB": 138.03125,
+          "pid": 17104,
+          "name": "whisper-cli",
+          "privateMB": 119.53125
+        }
+      ]
+    },
+    {
+      "gpu": "3, 1152",
+      "time": 1791801222216,
+      "processes": [
+        {
+          "cpuSeconds": 0.203125,
+          "ramMB": 177.99609375,
+          "pid": 27228,
+          "name": "whisper-cli",
+          "privateMB": 143.765625
+        }
+      ]
+    },
+    {
+      "gpu": "5, 1775",
+      "time": 1791801222860,
+      "processes": [
+        {
+          "cpuSeconds": 0.5625,
+          "ramMB": 348.00390625,
+          "pid": 27228,
+          "name": "whisper-cli",
+          "privateMB": 952.08984375
+        }
+      ]
+    },
+    {
+      "gpu": "6, 2021",
+      "time": 1791801223499,
+      "processes": [
+        {
+          "cpuSeconds": 0.96875,
+          "ramMB": 300.875,
+          "pid": 27228,
+          "name": "whisper-cli",
+          "privateMB": 1543.44140625
+        }
+      ]
+    },
+    {
+      "gpu": "19, 1138",
+      "time": 1791801223981,
+      "processes": []
+    },
+    {
+      "gpu": "0, 1138",
+      "time": 1791801224595,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1140",
+      "time": 1791801225315,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1134",
+      "time": 1791801225788,
+      "processes": []
+    },
+    {
+      "gpu": "2, 1134",
+      "time": 1791801226255,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1134",
+      "time": 1791801226775,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1134",
+      "time": 1791801227235,
+      "processes": []
+    },
+    {
+      "gpu": "2, 1131",
+      "time": 1791801227693,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1131",
+      "time": 1791801228151,
+      "processes": []
+    },
+    {
+      "gpu": "1, 1131",
+      "time": 1791801228619,
+      "processes": []
+    },
+    {
+      "gpu": "2, 1140",
+      "time": 1791801229087,
+      "processes": []
+    },
+    {
+      "gpu": "16, 1141",
+      "time": 1791801229556,
+      "processes": []
+    },
+    {
+      "gpu": "12, 1141",
+      "time": 1791801230021,
+      "processes": []
+    },
+    {
+      "gpu": "18, 1137",
+      "time": 1791801230487,
+      "processes": []
+    },
+    {
+      "gpu": "15, 1132",
+      "time": 1791801230971,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1132",
+      "time": 1791801231437,
+      "processes": []
+    },
+    {
+      "gpu": "25, 1132",
+      "time": 1791801231904,
+      "processes": []
+    },
+    {
+      "gpu": "29, 1132",
+      "time": 1791801232368,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1132",
+      "time": 1791801232831,
+      "processes": []
+    },
+    {
+      "gpu": "21, 1132",
+      "time": 1791801233301,
+      "processes": []
+    },
+    {
+      "gpu": "29, 1132",
+      "time": 1791801233768,
+      "processes": []
+    },
+    {
+      "gpu": "29, 1132",
+      "time": 1791801234236,
+      "processes": []
+    },
+    {
+      "gpu": "34, 1131",
+      "time": 1791801234705,
+      "processes": []
+    },
+    {
+      "gpu": "23, 1131",
+      "time": 1791801235177,
+      "processes": []
+    }
+  ]
+}

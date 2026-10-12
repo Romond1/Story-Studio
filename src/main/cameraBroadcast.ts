@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { CAMERA_DEFAULTS, parseCameraSettings, parseCameraStatus, type CameraState } from '../shared/cameraProtocol';
+import { parseTrackingStatus } from '../shared/faceTrackingProtocol';
 
 /** A sibling of the lesson relay. Device metadata/status travel only back to Control. */
 export function installCameraBroadcast(getControl: () => BrowserWindow | null, getPresent: () => BrowserWindow | null) {
@@ -49,7 +50,8 @@ export function installCameraBroadcast(getControl: () => BrowserWindow | null, g
     }
     if (request !== revision) return state;
     const acquisitionChanged = settings.enabled !== state.settings.enabled || settings.deviceId !== state.settings.deviceId;
-    state = { settings, status: acquisitionChanged ? { state: settings.enabled ? 'starting' : 'off', devices: state.status.devices } : state.status };
+    state = { ...state, settings, status: acquisitionChanged ? { state: settings.enabled ? 'starting' : 'off', devices: state.status.devices } : state.status,
+      trackingStatus: !settings.enabled || !settings.tracking.enabled || acquisitionChanged ? { state: 'off' } : state.trackingStatus };
     publish();
     return state;
   });
@@ -57,7 +59,14 @@ export function installCameraBroadcast(getControl: () => BrowserWindow | null, g
     if (!authorized(event, getPresent())) return;
     const status = parseCameraStatus(value);
     if (!status || (!state.settings.enabled && status.state !== 'off')) return;
-    state = { ...state, status };
+    state = { ...state, status, trackingStatus: status.state !== 'live' ? { state: 'off' } : state.trackingStatus };
+    send(getControl(), 'camera:state', state);
+  });
+  ipcMain.on('camera:tracking-status', (event, value: unknown) => {
+    if (!authorized(event, getPresent())) return;
+    const trackingStatus = parseTrackingStatus(value);
+    if (!trackingStatus || ((!state.settings.enabled || !state.settings.tracking.enabled || state.status.state !== 'live') && trackingStatus.state !== 'off')) return;
+    state = { ...state, trackingStatus };
     send(getControl(), 'camera:state', state);
   });
   return { reset };

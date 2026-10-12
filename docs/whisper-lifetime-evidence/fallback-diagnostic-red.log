@@ -1,0 +1,28 @@
+✖ Auto inference failure replaces CUDA with resident CPU and updates diagnostics (388.9007ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1860.5817
+
+✖ failing tests:
+
+test at scripts\translation-lifetime.test.cjs:67:1
+✖ Auto inference failure replaces CUDA with resident CPU and updates diagnostics (388.9007ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  100 !== 101
+  
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:68:328)
+      at async Test.run (node:internal/test_runner/test:1110:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 100,
+    expected: 101,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

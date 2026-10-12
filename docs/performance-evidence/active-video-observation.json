@@ -1,0 +1,86 @@
+[
+  {
+    "time": 1791784418516,
+    "sample": [
+      {
+        "title": "Story Studio",
+        "videos": [
+          {
+            "time": 297.213,
+            "paused": false,
+            "stream": true,
+            "totalFrames": 8439,
+            "dropped": 17,
+            "width": 1280,
+            "height": 720
+          },
+          {
+            "time": 0,
+            "paused": true,
+            "stream": false,
+            "totalFrames": 4,
+            "dropped": 0,
+            "width": 1280,
+            "height": 720
+          }
+        ]
+      },
+      {
+        "title": "Story Studio — Present",
+        "videos": [
+          {
+            "time": 4.462971,
+            "paused": false,
+            "stream": false,
+            "totalFrames": 143,
+            "dropped": 1,
+            "width": 1280,
+            "height": 720
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "time": 1791784420533,
+    "sample": [
+      {
+        "title": "Story Studio",
+        "videos": [
+          {
+            "time": 299.219,
+            "paused": false,
+            "stream": true,
+            "totalFrames": 8500,
+            "dropped": 17,
+            "width": 1280,
+            "height": 720
+          },
+          {
+            "time": 0,
+            "paused": true,
+            "stream": false,
+            "totalFrames": 4,
+            "dropped": 0,
+            "width": 1280,
+            "height": 720
+          }
+        ]
+      },
+      {
+        "title": "Story Studio — Present",
+        "videos": [
+          {
+            "time": 6.479523,
+            "paused": false,
+            "stream": false,
+            "totalFrames": 203,
+            "dropped": 1,
+            "width": 1280,
+            "height": 720
+          }
+        ]
+      }
+    ]
+  }
+]

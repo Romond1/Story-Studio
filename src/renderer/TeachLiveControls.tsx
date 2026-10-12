@@ -9,6 +9,7 @@ import { AudioMeter } from "./audio/AudioMeter";
 import { AudioStatus } from "./audio/AudioStatus";
 import "./TeachLiveControls.css";
 import { CameraControls } from './camera/CameraControls';
+import { TranslationControls } from './translation/TranslationControls';
 
 export interface TeachLiveControlsProps {
   onOpenAudio: () => void;
@@ -73,6 +74,7 @@ export function TeachLiveControls({ onOpenAudio, section, slide, movementControl
   ];
   return <div className="teach-live-controls">
     <CameraControls />
+    <TranslationControls />
     <section className="teach-live-card" aria-label="Live rewards">
       <div className="teach-live-heading"><h3>Rewards</h3><strong aria-live="polite">{sparks.totalSparks} total</strong></div>
       <label className="teach-live-student">Active student<select aria-label="Active student" value={sparks.activeStudentId ?? ""} disabled={!sparks.students.length} onChange={event => sparks.setActiveStudentId(event.target.value)}>

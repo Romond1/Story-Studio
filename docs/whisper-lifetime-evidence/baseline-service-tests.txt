@@ -1,0 +1,170 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { EventEmitter } = require('node:events');
+const ts = require('typescript');
+const compile = file => ts.transpileModule(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021, esModuleInterop: true } }).outputText;
+const source = compile('src/main/translation/service.ts');
+function setup({ pauseWorker = false, pauseMkdir = false, pauseChild = false, pauseTermination = false, speechError, cudaLog = '', probe = {device: 'Test NVIDIA'} } = {}) {
+  const workers = [], spawned = [], removed = [], timers = [];
+  let releaseMkdir, enteredMkdir, enteredSpawn;
+  const mkdirEntered = new Promise(resolve => { enteredMkdir = resolve; });
+  const spawnEntered = new Promise(resolve => { enteredSpawn = resolve; });
+  class Worker extends EventEmitter {
+    constructor() { super(); workers.push(this); this.messages = []; this.terminated = false; }
+    postMessage(message) { this.messages.push(message); if (!pauseWorker) queueMicrotask(() => this.emit('message', { id: message.id, error: message.kind === 'speech' && message.backend === 'cuda' ? speechError : undefined, result: message.kind === 'speech' ? { exe: message.backend + '-whisper.exe', modelPath: 'base.bin', backend: message.backend } : message.kind === 'format' ? [{ text: message.text }] : { text: 'translated', translationMs: 1, loadMs: 2 }, metrics: {} })); }
+    async terminate() { this.terminated = true; if (pauseTermination) await new Promise(resolve => { this.releaseTermination = resolve; }); }
+  }
+  const mockFs = { mkdir: async () => { enteredMkdir(); if (pauseMkdir) await new Promise(resolve => { releaseMkdir = resolve; }); }, mkdtemp: async () => 'cache/utterance-test', writeFile: async () => {}, readFile: async () => JSON.stringify({ transcription: [{ text: 'hello' }] }), rm: async folder => { removed.push(folder); } };
+  const context = { exports: {}, __dirname: 'test', Buffer, performance, setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timers.push({fn, ms, timer}); return timer; }, clearTimeout, require: name => {
+    if (name === 'node:worker_threads') return { Worker };
+    if (name === './whisper.cjs') return { ...require('../src/main/translation/whisper.cjs'), probeNvidia: async () => probe };
+    if (name === 'node:child_process') return { spawn: (exe, args) => { const child = new EventEmitter(); child.stderr = new EventEmitter(); child.killed = false; child.exe = exe; child.args = args; child.kill = () => { child.killed = true; if (!pauseChild) queueMicrotask(() => child.emit('close', 1)); }; spawned.push(child); enteredSpawn(); if (!pauseChild) queueMicrotask(() => { child.stderr.emit('data', cudaLog); child.emit('close', 0); }); return child; } };
+    if (name === 'node:fs') return { promises: mockFs };
+    if (name === '../../shared/translation') return { hasSpeech: audio => audio.length >= 4800 };
+    return require(name);
+  } };
+  vm.runInNewContext(source, context);
+  return { service: new context.exports.TranslationService('cache', () => {}), workers, spawned, removed, timers, mkdirEntered, spawnEntered, releaseMkdir: () => releaseMkdir() };
+}
+const textRequest = target => ({ text: 'hello', target, model: 'base.en' });
+test('worker creation is lazy, same language reuses worker, switch terminates previous worker', async () => {
+  const s = setup(); assert.equal(s.workers.length, 0);
+  assert.equal((await s.service.run(textRequest('ja'))).translation, 'translated');
+  await s.service.run(textRequest('ja')); assert.equal(s.workers.length, 1);
+  await s.service.run(textRequest('it')); assert.equal(s.workers.length, 2); assert.equal(s.workers[0].terminated, true); s.service.cancel();
+});
+test('bounded service rejects overlapping requests and cancellation discards old worker completion', async () => {
+  const s = setup({ pauseWorker: true }); const pending = s.service.run(textRequest('ja'));
+  const rejected = assert.rejects(pending, /Cancelled/);
+  await assert.rejects(s.service.run(textRequest('ja')), /Finish or cancel/);
+  s.service.cancel(); await rejected;
+  const next = s.service.run(textRequest('ro')); await new Promise(resolve => setImmediate(resolve)); const worker = s.workers[1];
+  s.workers[0].emit('message', { id: 1, result: { text: 'STALE' }, metrics: {} });
+  worker.emit('message', { id: worker.messages[0].id, result: { text: 'fresh' }, metrics: {} });
+  assert.equal((await next).translation, 'fresh'); s.service.cancel();
+});
+test('idle edit cancellation retains warm worker while explicit off unloads it', async () => {
+  const s = setup(); await s.service.run(textRequest('ja')); s.service.cancelCurrent();
+  assert.equal(s.workers[0].terminated, false); await s.service.run(textRequest('ja')); assert.equal(s.workers.length, 1);
+  s.service.cancelCurrent(true); assert.equal(s.workers[0].terminated, true);
+});
+test('language switching waits for previous worker termination before loading a new model', async () => {
+  const s = setup({ pauseTermination: true }); await s.service.run(textRequest('ja'));
+  const next = s.service.run(textRequest('ro')); await new Promise(resolve => setImmediate(resolve)); assert.equal(s.workers.length, 1);
+  s.workers[0].releaseTermination(); await next; assert.equal(s.workers.length, 2); s.service.cancel(); s.workers[1].releaseTermination();
+});
+test('worker-reported initialization failure disposes broken engine and permits clean retry', async () => {
+  const s = setup({ pauseWorker: true }); const pending = s.service.run(textRequest('ja')); const rejected = assert.rejects(pending, /load failed/);
+  s.workers[0].emit('message', { id: s.workers[0].messages[0].id, error: 'load failed' }); await rejected; assert.equal(s.workers[0].terminated, true);
+  const next = s.service.run(textRequest('ja')); await new Promise(resolve => setImmediate(resolve)); const worker = s.workers[1];
+  worker.emit('message', { id: worker.messages[0].id, result: { text: 'recovered' }, metrics: {} }); assert.equal((await next).translation, 'recovered'); s.service.cancel();
+});
+test('cancel during asynchronous speech folder setup never launches a native process', async () => {
+  const s = setup({ pauseMkdir: true }); const pending = s.service.run({ audio: Array(8000).fill(.1), target: 'ja', model: 'base.en', execution: 'cpu' });
+  const rejected = assert.rejects(pending, /Cancelled/);
+  await s.mkdirEntered; s.service.cancel(); s.releaseMkdir(); await rejected;
+  assert.equal(s.spawned.length, 0); assert.equal(s.removed.length, 1);
+});
+test('cancel kills native process and waits for its exit before deleting private audio', async () => {
+  const s = setup({ pauseChild: true }); const pending = s.service.run({ audio: Array(8000).fill(.1), target: 'ja', model: 'base.en', execution: 'cpu' });
+  const rejected = assert.rejects(pending, /Cancelled/);
+  await s.spawnEntered; s.service.cancel(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(s.spawned[0].killed, true); assert.equal(s.removed.length, 0);
+  s.spawned[0].emit('close', 1); await rejected;
+  assert.equal(s.removed.length, 1);
+});
+test('new speech waits for cancelled native process exit before preparing runtime again', async () => {
+  const s = setup({ pauseChild: true });
+  const request = { audio: Array(8000).fill(.1), target: 'ja', model: 'base.en', execution: 'cpu' };
+  const pending = s.service.run(request); const rejected = assert.rejects(pending, /Cancelled/);
+  await s.spawnEntered; s.service.cancel();
+  const next = s.service.run(request); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(s.workers.length, 1); assert.equal(s.spawned.length, 1);
+  s.spawned[0].emit('close', 1); await rejected; await new Promise(resolve => setImmediate(resolve));
+  assert.equal(s.workers.length, 2); assert.equal(s.spawned.length, 2);
+  s.spawned[1].emit('close', 0); assert.equal((await next).translation, 'translated'); s.service.cancel();
+});
+test('caption IPC denies Presenter inference and strips private fields from published envelope', async () => {
+  const handlers = new Map(), sent = [];
+  const makeWindow = () => ({ isDestroyed: () => false, webContents: { mainFrame: {}, isDestroyed: () => false, send: (channel, value) => sent.push({ channel, value }) } });
+  const control = makeWindow(), present = makeWindow();
+  const sharedContext = { exports: {} }; vm.runInNewContext(compile('src/shared/translation.ts'), sharedContext);
+  const context = { exports: {}, require: name => {
+    if (name === 'electron') return { app: { getPath: () => 'userdata', on() {} }, ipcMain: { handle: (name, fn) => handlers.set(name, fn) } };
+    if (name === './translation/service') return { TranslationService: class { cancel() {} run() { return 'private'; } } };
+    if (name === '../shared/translation') return sharedContext.exports;
+    return require(name);
+  } };
+  vm.runInNewContext(compile('src/main/translationBroadcast.ts'), context); context.exports.installTranslationBroadcast(() => control, () => present);
+  const event = win => ({ sender: win.webContents, senderFrame: win.webContents.mainFrame });
+  assert.throws(() => handlers.get('translation:run')(event(present), {}), /Only Control/);
+  assert.throws(() => handlers.get('translation:caption-get')(event(control)), /Only Presenter/);
+  assert.throws(() => handlers.get('translation:publish')({ ...event(control), senderFrame: {} }, null), /Only Control/);
+  handlers.get('translation:publish')(event(control), { language: 'ja', mode: 'furigana', fontSize: 36, position: 'top', transcript: 'PRIVATE', tokens: [{ text: '猫', reading: 'ねこ', private: 'SECRET' }] });
+  assert.equal(JSON.stringify(sent).includes('PRIVATE'), false); assert.equal(JSON.stringify(sent).includes('SECRET'), false);
+  handlers.get('translation:publish')(event(control), null); assert.equal(handlers.get('translation:caption-get')(event(present)), null);
+});
+
+const audioRequest = execution => ({audio:Array(8000).fill(.1),target:'ja',model:'base.en',execution});
+test('CPU always disables GPU and reports actual backend',async()=>{
+ const s=setup();const result=await s.service.run(audioRequest('cpu'));
+ assert.equal(result.speechBackend.backend,'cpu');assert.ok(s.spawned[0].args.includes('-ng'));s.service.cancel();
+});
+test('Auto falls back after preparation error without cancelling translation',async()=>{
+ const s=setup({speechError:'CUDA DLL missing'});const result=await s.service.run(audioRequest('auto'));
+ assert.equal(result.speechBackend.backend,'cpu');assert.match(result.speechBackend.reason,/CUDA DLL missing/);assert.equal(s.workers.length,1);s.service.cancel();
+});
+test('Auto rejects false CUDA success and reruns CPU',async()=>{
+ const s=setup({cudaLog:'use_gpu = 1\nggml_cuda_init: found 1 CUDA devices'});const result=await s.service.run(audioRequest('auto'));
+ assert.equal(result.speechBackend.backend,'cpu');assert.match(result.speechBackend.reason,/allocation/);assert.equal(s.spawned.length,2);assert.ok(!s.spawned[0].args.includes('-ng'));assert.ok(s.spawned[1].args.includes('-ng'));s.service.cancel();
+});
+test('GPU failure is actionable and never silently falls back',async()=>{
+ const s=setup({speechError:'CUDA DLL missing'});await assert.rejects(s.service.run(audioRequest('gpu')),/CUDA DLL missing.*CPU/);
+ assert.equal(s.spawned.length,0);s.service.cancel();
+});
+test('Auto skips CUDA download without NVIDIA',async()=>{
+ const s=setup({probe:{reason:'No NVIDIA device detected'}});const result=await s.service.run(audioRequest('auto'));
+ assert.equal(result.speechBackend.backend,'cpu');assert.match(result.speechBackend.reason,/No NVIDIA/);assert.ok(s.workers[0].messages.every(m=>m.backend!=='cuda'));s.service.cancel();
+});
+
+test('cancelled GPU process never launches a CPU fallback',async()=>{
+ const s=setup({pauseChild:true});const pending=s.service.run(audioRequest('auto'));const rejected=assert.rejects(pending,/Cancelled/);
+ await s.spawnEntered;s.service.cancel();s.spawned[0].emit('close',1);await rejected;
+ assert.equal(s.spawned.length,1);assert.equal(s.workers.length,1);
+});
+test('verified CUDA returns actual device and skips CPU',async()=>{
+ const s=setup({cudaLog:'whisper_backend_init_gpu: using CUDA0 backend\nwhisper_model_load: CUDA0 total size = 145.00 MB\nwhisper_init_state: compute buffer (encode) = 12.00 MB'});
+ const result=await s.service.run(audioRequest('gpu'));assert.equal(result.speechBackend.backend,'cuda');assert.equal(result.speechBackend.device,undefined);assert.equal(s.spawned.length,1);s.service.cancel();
+});
+test('invalid execution selection is rejected before any worker or process',async()=>{
+ const s=setup();await assert.rejects(s.service.run(audioRequest('bogus')),/Invalid speech execution/);assert.equal(s.workers.length,0);
+});
+
+test('GPU diagnostic names the runtime-selected GPU rather than the first detected GPU',async()=>{
+ const s=setup({probe:{device:'Detected first GPU'},cudaLog:'Device 0: Actual runtime GPU, compute capability 8.9, VMM: yes\nwhisper_backend_init_gpu: using CUDA0 backend\nwhisper_model_load: CUDA0 total size = 145.00 MB\nwhisper_init_state: compute buffer (encode) = 12.00 MB\nwhisper_print_timings: encode time = 12.34 ms\nwhisper_print_timings: decode time = 2.34 ms\nwhisper_print_timings: batchd time = 3.45 ms\nwhisper_print_timings: total time = 100.50 ms'});
+ const result=await s.service.run(audioRequest('gpu'));assert.equal(result.speechBackend.device,'Actual runtime GPU');assert.equal(result.metrics.whisperNativeTotalMs,100.50);assert.equal(result.metrics.whisperEncodeMs,12.34);assert.equal(result.metrics.whisperDecodeMs,2.34);assert.equal(result.metrics.whisperBatchDecodeMs,3.45);s.service.cancel();
+});
+
+
+for (const failure of ['error','timeout']) test(`Auto falls back after preparation worker ${failure} and waits for termination`,async()=>{
+ const s=setup({pauseWorker:true,pauseTermination:true});const pending=s.service.run(audioRequest('auto'));
+ await new Promise(resolve=>setImmediate(resolve));const first=s.workers[0];
+ if(failure==='error')first.emit('error',Error('worker crashed'));else s.timers.find(t=>t.ms===360000).fn();
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(first.terminated,true);assert.equal(s.workers.length,1);
+ first.releaseTermination();await new Promise(resolve=>setImmediate(resolve));const second=s.workers[1];assert.ok(second,'CPU worker created after disposal');
+ const prep=second.messages[0];assert.equal(prep.backend,'cpu');second.emit('message',{id:prep.id,result:{exe:'cpu.exe',modelPath:'base.bin'}});
+ await new Promise(resolve=>setImmediate(resolve));const translation=second.messages.at(-1);second.emit('message',{id:translation.id,result:{text:'translated',translationMs:1,loadMs:1},metrics:{}});
+ const result=await pending;assert.equal(result.speechBackend.backend,'cpu');assert.match(result.speechBackend.reason,failure==='error'?/worker crashed/:/timed out/);s.service.cancel();second.releaseTermination();
+});
+test('forced GPU retains actionable worker crash error',async()=>{
+ const s=setup({pauseWorker:true});const pending=s.service.run(audioRequest('gpu'));const rejected=assert.rejects(pending,/worker crashed.*CPU/);
+ await new Promise(resolve=>setImmediate(resolve));s.workers[0].emit('error',Error('worker crashed'));await rejected;assert.equal(s.workers.length,1);s.service.cancel();
+});
+test('cancelling during failed GPU worker disposal prevents CPU preparation',async()=>{
+ const s=setup({pauseWorker:true,pauseTermination:true});const pending=s.service.run(audioRequest('auto'));const rejected=assert.rejects(pending,/Cancelled/);
+ await new Promise(resolve=>setImmediate(resolve));s.workers[0].emit('error',Error('worker crashed'));await new Promise(resolve=>setImmediate(resolve));
+ s.service.cancel();s.workers[0].releaseTermination();await rejected;assert.equal(s.workers.length,1);assert.equal(s.spawned.length,0);
+});

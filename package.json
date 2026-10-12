@@ -8,18 +8,19 @@
   "scripts": {
     "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:main\" \"npm:dev:electron\"",
     "dev:counter": "concurrently -k \"npm:dev:renderer\" \"npm:dev:main\" \"npm:dev:counter:electron\"",
-    "dev:renderer": "vite",
-    "dev:main": "tsc -p tsconfig.main.json -w",
+    "dev:renderer": "node scripts/prepare-face-tracking.mjs && vite",
+    "dev:main": "node scripts/prepare-translation.mjs && tsc -p tsconfig.main.json -w",
     "dev:electron": "wait-on tcp:5173 dist/main/main/main.js && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electronmon dist/main/main/main.js",
     "dev:counter:electron": "wait-on tcp:5173 dist/main/main/counterMain.js && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electronmon dist/main/main/counterMain.js",
     "build": "npm run build:renderer && npm run build:main && electron-builder",
-    "build:renderer": "vite build",
-    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "node scripts/prepare-face-tracking.mjs && vite build",
+    "build:main": "tsc -p tsconfig.main.json && node scripts/prepare-translation.mjs",
     "test": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/*.test.js dist-test/shared/lesson/*.test.js",
     "check:audio": "npm test && npm run build:renderer && npm run build:main",
     "check:games": "tsc -p tsconfig.final-boss.json && node --test games/language-snake/inputBridge.test.mjs games/final-boss-hero/hostBridge.test.mjs games/final-boss-hero/projectRoundTrip.test.cjs games/final-boss-hero/editorImport.test.cjs games/final-boss-hero/observePlayArea.test.cjs games/final-boss-hero/fitPlayArea.test.cjs games/final-boss-hero/boardProjection.test.cjs",
     "check:release": "npm run check:audio && npm run check:games",
-    "test:counter": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/counterGame.test.js"
+    "test:counter": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/counterGame.test.js",
+    "test:translation": "node --test scripts/translation-cache.test.cjs scripts/translation-capture.test.cjs scripts/translation-service.test.cjs scripts/whisper-backend.test.cjs scripts/whisper-runtime.test.cjs scripts/whisper-host.test.cjs scripts/whisper-session.test.cjs"
   },
   "build": {
     "appId": "com.example.storystudio",
@@ -36,14 +37,24 @@
         "AppImage"
       ],
       "category": "Graphics"
-    }
+    },
+    "asarUnpack": [
+      "node_modules/@browsermt/**/*",
+      "node_modules/kuromoji/**/*",
+      "dist/main/main/translation/**/*"
+    ]
   },
   "dependencies": {
+    "@browsermt/bergamot-translator": "0.4.9",
+    "@mediapipe/tasks-vision": "0.10.32",
     "@tsparticles/engine": "3.9.1",
     "@tsparticles/react": "3.0.0",
     "@tsparticles/slim": "3.9.1",
+    "extract-zip": "2.0.1",
     "framer-motion": "^11.18.2",
+    "fzstd": "0.1.1",
     "gsap": "3.14.2",
+    "kuromoji": "0.1.2",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

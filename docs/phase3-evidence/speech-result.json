@@ -1,0 +1,17 @@
+{
+  "fixture": "Windows SAPI synthesized English, not physical microphone",
+  "transcript": "Do not open the door yet. Wait until I say go.",
+  "translation": "まだドアを開けないでください。 私が行くと言うまで待ってください。",
+  "metrics": {
+    "speechInstallVerifyMs": 7340.7394,
+    "transcriptionMs": 6314.9204,
+    "whisperLoadMs": 174.6,
+    "workerWallMs": 2516.5448000000015,
+    "cpuMs": 3156,
+    "rssMB": 594.48828125,
+    "rssDeltaMB": 195.04296875,
+    "translationMs": 901.7116999999998,
+    "translationLoadMs": 1614.1449000000011,
+    "totalMs": 16185.5355
+  }
+}

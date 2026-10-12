@@ -1,0 +1,9 @@
+WARMUP idle
+MEASURING idle
+SAVED idle 609 594
+WARMUP base-cuda
+MEASURING base-cuda
+SAVED base-cuda 604 589
+WARMUP small-cuda
+MEASURING small-cuda
+SAVED small-cuda 606 591

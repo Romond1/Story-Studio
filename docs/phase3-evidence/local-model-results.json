@@ -1,0 +1,328 @@
+{
+  "date": "2026-10-12T06:41:39.834Z",
+  "kind": "Node isolated inference; not live lesson or language evaluation",
+  "offlinePassed": true,
+  "cancelPassed": true,
+  "silencePassed": true,
+  "results": [
+    {
+      "target": "ja",
+      "transcript": "Don't open the door yet.",
+      "translation": "まだドアを開けないでください。",
+      "metrics": {
+        "workerWallMs": 2475.9583,
+        "cpuMs": 2906,
+        "rssMB": 573.37890625,
+        "rssDeltaMB": 509.46875,
+        "translationMs": 585.8921999999998,
+        "translationLoadMs": 1889.5971,
+        "totalMs": 2876.7352
+      }
+    },
+    {
+      "target": "ja",
+      "transcript": "Wait until I say go.",
+      "translation": "私が行くと言うまで待ってください。",
+      "metrics": {
+        "workerWallMs": 33.679299999999785,
+        "cpuMs": 63,
+        "rssMB": 571.0859375,
+        "rssDeltaMB": -1.82421875,
+        "translationMs": 33.55759999999964,
+        "translationLoadMs": 0,
+        "totalMs": 34.190599999999904
+      }
+    },
+    {
+      "target": "ja",
+      "transcript": "Move the red block to the left.",
+      "translation": "赤いブロックを左に動かして。",
+      "metrics": {
+        "workerWallMs": 45.571100000000115,
+        "cpuMs": 93,
+        "rssMB": 570.21484375,
+        "rssDeltaMB": -0.33984375,
+        "translationMs": 45.516299999999774,
+        "translationLoadMs": 0,
+        "totalMs": 45.80040000000008
+      }
+    },
+    {
+      "target": "ja",
+      "transcript": "Mia has the sword, and Yuki has the shield.",
+      "translation": "ミアは剣を持ち、ユキは盾を持っている。",
+      "metrics": {
+        "workerWallMs": 44.22589999999991,
+        "cpuMs": 63,
+        "rssMB": 570.7890625,
+        "rssDeltaMB": 0.56640625,
+        "translationMs": 44.1567,
+        "translationLoadMs": 0,
+        "totalMs": 44.44290000000001
+      }
+    },
+    {
+      "target": "ja",
+      "transcript": "Kage, can you find the hidden key?",
+      "translation": "ケイジ、隠し鍵が見つかるか?",
+      "metrics": {
+        "workerWallMs": 42.0616,
+        "cpuMs": 109,
+        "rssMB": 576.98828125,
+        "rssDeltaMB": 6.12109375,
+        "translationMs": 42.003600000000006,
+        "translationLoadMs": 0,
+        "totalMs": 42.26440000000002
+      }
+    },
+    {
+      "target": "ja",
+      "transcript": "If you choose the wrong door, the dragon will wake up.",
+      "translation": "間違ったドアを選ぶと、ドラゴンは目を覚ます。",
+      "metrics": {
+        "workerWallMs": 56.49530000000004,
+        "cpuMs": 109,
+        "rssMB": 570.95703125,
+        "rssDeltaMB": -6.11328125,
+        "translationMs": 56.22220000000016,
+        "translationLoadMs": 0,
+        "totalMs": 56.70730000000003
+      }
+    },
+    {
+      "target": "it",
+      "transcript": "Don't open the door yet.",
+      "translation": "Non aprire ancora la porta.",
+      "metrics": {
+        "workerWallMs": 1340.1412,
+        "cpuMs": 1890,
+        "rssMB": 358.49609375,
+        "rssDeltaMB": 285.66796875,
+        "translationMs": 413.5675000000001,
+        "translationLoadMs": 926.0194999999994,
+        "totalMs": 1455.0869000000002
+      }
+    },
+    {
+      "target": "it",
+      "transcript": "Wait until I say go.",
+      "translation": "Aspetta finché non ti dico di andare.",
+      "metrics": {
+        "workerWallMs": 49.22109999999975,
+        "cpuMs": 94,
+        "rssMB": 353.921875,
+        "rssDeltaMB": -4.578125,
+        "translationMs": 48.960299999999734,
+        "translationLoadMs": 0,
+        "totalMs": 50.47239999999965
+      }
+    },
+    {
+      "target": "it",
+      "transcript": "Move the red block to the left.",
+      "translation": "Spostati il blocco rosso a sinistra.",
+      "metrics": {
+        "workerWallMs": 35.52019999999993,
+        "cpuMs": 63,
+        "rssMB": 355.54296875,
+        "rssDeltaMB": 1.390625,
+        "translationMs": 35.45590000000084,
+        "translationLoadMs": 0,
+        "totalMs": 35.806400000000394
+      }
+    },
+    {
+      "target": "it",
+      "transcript": "Mia has the sword, and Yuki has the shield.",
+      "translation": "Mia ha la spada, e Yuki ha lo scudo.",
+      "metrics": {
+        "workerWallMs": 49.76209999999992,
+        "cpuMs": 15,
+        "rssMB": 354.08203125,
+        "rssDeltaMB": -1.48046875,
+        "translationMs": 49.70600000000013,
+        "translationLoadMs": 0,
+        "totalMs": 50.02590000000055
+      }
+    },
+    {
+      "target": "it",
+      "transcript": "Kage, can you find the hidden key?",
+      "translation": "Kage, riesci a trovare la chiave nascosta?",
+      "metrics": {
+        "workerWallMs": 56.53489999999965,
+        "cpuMs": 141,
+        "rssMB": 361.62890625,
+        "rssDeltaMB": 7.54296875,
+        "translationMs": 56.45719999999983,
+        "translationLoadMs": 0,
+        "totalMs": 56.77349999999933
+      }
+    },
+    {
+      "target": "it",
+      "transcript": "If you choose the wrong door, the dragon will wake up.",
+      "translation": "Se scegli la porta sbagliata, il drago si sveglierà.",
+      "metrics": {
+        "workerWallMs": 56.891200000000026,
+        "cpuMs": 110,
+        "rssMB": 355.046875,
+        "rssDeltaMB": -6.64453125,
+        "translationMs": 56.79359999999997,
+        "translationLoadMs": 0,
+        "totalMs": 57.14890000000014
+      }
+    },
+    {
+      "target": "ro",
+      "transcript": "Don't open the door yet.",
+      "translation": "Nu deschide uşa încă.",
+      "metrics": {
+        "workerWallMs": 967.7061000000003,
+        "cpuMs": 1390,
+        "rssMB": 273.31640625,
+        "rssDeltaMB": 198.20703125,
+        "translationMs": 298.1923999999999,
+        "translationLoadMs": 669.1800999999996,
+        "totalMs": 1045.7759000000005
+      }
+    },
+    {
+      "target": "ro",
+      "transcript": "Wait until I say go.",
+      "translation": "Aşteaptă până când spun să plec.",
+      "metrics": {
+        "workerWallMs": 17.27310000000034,
+        "cpuMs": 32,
+        "rssMB": 278.20703125,
+        "rssDeltaMB": 4.88671875,
+        "translationMs": 17.183899999999994,
+        "translationLoadMs": 0,
+        "totalMs": 17.79860000000008
+      }
+    },
+    {
+      "target": "ro",
+      "transcript": "Move the red block to the left.",
+      "translation": "Mutați blocul roșu spre stânga.",
+      "metrics": {
+        "workerWallMs": 19.90820000000076,
+        "cpuMs": 62,
+        "rssMB": 282.29296875,
+        "rssDeltaMB": 4.06640625,
+        "translationMs": 19.84140000000025,
+        "translationLoadMs": 0,
+        "totalMs": 20.168300000000272
+      }
+    },
+    {
+      "target": "ro",
+      "transcript": "Mia has the sword, and Yuki has the shield.",
+      "translation": "Mia are sabia, iar Yuki are scutul.",
+      "metrics": {
+        "workerWallMs": 25.561799999999494,
+        "cpuMs": 47,
+        "rssMB": 282.35546875,
+        "rssDeltaMB": 0.0625,
+        "translationMs": 25.507400000000416,
+        "translationLoadMs": 0,
+        "totalMs": 25.748199999999997
+      }
+    },
+    {
+      "target": "ro",
+      "transcript": "Kage, can you find the hidden key?",
+      "translation": "Kage, poţi găsi cheia ascunsă?",
+      "metrics": {
+        "workerWallMs": 24.07880000000023,
+        "cpuMs": 16,
+        "rssMB": 282.4296875,
+        "rssDeltaMB": 0.07421875,
+        "translationMs": 24.02260000000024,
+        "translationLoadMs": 0,
+        "totalMs": 24.298499999999876
+      }
+    },
+    {
+      "target": "ro",
+      "transcript": "If you choose the wrong door, the dragon will wake up.",
+      "translation": "Dacă alegi uşa greşită, dragonul se va trezi.",
+      "metrics": {
+        "workerWallMs": 27.73570000000018,
+        "cpuMs": 31,
+        "rssMB": 282.5,
+        "rssDeltaMB": 0.06640625,
+        "translationMs": 27.663000000000466,
+        "translationLoadMs": 0,
+        "totalMs": 27.913399999999456
+      }
+    }
+  ],
+  "formatted": {
+    "standard": [
+      {
+        "text": "勇者はドアを開けないでください。"
+      }
+    ],
+    "kana": [
+      {
+        "text": "ゆうしゃ"
+      },
+      {
+        "text": "は"
+      },
+      {
+        "text": "ドア"
+      },
+      {
+        "text": "を"
+      },
+      {
+        "text": "あけ"
+      },
+      {
+        "text": "ない"
+      },
+      {
+        "text": "で"
+      },
+      {
+        "text": "ください"
+      },
+      {
+        "text": "。"
+      }
+    ],
+    "furigana": [
+      {
+        "text": "勇者",
+        "reading": "ゆうしゃ"
+      },
+      {
+        "text": "は"
+      },
+      {
+        "text": "ドア"
+      },
+      {
+        "text": "を"
+      },
+      {
+        "text": "開け",
+        "reading": "あけ"
+      },
+      {
+        "text": "ない"
+      },
+      {
+        "text": "で"
+      },
+      {
+        "text": "ください"
+      },
+      {
+        "text": "。"
+      }
+    ]
+  }
+}

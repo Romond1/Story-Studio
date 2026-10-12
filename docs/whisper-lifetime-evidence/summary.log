@@ -1,0 +1,390 @@
+{
+  "before": [
+    {
+      "model": "base.en",
+      "execution": "cpu",
+      "firstTranscriptionMs": 6379.2065,
+      "warmTranscriptionMs": 5725.99082,
+      "warmTranscriptRangeMs": [
+        5495.070200000002,
+        6463.888800000001
+      ],
+      "warmTotalMs": 5783.81286,
+      "translationMs": 50.79853999999905,
+      "legacyLoadMs": 194.516,
+      "hostRssAfterRequestMB": 580.20390625,
+      "wordErrors": 0,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 26.761904761904763,
+        "systemVramMB": 1426.952380952381
+      },
+      "afterIdle": {
+        "sampleCount": 22,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 29.454545454545453,
+        "systemVramMB": 1434.3636363636363
+      },
+      "disableMs": 0.2856000000028871
+    },
+    {
+      "model": "base.en",
+      "execution": "gpu",
+      "firstTranscriptionMs": 889.5911999999953,
+      "warmTranscriptionMs": 985.3671199999953,
+      "warmTranscriptRangeMs": [
+        966.8828999999969,
+        1018.8597999999911
+      ],
+      "warmTotalMs": 1163.606859999997,
+      "translationMs": 69.69324000000196,
+      "legacyLoadMs": 332.428,
+      "hostRssAfterRequestMB": 590.153125,
+      "wordErrors": 0,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 25.714285714285715,
+        "systemVramMB": 1436.3333333333333
+      },
+      "afterIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 13.333333333333334,
+        "systemVramMB": 1429.4285714285713
+      },
+      "disableMs": 0.0635000000038417
+    },
+    {
+      "model": "small.en",
+      "execution": "cpu",
+      "firstTranscriptionMs": 18832.87800000001,
+      "warmTranscriptionMs": 18338.717259999994,
+      "warmTranscriptRangeMs": [
+        15757.542399999977,
+        20988.332599999994
+      ],
+      "warmTotalMs": 18400.687800000007,
+      "translationMs": 53.84680000000517,
+      "legacyLoadMs": 1008.4680000000001,
+      "hostRssAfterRequestMB": 587.52109375,
+      "wordErrors": 1,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 29.523809523809526,
+        "systemVramMB": 1463.7619047619048
+      },
+      "afterIdle": {
+        "sampleCount": 20,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 17.7,
+        "systemVramMB": 1134.95
+      },
+      "disableMs": 0.04910000000381842
+    },
+    {
+      "model": "small.en",
+      "execution": "gpu",
+      "firstTranscriptionMs": 1369.8461000000243,
+      "warmTranscriptionMs": 2323.4885200000017,
+      "warmTranscriptRangeMs": [
+        2026.1581000000006,
+        2778.444599999988
+      ],
+      "warmTotalMs": 2464.900000000006,
+      "translationMs": 56.57115999999805,
+      "legacyLoadMs": 1248.2060000000001,
+      "hostRssAfterRequestMB": 593.684375,
+      "wordErrors": 1,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 24.285714285714285,
+        "systemVramMB": 1120.904761904762
+      },
+      "afterIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": null,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 11.333333333333334,
+        "systemVramMB": 1134.6666666666667
+      },
+      "disableMs": 0.07360000000335276
+    }
+  ],
+  "after": [
+    {
+      "model": "base.en",
+      "execution": "cpu",
+      "prepareMs": 2150.9709000000003,
+      "nativePreparation": {
+        "dllLoadMs": 4.0359,
+        "modelLoadMs": 270.923,
+        "backendInitMs": 22.7594,
+        "prepareMs": 297.7408,
+        "speechPid": 29536,
+        "translationLoadMs": 1122.5711999999999,
+        "prepareTotalMs": 2150.745
+      },
+      "firstTranscriptionMs": 4538.903200000001,
+      "warmTranscriptionMs": 4644.924239999999,
+      "warmTranscriptRangeMs": [
+        4459.327499999999,
+        4759.037400000001
+      ],
+      "warmTotalMs": 4688.18188,
+      "translationMs": 42.79717999999993,
+      "legacyLoadMs": null,
+      "hostRssAfterRequestMB": 577.29609375,
+      "wordErrors": 0,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": 204.46484375,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 26.047619047619047,
+        "systemVramMB": 1129
+      },
+      "afterIdle": {
+        "sampleCount": 22,
+        "nativeRamMB": 295.96875,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 26.272727272727273,
+        "systemVramMB": 1118.7727272727273
+      },
+      "disableMs": 47.247199999997974
+    },
+    {
+      "model": "base.en",
+      "execution": "gpu",
+      "prepareMs": 3836.2958,
+      "nativePreparation": {
+        "dllLoadMs": 86.0756,
+        "modelLoadMs": 325.8088,
+        "backendInitMs": 10.4744,
+        "prepareMs": 422.3799,
+        "speechPid": 26648,
+        "translationLoadMs": 1125.2662000000055,
+        "prepareTotalMs": 3836.2658999999985
+      },
+      "firstTranscriptionMs": 468.101800000004,
+      "warmTranscriptionMs": 115.55534000000043,
+      "warmTranscriptRangeMs": [
+        104.81040000000212,
+        131.17369999999937
+      ],
+      "warmTotalMs": 153.85993999999772,
+      "translationMs": 37.89855999999854,
+      "legacyLoadMs": null,
+      "hostRssAfterRequestMB": 579.34765625,
+      "wordErrors": 0,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": 295.3671875,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 5.380952380952381,
+        "systemVramMB": 1606.6666666666667
+      },
+      "afterIdle": {
+        "sampleCount": 22,
+        "nativeRamMB": 453.92134232954544,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 15.727272727272727,
+        "systemVramMB": 1685.3181818181818
+      },
+      "disableMs": 120.69229999999516
+    },
+    {
+      "model": "small.en",
+      "execution": "cpu",
+      "prepareMs": 3020.065699999992,
+      "nativePreparation": {
+        "dllLoadMs": 4.1707,
+        "modelLoadMs": 536.9599,
+        "backendInitMs": 23.4759,
+        "prepareMs": 564.6226,
+        "speechPid": 30484,
+        "translationLoadMs": 1215.297900000005,
+        "prepareTotalMs": 3019.989400000006
+      },
+      "firstTranscriptionMs": 14619.145499999999,
+      "warmTranscriptionMs": 16495.216500000006,
+      "warmTranscriptRangeMs": [
+        15230.377699999997,
+        18150.385700000013
+      ],
+      "warmTotalMs": 16541.339759999995,
+      "translationMs": 45.699220000006605,
+      "legacyLoadMs": null,
+      "hostRssAfterRequestMB": 585.57578125,
+      "wordErrors": 1,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 22,
+        "nativeRamMB": 578.03515625,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 28.40909090909091,
+        "systemVramMB": 1127.1363636363637
+      },
+      "afterIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": 762.40625,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 25.047619047619047,
+        "systemVramMB": 1125.3809523809523
+      },
+      "disableMs": 61.016499999997905
+    },
+    {
+      "model": "small.en",
+      "execution": "gpu",
+      "prepareMs": 5812.080599999987,
+      "nativePreparation": {
+        "dllLoadMs": 89.9593,
+        "modelLoadMs": 668.5,
+        "backendInitMs": 13.0049,
+        "prepareMs": 771.4933,
+        "speechPid": 33424,
+        "translationLoadMs": 1253.6532999999763,
+        "prepareTotalMs": 5812.045199999993
+      },
+      "firstTranscriptionMs": 339.7917000000016,
+      "warmTranscriptionMs": 1625.80478,
+      "warmTranscriptRangeMs": [
+        624.3653999999806,
+        2490.018000000011
+      ],
+      "warmTotalMs": 1715.9614000000001,
+      "translationMs": 87.70362000000314,
+      "legacyLoadMs": null,
+      "hostRssAfterRequestMB": 588.4875,
+      "wordErrors": 1,
+      "words": 49,
+      "readyIdle": {
+        "sampleCount": 21,
+        "nativeRamMB": 295.2109375,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 9.047619047619047,
+        "systemVramMB": 2035.095238095238
+      },
+      "afterIdle": {
+        "sampleCount": 18,
+        "nativeRamMB": 455.9296875,
+        "nativeCpuPercent": 0,
+        "systemGpuPercent": 26.166666666666668,
+        "systemVramMB": 2373.222222222222
+      },
+      "disableMs": 134.9939000000013
+    }
+  ],
+  "camera": [
+    {
+      "name": "idle",
+      "seconds": 60.95009999999963,
+      "drawFPS": 30.00815421139606,
+      "deliveredFPS": 29.64720320393258,
+      "trackingHz": 9.991780161148279,
+      "facePercent": 97.53694581280789,
+      "trackingInferenceMs": 31.601149425323445,
+      "presenterRafP95Ms": 16.80000000000291,
+      "controlRafP95Ms": 16.80000000000291,
+      "presenterLongTasks": 0,
+      "controlLongTasks": 0,
+      "trials": 0,
+      "transcriptionMs": null,
+      "captionMs": null,
+      "uniqueNativePids": [],
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 72.293214,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 2173,
+            "dropped": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "base-cuda",
+      "seconds": 60.514599999999625,
+      "drawFPS": 29.959712201683747,
+      "deliveredFPS": 28.32374336110642,
+      "trackingHz": 9.981062421300045,
+      "facePercent": 97.51655629139073,
+      "trackingInferenceMs": 32.905298013187675,
+      "presenterRafP95Ms": 16.80000000000291,
+      "controlRafP95Ms": 33.40000000002328,
+      "presenterLongTasks": 2,
+      "controlLongTasks": 0,
+      "trials": 68,
+      "transcriptionMs": 237.43732205882407,
+      "captionMs": 886.3216691176477,
+      "uniqueNativePids": [
+        33680
+      ],
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 63.562757,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 4611,
+            "dropped": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "small-cuda",
+      "seconds": 60.53190000000037,
+      "drawFPS": 30.00071036924314,
+      "deliveredFPS": 29.93462950939899,
+      "trackingHz": 10.011250266388405,
+      "facePercent": 97.52475247524752,
+      "trackingInferenceMs": 31.25066006600414,
+      "presenterRafP95Ms": 16.800000000017462,
+      "controlRafP95Ms": 16.800000000017462,
+      "presenterLongTasks": 0,
+      "controlLongTasks": 0,
+      "trials": 70,
+      "transcriptionMs": 269.39192285714216,
+      "captionMs": 860.8369428571409,
+      "uniqueNativePids": [
+        35580
+      ],
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 57.530371,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 7130,
+            "dropped": 0
+          }
+        }
+      ]
+    }
+  ]
+}

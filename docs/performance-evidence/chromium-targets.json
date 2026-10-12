@@ -1,0 +1,22 @@
+{
+  "targetInfos": [
+    {
+      "targetId": "1D381CC399619DD47F21784D354707DD",
+      "type": "page",
+      "title": "Story Studio — Present",
+      "url": "http://127.0.0.1:5193/present.html",
+      "attached": true,
+      "canAccessOpener": false,
+      "browserContextId": "24C4FBBA61C74BB67ADD65B099564053"
+    },
+    {
+      "targetId": "9AE5BC2B667375277AED64B8A35F2612",
+      "type": "page",
+      "title": "Story Studio",
+      "url": "http://127.0.0.1:5193/",
+      "attached": true,
+      "canAccessOpener": false,
+      "browserContextId": "24C4FBBA61C74BB67ADD65B099564053"
+    }
+  ]
+}

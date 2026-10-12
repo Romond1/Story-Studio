@@ -1,0 +1,37 @@
+{
+  "upstream": "https://github.com/ggml-org/whisper.cpp",
+  "ref": "v1.8.2",
+  "files": [
+    {
+      "size": 3011,
+      "sha256": "8344c5eb56ce9d0e0d45e1ef59846e0dcd0e4f84eb9bb68a6126252247bc0338",
+      "file": "ggml-alloc.h"
+    },
+    {
+      "size": 20868,
+      "sha256": "88d58b3b507477eacfc401b914b48af8b2ad875705674b5304420523a92b9c0a",
+      "file": "ggml-backend.h"
+    },
+    {
+      "size": 7437,
+      "sha256": "0bba07cc8d4fb47ba9bd8cafcdbd3738a041f88861039151e119c52970a1d8f2",
+      "file": "ggml-cpu.h"
+    },
+    {
+      "size": 96415,
+      "sha256": "8a75bcdef50ff901c0b374668f06a6f005608fdee86ccec1b6b01650db1fe31b",
+      "file": "ggml.h"
+    },
+    {
+      "size": 1078,
+      "sha256": "e562a2ddfaf8280537795ac5ecd34e3012b6582a147ef69ba6a6a5c08c84757d",
+      "file": "LICENSE"
+    },
+    {
+      "size": 35157,
+      "sha256": "0525b758571ab71c00ddd8ea2845f74af7c62dfa5100c5586655f75bdc5ef4be",
+      "file": "whisper.h"
+    }
+  ],
+  "license": "MIT"
+}

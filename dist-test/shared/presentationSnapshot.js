@@ -10,6 +10,8 @@ const activityScene_1 = require("./activityScene");
 const teachingScene_1 = require("./teachingScene");
 const imageAdjustments_1 = require("./imageAdjustments");
 const cardV2Render_1 = require("./cardV2Render");
+const projection_1 = require("./lesson/projection");
+const gameHost_1 = require("./gameHost");
 const object = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const id = (v) => typeof v === 'string' && v.length > 0 && v.length <= 1024;
 const finite = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -30,6 +32,17 @@ function parsePresentSnapshot(value) {
     const target = value.target;
     if (!id(target.occurrenceId))
         return null;
+    if (target.kind === 'game') {
+        const game = (0, gameHost_1.parseGameSession)(target);
+        return game ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'game', occurrenceId: target.occurrenceId, ...game } } : null;
+    }
+    if (target.kind === 'scene') {
+        const plan = (0, projection_1.parseScenePlan)(target.plan);
+        const media = target.media === undefined ? undefined : (0, presentationMedia_1.parseMediaIntent)(target.media);
+        if (!plan || media === null || (plan.background.mediaType === 'video' && !media) || (media && plan.background.mediaType !== 'video'))
+            return null;
+        return { sessionId: value.sessionId, revision: value.revision, target: { kind: 'scene', occurrenceId: target.occurrenceId, plan, ...(media ? { media } : {}) } };
+    }
     if (target.kind === 'cards-v2') {
         const plan = (0, cardV2Render_1.parseCardV2RenderPlan)(target.plan);
         return plan ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'cards-v2', occurrenceId: target.occurrenceId, plan }, ...(movement ? { movement } : {}), ...(rewards ? { rewards } : {}) } : null;

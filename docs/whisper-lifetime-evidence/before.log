@@ -1,0 +1,24 @@
+before base.en cpu 0 6379 Please open your books and look at the first picture.
+before base.en cpu 1 5558 Please open your books and look at the first picture.
+before base.en cpu 2 5495 Mia and Oliver help the dragon find the blue key.
+before base.en cpu 3 5617 Do not open the red door. Choose the green door instead.
+before base.en cpu 4 6464 Listen carefully, then tell your partner what happens next.
+before base.en cpu 5 5497 The wizard cannot see the rabbit behind the castle.
+before base.en gpu 0 890 Please open your books and look at the first picture.
+before base.en gpu 1 969 Please open your books and look at the first picture.
+before base.en gpu 2 1019 Mia and Oliver help the dragon find the blue key.
+before base.en gpu 3 990 Do not open the red door. Choose the green door instead.
+before base.en gpu 4 982 Listen carefully, then tell your partner what happens next.
+before base.en gpu 5 967 The wizard cannot see the rabbit behind the castle.
+before small.en cpu 0 18833 Please open your books and look at the first picture.
+before small.en cpu 1 18675 Please open your books and look at the first picture.
+before small.en cpu 2 15758 Mia and Oliver helped the dragon find the blue key.
+before small.en cpu 3 17701 Do not open the red door. Choose the green door instead.
+before small.en cpu 4 18571 Listen carefully, then tell your partner what happens next.
+before small.en cpu 5 20988 The wizard cannot see the rabbit behind the castle.
+before small.en gpu 0 1370 Please open your books and look at the first picture.
+before small.en gpu 1 2026 Please open your books and look at the first picture.
+before small.en gpu 2 2516 Mia and Oliver helped the dragon find the blue key.
+before small.en gpu 3 2162 Do not open the red door. Choose the green door instead.
+before small.en gpu 4 2778 Listen carefully, then tell your partner what happens next.
+before small.en gpu 5 2135 The wizard cannot see the rabbit behind the castle.

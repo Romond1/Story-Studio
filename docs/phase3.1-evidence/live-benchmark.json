@@ -1,0 +1,989 @@
+{
+  "fixture": "User microphone recordings; artificial pink-noise stress sample",
+  "cpu": "Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz",
+  "logicalProcessors": 8,
+  "results": [
+    {
+      "model": "base.en",
+      "execution": "cpu",
+      "legacy": false,
+      "trials": [
+        {
+          "phase": "cold",
+          "started": 1791794779129,
+          "finished": 1791794790515,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 555.7794000000001,
+            "speechPreprocessMs": 7.510200000000168,
+            "transcriptionMs": 8359.6626,
+            "whisperLoadMs": 221.17,
+            "whisperNativeTotalMs": 8278.93,
+            "whisperEncodeMs": 6856.87,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 1002.64,
+            "workerWallMs": 2453.4182,
+            "cpuMs": 2906,
+            "rssMB": 578.73828125,
+            "rssDeltaMB": 510.60546875,
+            "translationMs": 795.9145000000008,
+            "translationLoadMs": 1656.8010999999988,
+            "totalMs": 11380.314400000001
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794790520,
+          "finished": 1791794800317,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.6576000000004569,
+            "speechPreprocessMs": 10.119800000000396,
+            "transcriptionMs": 9742.3358,
+            "whisperLoadMs": 444.07,
+            "whisperNativeTotalMs": 9502.11,
+            "whisperEncodeMs": 8545.53,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 349.25,
+            "workerWallMs": 38.00170000000071,
+            "cpuMs": 63,
+            "rssMB": 574.921875,
+            "rssDeltaMB": 0.55859375,
+            "translationMs": 37.892799999997806,
+            "translationLoadMs": 0,
+            "totalMs": 9793.332100000001
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794800318,
+          "finished": 1791794805990,
+          "fixture": "live-1",
+          "reference": "Mia and Oliver help the dragon find the blue key.",
+          "transcript": "Mia and Oliver help the dragon find the blue key.",
+          "translation": "ミアとオリバーは、ドラゴンが青い鍵を見つけるのを手伝って助けてくれ。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.4706000000005588,
+            "speechPreprocessMs": 3.875500000001921,
+            "transcriptionMs": 5614.414199999999,
+            "whisperLoadMs": 461.05,
+            "whisperNativeTotalMs": 5542.36,
+            "whisperEncodeMs": 4571.67,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 306.55,
+            "workerWallMs": 51.460800000000745,
+            "cpuMs": 47,
+            "rssMB": 575.87109375,
+            "rssDeltaMB": 0.8828125,
+            "translationMs": 51.41049999999814,
+            "translationLoadMs": 0,
+            "totalMs": 5671.838100000001
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794805991,
+          "finished": 1791794812314,
+          "fixture": "live-2",
+          "reference": "Do not open the red door. Choose the green door instead.",
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.32129999999961,
+            "speechPreprocessMs": 2.6913000000022294,
+            "transcriptionMs": 6263.099899999997,
+            "whisperLoadMs": 493.68,
+            "whisperNativeTotalMs": 6079.98,
+            "whisperEncodeMs": 4940.27,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 442.04,
+            "workerWallMs": 52.215799999998126,
+            "cpuMs": 78,
+            "rssMB": 576.25,
+            "rssDeltaMB": 0.23828125,
+            "translationMs": 52.08329999999842,
+            "translationLoadMs": 0,
+            "totalMs": 6321
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794812315,
+          "finished": 1791794818115,
+          "fixture": "live-3",
+          "reference": "Listen carefully, then tell your partner what happens next.",
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.8240999999979977,
+            "speechPreprocessMs": 3.576999999997497,
+            "transcriptionMs": 5747.711900000002,
+            "whisperLoadMs": 528.42,
+            "whisperNativeTotalMs": 5667.05,
+            "whisperEncodeMs": 4559.91,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 293.92,
+            "workerWallMs": 43.134100000002945,
+            "cpuMs": 63,
+            "rssMB": 587.046875,
+            "rssDeltaMB": 10.5078125,
+            "translationMs": 43.06300000000192,
+            "translationLoadMs": 0,
+            "totalMs": 5796.753100000002
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794818117,
+          "finished": 1791794823606,
+          "fixture": "live-4",
+          "reference": "The wizard cannot see the rabbit behind the castle.",
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.23369999999704305,
+            "speechPreprocessMs": 3.6723999999958323,
+            "transcriptionMs": 5437.261700000003,
+            "whisperLoadMs": 479.1,
+            "whisperNativeTotalMs": 5229.34,
+            "whisperEncodeMs": 4278.07,
+            "whisperDecodeMs": 11.44,
+            "whisperBatchDecodeMs": 283.09,
+            "workerWallMs": 45.41219999999885,
+            "cpuMs": 46,
+            "rssMB": 577.30859375,
+            "rssDeltaMB": 0.03125,
+            "translationMs": 45.276700000002165,
+            "translationLoadMs": 0,
+            "totalMs": 5488.745999999999
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "noise": {
+        "fixture": "live-noise",
+        "reference": "The wizard cannot see the rabbit behind the castle.",
+        "transcript": "The wizard cannot see the rabbit behind the castle.",
+        "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+        "metrics": {
+          "speechInstallVerifyMs": 0.1926999999996042,
+          "speechPreprocessMs": 2.8136000000013155,
+          "transcriptionMs": 5530.675199999998,
+          "whisperLoadMs": 348.67,
+          "whisperNativeTotalMs": 5459.59,
+          "whisperEncodeMs": 4633.03,
+          "whisperDecodeMs": 10.39,
+          "whisperBatchDecodeMs": 310.53,
+          "workerWallMs": 34.62510000000475,
+          "cpuMs": 32,
+          "rssMB": 577.75,
+          "rssDeltaMB": 0.23046875,
+          "translationMs": 34.55720000000292,
+          "translationLoadMs": 0,
+          "totalMs": 5569.699500000002
+        },
+        "speechBackend": {
+          "backend": "cpu"
+        },
+        "wer": {
+          "errors": 0,
+          "words": 9,
+          "rate": 0
+        }
+      }
+    },
+    {
+      "model": "base.en",
+      "execution": "gpu",
+      "legacy": false,
+      "trials": [
+        {
+          "phase": "cold",
+          "started": 1791794829177,
+          "finished": 1791794833898,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 2259.210299999999,
+            "speechPreprocessMs": 2.9302000000025146,
+            "transcriptionMs": 826.2710000000006,
+            "whisperLoadMs": 311.18,
+            "whisperNativeTotalMs": 572.72,
+            "whisperEncodeMs": 111.55,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 80.54,
+            "workerWallMs": 1565.2174999999988,
+            "cpuMs": 2282,
+            "rssMB": 587.16015625,
+            "rssDeltaMB": 364.98046875,
+            "translationMs": 454.9521999999997,
+            "translationLoadMs": 1109.9230000000025,
+            "totalMs": 4720.799000000006
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794833899,
+          "finished": 1791794835237,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.7122000000017579,
+            "speechPreprocessMs": 3.3791999999957625,
+            "transcriptionMs": 1223.3531000000003,
+            "whisperLoadMs": 511.09,
+            "whisperNativeTotalMs": 835.29,
+            "whisperEncodeMs": 136.69,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 92.39,
+            "workerWallMs": 44.26310000000376,
+            "cpuMs": 78,
+            "rssMB": 589.99609375,
+            "rssDeltaMB": 0.0859375,
+            "translationMs": 44.185599999997066,
+            "translationLoadMs": 0,
+            "totalMs": 1337.2465999999986
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794835238,
+          "finished": 1791794836847,
+          "fixture": "live-1",
+          "reference": "Mia and Oliver help the dragon find the blue key.",
+          "transcript": "Mia and Oliver help the dragon find the blue key.",
+          "translation": "ミアとオリバーは、ドラゴンが青い鍵を見つけるのを手伝って助けてくれ。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.299299999998766,
+            "speechPreprocessMs": 2.8870999999999185,
+            "transcriptionMs": 1478.839399999997,
+            "whisperLoadMs": 629.43,
+            "whisperNativeTotalMs": 924.75,
+            "whisperEncodeMs": 131.05,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 82.39,
+            "workerWallMs": 55.421699999998964,
+            "cpuMs": 47,
+            "rssMB": 590.203125,
+            "rssDeltaMB": 0.12890625,
+            "translationMs": 55.35040000000299,
+            "translationLoadMs": 0,
+            "totalMs": 1608.5174000000043
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794836848,
+          "finished": 1791794838331,
+          "fixture": "live-2",
+          "reference": "Do not open the red door. Choose the green door instead.",
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.22899999999935972,
+            "speechPreprocessMs": 2.56079999999929,
+            "transcriptionMs": 1379.5639999999985,
+            "whisperLoadMs": 553.36,
+            "whisperNativeTotalMs": 908.17,
+            "whisperEncodeMs": 149.97,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 102.21,
+            "workerWallMs": 41.551699999996345,
+            "cpuMs": 62,
+            "rssMB": 590.359375,
+            "rssDeltaMB": 0.15625,
+            "translationMs": 41.47470000000612,
+            "translationLoadMs": 0,
+            "totalMs": 1482.6575999999986
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794838332,
+          "finished": 1791794840581,
+          "fixture": "live-3",
+          "reference": "Listen carefully, then tell your partner what happens next.",
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.6209999999991851,
+            "speechPreprocessMs": 3.684900000000198,
+            "transcriptionMs": 2107.290500000003,
+            "whisperLoadMs": 601.1,
+            "whisperNativeTotalMs": 1668.44,
+            "whisperEncodeMs": 281.64,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 188.68,
+            "workerWallMs": 64.51859999999579,
+            "cpuMs": 109,
+            "rssMB": 595.41796875,
+            "rssDeltaMB": 5.05078125,
+            "translationMs": 64.42749999999796,
+            "translationLoadMs": 0,
+            "totalMs": 2248.282500000001
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794840583,
+          "finished": 1791794842178,
+          "fixture": "live-4",
+          "reference": "The wizard cannot see the rabbit behind the castle.",
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.3497999999963213,
+            "speechPreprocessMs": 3.1171999999933178,
+            "transcriptionMs": 1472.724000000002,
+            "whisperLoadMs": 385.79,
+            "whisperNativeTotalMs": 1193.52,
+            "whisperEncodeMs": 421.27,
+            "whisperDecodeMs": 17.89,
+            "whisperBatchDecodeMs": 127.09,
+            "workerWallMs": 45.06810000000405,
+            "cpuMs": 63,
+            "rssMB": 584.87109375,
+            "rssDeltaMB": 1.23046875,
+            "translationMs": 44.9742000000042,
+            "translationLoadMs": 0,
+            "totalMs": 1594.8590999999942
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "noise": {
+        "fixture": "live-noise",
+        "reference": "The wizard cannot see the rabbit behind the castle.",
+        "transcript": "The wizard cannot see the rabbit behind the castle.",
+        "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+        "metrics": {
+          "speechInstallVerifyMs": 0.29490000000078,
+          "speechPreprocessMs": 2.5794000000023516,
+          "transcriptionMs": 2370.8858000000037,
+          "whisperLoadMs": 385.32,
+          "whisperNativeTotalMs": 1663.1,
+          "whisperEncodeMs": 269.11,
+          "whisperDecodeMs": 27.48,
+          "whisperBatchDecodeMs": 247.4,
+          "workerWallMs": 58.18649999999616,
+          "cpuMs": 62,
+          "rssMB": 585.1640625,
+          "rssDeltaMB": 0.1640625,
+          "translationMs": 58.115399999995134,
+          "translationLoadMs": 0,
+          "totalMs": 2501.4222999999984
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "wer": {
+          "errors": 0,
+          "words": 9,
+          "rate": 0
+        }
+      }
+    },
+    {
+      "model": "small.en",
+      "execution": "cpu",
+      "legacy": false,
+      "trials": [
+        {
+          "phase": "cold",
+          "started": 1791794844681,
+          "finished": 1791794865420,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1973.0685999999987,
+            "speechPreprocessMs": 4.945899999991525,
+            "transcriptionMs": 17110.895200000014,
+            "whisperLoadMs": 552.26,
+            "whisperNativeTotalMs": 17011.9,
+            "whisperEncodeMs": 15459.88,
+            "whisperDecodeMs": 36.55,
+            "whisperBatchDecodeMs": 846.06,
+            "workerWallMs": 1647.9538999999932,
+            "cpuMs": 2281,
+            "rssMB": 585.91796875,
+            "rssDeltaMB": 504.359375,
+            "translationMs": 470.5671000000002,
+            "translationLoadMs": 1176.886799999993,
+            "totalMs": 20738.414000000004
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794865421,
+          "finished": 1791794882765,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.3513999999995576,
+            "speechPreprocessMs": 2.9373000000050524,
+            "transcriptionMs": 17306.135800000004,
+            "whisperLoadMs": 1048.55,
+            "whisperNativeTotalMs": 17216.58,
+            "whisperEncodeMs": 15237.58,
+            "whisperDecodeMs": 28.9,
+            "whisperBatchDecodeMs": 786,
+            "workerWallMs": 33.483500000002095,
+            "cpuMs": 62,
+            "rssMB": 588.24609375,
+            "rssDeltaMB": 0.25,
+            "translationMs": 33.391399999993155,
+            "translationLoadMs": 0,
+            "totalMs": 17344.343100000013
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794882767,
+          "finished": 1791794899011,
+          "fixture": "live-1",
+          "reference": "Mia and Oliver help the dragon find the blue key.",
+          "transcript": "Mia and Oliver helped the dragon find the blue key.",
+          "translation": "ミアとオリバーはドラゴンが青い鍵を見つけるのを手伝した。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.3084999999991851,
+            "speechPreprocessMs": 2.619699999995646,
+            "transcriptionMs": 16179.881399999998,
+            "whisperLoadMs": 1015.6,
+            "whisperNativeTotalMs": 16099.56,
+            "whisperEncodeMs": 13942.68,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 1013.11,
+            "workerWallMs": 60.047200000000885,
+            "cpuMs": 110,
+            "rssMB": 588.6328125,
+            "rssDeltaMB": 0.37109375,
+            "translationMs": 59.97950000000128,
+            "translationLoadMs": 0,
+            "totalMs": 16244.331099999996
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 1,
+            "words": 10,
+            "rate": 0.1
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794899013,
+          "finished": 1791794915269,
+          "fixture": "live-2",
+          "reference": "Do not open the red door. Choose the green door instead.",
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.4228999999904772,
+            "speechPreprocessMs": 3.2480000000068685,
+            "transcriptionMs": 16206.833399999989,
+            "whisperLoadMs": 1016.32,
+            "whisperNativeTotalMs": 16112.88,
+            "whisperEncodeMs": 14024.37,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 949.53,
+            "workerWallMs": 41.55959999997867,
+            "cpuMs": 63,
+            "rssMB": 580.8671875,
+            "rssDeltaMB": -7.77734375,
+            "translationMs": 41.22479999999632,
+            "translationLoadMs": 0,
+            "totalMs": 16255.290799999988
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794915270,
+          "finished": 1791794931273,
+          "fixture": "live-3",
+          "reference": "Listen carefully, then tell your partner what happens next.",
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.16940000001341105,
+            "speechPreprocessMs": 3.141700000007404,
+            "transcriptionMs": 15953.260999999999,
+            "whisperLoadMs": 1021.97,
+            "whisperNativeTotalMs": 15867.75,
+            "whisperEncodeMs": 13962.52,
+            "whisperDecodeMs": 27.18,
+            "whisperBatchDecodeMs": 749.52,
+            "workerWallMs": 44.60960000002524,
+            "cpuMs": 62,
+            "rssMB": 593.28125,
+            "rssDeltaMB": 12.1015625,
+            "translationMs": 44.52689999999711,
+            "translationLoadMs": 0,
+            "totalMs": 16002.736300000019
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794931274,
+          "finished": 1791794947036,
+          "fixture": "live-4",
+          "reference": "The wizard cannot see the rabbit behind the castle.",
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.21870000002672896,
+            "speechPreprocessMs": 3.0446999999985565,
+            "transcriptionMs": 15719.149600000004,
+            "whisperLoadMs": 1016.64,
+            "whisperNativeTotalMs": 15626.29,
+            "whisperEncodeMs": 13690.04,
+            "whisperDecodeMs": 27.53,
+            "whisperBatchDecodeMs": 788,
+            "workerWallMs": 37.40240000002086,
+            "cpuMs": 47,
+            "rssMB": 593.9609375,
+            "rssDeltaMB": 0.1875,
+            "translationMs": 37.32449999998789,
+            "translationLoadMs": 0,
+            "totalMs": 15761.505999999994
+          },
+          "speechBackend": {
+            "backend": "cpu"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "noise": {
+        "fixture": "live-noise",
+        "reference": "The wizard cannot see the rabbit behind the castle.",
+        "transcript": "The wizard cannot see the rabbit behind the castle.",
+        "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+        "metrics": {
+          "speechInstallVerifyMs": 0.18649999998160638,
+          "speechPreprocessMs": 2.574400000012247,
+          "transcriptionMs": 16446.353100000008,
+          "whisperLoadMs": 968.95,
+          "whisperNativeTotalMs": 15967.4,
+          "whisperEncodeMs": 14096.48,
+          "whisperDecodeMs": 30.59,
+          "whisperBatchDecodeMs": 770.07,
+          "workerWallMs": 38.36230000000796,
+          "cpuMs": 47,
+          "rssMB": 594.12109375,
+          "rssDeltaMB": 0.1328125,
+          "translationMs": 38.28390000000945,
+          "translationLoadMs": 0,
+          "totalMs": 16488.959100000007
+        },
+        "speechBackend": {
+          "backend": "cpu"
+        },
+        "wer": {
+          "errors": 0,
+          "words": 9,
+          "rate": 0
+        }
+      }
+    },
+    {
+      "model": "small.en",
+      "execution": "gpu",
+      "legacy": false,
+      "trials": [
+        {
+          "phase": "cold",
+          "started": 1791794963527,
+          "finished": 1791794969295,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 2891.7595000000147,
+            "speechPreprocessMs": 2.9777000000176486,
+            "transcriptionMs": 1225.9882999999973,
+            "whisperLoadMs": 647.92,
+            "whisperNativeTotalMs": 980.22,
+            "whisperEncodeMs": 125.88,
+            "whisperDecodeMs": 16.9,
+            "whisperBatchDecodeMs": 117.01,
+            "workerWallMs": 1565.9940999999817,
+            "cpuMs": 2172,
+            "rssMB": 614.28125,
+            "rssDeltaMB": 62.953125,
+            "translationMs": 442.5923999999941,
+            "translationLoadMs": 1123.0470000000205,
+            "totalMs": 5768.339500000002
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794969296,
+          "finished": 1791794971119,
+          "fixture": "live-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.8188000000081956,
+            "speechPreprocessMs": 3.2981999999901745,
+            "transcriptionMs": 1712.5162999999884,
+            "whisperLoadMs": 901.52,
+            "whisperNativeTotalMs": 1244.18,
+            "whisperEncodeMs": 124.62,
+            "whisperDecodeMs": 18.09,
+            "whisperBatchDecodeMs": 123.61,
+            "workerWallMs": 41.83259999999427,
+            "cpuMs": 62,
+            "rssMB": 614.515625,
+            "rssDeltaMB": 0.09765625,
+            "translationMs": 41.72820000001229,
+            "translationLoadMs": 0,
+            "totalMs": 1822.4251999999979
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794971120,
+          "finished": 1791794973297,
+          "fixture": "live-1",
+          "reference": "Mia and Oliver help the dragon find the blue key.",
+          "transcript": "Mia and Oliver helped the dragon find the blue key.",
+          "translation": "ミアとオリバーはドラゴンが青い鍵を見つけるのを手伝した。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.26750000001629815,
+            "speechPreprocessMs": 4.448199999984354,
+            "transcriptionMs": 2032.5125000000116,
+            "whisperLoadMs": 1212.14,
+            "whisperNativeTotalMs": 1542.15,
+            "whisperEncodeMs": 129.6,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 119.7,
+            "workerWallMs": 63.91170000002603,
+            "cpuMs": 141,
+            "rssMB": 614.796875,
+            "rssDeltaMB": 0.1328125,
+            "translationMs": 63.60020000001532,
+            "translationLoadMs": 0,
+            "totalMs": 2176.7660000000033
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 1,
+            "words": 10,
+            "rate": 0.1
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794973299,
+          "finished": 1791794975512,
+          "fixture": "live-2",
+          "reference": "Do not open the red door. Choose the green door instead.",
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.21400000000721775,
+            "speechPreprocessMs": 3.2981999999901745,
+            "transcriptionMs": 2095.514200000005,
+            "whisperLoadMs": 1221.39,
+            "whisperNativeTotalMs": 1562.76,
+            "whisperEncodeMs": 123.22,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 133.45,
+            "workerWallMs": 48.521999999997206,
+            "cpuMs": 46,
+            "rssMB": 614.95703125,
+            "rssDeltaMB": 0.15625,
+            "translationMs": 48.45110000000568,
+            "translationLoadMs": 0,
+            "totalMs": 2213.1643999999797
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794975514,
+          "finished": 1791794978008,
+          "fixture": "live-3",
+          "reference": "Listen carefully, then tell your partner what happens next.",
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.5198999999847729,
+            "speechPreprocessMs": 3.7449999999953434,
+            "transcriptionMs": 2336.0911999999953,
+            "whisperLoadMs": 1393.41,
+            "whisperNativeTotalMs": 1787.78,
+            "whisperEncodeMs": 157.59,
+            "whisperDecodeMs": 19.68,
+            "whisperBatchDecodeMs": 131.14,
+            "workerWallMs": 58.51659999997355,
+            "cpuMs": 110,
+            "rssMB": 615.1015625,
+            "rssDeltaMB": 0.12109375,
+            "translationMs": 57.85000000000582,
+            "translationLoadMs": 0,
+            "totalMs": 2493.74549999999
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791794978009,
+          "finished": 1791794980033,
+          "fixture": "live-4",
+          "reference": "The wizard cannot see the rabbit behind the castle.",
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 0.19750000000931323,
+            "speechPreprocessMs": 2.4839999999967404,
+            "transcriptionMs": 1919.8434999999881,
+            "whisperLoadMs": 1260.87,
+            "whisperNativeTotalMs": 1632.52,
+            "whisperEncodeMs": 143.42,
+            "whisperDecodeMs": 0,
+            "whisperBatchDecodeMs": 137.79,
+            "workerWallMs": 37.673399999999674,
+            "cpuMs": 47,
+            "rssMB": 615.12890625,
+            "rssDeltaMB": 0.02734375,
+            "translationMs": 37.56489999999758,
+            "translationLoadMs": 0,
+            "totalMs": 2024.2013999999908
+          },
+          "speechBackend": {
+            "backend": "cuda",
+            "device": "NVIDIA GeForce RTX 4070 Ti"
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "noise": {
+        "fixture": "live-noise",
+        "reference": "The wizard cannot see the rabbit behind the castle.",
+        "transcript": "The wizard cannot see the rabbit behind the castle.",
+        "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+        "metrics": {
+          "speechInstallVerifyMs": 0.26709999999729916,
+          "speechPreprocessMs": 3.212500000023283,
+          "transcriptionMs": 2034.0607000000018,
+          "whisperLoadMs": 1237.94,
+          "whisperNativeTotalMs": 1567.42,
+          "whisperEncodeMs": 129.46,
+          "whisperDecodeMs": 18.35,
+          "whisperBatchDecodeMs": 110.18,
+          "workerWallMs": 35.60409999999683,
+          "cpuMs": 31,
+          "rssMB": 615.16015625,
+          "rssDeltaMB": 0.01171875,
+          "translationMs": 35.54489999997895,
+          "translationLoadMs": 0,
+          "totalMs": 2139.2161999999953
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "wer": {
+          "errors": 0,
+          "words": 9,
+          "rate": 0
+        }
+      }
+    }
+  ]
+}

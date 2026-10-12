@@ -1,0 +1,22 @@
+✔ enable prepares both models and repeated utterances retain recognition and translation (419.1319ms)
+✔ target switching replaces only translator; model switching replaces only recognizer (117.2783ms)
+✔ idle cancellation retains engines and in-flight cancellation rejects stale output without reloading (124.7965ms)
+✔ Auto prepares independent CPU fallback while explicit GPU reports error (117.4827ms)
+✔ idle native crash invalidates Ready and retry creates fresh engine (51.7331ms)
+✔ disabling during an utterance prevents stale translation and releases both models (46.3806ms)
+✔ invalid settings and invalid audio cannot start either engine (56.9281ms)
+✔ Auto without NVIDIA prepares CPU directly; explicit GPU is actionable (119.4893ms)
+✔ cancel while native files prepare never starts a native process (67.2095ms)
+✔ translator crash retains recognizer and preparation recovers only the worker (43.0612ms)
+✔ engine diagnostics never retain or broadcast private audio (48.6613ms)
+✔ text translation reuses model and language change releases old worker (44.9226ms)
+✔ new preparation waits for previous native cancellation acknowledgement (68.583ms)
+✔ Auto inference failure replaces CUDA with resident CPU and updates diagnostics (34.7808ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2160.2349

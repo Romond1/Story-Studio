@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CAMERA_DEFAULTS, type CameraSettings, type CameraState } from '../../shared/cameraProtocol';
 import './camera.css';
+import { FaceTrackingControls } from './tracking/FaceTrackingControls';
 
 export function CameraControls() {
   const [state, setState] = useState<CameraState>({ settings: CAMERA_DEFAULTS, status: { state: 'off', devices: [] } });
@@ -37,7 +38,7 @@ export function CameraControls() {
     } finally { if (enabling) setBusy(false); }
   };
   const settings = state.settings;
-  return <section className="camera-controls teach-live-card" aria-label="Camera">
+  return <><section className="camera-controls teach-live-card" aria-label="Camera">
     <h3>Camera</h3>
     <button type="button" disabled={busy || !window.cameraControl} aria-pressed={settings.enabled} onClick={() => void update({ enabled: !settings.enabled })}>
       {settings.enabled ? 'Turn camera off' : 'Turn camera on'}
@@ -62,5 +63,6 @@ export function CameraControls() {
       <label className="camera-toggle"><input type="checkbox" checked={settings.mirror} onChange={e => void update({ mirror: e.target.checked })} />Mirror horizontally</label>
     </fieldset>
     <small>Hidden keeps the camera active. Camera off releases it.</small>
-  </section>;
+  </section><FaceTrackingControls settings={settings.tracking} status={state.trackingStatus} cameraEnabled={settings.enabled}
+    disabled={busy || !window.cameraControl} onChange={tracking => void update({ tracking })} /></>;
 }

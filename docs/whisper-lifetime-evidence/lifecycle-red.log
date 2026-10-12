@@ -1,0 +1,80 @@
+✖ enable prepares both models and repeated utterances retain recognition and translation (318.3993ms)
+✖ target switching replaces only translator; model switching replaces only recognizer (84.2901ms)
+✖ idle cancellation retains engines and in-flight cancellation rejects stale output without reloading (59.2257ms)
+✖ Auto prepares independent CPU fallback while explicit GPU reports error (41.081ms)
+✖ idle native crash invalidates Ready and retry creates fresh engine (68.1038ms)
+✖ disabling during an utterance prevents stale translation and releases both models (31.0909ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1065.3739
+
+✖ failing tests:
+
+test at scripts\translation-lifetime.test.cjs:23:1
+✖ enable prepares both models and repeated utterances retain recognition and translation (318.3993ms)
+  TypeError: s.service.prepare is not a function
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:24:34)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+
+test at scripts\translation-lifetime.test.cjs:27:1
+✖ target switching replaces only translator; model switching replaces only recognizer (84.2901ms)
+  TypeError: s.service.prepare is not a function
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:28:34)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at scripts\translation-lifetime.test.cjs:31:1
+✖ idle cancellation retains engines and in-flight cancellation rejects stale output without reloading (59.2257ms)
+  TypeError: s.service.prepare is not a function
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:32:46)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7)
+
+test at scripts\translation-lifetime.test.cjs:35:1
+✖ Auto prepares independent CPU fallback while explicit GPU reports error (41.081ms)
+  TypeError: s.service.prepare is not a function
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:36:61)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7)
+
+test at scripts\translation-lifetime.test.cjs:39:1
+✖ idle native crash invalidates Ready and retry creates fresh engine (68.1038ms)
+  TypeError: s.service.prepare is not a function
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:40:34)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7)
+
+test at scripts\translation-lifetime.test.cjs:42:1
+✖ disabling during an utterance prevents stale translation and releases both models (31.0909ms)
+  TypeError: s.service.prepare is not a function
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:43:46)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7)

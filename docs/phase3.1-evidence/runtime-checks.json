@@ -1,0 +1,119 @@
+{
+  "offline": true,
+  "results": [
+    {
+      "test": "offline explicit CPU",
+      "result": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "speechInstallVerifyMs": 422.8403,
+          "speechPreprocessMs": 6.671199999999999,
+          "transcriptionMs": 5551.9587,
+          "whisperLoadMs": 174.48,
+          "whisperNativeTotalMs": 5480.57,
+          "whisperEncodeMs": 4835.95,
+          "whisperDecodeMs": 0,
+          "whisperBatchDecodeMs": 377.51,
+          "workerWallMs": 1589.5542000000005,
+          "cpuMs": 2390,
+          "rssMB": 578.6015625,
+          "rssDeltaMB": 364.05859375,
+          "translationMs": 456.9268000000002,
+          "translationLoadMs": 1132.2057999999997,
+          "totalMs": 7573.8505
+        },
+        "speechBackend": {
+          "backend": "cpu"
+        }
+      }
+    },
+    {
+      "test": "Auto falls back when native CUDA initialization is unavailable",
+      "result": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "speechInstallVerifyMs": 2438.7553000000007,
+          "speechPreprocessMs": 2.027700000002369,
+          "transcriptionMs": 4536.706099999999,
+          "whisperLoadMs": 159.34,
+          "whisperNativeTotalMs": 4474.16,
+          "whisperEncodeMs": 3863.47,
+          "whisperDecodeMs": 0,
+          "whisperBatchDecodeMs": 364.53,
+          "workerWallMs": 1558.7789000000012,
+          "cpuMs": 2235,
+          "rssMB": 584.22265625,
+          "rssDeltaMB": 364.99609375,
+          "translationMs": 454.10210000000006,
+          "translationLoadMs": 1104.1124000000018,
+          "totalMs": 15383.708600000002
+        },
+        "speechBackend": {
+          "backend": "cpu",
+          "reason": "CUDA allocation verification failed; Whisper did not confirm GPU model and compute buffers."
+        }
+      }
+    },
+    {
+      "test": "forced GPU returns actionable error",
+      "error": "GPU transcription failed: CUDA allocation verification failed; Whisper did not confirm GPU model and compute buffers. Select CPU or Auto, or update your NVIDIA driver."
+    },
+    {
+      "test": "offline GPU after CPU/failure releases old resources",
+      "result": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "speechInstallVerifyMs": 2087.331000000002,
+          "speechPreprocessMs": 2.3464999999996508,
+          "transcriptionMs": 783.9888999999966,
+          "whisperLoadMs": 282.84,
+          "whisperNativeTotalMs": 527.77,
+          "whisperEncodeMs": 108.15,
+          "whisperDecodeMs": 0,
+          "whisperBatchDecodeMs": 73.23,
+          "workerWallMs": 1545.2834999999977,
+          "cpuMs": 2047,
+          "rssMB": 585.35546875,
+          "rssDeltaMB": 340.19140625,
+          "translationMs": 441.0195999999996,
+          "translationLoadMs": 1103.875500000002,
+          "totalMs": 4484.691799999997
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        }
+      }
+    },
+    {
+      "test": "cancel GPU preparation then CPU retry",
+      "result": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "speechInstallVerifyMs": 420.34569999999803,
+          "speechPreprocessMs": 2.3118000000031316,
+          "transcriptionMs": 4537.857199999999,
+          "whisperLoadMs": 163.02,
+          "whisperNativeTotalMs": 4474.9,
+          "whisperEncodeMs": 3856.72,
+          "whisperDecodeMs": 0,
+          "whisperBatchDecodeMs": 364.25,
+          "workerWallMs": 1558.0910000000003,
+          "cpuMs": 2422,
+          "rssMB": 607.53125,
+          "rssDeltaMB": 382.07421875,
+          "translationMs": 463.1212999999989,
+          "translationLoadMs": 1094.5145000000048,
+          "totalMs": 6519.988799999999
+        },
+        "speechBackend": {
+          "backend": "cpu"
+        }
+      }
+    }
+  ]
+}

@@ -7,3 +7,15 @@ dist-test/
 .tmp-reconstruction-tests/
 output/
 .tmp-usability-*
+public/face-tracking/wasm/
+public/face-tracking/face.worker.js
+.tmp-face-*
+
+# Local Phase 3 model test cache
+.translation-cache/
+.tmp-phase3-*
+.tmp-translation-models.json
+
+# Local timeline verification outputs
+.tmp-timeline-*.log
+dist-test-new/

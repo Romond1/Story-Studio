@@ -1,0 +1,45 @@
+
+> story-studio@1.0.0 check:games
+> tsc -p tsconfig.final-boss.json && node --test games/language-snake/inputBridge.test.mjs games/final-boss-hero/hostBridge.test.mjs games/final-boss-hero/projectRoundTrip.test.cjs games/final-boss-hero/editorImport.test.cjs games/final-boss-hero/observePlayArea.test.cjs games/final-boss-hero/fitPlayArea.test.cjs games/final-boss-hero/boardProjection.test.cjs
+
+✔ the original 48-tile star projection is included on both horizontal sides (1.5465ms)
+✔ the original capped 60-tile star includes its bottom projection (0.2657ms)
+✔ the default shield retains its original aspect and needs no upper projection gutter (1.1362ms)
+✔ same-id card import settles and subsequent native draft edits still autosave (262.2991ms)
+✔ same-id cutscene import settles and subsequent native media edits still autosave (42.5677ms)
+✔ explicit empty card assignments remain unchecked through import, selection and native edits (163.2114ms)
+✔ unchecking every native game assignment survives subsequent title editing (74.1898ms)
+✔ initial and resized play areas fit all critical content without manual zoom (2.3532ms)
+✔ explicit wheel zoom is preserved when content observation runs (1.6174ms)
+✔ automatic fit centers smaller content and retains correct local pan coordinates (0.2043ms)
+✔ dense Board Dash can automatically fit below the original minimum zoom (0.3527ms)
+✔ other mini-games retain their original minimum fitting zoom (0.2119ms)
+✔ reports readiness to the owning host with this instance (2.483ms)
+✔ uses the opaque packaged origin and preserves parent identity (1.4628ms)
+✔ forwards only current parent input and retains original Shift shortcuts (0.6554ms)
+✔ reports a startup failure and stops media and animations (0.5387ms)
+✔ pagehide disposes the runtime, media sources and listeners exactly once (0.3899ms)
+✔ blocks host-free startup reports without blocking native configured modifiers (0.3938ms)
+✔ suppresses native arrow scrolling while preserving typing field defaults (0.3158ms)
+✔ defers geometry updates outside ResizeObserver delivery to avoid same-cycle feedback (2.6084ms)
+✔ coalesces simultaneous viewport/content notifications and native window resize (0.327ms)
+✔ closing the game disconnects resize observation and cancels queued geometry updates (0.2938ms)
+✔ default project roundtrip preserves cards that omit optional game assignments (11.3906ms)
+✔ explicit empty game assignments remain empty during project import (1.6957ms)
+✔ explicit game assignments retain only supported unique game ids (1.1313ms)
+✔ accepts input from the owning parent for the current game session (3.9732ms)
+✔ rejects input from a different window or origin (0.2632ms)
+✔ rejects stale or absent game session identifiers (0.2191ms)
+✔ rejects modifier shortcuts while retaining ordinary game shortcuts (0.681ms)
+✔ rejects malformed messages and unsupported keyboard event phases (0.8452ms)
+✔ accepts key release and repeat input for the owning session (0.2339ms)
+✔ accepts the local file origin used by the packaged application (0.2561ms)
+✔ preserves Shift for native game shortcuts and rejects malformed modifiers (0.5013ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4420.3179

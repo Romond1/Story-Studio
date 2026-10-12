@@ -1,0 +1,50 @@
+
+> story-studio@1.0.0 test:translation
+> node --test scripts/translation-cache.test.cjs scripts/translation-capture.test.cjs scripts/translation-service.test.cjs scripts/whisper-backend.test.cjs scripts/whisper-runtime.test.cjs scripts/whisper-host.test.cjs scripts/whisper-session.test.cjs
+
+✔ offline cache reuses verified bytes and refuses corruption without attempting download (23.9764ms)
+✔ download integrity failure does not become a cached model (101.8304ms)
+✔ 20 second limit stops and resamples to bounded mono 16 kHz without stopping shared microphone (26.5927ms)
+✔ cancel discards recording and removes timers without decoding or stopping shared tracks (2.3043ms)
+✔ microphone replacement cancels capture and reports a recoverable error (6.3663ms)
+✔ ended track cancels capture (1.9841ms)
+✔ cancel during decoding suppresses result and closes decoding context (2.1123ms)
+✔ recorder start failure removes listeners and does not retain timers (1.4718ms)
+✔ enable prepares both models and repeated utterances retain recognition and translation (152.43ms)
+✔ target switching replaces only translator; model switching replaces only recognizer (39.5486ms)
+✔ idle cancellation retains engines and in-flight cancellation rejects stale output without reloading (34.7424ms)
+✔ Auto prepares independent CPU fallback while explicit GPU reports error (54.7765ms)
+✔ idle native crash invalidates Ready and retry creates fresh engine (25.3207ms)
+✔ disabling during an utterance prevents stale translation and releases both models (20.8063ms)
+✔ invalid settings and invalid audio cannot start either engine (32.8723ms)
+✔ Auto without NVIDIA prepares CPU directly; explicit GPU is actionable (50.9729ms)
+✔ cancel while native files prepare never starts a native process (25.4716ms)
+✔ translator crash retains recognizer and preparation recovers only the worker (31.5761ms)
+✔ engine diagnostics never retain or broadcast private audio (47.1149ms)
+✔ text translation reuses model and language change releases old worker (28.862ms)
+✔ caption IPC denies Presenter inference and strips private fields from published envelope (20.4368ms)
+✔ CUDA requires real model and compute allocations, not discovery or use_gpu (4.3876ms)
+✔ CUDA allocation without CUDA backend initialization is not proof of GPU execution (0.2695ms)
+✔ worker memoizes successful preparation and retries a failed preparation (17.4301ms)
+✔ bundled executable matches manifest (11.7899ms)
+✔ native host is bundled and rejects missing arguments (139.1253ms)
+✔ parent PID zero is rejected before loading model (74.5212ms)
+✔ verified runtime skips archive access and extraction (28.528ms)
+✔ modified runtime dependency repairs from verified archive (72.8313ms)
+✔ missing runtime dependency repairs from verified archive (17.1165ms)
+✔ stream read error marks runtime invalid (8.0242ms)
+✔ failed repair does not accept corrupt runtime (35.4428ms)
+✔ stream failure after stat is treated as invalid runtime (3.1598ms)
+✔ speech preparation launches the exact manifest-verified executable and reports verification first (4.3619ms)
+✔ session retains PID across inference and cancellation, then closes (13.8262ms)
+✔ unexpected close rejects request and reports crash once (1.6341ms)
+✔ CUDA ready waits for allocation evidence arriving on separate pipe (2.0826ms)
+✔ split UTF-8 output survives pipe chunk boundaries (1.1243ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1073.0112

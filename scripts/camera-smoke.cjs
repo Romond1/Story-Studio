@@ -12,7 +12,7 @@ const commands = require('../dist-test/shared/lesson/commands');
 (async () => {
   const root = path.resolve(__dirname, '..');
   const temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'story-camera-'));
-  const evidence = path.join(root, 'docs/camera-phase1-evidence');
+  const evidence = process.env.STORY_STUDIO_CAMERA_EVIDENCE || path.join(root, 'docs/camera-phase1-evidence');
   await fs.mkdir(evidence, { recursive: true });
   const fixture = path.join(temporary, 'camera.y4m');
   execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'color=c=0x00ff00:s=1280x720:r=30,drawbox=x=160:y=180:w=240:h=360:color=red:t=fill', '-t', '1', '-pix_fmt', 'yuv420p', fixture]);
@@ -110,12 +110,12 @@ const commands = require('../dist-test/shared/lesson/commands');
     await control.getByLabel('Live zoom').fill('2'); await settle();
     assert.deepEqual(await present.locator('.camera-layer').boundingBox(), beforeZoom);
     await present.screenshot({ path: path.join(evidence, 'keyed-corner.png') });
-    await control.locator('.camera-controls').scrollIntoViewIfNeeded();
+    await control.getByRole('region', { name: 'Camera', exact: true }).scrollIntoViewIfNeeded();
     await control.screenshot({ path: path.join(evidence, 'controls-desktop.png') });
     await app.evaluate(({ BrowserWindow }) => { const w = BrowserWindow.getAllWindows().find(w => !w.getTitle().includes('— Present')); w.setMinimumSize(320, 400); w.setSize(480, 850); });
-    await control.locator('.camera-controls').scrollIntoViewIfNeeded();
+    await control.getByRole('region', { name: 'Camera', exact: true }).scrollIntoViewIfNeeded();
     await control.screenshot({ path: path.join(evidence, 'controls-narrow.png') });
-    const controlsAudit = await control.locator('.camera-controls').evaluate(section => ({
+    const controlsAudit = await control.getByRole('region', { name: 'Camera', exact: true }).evaluate(section => ({
       overflow: section.scrollWidth > section.clientWidth + 1,
       sliders: [...section.querySelectorAll('.camera-slider')].every(label => getComputedStyle(label).display === 'grid'),
       toggles: [...section.querySelectorAll('.camera-toggle')].every(label => getComputedStyle(label).flexDirection === 'row'),

@@ -1,0 +1,212 @@
+[
+  {
+    "name": "model.enit.intgemm.alphas.bin",
+    "schema": 1760721816228,
+    "version": "3.0",
+    "fileType": "model",
+    "attachment": {
+      "hash": "ed0580da44b91afd665956959d893c02e16e27240542799a524a3041c523ca17",
+      "size": 23600729,
+      "filename": "model.enit.intgemm.alphas.bin.zst",
+      "location": "main-workspace/translations-models-v2/3869680e-cedc-4af2-9167-bee368caa4be.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "base-memory",
+    "sourceLanguage": "en",
+    "targetLanguage": "it",
+    "decompressedHash": "248f47568788ecc351da7e5e07064d4153b4f71e011364ae2c931ffeec4d1cc2",
+    "decompressedSize": 31561787,
+    "filter_expression": "",
+    "id": "04bfa2c3-f1c1-4a6b-9019-2291c2342f3c",
+    "last_modified": 1760725182915
+  },
+  {
+    "name": "vocab.enit.spm",
+    "schema": 1760721823253,
+    "version": "3.0",
+    "fileType": "vocab",
+    "attachment": {
+      "hash": "ad75fd13305e6dc6ec6cc95e43fbb3cb2fe8b7ea60332f195785541325555db8",
+      "size": 346942,
+      "filename": "vocab.enit.spm.zst",
+      "location": "main-workspace/translations-models-v2/6779446e-354e-44ec-a0d1-f3435c340b86.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "base-memory",
+    "sourceLanguage": "en",
+    "targetLanguage": "it",
+    "decompressedHash": "3ef0211d4ae6db21440892f180f2019fe2bfc110a330ffa9d2eca9665e4f2bc5",
+    "decompressedSize": 812724,
+    "filter_expression": "",
+    "id": "d1cbab2d-eaf5-4594-8545-501b84d009ad",
+    "last_modified": 1760725182911
+  },
+  {
+    "name": "lex.50.50.enit.s2t.bin",
+    "schema": 1760721821321,
+    "version": "3.0",
+    "fileType": "lex",
+    "attachment": {
+      "hash": "a97b81e39392c07084f3e8340f119e31ae10529634dd0ad6bad1f945d94bb4c7",
+      "size": 1646871,
+      "filename": "lex.50.50.enit.s2t.bin.zst",
+      "location": "main-workspace/translations-models-v2/598d567f-4a7e-4ae8-b9b2-0c4edbc01aa6.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "base-memory",
+    "sourceLanguage": "en",
+    "targetLanguage": "it",
+    "decompressedHash": "8b21914804625b2777dae7fdb636eb78f02a3eb8b7bceaa50f29ac740961da93",
+    "decompressedSize": 4133192,
+    "filter_expression": "",
+    "id": "2f21e4d2-001f-4beb-a5ae-4cbf2547a747",
+    "last_modified": 1760725182873
+  },
+  {
+    "name": "model.enro.intgemm.alphas.bin",
+    "schema": 1758910761876,
+    "version": "3.0",
+    "fileType": "model",
+    "attachment": {
+      "hash": "acacf72be3a0860c45ba8e37e36356aa264418f43fe08492cad4e34800da472e",
+      "size": 11836949,
+      "filename": "model.enro.intgemm.alphas.bin.zst",
+      "location": "main-workspace/translations-models-v2/8da98363-934f-49cd-ae8e-c6c531a5d563.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "tiny",
+    "sourceLanguage": "en",
+    "targetLanguage": "ro",
+    "decompressedHash": "aa98c415e5beb1c5ee2f7d2508a3bbba949be223d7d9e5e1788ad0ae8598dda5",
+    "decompressedSize": 17141051,
+    "filter_expression": "",
+    "id": "761bc790-808a-4269-87fa-450350d19faa",
+    "last_modified": 1758912286495
+  },
+  {
+    "name": "lex.50.50.enro.s2t.bin",
+    "schema": 1758910758251,
+    "version": "3.0",
+    "fileType": "lex",
+    "attachment": {
+      "hash": "83dd2508a9eff3ae0b401e08cb17073678c2ad1977b5d09e8efeab0ad7648a05",
+      "size": 1357161,
+      "filename": "lex.50.50.enro.s2t.bin.zst",
+      "location": "main-workspace/translations-models-v2/9973d8be-2dbe-412a-87b3-06268b16c333.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "tiny",
+    "sourceLanguage": "en",
+    "targetLanguage": "ro",
+    "decompressedHash": "508bce64a8bc906a99043ad2f4855b4662e06f8827c1c6a75ab83181b4f17f81",
+    "decompressedSize": 3739880,
+    "filter_expression": "",
+    "id": "70ce7867-bf8b-4fbb-accc-71bbbce4c86c",
+    "last_modified": 1758912286492
+  },
+  {
+    "name": "vocab.enro.spm",
+    "schema": 1758910760450,
+    "version": "3.0",
+    "fileType": "vocab",
+    "attachment": {
+      "hash": "05354daf8fb0ba776492b531d4a10f616c27df9e6ba9d0d16d995fc477614458",
+      "size": 336827,
+      "filename": "vocab.enro.spm.zst",
+      "location": "main-workspace/translations-models-v2/c7c06805-a9f2-44d9-b906-c9e48a136c55.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "tiny",
+    "sourceLanguage": "en",
+    "targetLanguage": "ro",
+    "decompressedHash": "d89eedf6cbbcb30d7ed4b0b092189196ac2b010ec0c3ede33a6676b17ea1c95e",
+    "decompressedSize": 801522,
+    "filter_expression": "",
+    "id": "62b1383b-12e2-4edf-a0ed-e5764a1eeaf4",
+    "last_modified": 1758912286473
+  },
+  {
+    "name": "lex.50.50.enja.s2t.bin",
+    "schema": 1758910266014,
+    "version": "3.0",
+    "fileType": "lex",
+    "attachment": {
+      "hash": "8954d5b63432366992b22ad2aaa11895e2643014835049fe677655540a705915",
+      "size": 1751977,
+      "filename": "lex.50.50.enja.s2t.bin.zst",
+      "location": "main-workspace/translations-models-v2/83e22dc9-40c4-4ac1-8c25-5d3877b5f628.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "base-memory",
+    "sourceLanguage": "en",
+    "targetLanguage": "ja",
+    "decompressedHash": "edfb7eb47b98a2689b804ab3614c31b24f1257aa54b1154da3d85e1ae8152d9f",
+    "decompressedSize": 4128360,
+    "filter_expression": "",
+    "id": "84a3db4a-db12-4d1a-9b6e-40ec28c3c43a",
+    "last_modified": 1758912286285
+  },
+  {
+    "name": "trgvocab.enja.spm",
+    "schema": 1758910264591,
+    "version": "3.0",
+    "fileType": "trgvocab",
+    "attachment": {
+      "hash": "5384abf34f0e1298f795bd14909a577272059041e60f91a5eb10500e35d0ee98",
+      "size": 361180,
+      "filename": "trgvocab.enja.spm.zst",
+      "location": "main-workspace/translations-models-v2/e54d177c-1131-4fbf-90ea-6741a98d6675.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "base-memory",
+    "sourceLanguage": "en",
+    "targetLanguage": "ja",
+    "decompressedHash": "3b3d9f8f3a034d98d0a476f1794fa79c01e4e98a967ceb6777a66ba2d03ec1e1",
+    "decompressedSize": 827144,
+    "filter_expression": "",
+    "id": "807942e6-6bd0-4121-9099-cc7d0ec53ab2",
+    "last_modified": 1758912286281
+  },
+  {
+    "name": "srcvocab.enja.spm",
+    "schema": 1758910263115,
+    "version": "3.0",
+    "fileType": "srcvocab",
+    "attachment": {
+      "hash": "dd1e93d625d9a8d8a42f75255343f302ea37527933eda1a490652b66a7408a64",
+      "size": 345747,
+      "filename": "srcvocab.enja.spm.zst",
+      "location": "main-workspace/translations-models-v2/d10e4482-b9ba-4565-ab44-5ba3cebcf94b.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "base-memory",
+    "sourceLanguage": "en",
+    "targetLanguage": "ja",
+    "decompressedHash": "970c98d174fc01e0339fbabbf45af36a4be3f26f819ec1a5ea1189f71e091889",
+    "decompressedSize": 796275,
+    "filter_expression": "",
+    "id": "38968319-f51d-4b4c-8c7e-80a4a6bd3abb",
+    "last_modified": 1758912286275
+  },
+  {
+    "name": "model.enja.intgemm.alphas.bin",
+    "schema": 1758910251828,
+    "version": "3.0",
+    "fileType": "model",
+    "attachment": {
+      "hash": "f92259b9904812350b71f440c3328f3e2e856f31c1a3ab6002756380dd908e00",
+      "size": 32431590,
+      "filename": "model.enja.intgemm.alphas.bin.zst",
+      "location": "main-workspace/translations-models-v2/a01a5318-41c7-4266-8fe1-66c105d6d711.zst",
+      "mimetype": "application/zstd"
+    },
+    "architecture": "base-memory",
+    "sourceLanguage": "en",
+    "targetLanguage": "ja",
+    "decompressedHash": "59ae659f9bb63e4f81f474fe3c03d3f4499434b5f9e779fab7c12a45f31fd562",
+    "decompressedSize": 43849787,
+    "filter_expression": "",
+    "id": "cf8e6d41-9247-482a-be8a-a5ff6c45d4dd",
+    "last_modified": 1758912286271
+  }
+]

@@ -1,4 +1,16 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
+import type { TranslationControlApi } from '../shared/translation';
+const translationControl:TranslationControlApi={
+  prepare:settings=>ipcRenderer.invoke('translation:prepare',settings),
+  getState:()=>ipcRenderer.invoke('translation:state-get'),
+  subscribeState:listener=>{const handle=(_event:Electron.IpcRendererEvent,state:Parameters<typeof listener>[0])=>listener(state);ipcRenderer.on('translation:state',handle);return()=>ipcRenderer.removeListener('translation:state',handle);},
+  run:request=>ipcRenderer.invoke('translation:run',request),
+  cancel:(unload?:boolean)=>ipcRenderer.invoke('translation:cancel',unload),
+  format:(text,mode)=>ipcRenderer.invoke('translation:format',text,mode),
+  publish:caption=>ipcRenderer.invoke('translation:publish',caption),
+  subscribeStatus:listener=>{const handle=(_event:Electron.IpcRendererEvent,status:string)=>listener(status);ipcRenderer.on('translation:status',handle);return()=>{ipcRenderer.removeListener('translation:status',handle);};},
+};
+contextBridge.exposeInMainWorld('translationControl',translationControl);
 import type { CameraControlApi, CameraState } from '../shared/cameraProtocol';
 
 const cameraControl: CameraControlApi = {

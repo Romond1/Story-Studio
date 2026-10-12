@@ -1,0 +1,103 @@
+{
+  "packaged": false,
+  "offline": true,
+  "fixture": "User speech WAV injected through Chromium fake microphone and actual AudioController/MediaRecorder UI",
+  "results": [
+    {
+      "execution": "cpu",
+      "warmup": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "speechInstallVerifyMs": 627.5,
+          "speechPreprocessMs": 7.535499999999956,
+          "transcriptionMs": 5405.803599999999,
+          "whisperLoadMs": 183.58,
+          "whisperNativeTotalMs": 5221.29,
+          "whisperEncodeMs": 4618.55,
+          "whisperDecodeMs": 0,
+          "whisperBatchDecodeMs": 329.15,
+          "workerWallMs": 2114.3032999999996,
+          "cpuMs": 2860,
+          "rssMB": 656.54296875,
+          "rssDeltaMB": 370.5078125,
+          "translationMs": 534.4437999999991,
+          "translationLoadMs": 1579.5164000000004,
+          "totalMs": 8158.9773000000005
+        },
+        "speechBackend": {
+          "backend": "cpu"
+        }
+      },
+      "backend": "Last speech backend: CPU",
+      "stopToCaptionMs": 6021.474100000001,
+      "transcript": "Open your books and look at the first picture. Please open your",
+      "translation": "本を開いて、最初の写真を見てください。 開けてください"
+    },
+    {
+      "execution": "gpu",
+      "warmup": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "speechInstallVerifyMs": 4777.137999999999,
+          "speechPreprocessMs": 2.5843999999997322,
+          "transcriptionMs": 856.2975000000006,
+          "whisperLoadMs": 320.64,
+          "whisperNativeTotalMs": 586.49,
+          "whisperEncodeMs": 110.57,
+          "whisperDecodeMs": 0,
+          "whisperBatchDecodeMs": 86.52,
+          "workerWallMs": 2336.4159999999974,
+          "cpuMs": 3359,
+          "rssMB": 658.23046875,
+          "rssDeltaMB": 367.265625,
+          "translationMs": 552.647100000002,
+          "translationLoadMs": 1783.4099999999999,
+          "totalMs": 8080.6433
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        }
+      },
+      "backend": "Last speech backend: NVIDIA CUDA · NVIDIA GeForce RTX 4070 Ti",
+      "stopToCaptionMs": 1413.0058999999965,
+      "transcript": "Please open your books and look at the first picture.",
+      "translation": "本を開いて、最初の写真を見てください。"
+    },
+    {
+      "execution": "auto",
+      "warmup": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "speechInstallVerifyMs": 5071.9769000000015,
+          "speechPreprocessMs": 2.929500000005646,
+          "transcriptionMs": 921.239999999998,
+          "whisperLoadMs": 316.76,
+          "whisperNativeTotalMs": 640.39,
+          "whisperEncodeMs": 141.91,
+          "whisperDecodeMs": 0,
+          "whisperBatchDecodeMs": 89.26,
+          "workerWallMs": 2997.444499999998,
+          "cpuMs": 3968,
+          "rssMB": 659.94921875,
+          "rssDeltaMB": 367.9453125,
+          "translationMs": 738.421500000004,
+          "translationLoadMs": 2258.577599999997,
+          "totalMs": 9074.250499999995
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        }
+      },
+      "backend": "Last speech backend: NVIDIA CUDA · NVIDIA GeForce RTX 4070 Ti",
+      "stopToCaptionMs": 1376.3097999999954,
+      "transcript": "picture. Please open your books and look at the first picture.",
+      "translation": "画像。 本を開いて、最初の写真を見てください。"
+    }
+  ],
+  "errors": []
+}

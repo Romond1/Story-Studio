@@ -636,6 +636,11 @@ export class AudioController {
     return Boolean(this.microphoneStream);
   }
 
+  /** Read-only tap of the existing clean input. Consumers must never stop its tracks. */
+  getRecognitionStream(): MediaStream | null {
+    return this.microphoneStream;
+  }
+
   setBusVolume(bus: AudioBusName, volume: number): void {
     const settings = normalizeAudioSettings({
       ...this.snapshot.settings,

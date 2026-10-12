@@ -1,0 +1,181 @@
+{
+  "packaged": true,
+  "offline": true,
+  "fixture": "Recorded user WAV loop through actual AudioController/MediaRecorder capture; intervals may cross phrase boundaries",
+  "results": [
+    {
+      "execution": "cpu",
+      "trial": 0,
+      "prepared": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "cpu"
+        },
+        "backend": {
+          "backend": "cpu"
+        },
+        "metrics": {
+          "dllLoadMs": 7.9825,
+          "modelLoadMs": 203.2407,
+          "backendInitMs": 13.9078,
+          "prepareMs": 225.147,
+          "speechPid": 35064,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 797.4995999999992
+        }
+      },
+      "releaseToTranscriptMs": 5761.655699999999,
+      "releaseToCaptionMs": 5797.604200000002,
+      "transcript": "Open your books and look at the first picture. Please open your books.",
+      "translation": "本を開いて、最初の写真を見てください。 本を開いてください。"
+    },
+    {
+      "execution": "cpu",
+      "trial": 1,
+      "prepared": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "cpu"
+        },
+        "backend": {
+          "backend": "cpu"
+        },
+        "metrics": {
+          "dllLoadMs": 7.9825,
+          "modelLoadMs": 203.2407,
+          "backendInitMs": 13.9078,
+          "prepareMs": 225.147,
+          "speechPid": 35064,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 797.4995999999992
+        }
+      },
+      "releaseToTranscriptMs": 5173.428899999999,
+      "releaseToCaptionMs": 5180.458699999999,
+      "transcript": "Please look at the books and look at the first picture.",
+      "translation": "本を見て、最初の写真を見てください。"
+    },
+    {
+      "execution": "gpu",
+      "trial": 0,
+      "prepared": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 93.3135,
+          "modelLoadMs": 344.4851,
+          "backendInitMs": 12.1969,
+          "prepareMs": 450.0177,
+          "speechPid": 27176,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 573.0728999999992
+        }
+      },
+      "releaseToTranscriptMs": 423.43389999999636,
+      "releaseToCaptionMs": 430.42759999999544,
+      "transcript": "books and look at the first picture. Please open your books",
+      "translation": "本を書いて、最初の写真を見てください。 本を開いてください"
+    },
+    {
+      "execution": "gpu",
+      "trial": 1,
+      "prepared": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 93.3135,
+          "modelLoadMs": 344.4851,
+          "backendInitMs": 12.1969,
+          "prepareMs": 450.0177,
+          "speechPid": 27176,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 573.0728999999992
+        }
+      },
+      "releaseToTranscriptMs": 441.2260000000024,
+      "releaseToCaptionMs": 448.03399999999965,
+      "transcript": "look at the first picture. Please open your books and look at the",
+      "translation": "最初の写真を見てください。 本を開いて、ぜひその本を見てください"
+    },
+    {
+      "execution": "auto",
+      "trial": 0,
+      "prepared": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "auto"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 89.6447,
+          "modelLoadMs": 332.9363,
+          "backendInitMs": 12.6982,
+          "prepareMs": 435.3003,
+          "speechPid": 2248,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 659.0891999999949
+        }
+      },
+      "releaseToTranscriptMs": 387.7019999999975,
+      "releaseToCaptionMs": 395.2966000000015,
+      "transcript": "Please open your books and look at the first picture.",
+      "translation": "本を開いて、最初の写真を見てください。"
+    },
+    {
+      "execution": "auto",
+      "trial": 1,
+      "prepared": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "auto"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 89.6447,
+          "modelLoadMs": 332.9363,
+          "backendInitMs": 12.6982,
+          "prepareMs": 435.3003,
+          "speechPid": 2248,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 659.0891999999949
+        }
+      },
+      "releaseToTranscriptMs": 361.1588000000047,
+      "releaseToCaptionMs": 367.2378000000026,
+      "transcript": "Please open your books and look at the first picture.",
+      "translation": "本を開いて、最初の写真を見てください。"
+    }
+  ],
+  "errors": [],
+  "orphanPids": []
+}

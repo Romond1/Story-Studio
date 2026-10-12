@@ -1,0 +1,27 @@
+{
+  "source": "E-20Hz actual 14.81Hz physical observations",
+  "note": "Derived same-input replay. Offset is to noisy raw observations, not truth. Roughness includes desired head acceleration. No screen interpolation was implemented.",
+  "results": [
+    {
+      "tauMs": 0,
+      "samples": 893,
+      "meanOffsetPixels": 0,
+      "maxOffsetPixels": 0,
+      "rmsVelocityChangePixelsPerMs": 0.1045451063131105
+    },
+    {
+      "tauMs": 45,
+      "samples": 893,
+      "meanOffsetPixels": 3.6481069599091405,
+      "maxOffsetPixels": 19.05707100710253,
+      "rmsVelocityChangePixelsPerMs": 0.08536240104761367
+    },
+    {
+      "tauMs": 90,
+      "samples": 893,
+      "meanOffsetPixels": 11.052610867738395,
+      "maxOffsetPixels": 53.454735639372984,
+      "rmsVelocityChangePixelsPerMs": 0.06771017733557139
+    }
+  ]
+}

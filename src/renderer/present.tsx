@@ -1,5 +1,6 @@
 import { PromptCardScene } from './PromptCardScene';
 import { CameraLayer } from './camera/CameraLayer';
+import { CaptionLayer } from './translation/CaptionLayer';
 import { RewardSurface } from './RewardScene';
 import type { RewardPresentation } from '../shared/rewardPresentation';
 import { MovementSurface } from './movement/MovementOverlay';
@@ -89,6 +90,7 @@ function Present() {
     <MovementSurface presentation={envelope?.snapshot?.movement ?? null} />
     </div>
     <CameraLayer />
+    <CaptionLayer />
   </main>;
 }
 export function PresentLessonScene({ target, envelope, report }: { target: Extract<PresentTarget, { kind: 'scene' }>; envelope: PresentEnvelope; report: PresentApi['reportApplied'] }) {

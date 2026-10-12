@@ -1,0 +1,28 @@
+✖ new preparation waits for previous native cancellation acknowledgement (187.8352ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 727.6339
+
+✖ failing tests:
+
+test at scripts\translation-lifetime.test.cjs:64:1
+✖ new preparation waits for previous native cancellation acknowledgement (187.8352ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\scripts\translation-lifetime.test.cjs:65:245)
+      at async Test.run (node:internal/test_runner/test:1110:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

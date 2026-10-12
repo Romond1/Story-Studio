@@ -1,0 +1,7 @@
+PASS [
+  'offline explicit CPU',
+  'Auto falls back when native CUDA initialization is unavailable',
+  'forced GPU returns actionable error',
+  'offline GPU after CPU/failure releases old resources',
+  'cancel GPU preparation then CPU retry'
+]

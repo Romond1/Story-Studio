@@ -1,0 +1,560 @@
+{
+  "notes": [
+    "Warm means repeated process with warm OS/driver caches, NOT a resident model.",
+    "Native CPU is interval samples normalized over 8 logical CPUs; peaks may be missed.",
+    "GPU utilization/VRAM are system-wide including desktop/other apps; not attributable entirely to Whisper.",
+    "Service total excludes recording, renderer decode/resample and caption publish; camera speechToCaption includes publish/UI acknowledgement but excludes recording."
+  ],
+  "summaries": [
+    {
+      "file": "baseline.json",
+      "legacy": true,
+      "model": "base.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 4907.13,
+      "medianTranscriptionMs": 4668.54,
+      "meanModelLoadMs": 175.89,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 6362.78,
+      "coldPrepareMs": 948.38,
+      "warmPrepareMs": 487.72,
+      "meanTranslationMs": 46.38,
+      "meanTotalMs": 5447.18,
+      "meanPreprocessMs": 0,
+      "meanNativeCpuPercentOfMachine": 19.1,
+      "peakNativeWorkingSetMB": 579.95,
+      "peakHostRssMB": 732.25,
+      "meanSystemGpuUtilPercent": 25.3,
+      "peakSystemVramMB": 1699,
+      "wer": 0,
+      "noiseWER": 0.1111111111111111
+    },
+    {
+      "file": "baseline.json",
+      "legacy": true,
+      "model": "small.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 13915.24,
+      "medianTranscriptionMs": 13776.29,
+      "meanModelLoadMs": 520.01,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 18073.83,
+      "coldPrepareMs": 8951.9,
+      "warmPrepareMs": 1270.85,
+      "meanTranslationMs": 46.29,
+      "meanTotalMs": 15243.76,
+      "meanPreprocessMs": 0,
+      "meanNativeCpuPercentOfMachine": 24.11,
+      "peakNativeWorkingSetMB": 764.73,
+      "peakHostRssMB": 1070.04,
+      "meanSystemGpuUtilPercent": 25.94,
+      "peakSystemVramMB": 1203,
+      "wer": 2.04,
+      "noiseWER": 0
+    },
+    {
+      "file": "benchmark.json",
+      "legacy": false,
+      "model": "base.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 4744.36,
+      "medianTranscriptionMs": 4696.96,
+      "meanModelLoadMs": 462.01,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 5465.6,
+      "coldPrepareMs": 575,
+      "warmPrepareMs": 0.37,
+      "meanTranslationMs": 35,
+      "meanTotalMs": 4785.72,
+      "meanPreprocessMs": 3.88,
+      "meanNativeCpuPercentOfMachine": 23.26,
+      "peakNativeWorkingSetMB": 298.19,
+      "peakHostRssMB": 586.5,
+      "meanSystemGpuUtilPercent": 21.78,
+      "peakSystemVramMB": 1154,
+      "wer": 0,
+      "noiseWER": 0.1111111111111111,
+      "backend": {
+        "backend": "cpu"
+      }
+    },
+    {
+      "file": "benchmark.json",
+      "legacy": false,
+      "model": "base.en",
+      "execution": "gpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 3555.76,
+      "medianTranscriptionMs": 1466.91,
+      "meanModelLoadMs": 504.21,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 2915.67,
+      "coldPrepareMs": 9266.14,
+      "warmPrepareMs": 0.42,
+      "meanTranslationMs": 38.84,
+      "meanTotalMs": 3667.25,
+      "meanPreprocessMs": 3.38,
+      "meanNativeCpuPercentOfMachine": 10.89,
+      "peakNativeWorkingSetMB": 597.33,
+      "peakHostRssMB": 597.01,
+      "meanSystemGpuUtilPercent": 5.12,
+      "peakSystemVramMB": 1675,
+      "wer": 0,
+      "noiseWER": 0.1111111111111111,
+      "backend": {
+        "backend": "cuda",
+        "device": "NVIDIA GeForce RTX 4070 Ti"
+      }
+    },
+    {
+      "file": "benchmark.json",
+      "legacy": false,
+      "model": "small.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 14060.34,
+      "medianTranscriptionMs": 13593.84,
+      "meanModelLoadMs": 994.33,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 15457.35,
+      "coldPrepareMs": 1959.85,
+      "warmPrepareMs": 0.28,
+      "meanTranslationMs": 38.64,
+      "meanTotalMs": 14104.44,
+      "meanPreprocessMs": 3.05,
+      "meanNativeCpuPercentOfMachine": 23.73,
+      "peakNativeWorkingSetMB": 764.63,
+      "peakHostRssMB": 594.99,
+      "meanSystemGpuUtilPercent": 24.4,
+      "peakSystemVramMB": 1131,
+      "wer": 2.04,
+      "noiseWER": 0,
+      "backend": {
+        "backend": "cpu"
+      }
+    },
+    {
+      "file": "benchmark.json",
+      "legacy": false,
+      "model": "small.en",
+      "execution": "gpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 2254.26,
+      "medianTranscriptionMs": 2281.09,
+      "meanModelLoadMs": 1180.5,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 5019.95,
+      "coldPrepareMs": 9306.16,
+      "warmPrepareMs": 4.41,
+      "meanTranslationMs": 52.82,
+      "meanTotalMs": 2433.98,
+      "meanPreprocessMs": 4.46,
+      "meanNativeCpuPercentOfMachine": 9.87,
+      "peakNativeWorkingSetMB": 449.2,
+      "peakHostRssMB": 599.89,
+      "meanSystemGpuUtilPercent": 6.43,
+      "peakSystemVramMB": 2143,
+      "wer": 2.04,
+      "noiseWER": 0,
+      "backend": {
+        "backend": "cuda",
+        "device": "NVIDIA GeForce RTX 4070 Ti"
+      }
+    },
+    {
+      "file": "live-baseline.json",
+      "legacy": true,
+      "model": "base.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 7133.72,
+      "medianTranscriptionMs": 6552.03,
+      "meanModelLoadMs": 272.13,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 7033.35,
+      "coldPrepareMs": 739.09,
+      "warmPrepareMs": 1039.79,
+      "meanTranslationMs": 44.27,
+      "meanTotalMs": 8224.12,
+      "meanPreprocessMs": 0,
+      "meanNativeCpuPercentOfMachine": 20.26,
+      "peakNativeWorkingSetMB": 297.91,
+      "peakHostRssMB": 721.88,
+      "meanSystemGpuUtilPercent": 15.97,
+      "peakSystemVramMB": 1184,
+      "wer": 0,
+      "noiseWER": 0
+    },
+    {
+      "file": "live-baseline.json",
+      "legacy": true,
+      "model": "small.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 19063.82,
+      "medianTranscriptionMs": 18832.56,
+      "meanModelLoadMs": 967.91,
+      "meanNativeTotalMs": 0,
+      "coldTranscriptionMs": 15594.59,
+      "coldPrepareMs": 1380.4,
+      "warmPrepareMs": 2208.51,
+      "meanTranslationMs": 42.6,
+      "meanTotalMs": 21319.98,
+      "meanPreprocessMs": 0,
+      "meanNativeCpuPercentOfMachine": 22.4,
+      "peakNativeWorkingSetMB": 764.82,
+      "peakHostRssMB": 1059.6,
+      "meanSystemGpuUtilPercent": 23.69,
+      "peakSystemVramMB": 1216,
+      "wer": 2.04,
+      "noiseWER": 0
+    },
+    {
+      "file": "live-benchmark.json",
+      "legacy": false,
+      "model": "base.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 6560.96,
+      "medianTranscriptionMs": 5747.71,
+      "meanModelLoadMs": 481.26,
+      "meanNativeTotalMs": 6404.17,
+      "coldTranscriptionMs": 8359.66,
+      "coldPrepareMs": 555.78,
+      "warmPrepareMs": 0.5,
+      "meanTranslationMs": 45.95,
+      "meanTotalMs": 6614.33,
+      "meanPreprocessMs": 4.79,
+      "meanNativeCpuPercentOfMachine": 21.57,
+      "peakNativeWorkingSetMB": 298.25,
+      "peakHostRssMB": 587.05,
+      "meanSystemGpuUtilPercent": 21.45,
+      "peakSystemVramMB": 1169,
+      "wer": 0,
+      "noiseWER": 0,
+      "backend": {
+        "backend": "cpu"
+      }
+    },
+    {
+      "file": "live-benchmark.json",
+      "legacy": false,
+      "model": "base.en",
+      "execution": "gpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 1532.35,
+      "medianTranscriptionMs": 1472.72,
+      "meanModelLoadMs": 536.15,
+      "meanNativeTotalMs": 1106.03,
+      "coldTranscriptionMs": 826.27,
+      "coldPrepareMs": 2259.21,
+      "warmPrepareMs": 0.44,
+      "meanTranslationMs": 50.08,
+      "meanTotalMs": 1654.31,
+      "meanPreprocessMs": 3.13,
+      "meanNativeCpuPercentOfMachine": 8.71,
+      "peakNativeWorkingSetMB": 449.13,
+      "peakHostRssMB": 595.42,
+      "meanSystemGpuUtilPercent": 4.8,
+      "peakSystemVramMB": 1723,
+      "wer": 0,
+      "noiseWER": 0,
+      "backend": {
+        "backend": "cuda",
+        "device": "NVIDIA GeForce RTX 4070 Ti"
+      }
+    },
+    {
+      "file": "live-benchmark.json",
+      "legacy": false,
+      "model": "small.en",
+      "execution": "cpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 16273.05,
+      "medianTranscriptionMs": 16179.88,
+      "meanModelLoadMs": 1023.82,
+      "meanNativeTotalMs": 16184.61,
+      "coldTranscriptionMs": 17110.9,
+      "coldPrepareMs": 1973.07,
+      "warmPrepareMs": 0.29,
+      "meanTranslationMs": 43.29,
+      "meanTotalMs": 16321.64,
+      "meanPreprocessMs": 3,
+      "meanNativeCpuPercentOfMachine": 23.75,
+      "peakNativeWorkingSetMB": 765.45,
+      "peakHostRssMB": 593.96,
+      "meanSystemGpuUtilPercent": 23.3,
+      "peakSystemVramMB": 1175,
+      "wer": 2.04,
+      "noiseWER": 0,
+      "backend": {
+        "backend": "cpu"
+      }
+    },
+    {
+      "file": "live-benchmark.json",
+      "legacy": false,
+      "model": "small.en",
+      "execution": "gpu",
+      "warmTrials": 5,
+      "meanTranscriptionMs": 2019.3,
+      "medianTranscriptionMs": 2032.51,
+      "meanModelLoadMs": 1197.87,
+      "meanNativeTotalMs": 1553.88,
+      "coldTranscriptionMs": 1225.99,
+      "coldPrepareMs": 2891.76,
+      "warmPrepareMs": 0.4,
+      "meanTranslationMs": 49.84,
+      "meanTotalMs": 2146.06,
+      "meanPreprocessMs": 3.45,
+      "meanNativeCpuPercentOfMachine": 10.64,
+      "peakNativeWorkingSetMB": 448.49,
+      "peakHostRssMB": 615.13,
+      "meanSystemGpuUtilPercent": 5.74,
+      "peakSystemVramMB": 2195,
+      "wer": 2.04,
+      "noiseWER": 0,
+      "backend": {
+        "backend": "cuda",
+        "device": "NVIDIA GeForce RTX 4070 Ti"
+      }
+    }
+  ],
+  "camera": [
+    {
+      "source": "camera-benchmark.json",
+      "config": "idle",
+      "seconds": 60.35,
+      "cameraDrawFPS": 30.01,
+      "cameraDeliveredFPS": 29.98,
+      "trackingHz": 10.01,
+      "faceResults": 0,
+      "trackingInferenceMeanMs": 10.89,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 0,
+      "controlLongTasks": 0,
+      "transcriptionMs": 0,
+      "speechToCaptionMs": 0,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 70.784099,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 2127,
+            "dropped": 0
+          }
+        }
+      ]
+    },
+    {
+      "source": "camera-benchmark.json",
+      "config": "base-cpu",
+      "seconds": 61.94,
+      "cameraDrawFPS": 29.95,
+      "cameraDeliveredFPS": 29.07,
+      "trackingHz": 10.01,
+      "faceResults": 0,
+      "trackingInferenceMeanMs": 9.78,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 7,
+      "controlLongTasks": 2,
+      "transcriptionMs": 9549.68,
+      "speechToCaptionMs": 10299.28,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 69.782242,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 4798,
+            "dropped": 0
+          }
+        }
+      ]
+    },
+    {
+      "source": "camera-benchmark.json",
+      "config": "base-cuda",
+      "seconds": 60.7,
+      "cameraDrawFPS": 30,
+      "cameraDeliveredFPS": 29.75,
+      "trackingHz": 10,
+      "faceResults": 0,
+      "trackingInferenceMeanMs": 9.55,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 0,
+      "controlLongTasks": 2,
+      "transcriptionMs": 1172.36,
+      "speechToCaptionMs": 1833.73,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 61.254023,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 7242,
+            "dropped": 0
+          }
+        }
+      ]
+    },
+    {
+      "source": "camera-benchmark.json",
+      "config": "small-cpu",
+      "seconds": 116.46,
+      "cameraDrawFPS": 30,
+      "cameraDeliveredFPS": 29.85,
+      "trackingHz": 10,
+      "faceResults": 0,
+      "trackingInferenceMeanMs": 10.06,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 4,
+      "controlLongTasks": 0,
+      "transcriptionMs": 22632.85,
+      "speechToCaptionMs": 23244.73,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 37.193266,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 11920,
+            "dropped": 0
+          }
+        }
+      ]
+    },
+    {
+      "source": "camera-benchmark.json",
+      "config": "small-cuda",
+      "seconds": 60.97,
+      "cameraDrawFPS": 29.97,
+      "cameraDeliveredFPS": 29.62,
+      "trackingHz": 10.04,
+      "faceResults": 0,
+      "trackingInferenceMeanMs": 8.78,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 2,
+      "controlLongTasks": 1,
+      "transcriptionMs": 1749.48,
+      "speechToCaptionMs": 2432.17,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 31.479634,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 14449,
+            "dropped": 0
+          }
+        }
+      ]
+    },
+    {
+      "source": "synthetic-camera-benchmark.json",
+      "config": "idle",
+      "seconds": 60.77,
+      "cameraDrawFPS": 30,
+      "cameraDeliveredFPS": 29.64,
+      "trackingHz": 10.04,
+      "faceResults": 595,
+      "trackingInferenceMeanMs": 29.99,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 0,
+      "controlLongTasks": 0,
+      "transcriptionMs": 0,
+      "speechToCaptionMs": 0,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 72.056519,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 2166,
+            "dropped": 1
+          }
+        }
+      ]
+    },
+    {
+      "source": "synthetic-camera-benchmark.json",
+      "config": "base-cpu",
+      "seconds": 68.7,
+      "cameraDrawFPS": 29.94,
+      "cameraDeliveredFPS": 28.97,
+      "trackingHz": 9.99,
+      "faceResults": 669,
+      "trackingInferenceMeanMs": 34.88,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 7,
+      "controlLongTasks": 2,
+      "transcriptionMs": 7983.87,
+      "speechToCaptionMs": 8570.69,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 75.306579,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 4964,
+            "dropped": 1
+          }
+        }
+      ]
+    },
+    {
+      "source": "synthetic-camera-benchmark.json",
+      "config": "base-cuda",
+      "seconds": 62.1,
+      "cameraDrawFPS": 29.99,
+      "cameraDeliveredFPS": 29.53,
+      "trackingHz": 9.98,
+      "faceResults": 604,
+      "trackingInferenceMeanMs": 30.14,
+      "presenterRafP95Ms": 16.8,
+      "controlRafP95Ms": 16.8,
+      "presenterLongTasks": 1,
+      "controlLongTasks": 0,
+      "transcriptionMs": 1132.48,
+      "speechToCaptionMs": 1819.88,
+      "videos": [
+        {
+          "camera": false,
+          "paused": false,
+          "time": 69.189363,
+          "width": 1280,
+          "height": 720,
+          "quality": {
+            "total": 7480,
+            "dropped": 1
+          }
+        }
+      ]
+    }
+  ]
+}

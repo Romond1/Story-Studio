@@ -1,0 +1,3 @@
+PASS cpu 5568 5603 Last speech backend: CPU
+PASS gpu 1226 1236 Last speech backend: NVIDIA CUDA · NVIDIA GeForce RTX 4070 Ti
+PASS auto 1110 1116 Last speech backend: NVIDIA CUDA · NVIDIA GeForce RTX 4070 Ti

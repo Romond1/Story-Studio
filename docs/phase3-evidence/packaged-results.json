@@ -1,0 +1,85 @@
+{
+  "offline": true,
+  "results": [
+    {
+      "target": "ja",
+      "transcript": "Don't open the door yet.",
+      "translation": "まだドアを開けないでください。",
+      "metrics": {
+        "workerWallMs": 3143.5110999999997,
+        "cpuMs": 4047,
+        "rssMB": 635.22265625,
+        "rssDeltaMB": 522.79296875,
+        "translationMs": 830.1974,
+        "translationLoadMs": 2312.8795,
+        "totalMs": 3313.8396
+      }
+    },
+    {
+      "target": "it",
+      "transcript": "Don't open the door yet.",
+      "translation": "Non aprire ancora la porta.",
+      "metrics": {
+        "workerWallMs": 1933.1903000000002,
+        "cpuMs": 2954,
+        "rssMB": 416.109375,
+        "rssDeltaMB": 296.2265625,
+        "translationMs": 557.7903999999999,
+        "translationLoadMs": 1374.9678000000004,
+        "totalMs": 2126.7205999999996
+      }
+    },
+    {
+      "target": "ro",
+      "transcript": "Don't open the door yet.",
+      "translation": "Nu deschide uşa încă.",
+      "metrics": {
+        "workerWallMs": 1465.8378000000002,
+        "cpuMs": 2469,
+        "rssMB": 332.6796875,
+        "rssDeltaMB": 212.43359375,
+        "translationMs": 422.01680000000124,
+        "translationLoadMs": 1043.1803,
+        "totalMs": 1641.6807
+      }
+    }
+  ],
+  "tokens": [
+    {
+      "text": "勇者",
+      "reading": "ゆうしゃ"
+    },
+    {
+      "text": "は"
+    },
+    {
+      "text": "ドア"
+    },
+    {
+      "text": "を"
+    },
+    {
+      "text": "開ける",
+      "reading": "あける"
+    },
+    {
+      "text": "。"
+    }
+  ],
+  "speech": {
+    "transcript": "Do not open the door yet. Wait until I say go.",
+    "translation": "まだドアを開けないでください。 私が行くと言うまで待ってください。",
+    "metrics": {
+      "speechInstallVerifyMs": 1633.5720000000001,
+      "transcriptionMs": 5191.4807,
+      "whisperLoadMs": 185.62,
+      "workerWallMs": 1923.1670999999988,
+      "cpuMs": 2828,
+      "rssMB": 634.45703125,
+      "rssDeltaMB": 365.00390625,
+      "translationMs": 515.4782000000014,
+      "translationLoadMs": 1407.381400000002,
+      "totalMs": 8757.587800000001
+    }
+  }
+}

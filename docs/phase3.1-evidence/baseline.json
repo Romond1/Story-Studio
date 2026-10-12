@@ -1,0 +1,379 @@
+{
+  "fixture": "Windows SAPI synthetic English; pink noise is artificial, not real classroom noise",
+  "cpu": "Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz",
+  "logicalProcessors": 8,
+  "results": [
+    {
+      "model": "base.en",
+      "execution": "cpu",
+      "legacy": true,
+      "trials": [
+        {
+          "phase": "cold",
+          "started": 1791793685033,
+          "finished": 1791793694091,
+          "fixture": "utterance-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 948.3791,
+            "transcriptionMs": 6362.782499999999,
+            "whisperLoadMs": 177.64,
+            "workerWallMs": 1730.2769000000008,
+            "cpuMs": 2031,
+            "rssMB": 579.95703125,
+            "rssDeltaMB": 359.4765625,
+            "translationMs": 410.2703999999994,
+            "translationLoadMs": 1319.5272999999997,
+            "totalMs": 9052.9046
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793694102,
+          "finished": 1791793699217,
+          "fixture": "utterance-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 509.2456000000002,
+            "transcriptionMs": 4551.1954000000005,
+            "whisperLoadMs": 170.77,
+            "workerWallMs": 39.27880000000005,
+            "cpuMs": 78,
+            "rssMB": 719.171875,
+            "rssDeltaMB": -0.49609375,
+            "translationMs": 39.013600000000224,
+            "translationLoadMs": 0,
+            "totalMs": 5111.3537
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793699218,
+          "finished": 1791793704198,
+          "fixture": "utterance-1",
+          "reference": "Mia and Oliver help the dragon find the blue key.",
+          "transcript": "Mia and Oliver help the dragon find the blue key.",
+          "translation": "ミアとオリバーは、ドラゴンが青い鍵を見つけるのを手伝って助けてくれ。",
+          "metrics": {
+            "speechInstallVerifyMs": 486.928100000001,
+            "transcriptionMs": 4428.6844,
+            "whisperLoadMs": 159.46,
+            "workerWallMs": 60.78839999999764,
+            "cpuMs": 110,
+            "rssMB": 720.0546875,
+            "rssDeltaMB": 0.29296875,
+            "translationMs": 60.675899999998364,
+            "translationLoadMs": 0,
+            "totalMs": 4980.4126
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793704200,
+          "finished": 1791793709374,
+          "fixture": "utterance-2",
+          "reference": "Do not open the red door. Choose the green door instead.",
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 458.91699999999764,
+            "transcriptionMs": 4668.5396999999975,
+            "whisperLoadMs": 158.93,
+            "workerWallMs": 41.12779999999839,
+            "cpuMs": 94,
+            "rssMB": 721.484375,
+            "rssDeltaMB": 0.65625,
+            "translationMs": 41.01369999999952,
+            "translationLoadMs": 0,
+            "totalMs": 5172.875200000002
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793709378,
+          "finished": 1791793714989,
+          "fixture": "utterance-3",
+          "reference": "Listen carefully, then tell your partner what happens next.",
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 503.6820000000007,
+            "transcriptionMs": 5058.658499999998,
+            "whisperLoadMs": 215.97,
+            "workerWallMs": 41.86609999999928,
+            "cpuMs": 62,
+            "rssMB": 732.25,
+            "rssDeltaMB": 11.79296875,
+            "translationMs": 41.7957000000024,
+            "translationLoadMs": 0,
+            "totalMs": 5608.624500000002
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793714990,
+          "finished": 1791793721353,
+          "fixture": "utterance-4",
+          "reference": "The wizard cannot see the rabbit behind the castle.",
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 479.8140999999996,
+            "transcriptionMs": 5828.578700000002,
+            "whisperLoadMs": 174.3,
+            "workerWallMs": 49.782500000001164,
+            "cpuMs": 63,
+            "rssMB": 722.4375,
+            "rssDeltaMB": -3.70703125,
+            "translationMs": 49.42139999999927,
+            "translationLoadMs": 0,
+            "totalMs": 6362.641299999999
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "noise": {
+        "fixture": "utterance-noise",
+        "reference": "The wizard cannot see the rabbit behind the castle.",
+        "transcript": "The wizard cannot see the rabbit behind a castle.",
+        "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+        "metrics": {
+          "speechInstallVerifyMs": 668.2176000000036,
+          "transcriptionMs": 5048.929799999998,
+          "whisperLoadMs": 183.71,
+          "workerWallMs": 34.44220000000496,
+          "cpuMs": 31,
+          "rssMB": 722.7890625,
+          "rssDeltaMB": 0.125,
+          "translationMs": 34.37059999999474,
+          "translationLoadMs": 0,
+          "totalMs": 5760.8577000000005
+        },
+        "wer": {
+          "errors": 1,
+          "words": 9,
+          "rate": 0.1111111111111111
+        }
+      }
+    },
+    {
+      "model": "small.en",
+      "execution": "cpu",
+      "legacy": true,
+      "trials": [
+        {
+          "phase": "cold",
+          "started": 1791793727116,
+          "finished": 1791793756030,
+          "fixture": "utterance-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 8951.9032,
+            "transcriptionMs": 18073.834199999998,
+            "whisperLoadMs": 431.27,
+            "workerWallMs": 1883.099000000002,
+            "cpuMs": 2547,
+            "rssMB": 589.8046875,
+            "rssDeltaMB": 508.375,
+            "translationMs": 516.1861999999965,
+            "translationLoadMs": 1366.5690999999933,
+            "totalMs": 28914.317199999998
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793756031,
+          "finished": 1791793772102,
+          "fixture": "utterance-0",
+          "reference": "Please open your books and look at the first picture.",
+          "transcript": "Please open your books and look at the first picture.",
+          "translation": "本を開いて、最初の写真を見てください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1241.071100000001,
+            "transcriptionMs": 14793.919200000004,
+            "whisperLoadMs": 494.97,
+            "workerWallMs": 30.272400000001653,
+            "cpuMs": 47,
+            "rssMB": 1057.78515625,
+            "rssDeltaMB": 1.609375,
+            "translationMs": 30.1987999999983,
+            "translationLoadMs": 0,
+            "totalMs": 16069.933699999994
+          },
+          "wer": {
+            "errors": 0,
+            "words": 10,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793772103,
+          "finished": 1791793787125,
+          "fixture": "utterance-1",
+          "reference": "Mia and Oliver help the dragon find the blue key.",
+          "transcript": "Mia and Oliver helped the dragon find the blue key.",
+          "translation": "ミアとオリバーはドラゴンが青い鍵を見つけるのを手伝した。",
+          "metrics": {
+            "speechInstallVerifyMs": 1149.879700000005,
+            "transcriptionMs": 13736.886899999998,
+            "whisperLoadMs": 522.85,
+            "workerWallMs": 92.41590000000724,
+            "cpuMs": 109,
+            "rssMB": 1058.5390625,
+            "rssDeltaMB": 0.30859375,
+            "translationMs": 92.30240000000049,
+            "translationLoadMs": 0,
+            "totalMs": 15017.350900000005
+          },
+          "wer": {
+            "errors": 1,
+            "words": 10,
+            "rate": 0.1
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793787130,
+          "finished": 1791793802937,
+          "fixture": "utterance-2",
+          "reference": "Do not open the red door. Choose the green door instead.",
+          "transcript": "Do not open the red door. Choose the green door instead.",
+          "translation": "赤いドアを開けないでください。 代わりに緑色のドアを選んでください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1418.6934000000037,
+            "transcriptionMs": 14352.215299999996,
+            "whisperLoadMs": 565.75,
+            "workerWallMs": 31.317800000004354,
+            "cpuMs": 78,
+            "rssMB": 1063.06640625,
+            "rssDeltaMB": 1.328125,
+            "translationMs": 31.179900000002817,
+            "translationLoadMs": 0,
+            "totalMs": 15806.593000000008
+          },
+          "wer": {
+            "errors": 0,
+            "words": 11,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793802938,
+          "finished": 1791793817042,
+          "fixture": "utterance-3",
+          "reference": "Listen carefully, then tell your partner what happens next.",
+          "transcript": "Listen carefully, then tell your partner what happens next.",
+          "translation": "よく聞いてから、次に何が起こるかパートナーに伝えてください。",
+          "metrics": {
+            "speechInstallVerifyMs": 1134.5800000000017,
+            "transcriptionMs": 12916.91379999998,
+            "whisperLoadMs": 466.2,
+            "workerWallMs": 46.935700000001816,
+            "cpuMs": 94,
+            "rssMB": 1070.0390625,
+            "rssDeltaMB": 6.46484375,
+            "translationMs": 46.671999999991385,
+            "translationLoadMs": 0,
+            "totalMs": 14102.905599999984
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        },
+        {
+          "phase": "warm",
+          "started": 1791793817043,
+          "finished": 1791793832265,
+          "fixture": "utterance-4",
+          "reference": "The wizard cannot see the rabbit behind the castle.",
+          "transcript": "The wizard cannot see the rabbit behind the castle.",
+          "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+          "metrics": {
+            "speechInstallVerifyMs": 1410.0289999999804,
+            "transcriptionMs": 13776.288299999986,
+            "whisperLoadMs": 550.26,
+            "workerWallMs": 31.18640000000596,
+            "cpuMs": 47,
+            "rssMB": 1061.14453125,
+            "rssDeltaMB": 1.17578125,
+            "translationMs": 31.106599999999162,
+            "translationLoadMs": 0,
+            "totalMs": 15222.002300000022
+          },
+          "wer": {
+            "errors": 0,
+            "words": 9,
+            "rate": 0
+          }
+        }
+      ],
+      "noise": {
+        "fixture": "utterance-noise",
+        "reference": "The wizard cannot see the rabbit behind the castle.",
+        "transcript": "The wizard cannot see the rabbit behind the castle.",
+        "translation": "魔法使いは城の向こうにウサギを見ることができない。",
+        "metrics": {
+          "speechInstallVerifyMs": 1131.7688999999955,
+          "transcriptionMs": 12772.150900000008,
+          "whisperLoadMs": 481.55,
+          "workerWallMs": 32.24199999999837,
+          "cpuMs": 31,
+          "rssMB": 1061.89453125,
+          "rssDeltaMB": 0.01953125,
+          "translationMs": 32.17550000001211,
+          "translationLoadMs": 0,
+          "totalMs": 13940.572799999994
+        },
+        "wer": {
+          "errors": 0,
+          "words": 9,
+          "rate": 0
+        }
+      }
+    }
+  ]
+}

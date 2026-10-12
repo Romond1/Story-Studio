@@ -1,0 +1,5773 @@
+[
+  {
+    "gpu": "33, 28, 1154",
+    "time": 1791793685465,
+    "processes": []
+  },
+  {
+    "gpu": "43, 36, 1151",
+    "time": 1791793686069,
+    "processes": []
+  },
+  {
+    "gpu": "29, 27, 1151",
+    "time": 1791793686431,
+    "processes": [
+      {
+        "cpuSeconds": 0.328125,
+        "workingSetMB": 216.1640625,
+        "pid": 24964,
+        "privateMB": 742.640625
+      }
+    ]
+  },
+  {
+    "gpu": "7, 12, 1150",
+    "time": 1791793687362,
+    "processes": [
+      {
+        "cpuSeconds": 0.734375,
+        "workingSetMB": 233.52734375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "9, 12, 1163",
+    "time": 1791793687890,
+    "processes": [
+      {
+        "cpuSeconds": 1.6875,
+        "workingSetMB": 233.54296875,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "9, 13, 1163",
+    "time": 1791793688384,
+    "processes": [
+      {
+        "cpuSeconds": 1.984375,
+        "workingSetMB": 233.55078125,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "12, 14, 1158",
+    "time": 1791793688769,
+    "processes": [
+      {
+        "cpuSeconds": 2.390625,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "8, 12, 1157",
+    "time": 1791793689091,
+    "processes": [
+      {
+        "cpuSeconds": 2.984375,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "8, 12, 1157",
+    "time": 1791793689402,
+    "processes": [
+      {
+        "cpuSeconds": 3.53125,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "44, 36, 1156",
+    "time": 1791793689714,
+    "processes": [
+      {
+        "cpuSeconds": 4.15625,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 29, 1156",
+    "time": 1791793690040,
+    "processes": [
+      {
+        "cpuSeconds": 4.765625,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 29, 1156",
+    "time": 1791793690355,
+    "processes": [
+      {
+        "cpuSeconds": 5.375,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "38, 34, 1156",
+    "time": 1791793690668,
+    "processes": [
+      {
+        "cpuSeconds": 6,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "33, 30, 1156",
+    "time": 1791793690981,
+    "processes": [
+      {
+        "cpuSeconds": 6.625,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "33, 30, 1156",
+    "time": 1791793691293,
+    "processes": [
+      {
+        "cpuSeconds": 7.234375,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "38, 34, 1156",
+    "time": 1791793691604,
+    "processes": [
+      {
+        "cpuSeconds": 7.84375,
+        "workingSetMB": 249.5859375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "38, 34, 1156",
+    "time": 1791793691917,
+    "processes": [
+      {
+        "cpuSeconds": 8.4375,
+        "workingSetMB": 252.5234375,
+        "pid": 24964,
+        "privateMB": 748.5234375
+      }
+    ]
+  },
+  {
+    "gpu": "33, 30, 1156",
+    "time": 1791793692231,
+    "processes": [
+      {
+        "cpuSeconds": 9.078125,
+        "workingSetMB": 297.41796875,
+        "pid": 24964,
+        "privateMB": 787.00390625
+      }
+    ]
+  },
+  {
+    "gpu": "38, 34, 1156",
+    "time": 1791793692546,
+    "processes": []
+  },
+  {
+    "gpu": "38, 34, 1156",
+    "time": 1791793692859,
+    "processes": []
+  },
+  {
+    "gpu": "33, 29, 1155",
+    "time": 1791793693168,
+    "processes": []
+  },
+  {
+    "gpu": "40, 34, 1156",
+    "time": 1791793693479,
+    "processes": []
+  },
+  {
+    "gpu": "40, 34, 1156",
+    "time": 1791793693791,
+    "processes": []
+  },
+  {
+    "gpu": "34, 29, 1155",
+    "time": 1791793694105,
+    "processes": []
+  },
+  {
+    "gpu": "34, 29, 1155",
+    "time": 1791793694415,
+    "processes": []
+  },
+  {
+    "gpu": "36, 33, 1155",
+    "time": 1791793694728,
+    "processes": [
+      {
+        "cpuSeconds": 0,
+        "workingSetMB": 3.16015625,
+        "pid": 1392,
+        "privateMB": 0.59765625
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1155",
+    "time": 1791793695043,
+    "processes": [
+      {
+        "cpuSeconds": 0.296875,
+        "workingSetMB": 223.1171875,
+        "pid": 1392,
+        "privateMB": 742.625
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1155",
+    "time": 1791793695354,
+    "processes": [
+      {
+        "cpuSeconds": 0.84375,
+        "workingSetMB": 233.4765625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1154",
+    "time": 1791793695665,
+    "processes": [
+      {
+        "cpuSeconds": 1.4375,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 30, 1154",
+    "time": 1791793695995,
+    "processes": [
+      {
+        "cpuSeconds": 2.09375,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 30, 1150",
+    "time": 1791793696370,
+    "processes": [
+      {
+        "cpuSeconds": 2.640625,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1150",
+    "time": 1791793696682,
+    "processes": [
+      {
+        "cpuSeconds": 3.28125,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 30, 1157",
+    "time": 1791793697013,
+    "processes": [
+      {
+        "cpuSeconds": 3.90625,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 30, 1149",
+    "time": 1791793697322,
+    "processes": [
+      {
+        "cpuSeconds": 4.53125,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "39, 33, 1149",
+    "time": 1791793697634,
+    "processes": [
+      {
+        "cpuSeconds": 5.171875,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1150",
+    "time": 1791793697946,
+    "processes": [
+      {
+        "cpuSeconds": 5.765625,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1150",
+    "time": 1791793698268,
+    "processes": [
+      {
+        "cpuSeconds": 6.375,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "35, 32, 1150",
+    "time": 1791793698585,
+    "processes": [
+      {
+        "cpuSeconds": 7,
+        "workingSetMB": 249.53515625,
+        "pid": 1392,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "35, 32, 1150",
+    "time": 1791793698894,
+    "processes": [
+      {
+        "cpuSeconds": 7.640625,
+        "workingSetMB": 297.3359375,
+        "pid": 1392,
+        "privateMB": 786.9453125
+      }
+    ]
+  },
+  {
+    "gpu": "33, 31, 1145",
+    "time": 1791793699205,
+    "processes": [
+      {
+        "cpuSeconds": 8.296875,
+        "workingSetMB": 217.90234375,
+        "pid": 1392,
+        "privateMB": 786.67578125
+      }
+    ]
+  },
+  {
+    "gpu": "35, 32, 1145",
+    "time": 1791793699516,
+    "processes": []
+  },
+  {
+    "gpu": "35, 32, 1145",
+    "time": 1791793699829,
+    "processes": [
+      {
+        "cpuSeconds": 0.015625,
+        "workingSetMB": 3.4296875,
+        "pid": 992,
+        "privateMB": 0.64453125
+      }
+    ]
+  },
+  {
+    "gpu": "33, 29, 1144",
+    "time": 1791793700139,
+    "processes": [
+      {
+        "cpuSeconds": 0.375,
+        "workingSetMB": 233.42578125,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "35, 31, 1144",
+    "time": 1791793700453,
+    "processes": [
+      {
+        "cpuSeconds": 0.96875,
+        "workingSetMB": 233.4453125,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "35, 31, 1144",
+    "time": 1791793700780,
+    "processes": [
+      {
+        "cpuSeconds": 1.625,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 30, 1144",
+    "time": 1791793701090,
+    "processes": [
+      {
+        "cpuSeconds": 2.21875,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 30, 1144",
+    "time": 1791793701403,
+    "processes": [
+      {
+        "cpuSeconds": 2.734375,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "39, 33, 1144",
+    "time": 1791793701715,
+    "processes": [
+      {
+        "cpuSeconds": 3.375,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1144",
+    "time": 1791793702026,
+    "processes": [
+      {
+        "cpuSeconds": 3.9375,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1144",
+    "time": 1791793702337,
+    "processes": [
+      {
+        "cpuSeconds": 4.5625,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1144",
+    "time": 1791793702651,
+    "processes": [
+      {
+        "cpuSeconds": 5.21875,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 32, 1144",
+    "time": 1791793702967,
+    "processes": [
+      {
+        "cpuSeconds": 5.796875,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 32, 1144",
+    "time": 1791793703273,
+    "processes": [
+      {
+        "cpuSeconds": 6.40625,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1144",
+    "time": 1791793703585,
+    "processes": [
+      {
+        "cpuSeconds": 7.03125,
+        "workingSetMB": 249.51171875,
+        "pid": 992,
+        "privateMB": 748.49609375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1144",
+    "time": 1791793703899,
+    "processes": [
+      {
+        "cpuSeconds": 7.65625,
+        "workingSetMB": 297.359375,
+        "pid": 992,
+        "privateMB": 786.89453125
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1144",
+    "time": 1791793704231,
+    "processes": []
+  },
+  {
+    "gpu": "34, 30, 1144",
+    "time": 1791793704542,
+    "processes": []
+  },
+  {
+    "gpu": "34, 30, 1144",
+    "time": 1791793704850,
+    "processes": [
+      {
+        "cpuSeconds": 0.09375,
+        "workingSetMB": 27.8984375,
+        "pid": 26060,
+        "privateMB": 151.02734375
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1145",
+    "time": 1791793705171,
+    "processes": [
+      {
+        "cpuSeconds": 0.578125,
+        "workingSetMB": 233.54296875,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "43, 34, 1144",
+    "time": 1791793705491,
+    "processes": [
+      {
+        "cpuSeconds": 1.203125,
+        "workingSetMB": 233.54296875,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "43, 34, 1144",
+    "time": 1791793705802,
+    "processes": [
+      {
+        "cpuSeconds": 1.828125,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "35, 33, 1143",
+    "time": 1791793706117,
+    "processes": [
+      {
+        "cpuSeconds": 2.453125,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "35, 33, 1143",
+    "time": 1791793706427,
+    "processes": [
+      {
+        "cpuSeconds": 3.03125,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "32, 31, 1143",
+    "time": 1791793706733,
+    "processes": [
+      {
+        "cpuSeconds": 3.65625,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1143",
+    "time": 1791793707042,
+    "processes": [
+      {
+        "cpuSeconds": 4.265625,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1143",
+    "time": 1791793707353,
+    "processes": [
+      {
+        "cpuSeconds": 4.859375,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1143",
+    "time": 1791793707668,
+    "processes": [
+      {
+        "cpuSeconds": 5.40625,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1143",
+    "time": 1791793707978,
+    "processes": [
+      {
+        "cpuSeconds": 6.03125,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1143",
+    "time": 1791793708288,
+    "processes": [
+      {
+        "cpuSeconds": 6.65625,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1143",
+    "time": 1791793708602,
+    "processes": [
+      {
+        "cpuSeconds": 7.28125,
+        "workingSetMB": 249.61328125,
+        "pid": 26060,
+        "privateMB": 748.59375
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1142",
+    "time": 1791793708945,
+    "processes": [
+      {
+        "cpuSeconds": 7.96875,
+        "workingSetMB": 296.00390625,
+        "pid": 26060,
+        "privateMB": 786.73828125
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1142",
+    "time": 1791793709255,
+    "processes": [
+      {
+        "cpuSeconds": 0.015625,
+        "workingSetMB": 4.20703125,
+        "pid": 14524,
+        "privateMB": 1.7734375
+      },
+      {
+        "cpuSeconds": 8.578125,
+        "workingSetMB": 298.4140625,
+        "pid": 26060,
+        "privateMB": 788.1328125
+      }
+    ]
+  },
+  {
+    "gpu": "36, 30, 1142",
+    "time": 1791793709586,
+    "processes": [
+      {
+        "cpuSeconds": 0.015625,
+        "workingSetMB": 4.3046875,
+        "pid": 14524,
+        "privateMB": 2.0859375
+      }
+    ]
+  },
+  {
+    "gpu": "36, 30, 1142",
+    "time": 1791793709900,
+    "processes": [
+      {
+        "cpuSeconds": 0.09375,
+        "workingSetMB": 92.12890625,
+        "pid": 14524,
+        "privateMB": 120.84765625
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1455",
+    "time": 1791793710229,
+    "processes": [
+      {
+        "cpuSeconds": 0.390625,
+        "workingSetMB": 323.99609375,
+        "pid": 14524,
+        "privateMB": 603.15625
+      },
+      {
+        "cpuSeconds": 0.1875,
+        "workingSetMB": 129.3125,
+        "pid": 24852,
+        "privateMB": 151.0234375
+      }
+    ]
+  },
+  {
+    "gpu": "11, 2, 1617",
+    "time": 1791793710552,
+    "processes": [
+      {
+        "cpuSeconds": 0.5625,
+        "workingSetMB": 301.96875,
+        "pid": 14524,
+        "privateMB": 1152.9765625
+      },
+      {
+        "cpuSeconds": 0.78125,
+        "workingSetMB": 233.609375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "11, 2, 1617",
+    "time": 1791793710867,
+    "processes": [
+      {
+        "cpuSeconds": 0.640625,
+        "workingSetMB": 325.234375,
+        "pid": 14524,
+        "privateMB": 1172.09375
+      },
+      {
+        "cpuSeconds": 1.34375,
+        "workingSetMB": 233.609375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1635",
+    "time": 1791793711198,
+    "processes": [
+      {
+        "cpuSeconds": 0.953125,
+        "workingSetMB": 419.58984375,
+        "pid": 14524,
+        "privateMB": 1286.51171875
+      },
+      {
+        "cpuSeconds": 1.96875,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1634",
+    "time": 1791793711589,
+    "processes": [
+      {
+        "cpuSeconds": 1.28125,
+        "workingSetMB": 422.30859375,
+        "pid": 14524,
+        "privateMB": 1288.50390625
+      },
+      {
+        "cpuSeconds": 2.578125,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1652",
+    "time": 1791793711905,
+    "processes": [
+      {
+        "cpuSeconds": 1.609375,
+        "workingSetMB": 438.2265625,
+        "pid": 14524,
+        "privateMB": 1434.89453125
+      },
+      {
+        "cpuSeconds": 3.203125,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1652",
+    "time": 1791793712234,
+    "processes": [
+      {
+        "cpuSeconds": 1.921875,
+        "workingSetMB": 420.59375,
+        "pid": 14524,
+        "privateMB": 1418.2421875
+      },
+      {
+        "cpuSeconds": 3.828125,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1652",
+    "time": 1791793712548,
+    "processes": [
+      {
+        "cpuSeconds": 2.234375,
+        "workingSetMB": 436.87109375,
+        "pid": 14524,
+        "privateMB": 1436.90234375
+      },
+      {
+        "cpuSeconds": 4.453125,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1652",
+    "time": 1791793712862,
+    "processes": [
+      {
+        "cpuSeconds": 2.546875,
+        "workingSetMB": 438.96875,
+        "pid": 14524,
+        "privateMB": 1438.94921875
+      },
+      {
+        "cpuSeconds": 5.0625,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1652",
+    "time": 1791793713177,
+    "processes": [
+      {
+        "cpuSeconds": 2.859375,
+        "workingSetMB": 434.47265625,
+        "pid": 14524,
+        "privateMB": 1435.5078125
+      },
+      {
+        "cpuSeconds": 5.65625,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "4, 1, 1652",
+    "time": 1791793713484,
+    "processes": [
+      {
+        "cpuSeconds": 3.140625,
+        "workingSetMB": 464.73046875,
+        "pid": 14524,
+        "privateMB": 1464.75
+      },
+      {
+        "cpuSeconds": 6.28125,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "4, 1, 1652",
+    "time": 1791793713799,
+    "processes": [
+      {
+        "cpuSeconds": 3.453125,
+        "workingSetMB": 485.36328125,
+        "pid": 14524,
+        "privateMB": 1485.57421875
+      },
+      {
+        "cpuSeconds": 6.890625,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1652",
+    "time": 1791793714109,
+    "processes": [
+      {
+        "cpuSeconds": 3.75,
+        "workingSetMB": 497.5,
+        "pid": 14524,
+        "privateMB": 1498.26953125
+      },
+      {
+        "cpuSeconds": 7.515625,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1652",
+    "time": 1791793714421,
+    "processes": [
+      {
+        "cpuSeconds": 4.0625,
+        "workingSetMB": 495.2265625,
+        "pid": 14524,
+        "privateMB": 1495.7734375
+      },
+      {
+        "cpuSeconds": 8.125,
+        "workingSetMB": 249.6484375,
+        "pid": 24852,
+        "privateMB": 748.62109375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1652",
+    "time": 1791793714736,
+    "processes": [
+      {
+        "cpuSeconds": 4.375,
+        "workingSetMB": 486.5078125,
+        "pid": 14524,
+        "privateMB": 1486.70703125
+      },
+      {
+        "cpuSeconds": 8.765625,
+        "workingSetMB": 297.09765625,
+        "pid": 24852,
+        "privateMB": 786.6484375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1644",
+    "time": 1791793715054,
+    "processes": [
+      {
+        "cpuSeconds": 4.671875,
+        "workingSetMB": 495.6015625,
+        "pid": 14524,
+        "privateMB": 1387.73046875
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1644",
+    "time": 1791793715381,
+    "processes": [
+      {
+        "cpuSeconds": 4.96875,
+        "workingSetMB": 497.48046875,
+        "pid": 14524,
+        "privateMB": 1389.8671875
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1644",
+    "time": 1791793715690,
+    "processes": [
+      {
+        "cpuSeconds": 5.265625,
+        "workingSetMB": 493.88671875,
+        "pid": 14524,
+        "privateMB": 1386.51953125
+      },
+      {
+        "cpuSeconds": 0.09375,
+        "workingSetMB": 41.75390625,
+        "pid": 17736,
+        "privateMB": 151.0078125
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1654",
+    "time": 1791793716004,
+    "processes": [
+      {
+        "cpuSeconds": 5.53125,
+        "workingSetMB": 484.3046875,
+        "pid": 14524,
+        "privateMB": 1375.671875
+      },
+      {
+        "cpuSeconds": 0.4375,
+        "workingSetMB": 230.99609375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1654",
+    "time": 1791793716318,
+    "processes": [
+      {
+        "cpuSeconds": 5.796875,
+        "workingSetMB": 448.97265625,
+        "pid": 14524,
+        "privateMB": 1353.07421875
+      },
+      {
+        "cpuSeconds": 1.0625,
+        "workingSetMB": 233.4609375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "12, 14, 1648",
+    "time": 1791793716630,
+    "processes": [
+      {
+        "cpuSeconds": 6.109375,
+        "workingSetMB": 427.171875,
+        "pid": 14524,
+        "privateMB": 1330.7890625
+      },
+      {
+        "cpuSeconds": 1.671875,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "7, 3, 1691",
+    "time": 1791793716956,
+    "processes": [
+      {
+        "cpuSeconds": 6.421875,
+        "workingSetMB": 446.91015625,
+        "pid": 14524,
+        "privateMB": 1392.48046875
+      },
+      {
+        "cpuSeconds": 2.28125,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "7, 3, 1695",
+    "time": 1791793717288,
+    "processes": [
+      {
+        "cpuSeconds": 6.703125,
+        "workingSetMB": 448.26171875,
+        "pid": 14524,
+        "privateMB": 1394.52734375
+      },
+      {
+        "cpuSeconds": 2.84375,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "16, 14, 1699",
+    "time": 1791793717613,
+    "processes": [
+      {
+        "cpuSeconds": 6.984375,
+        "workingSetMB": 481.09765625,
+        "pid": 14524,
+        "privateMB": 1426.2734375
+      },
+      {
+        "cpuSeconds": 3.40625,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "16, 14, 1699",
+    "time": 1791793717923,
+    "processes": [
+      {
+        "cpuSeconds": 7.296875,
+        "workingSetMB": 526.21484375,
+        "pid": 14524,
+        "privateMB": 1471.80859375
+      },
+      {
+        "cpuSeconds": 4.0625,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "19, 17, 1699",
+    "time": 1791793718235,
+    "processes": [
+      {
+        "cpuSeconds": 7.59375,
+        "workingSetMB": 567.484375,
+        "pid": 14524,
+        "privateMB": 1513.12890625
+      },
+      {
+        "cpuSeconds": 4.6875,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "15, 14, 1699",
+    "time": 1791793718563,
+    "processes": [
+      {
+        "cpuSeconds": 7.90625,
+        "workingSetMB": 575.93359375,
+        "pid": 14524,
+        "privateMB": 1523.01953125
+      },
+      {
+        "cpuSeconds": 5.265625,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "15, 14, 1699",
+    "time": 1791793718871,
+    "processes": [
+      {
+        "cpuSeconds": 8.203125,
+        "workingSetMB": 577.5390625,
+        "pid": 14524,
+        "privateMB": 1523.8671875
+      },
+      {
+        "cpuSeconds": 5.859375,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "20, 17, 1699",
+    "time": 1791793719248,
+    "processes": [
+      {
+        "cpuSeconds": 8.46875,
+        "workingSetMB": 577.46875,
+        "pid": 14524,
+        "privateMB": 1524.5859375
+      },
+      {
+        "cpuSeconds": 6.46875,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "16, 14, 1698",
+    "time": 1791793719557,
+    "processes": [
+      {
+        "cpuSeconds": 8.78125,
+        "workingSetMB": 577.81640625,
+        "pid": 14524,
+        "privateMB": 1524.10546875
+      },
+      {
+        "cpuSeconds": 7.046875,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "16, 14, 1698",
+    "time": 1791793719869,
+    "processes": [
+      {
+        "cpuSeconds": 9.078125,
+        "workingSetMB": 578.2890625,
+        "pid": 14524,
+        "privateMB": 1519.2109375
+      },
+      {
+        "cpuSeconds": 7.65625,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "24, 18, 1698",
+    "time": 1791793720200,
+    "processes": [
+      {
+        "cpuSeconds": 9.359375,
+        "workingSetMB": 578.78515625,
+        "pid": 14524,
+        "privateMB": 1519.8671875
+      },
+      {
+        "cpuSeconds": 8.296875,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 27, 1698",
+    "time": 1791793720525,
+    "processes": [
+      {
+        "cpuSeconds": 9.625,
+        "workingSetMB": 579.46484375,
+        "pid": 14524,
+        "privateMB": 1520.5234375
+      },
+      {
+        "cpuSeconds": 8.84375,
+        "workingSetMB": 249.52734375,
+        "pid": 17736,
+        "privateMB": 748.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 27, 1698",
+    "time": 1791793720835,
+    "processes": [
+      {
+        "cpuSeconds": 9.921875,
+        "workingSetMB": 578.921875,
+        "pid": 14524,
+        "privateMB": 1519.30859375
+      },
+      {
+        "cpuSeconds": 9.40625,
+        "workingSetMB": 290.625,
+        "pid": 17736,
+        "privateMB": 785.265625
+      }
+    ]
+  },
+  {
+    "gpu": "41, 36, 1695",
+    "time": 1791793721164,
+    "processes": [
+      {
+        "cpuSeconds": 10.1875,
+        "workingSetMB": 579.94921875,
+        "pid": 14524,
+        "privateMB": 1521.2421875
+      },
+      {
+        "cpuSeconds": 9.984375,
+        "workingSetMB": 297.4296875,
+        "pid": 17736,
+        "privateMB": 787.01171875
+      }
+    ]
+  },
+  {
+    "gpu": "34, 28, 1698",
+    "time": 1791793721516,
+    "processes": [
+      {
+        "cpuSeconds": 10.453125,
+        "workingSetMB": 583.12890625,
+        "pid": 14524,
+        "privateMB": 1524.109375
+      }
+    ]
+  },
+  {
+    "gpu": "34, 28, 1698",
+    "time": 1791793721837,
+    "processes": [
+      {
+        "cpuSeconds": 10.75,
+        "workingSetMB": 584.53515625,
+        "pid": 14524,
+        "privateMB": 1525.4453125
+      }
+    ]
+  },
+  {
+    "gpu": "39, 36, 1699",
+    "time": 1791793722164,
+    "processes": [
+      {
+        "cpuSeconds": 0,
+        "workingSetMB": 2.4921875,
+        "pid": 14016,
+        "privateMB": 0.3984375
+      },
+      {
+        "cpuSeconds": 10.921875,
+        "workingSetMB": 583.43359375,
+        "pid": 14524,
+        "privateMB": 1524.16015625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 28, 1699",
+    "time": 1791793722480,
+    "processes": [
+      {
+        "cpuSeconds": 0.28125,
+        "workingSetMB": 223.1015625,
+        "pid": 14016,
+        "privateMB": 742.609375
+      },
+      {
+        "cpuSeconds": 11.25,
+        "workingSetMB": 585.02734375,
+        "pid": 14524,
+        "privateMB": 1526.15234375
+      }
+    ]
+  },
+  {
+    "gpu": "28, 28, 1699",
+    "time": 1791793722804,
+    "processes": [
+      {
+        "cpuSeconds": 0.921875,
+        "workingSetMB": 233.4609375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 11.53125,
+        "workingSetMB": 585.10546875,
+        "pid": 14524,
+        "privateMB": 1525.94140625
+      }
+    ]
+  },
+  {
+    "gpu": "39, 36, 1699",
+    "time": 1791793723118,
+    "processes": [
+      {
+        "cpuSeconds": 1.484375,
+        "workingSetMB": 240.80078125,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 11.8125,
+        "workingSetMB": 585.98046875,
+        "pid": 14524,
+        "privateMB": 1526.99609375
+      }
+    ]
+  },
+  {
+    "gpu": "28, 28, 1699",
+    "time": 1791793723445,
+    "processes": [
+      {
+        "cpuSeconds": 2.015625,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 12.09375,
+        "workingSetMB": 586.34375,
+        "pid": 14524,
+        "privateMB": 1526.83984375
+      }
+    ]
+  },
+  {
+    "gpu": "28, 28, 1699",
+    "time": 1791793723770,
+    "processes": [
+      {
+        "cpuSeconds": 2.640625,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 12.375,
+        "workingSetMB": 585.41015625,
+        "pid": 14524,
+        "privateMB": 1526.6953125
+      }
+    ]
+  },
+  {
+    "gpu": "39, 36, 1699",
+    "time": 1791793724080,
+    "processes": [
+      {
+        "cpuSeconds": 3.28125,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 12.703125,
+        "workingSetMB": 590.3359375,
+        "pid": 14524,
+        "privateMB": 1531.4140625
+      }
+    ]
+  },
+  {
+    "gpu": "39, 36, 1699",
+    "time": 1791793724398,
+    "processes": [
+      {
+        "cpuSeconds": 3.890625,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 13.015625,
+        "workingSetMB": 593.40234375,
+        "pid": 14524,
+        "privateMB": 1534.4140625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 28, 1699",
+    "time": 1791793724712,
+    "processes": [
+      {
+        "cpuSeconds": 4.46875,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 13.3125,
+        "workingSetMB": 592.92578125,
+        "pid": 14524,
+        "privateMB": 1534.07421875
+      }
+    ]
+  },
+  {
+    "gpu": "40, 36, 1713",
+    "time": 1791793725024,
+    "processes": [
+      {
+        "cpuSeconds": 5.078125,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 13.59375,
+        "workingSetMB": 593.828125,
+        "pid": 14524,
+        "privateMB": 1534.26953125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 36, 1698",
+    "time": 1791793725357,
+    "processes": [
+      {
+        "cpuSeconds": 5.6875,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 13.875,
+        "workingSetMB": 594.84375,
+        "pid": 14524,
+        "privateMB": 1535.2578125
+      }
+    ]
+  },
+  {
+    "gpu": "32, 29, 1698",
+    "time": 1791793725667,
+    "processes": [
+      {
+        "cpuSeconds": 6.3125,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 14.1875,
+        "workingSetMB": 595.05078125,
+        "pid": 14524,
+        "privateMB": 1535.984375
+      }
+    ]
+  },
+  {
+    "gpu": "39, 35, 1699",
+    "time": 1791793725980,
+    "processes": [
+      {
+        "cpuSeconds": 6.921875,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 14.484375,
+        "workingSetMB": 593.796875,
+        "pid": 14524,
+        "privateMB": 1534.0859375
+      }
+    ]
+  },
+  {
+    "gpu": "39, 35, 1697",
+    "time": 1791793726293,
+    "processes": [
+      {
+        "cpuSeconds": 7.546875,
+        "workingSetMB": 249.5234375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 14.796875,
+        "workingSetMB": 595.85546875,
+        "pid": 14524,
+        "privateMB": 1537.0859375
+      }
+    ]
+  },
+  {
+    "gpu": "30, 29, 1697",
+    "time": 1791793726620,
+    "processes": [
+      {
+        "cpuSeconds": 8.171875,
+        "workingSetMB": 252.4609375,
+        "pid": 14016,
+        "privateMB": 748.4921875
+      },
+      {
+        "cpuSeconds": 15.125,
+        "workingSetMB": 460.25390625,
+        "pid": 14524,
+        "privateMB": 1405.77734375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1140",
+    "time": 1791793726948,
+    "processes": [
+      {
+        "cpuSeconds": 8.875,
+        "workingSetMB": 298.4375,
+        "pid": 14016,
+        "privateMB": 788.21875
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1140",
+    "time": 1791793727275,
+    "processes": []
+  },
+  {
+    "gpu": "2, 1, 1140",
+    "time": 1791793727595,
+    "processes": []
+  },
+  {
+    "gpu": "2, 1, 1140",
+    "time": 1791793727914,
+    "processes": []
+  },
+  {
+    "gpu": "3, 1, 1140",
+    "time": 1791793728224,
+    "processes": []
+  },
+  {
+    "gpu": "3, 1, 1139",
+    "time": 1791793728553,
+    "processes": []
+  },
+  {
+    "gpu": "3, 1, 1139",
+    "time": 1791793728882,
+    "processes": []
+  },
+  {
+    "gpu": "6, 3, 1138",
+    "time": 1791793729186,
+    "processes": []
+  },
+  {
+    "gpu": "9, 2, 1138",
+    "time": 1791793729497,
+    "processes": []
+  },
+  {
+    "gpu": "9, 2, 1132",
+    "time": 1791793729802,
+    "processes": []
+  },
+  {
+    "gpu": "8, 3, 1132",
+    "time": 1791793730124,
+    "processes": []
+  },
+  {
+    "gpu": "8, 2, 1132",
+    "time": 1791793730435,
+    "processes": []
+  },
+  {
+    "gpu": "8, 2, 1132",
+    "time": 1791793730746,
+    "processes": []
+  },
+  {
+    "gpu": "21, 17, 1132",
+    "time": 1791793731053,
+    "processes": []
+  },
+  {
+    "gpu": "21, 17, 1132",
+    "time": 1791793731363,
+    "processes": []
+  },
+  {
+    "gpu": "15, 14, 1132",
+    "time": 1791793731689,
+    "processes": []
+  },
+  {
+    "gpu": "22, 17, 1132",
+    "time": 1791793732001,
+    "processes": []
+  },
+  {
+    "gpu": "22, 17, 1132",
+    "time": 1791793732312,
+    "processes": []
+  },
+  {
+    "gpu": "18, 14, 1132",
+    "time": 1791793732620,
+    "processes": []
+  },
+  {
+    "gpu": "18, 14, 1132",
+    "time": 1791793732926,
+    "processes": []
+  },
+  {
+    "gpu": "35, 30, 1132",
+    "time": 1791793733235,
+    "processes": []
+  },
+  {
+    "gpu": "34, 29, 1132",
+    "time": 1791793733547,
+    "processes": []
+  },
+  {
+    "gpu": "34, 29, 1132",
+    "time": 1791793733854,
+    "processes": []
+  },
+  {
+    "gpu": "41, 37, 1178",
+    "time": 1791793734243,
+    "processes": []
+  },
+  {
+    "gpu": "37, 33, 1186",
+    "time": 1791793734551,
+    "processes": []
+  },
+  {
+    "gpu": "37, 33, 1180",
+    "time": 1791793734858,
+    "processes": []
+  },
+  {
+    "gpu": "47, 42, 1180",
+    "time": 1791793735167,
+    "processes": []
+  },
+  {
+    "gpu": "23, 27, 1180",
+    "time": 1791793735480,
+    "processes": []
+  },
+  {
+    "gpu": "23, 27, 1180",
+    "time": 1791793735787,
+    "processes": []
+  },
+  {
+    "gpu": "34, 36, 1180",
+    "time": 1791793736101,
+    "processes": []
+  },
+  {
+    "gpu": "34, 36, 1134",
+    "time": 1791793736412,
+    "processes": [
+      {
+        "cpuSeconds": 0.21875,
+        "workingSetMB": 199.71484375,
+        "pid": 2400,
+        "privateMB": 475.8359375
+      }
+    ]
+  },
+  {
+    "gpu": "24, 27, 1134",
+    "time": 1791793736724,
+    "processes": [
+      {
+        "cpuSeconds": 0.5625,
+        "workingSetMB": 602.6953125,
+        "pid": 2400,
+        "privateMB": 1135.546875
+      }
+    ]
+  },
+  {
+    "gpu": "37, 36, 1135",
+    "time": 1791793737036,
+    "processes": [
+      {
+        "cpuSeconds": 1.1875,
+        "workingSetMB": 618.15234375,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "37, 36, 1200",
+    "time": 1791793737352,
+    "processes": [
+      {
+        "cpuSeconds": 1.6875,
+        "workingSetMB": 618.15234375,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "43, 35, 1200",
+    "time": 1791793737664,
+    "processes": [
+      {
+        "cpuSeconds": 2.3125,
+        "workingSetMB": 628.18359375,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "38, 35, 1202",
+    "time": 1791793737989,
+    "processes": [
+      {
+        "cpuSeconds": 2.890625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "38, 35, 1211",
+    "time": 1791793738298,
+    "processes": [
+      {
+        "cpuSeconds": 3.5,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 29, 1205",
+    "time": 1791793738606,
+    "processes": [
+      {
+        "cpuSeconds": 4.125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 29, 1205",
+    "time": 1791793738929,
+    "processes": [
+      {
+        "cpuSeconds": 4.6875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "36, 35, 1147",
+    "time": 1791793739246,
+    "processes": [
+      {
+        "cpuSeconds": 5.21875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 30, 1154",
+    "time": 1791793739556,
+    "processes": [
+      {
+        "cpuSeconds": 5.828125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 30, 1160",
+    "time": 1791793739868,
+    "processes": [
+      {
+        "cpuSeconds": 6.40625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "41, 39, 1185",
+    "time": 1791793740183,
+    "processes": [
+      {
+        "cpuSeconds": 7.015625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "34, 32, 1193",
+    "time": 1791793740491,
+    "processes": [
+      {
+        "cpuSeconds": 7.625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "34, 32, 1193",
+    "time": 1791793740802,
+    "processes": [
+      {
+        "cpuSeconds": 8.21875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "42, 39, 1193",
+    "time": 1791793741132,
+    "processes": [
+      {
+        "cpuSeconds": 8.875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "33, 32, 1202",
+    "time": 1791793741441,
+    "processes": [
+      {
+        "cpuSeconds": 9.5,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "33, 32, 1201",
+    "time": 1791793741753,
+    "processes": [
+      {
+        "cpuSeconds": 10.125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 39, 1202",
+    "time": 1791793742067,
+    "processes": [
+      {
+        "cpuSeconds": 10.75,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 39, 1190",
+    "time": 1791793742378,
+    "processes": [
+      {
+        "cpuSeconds": 11.375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 32, 1190",
+    "time": 1791793742708,
+    "processes": [
+      {
+        "cpuSeconds": 12,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "52, 44, 1195",
+    "time": 1791793743019,
+    "processes": [
+      {
+        "cpuSeconds": 12.65625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "52, 44, 1195",
+    "time": 1791793743328,
+    "processes": [
+      {
+        "cpuSeconds": 13.25,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "33, 32, 1195",
+    "time": 1791793743638,
+    "processes": [
+      {
+        "cpuSeconds": 13.859375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 38, 1195",
+    "time": 1791793743951,
+    "processes": [
+      {
+        "cpuSeconds": 14.484375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 38, 1200",
+    "time": 1791793744298,
+    "processes": [
+      {
+        "cpuSeconds": 15.078125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "37, 39, 1194",
+    "time": 1791793744626,
+    "processes": [
+      {
+        "cpuSeconds": 15.71875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 40, 1210",
+    "time": 1791793744938,
+    "processes": [
+      {
+        "cpuSeconds": 16.359375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 40, 1197",
+    "time": 1791793745268,
+    "processes": [
+      {
+        "cpuSeconds": 16.984375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "38, 37, 1197",
+    "time": 1791793745585,
+    "processes": [
+      {
+        "cpuSeconds": 17.59375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "38, 37, 1196",
+    "time": 1791793745911,
+    "processes": [
+      {
+        "cpuSeconds": 18.15625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "36, 36, 1197",
+    "time": 1791793746240,
+    "processes": [
+      {
+        "cpuSeconds": 18.796875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "32, 34, 1223",
+    "time": 1791793746555,
+    "processes": [
+      {
+        "cpuSeconds": 19.4375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "32, 34, 1223",
+    "time": 1791793746872,
+    "processes": [
+      {
+        "cpuSeconds": 20.0625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "19, 27, 1223",
+    "time": 1791793747180,
+    "processes": [
+      {
+        "cpuSeconds": 20.6875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 33, 1223",
+    "time": 1791793747555,
+    "processes": [
+      {
+        "cpuSeconds": 21.28125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 33, 1217",
+    "time": 1791793747916,
+    "processes": [
+      {
+        "cpuSeconds": 21.859375,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "19, 27, 1146",
+    "time": 1791793748314,
+    "processes": [
+      {
+        "cpuSeconds": 22.5,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 33, 1151",
+    "time": 1791793748764,
+    "processes": [
+      {
+        "cpuSeconds": 23.125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "20, 27, 1151",
+    "time": 1791793749080,
+    "processes": [
+      {
+        "cpuSeconds": 23.828125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "20, 27, 1150",
+    "time": 1791793749393,
+    "processes": [
+      {
+        "cpuSeconds": 24.453125,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "35, 35, 1150",
+    "time": 1791793749705,
+    "processes": [
+      {
+        "cpuSeconds": 24.96875,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "22, 29, 1150",
+    "time": 1791793750108,
+    "processes": [
+      {
+        "cpuSeconds": 25.515625,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1150",
+    "time": 1791793750516,
+    "processes": [
+      {
+        "cpuSeconds": 26.25,
+        "workingSetMB": 642.296875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1150",
+    "time": 1791793750855,
+    "processes": [
+      {
+        "cpuSeconds": 26.859375,
+        "workingSetMB": 646.69921875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "18, 25, 1150",
+    "time": 1791793751267,
+    "processes": [
+      {
+        "cpuSeconds": 27.375,
+        "workingSetMB": 646.69921875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 32, 1150",
+    "time": 1791793751697,
+    "processes": [
+      {
+        "cpuSeconds": 27.96875,
+        "workingSetMB": 646.69921875,
+        "pid": 2400,
+        "privateMB": 1144.36328125
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1149",
+    "time": 1791793752043,
+    "processes": [
+      {
+        "cpuSeconds": 28.65625,
+        "workingSetMB": 762.05859375,
+        "pid": 2400,
+        "privateMB": 1254.328125
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1149",
+    "time": 1791793752440,
+    "processes": [
+      {
+        "cpuSeconds": 29.0625,
+        "workingSetMB": 763.17578125,
+        "pid": 2400,
+        "privateMB": 1254.328125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1148",
+    "time": 1791793752814,
+    "processes": [
+      {
+        "cpuSeconds": 29.578125,
+        "workingSetMB": 763.18359375,
+        "pid": 2400,
+        "privateMB": 1254.33203125
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1148",
+    "time": 1791793753194,
+    "processes": [
+      {
+        "cpuSeconds": 30.046875,
+        "workingSetMB": 763.1875,
+        "pid": 2400,
+        "privateMB": 1254.33203125
+      }
+    ]
+  },
+  {
+    "gpu": "38, 34, 1148",
+    "time": 1791793753624,
+    "processes": [
+      {
+        "cpuSeconds": 30.59375,
+        "workingSetMB": 763.63671875,
+        "pid": 2400,
+        "privateMB": 1254.83984375
+      }
+    ]
+  },
+  {
+    "gpu": "24, 29, 1148",
+    "time": 1791793753994,
+    "processes": [
+      {
+        "cpuSeconds": 31.046875,
+        "workingSetMB": 763.625,
+        "pid": 2400,
+        "privateMB": 1254.8125
+      }
+    ]
+  },
+  {
+    "gpu": "24, 29, 1148",
+    "time": 1791793754304,
+    "processes": []
+  },
+  {
+    "gpu": "30, 32, 1148",
+    "time": 1791793754648,
+    "processes": []
+  },
+  {
+    "gpu": "29, 28, 1147",
+    "time": 1791793754962,
+    "processes": []
+  },
+  {
+    "gpu": "29, 28, 1147",
+    "time": 1791793755430,
+    "processes": []
+  },
+  {
+    "gpu": "30, 32, 1146",
+    "time": 1791793755777,
+    "processes": []
+  },
+  {
+    "gpu": "27, 28, 1146",
+    "time": 1791793756089,
+    "processes": []
+  },
+  {
+    "gpu": "27, 28, 1130",
+    "time": 1791793756401,
+    "processes": []
+  },
+  {
+    "gpu": "38, 34, 1130",
+    "time": 1791793756717,
+    "processes": []
+  },
+  {
+    "gpu": "32, 28, 1135",
+    "time": 1791793757022,
+    "processes": []
+  },
+  {
+    "gpu": "32, 28, 1135",
+    "time": 1791793757351,
+    "processes": []
+  },
+  {
+    "gpu": "35, 33, 1135",
+    "time": 1791793757663,
+    "processes": [
+      {
+        "cpuSeconds": 0.234375,
+        "workingSetMB": 196.015625,
+        "pid": 23460,
+        "privateMB": 475.9453125
+      }
+    ]
+  },
+  {
+    "gpu": "24, 28, 1134",
+    "time": 1791793757992,
+    "processes": [
+      {
+        "cpuSeconds": 0.546875,
+        "workingSetMB": 581.02734375,
+        "pid": 23460,
+        "privateMB": 1132.32421875
+      }
+    ]
+  },
+  {
+    "gpu": "24, 28, 1133",
+    "time": 1791793758321,
+    "processes": [
+      {
+        "cpuSeconds": 1.140625,
+        "workingSetMB": 618.2578125,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1133",
+    "time": 1791793758660,
+    "processes": [
+      {
+        "cpuSeconds": 1.75,
+        "workingSetMB": 618.27734375,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "24, 27, 1133",
+    "time": 1791793758988,
+    "processes": [
+      {
+        "cpuSeconds": 2.390625,
+        "workingSetMB": 618.27734375,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "24, 27, 1133",
+    "time": 1791793759302,
+    "processes": [
+      {
+        "cpuSeconds": 2.96875,
+        "workingSetMB": 631.30078125,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1133",
+    "time": 1791793759617,
+    "processes": [
+      {
+        "cpuSeconds": 3.578125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1133",
+    "time": 1791793759930,
+    "processes": [
+      {
+        "cpuSeconds": 4.1875,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1133",
+    "time": 1791793760239,
+    "processes": [
+      {
+        "cpuSeconds": 4.8125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1121",
+    "time": 1791793760569,
+    "processes": [
+      {
+        "cpuSeconds": 5.421875,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1121",
+    "time": 1791793760880,
+    "processes": [
+      {
+        "cpuSeconds": 6.015625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 27, 1137",
+    "time": 1791793761207,
+    "processes": [
+      {
+        "cpuSeconds": 6.609375,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "36, 37, 1202",
+    "time": 1791793761576,
+    "processes": [
+      {
+        "cpuSeconds": 7.1875,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "36, 37, 1203",
+    "time": 1791793761886,
+    "processes": [
+      {
+        "cpuSeconds": 7.78125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1197",
+    "time": 1791793762200,
+    "processes": [
+      {
+        "cpuSeconds": 8.4375,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 31, 1197",
+    "time": 1791793762512,
+    "processes": [
+      {
+        "cpuSeconds": 9.015625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 31, 1198",
+    "time": 1791793762825,
+    "processes": [
+      {
+        "cpuSeconds": 9.640625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "24, 28, 1198",
+    "time": 1791793763135,
+    "processes": [
+      {
+        "cpuSeconds": 10.265625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 30, 1136",
+    "time": 1791793763446,
+    "processes": [
+      {
+        "cpuSeconds": 10.890625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 30, 1141",
+    "time": 1791793763757,
+    "processes": [
+      {
+        "cpuSeconds": 11.515625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1141",
+    "time": 1791793764068,
+    "processes": [
+      {
+        "cpuSeconds": 12.140625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1141",
+    "time": 1791793764380,
+    "processes": [
+      {
+        "cpuSeconds": 12.65625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "26, 30, 1138",
+    "time": 1791793764690,
+    "processes": [
+      {
+        "cpuSeconds": 13.28125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "25, 29, 1138",
+    "time": 1791793765003,
+    "processes": [
+      {
+        "cpuSeconds": 13.90625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "25, 29, 1138",
+    "time": 1791793765311,
+    "processes": [
+      {
+        "cpuSeconds": 14.53125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1138",
+    "time": 1791793765626,
+    "processes": [
+      {
+        "cpuSeconds": 15.15625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1137",
+    "time": 1791793765940,
+    "processes": [
+      {
+        "cpuSeconds": 15.78125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1137",
+    "time": 1791793766251,
+    "processes": [
+      {
+        "cpuSeconds": 16.40625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1137",
+    "time": 1791793766564,
+    "processes": [
+      {
+        "cpuSeconds": 17.03125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1164",
+    "time": 1791793766875,
+    "processes": [
+      {
+        "cpuSeconds": 17.625,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 29, 1164",
+    "time": 1791793767189,
+    "processes": [
+      {
+        "cpuSeconds": 18.25,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 30, 1164",
+    "time": 1791793767500,
+    "processes": [
+      {
+        "cpuSeconds": 18.875,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 30, 1164",
+    "time": 1791793767809,
+    "processes": [
+      {
+        "cpuSeconds": 19.453125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "26, 29, 1173",
+    "time": 1791793768120,
+    "processes": [
+      {
+        "cpuSeconds": 20.078125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "26, 29, 1174",
+    "time": 1791793768436,
+    "processes": [
+      {
+        "cpuSeconds": 20.734375,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 32, 1125",
+    "time": 1791793768747,
+    "processes": [
+      {
+        "cpuSeconds": 21.3125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "33, 30, 1130",
+    "time": 1791793769079,
+    "processes": [
+      {
+        "cpuSeconds": 21.921875,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "33, 30, 1130",
+    "time": 1791793769387,
+    "processes": [
+      {
+        "cpuSeconds": 22.5,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "25, 29, 1130",
+    "time": 1791793769700,
+    "processes": [
+      {
+        "cpuSeconds": 23.125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 31, 1130",
+    "time": 1791793770012,
+    "processes": [
+      {
+        "cpuSeconds": 23.78125,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 31, 1130",
+    "time": 1791793770323,
+    "processes": [
+      {
+        "cpuSeconds": 24.375,
+        "workingSetMB": 642.44921875,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "25, 29, 1129",
+    "time": 1791793770633,
+    "processes": [
+      {
+        "cpuSeconds": 25,
+        "workingSetMB": 646.8515625,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "26, 30, 1129",
+    "time": 1791793770947,
+    "processes": [
+      {
+        "cpuSeconds": 25.609375,
+        "workingSetMB": 646.8515625,
+        "pid": 23460,
+        "privateMB": 1144.50390625
+      }
+    ]
+  },
+  {
+    "gpu": "26, 30, 1129",
+    "time": 1791793771261,
+    "processes": [
+      {
+        "cpuSeconds": 26.234375,
+        "workingSetMB": 717.38671875,
+        "pid": 23460,
+        "privateMB": 1252.984375
+      }
+    ]
+  },
+  {
+    "gpu": "24, 28, 1129",
+    "time": 1791793771574,
+    "processes": [
+      {
+        "cpuSeconds": 26.90625,
+        "workingSetMB": 763.36328125,
+        "pid": 23460,
+        "privateMB": 1254.67578125
+      }
+    ]
+  },
+  {
+    "gpu": "24, 28, 1129",
+    "time": 1791793771884,
+    "processes": [
+      {
+        "cpuSeconds": 27.546875,
+        "workingSetMB": 764.734375,
+        "pid": 23460,
+        "privateMB": 1255.93359375
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1129",
+    "time": 1791793772200,
+    "processes": []
+  },
+  {
+    "gpu": "32, 30, 1129",
+    "time": 1791793772508,
+    "processes": []
+  },
+  {
+    "gpu": "32, 30, 1129",
+    "time": 1791793772820,
+    "processes": []
+  },
+  {
+    "gpu": "35, 32, 1128",
+    "time": 1791793773144,
+    "processes": []
+  },
+  {
+    "gpu": "24, 28, 1129",
+    "time": 1791793773456,
+    "processes": [
+      {
+        "cpuSeconds": 0.078125,
+        "workingSetMB": 29.33203125,
+        "pid": 24648,
+        "privateMB": 475.9609375
+      }
+    ]
+  },
+  {
+    "gpu": "24, 28, 1138",
+    "time": 1791793773782,
+    "processes": [
+      {
+        "cpuSeconds": 0.390625,
+        "workingSetMB": 329.90625,
+        "pid": 24648,
+        "privateMB": 475.9609375
+      }
+    ]
+  },
+  {
+    "gpu": "0, 0, 1129",
+    "time": 1791793774095,
+    "processes": [
+      {
+        "cpuSeconds": 0.84375,
+        "workingSetMB": 602.8515625,
+        "pid": 24648,
+        "privateMB": 1135.71484375
+      }
+    ]
+  },
+  {
+    "gpu": "0, 0, 1129",
+    "time": 1791793774403,
+    "processes": [
+      {
+        "cpuSeconds": 1.46875,
+        "workingSetMB": 618.359375,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "1, 1, 1129",
+    "time": 1791793774715,
+    "processes": [
+      {
+        "cpuSeconds": 2.09375,
+        "workingSetMB": 618.359375,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "0, 1, 1128",
+    "time": 1791793775029,
+    "processes": [
+      {
+        "cpuSeconds": 2.6875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "0, 1, 1128",
+    "time": 1791793775341,
+    "processes": [
+      {
+        "cpuSeconds": 3.3125,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 1, 1129",
+    "time": 1791793775654,
+    "processes": [
+      {
+        "cpuSeconds": 3.9375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "1, 1, 1129",
+    "time": 1791793775963,
+    "processes": [
+      {
+        "cpuSeconds": 4.5625,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "1, 1, 1129",
+    "time": 1791793776274,
+    "processes": [
+      {
+        "cpuSeconds": 5.171875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1129",
+    "time": 1791793776582,
+    "processes": [
+      {
+        "cpuSeconds": 5.796875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1129",
+    "time": 1791793776895,
+    "processes": [
+      {
+        "cpuSeconds": 6.421875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "2, 1, 1134",
+    "time": 1791793777208,
+    "processes": [
+      {
+        "cpuSeconds": 7.046875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 2, 1134",
+    "time": 1791793777519,
+    "processes": [
+      {
+        "cpuSeconds": 7.671875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "3, 2, 1134",
+    "time": 1791793777829,
+    "processes": [
+      {
+        "cpuSeconds": 8.296875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "9, 13, 1134",
+    "time": 1791793778138,
+    "processes": [
+      {
+        "cpuSeconds": 8.890625,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "9, 12, 1134",
+    "time": 1791793778449,
+    "processes": [
+      {
+        "cpuSeconds": 9.515625,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "9, 12, 1134",
+    "time": 1791793778884,
+    "processes": [
+      {
+        "cpuSeconds": 10.078125,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "10, 13, 1123",
+    "time": 1791793779199,
+    "processes": [
+      {
+        "cpuSeconds": 10.71875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "15, 14, 1125",
+    "time": 1791793779521,
+    "processes": [
+      {
+        "cpuSeconds": 11.359375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "15, 14, 1134",
+    "time": 1791793779832,
+    "processes": [
+      {
+        "cpuSeconds": 11.984375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "15, 17, 1134",
+    "time": 1791793780147,
+    "processes": [
+      {
+        "cpuSeconds": 12.609375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1134",
+    "time": 1791793780457,
+    "processes": [
+      {
+        "cpuSeconds": 13.234375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1134",
+    "time": 1791793780767,
+    "processes": [
+      {
+        "cpuSeconds": 13.859375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1134",
+    "time": 1791793781096,
+    "processes": [
+      {
+        "cpuSeconds": 14.484375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1134",
+    "time": 1791793781406,
+    "processes": [
+      {
+        "cpuSeconds": 15.140625,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1130",
+    "time": 1791793781720,
+    "processes": [
+      {
+        "cpuSeconds": 15.765625,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1130",
+    "time": 1791793782029,
+    "processes": [
+      {
+        "cpuSeconds": 16.359375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1130",
+    "time": 1791793782345,
+    "processes": [
+      {
+        "cpuSeconds": 16.984375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1130",
+    "time": 1791793782655,
+    "processes": [
+      {
+        "cpuSeconds": 17.609375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1129",
+    "time": 1791793782969,
+    "processes": [
+      {
+        "cpuSeconds": 18.234375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1129",
+    "time": 1791793783278,
+    "processes": [
+      {
+        "cpuSeconds": 18.828125,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "28, 27, 1129",
+    "time": 1791793783589,
+    "processes": [
+      {
+        "cpuSeconds": 19.4375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "28, 27, 1129",
+    "time": 1791793783902,
+    "processes": [
+      {
+        "cpuSeconds": 20.0625,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "33, 33, 1133",
+    "time": 1791793784230,
+    "processes": [
+      {
+        "cpuSeconds": 20.71875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1133",
+    "time": 1791793784544,
+    "processes": [
+      {
+        "cpuSeconds": 21.34375,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1133",
+    "time": 1791793784854,
+    "processes": [
+      {
+        "cpuSeconds": 21.96875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1133",
+    "time": 1791793785168,
+    "processes": [
+      {
+        "cpuSeconds": 22.546875,
+        "workingSetMB": 642.453125,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "27, 27, 1133",
+    "time": 1791793785480,
+    "processes": [
+      {
+        "cpuSeconds": 23.125,
+        "workingSetMB": 646.85546875,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "27, 27, 1133",
+    "time": 1791793785791,
+    "processes": [
+      {
+        "cpuSeconds": 23.75,
+        "workingSetMB": 646.85546875,
+        "pid": 24648,
+        "privateMB": 1144.52734375
+      }
+    ]
+  },
+  {
+    "gpu": "37, 35, 1131",
+    "time": 1791793786103,
+    "processes": [
+      {
+        "cpuSeconds": 24.3125,
+        "workingSetMB": 755.24609375,
+        "pid": 24648,
+        "privateMB": 1253.03125
+      }
+    ]
+  },
+  {
+    "gpu": "37, 35, 1131",
+    "time": 1791793786417,
+    "processes": [
+      {
+        "cpuSeconds": 24.9375,
+        "workingSetMB": 762.98828125,
+        "pid": 24648,
+        "privateMB": 1254.41015625
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1131",
+    "time": 1791793786731,
+    "processes": [
+      {
+        "cpuSeconds": 25.59375,
+        "workingSetMB": 763.65625,
+        "pid": 24648,
+        "privateMB": 1255.19921875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1122",
+    "time": 1791793787162,
+    "processes": []
+  },
+  {
+    "gpu": "21, 26, 1122",
+    "time": 1791793787495,
+    "processes": []
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793787885,
+    "processes": []
+  },
+  {
+    "gpu": "30, 33, 1127",
+    "time": 1791793788214,
+    "processes": []
+  },
+  {
+    "gpu": "22, 26, 1127",
+    "time": 1791793788522,
+    "processes": []
+  },
+  {
+    "gpu": "22, 26, 1127",
+    "time": 1791793788838,
+    "processes": [
+      {
+        "cpuSeconds": 0.125,
+        "workingSetMB": 95.87109375,
+        "pid": 24972,
+        "privateMB": 475.953125
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1127",
+    "time": 1791793789169,
+    "processes": [
+      {
+        "cpuSeconds": 0.453125,
+        "workingSetMB": 387.5546875,
+        "pid": 24972,
+        "privateMB": 475.953125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 28, 1126",
+    "time": 1791793789500,
+    "processes": [
+      {
+        "cpuSeconds": 0.9375,
+        "workingSetMB": 602.953125,
+        "pid": 24972,
+        "privateMB": 1135.80078125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 28, 1126",
+    "time": 1791793789822,
+    "processes": [
+      {
+        "cpuSeconds": 1.609375,
+        "workingSetMB": 618.44140625,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1126",
+    "time": 1791793790135,
+    "processes": [
+      {
+        "cpuSeconds": 2.21875,
+        "workingSetMB": 618.44140625,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "22, 26, 1127",
+    "time": 1791793790446,
+    "processes": [
+      {
+        "cpuSeconds": 2.828125,
+        "workingSetMB": 627.3515625,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "22, 26, 1127",
+    "time": 1791793790774,
+    "processes": [
+      {
+        "cpuSeconds": 3.46875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1127",
+    "time": 1791793791085,
+    "processes": [
+      {
+        "cpuSeconds": 4.0625,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1127",
+    "time": 1791793791403,
+    "processes": [
+      {
+        "cpuSeconds": 4.6875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793791716,
+    "processes": [
+      {
+        "cpuSeconds": 5.3125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1127",
+    "time": 1791793792030,
+    "processes": [
+      {
+        "cpuSeconds": 5.96875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1127",
+    "time": 1791793792361,
+    "processes": [
+      {
+        "cpuSeconds": 6.59375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793792671,
+    "processes": [
+      {
+        "cpuSeconds": 7.25,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 32, 1126",
+    "time": 1791793792987,
+    "processes": [
+      {
+        "cpuSeconds": 7.875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 32, 1127",
+    "time": 1791793793299,
+    "processes": [
+      {
+        "cpuSeconds": 8.46875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "29, 28, 1126",
+    "time": 1791793793611,
+    "processes": [
+      {
+        "cpuSeconds": 9.046875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "38, 33, 1126",
+    "time": 1791793793941,
+    "processes": [
+      {
+        "cpuSeconds": 9.703125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "38, 33, 1127",
+    "time": 1791793794254,
+    "processes": [
+      {
+        "cpuSeconds": 10.328125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793794568,
+    "processes": [
+      {
+        "cpuSeconds": 10.953125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793794876,
+    "processes": [
+      {
+        "cpuSeconds": 11.5625,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 32, 1127",
+    "time": 1791793795191,
+    "processes": [
+      {
+        "cpuSeconds": 12.1875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793795504,
+    "processes": [
+      {
+        "cpuSeconds": 12.8125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793795814,
+    "processes": [
+      {
+        "cpuSeconds": 13.4375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 32, 1127",
+    "time": 1791793796126,
+    "processes": [
+      {
+        "cpuSeconds": 14.0625,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793796439,
+    "processes": [
+      {
+        "cpuSeconds": 14.6875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1127",
+    "time": 1791793796753,
+    "processes": [
+      {
+        "cpuSeconds": 15.3125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1127",
+    "time": 1791793797079,
+    "processes": [
+      {
+        "cpuSeconds": 15.9375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1135",
+    "time": 1791793797392,
+    "processes": [
+      {
+        "cpuSeconds": 16.59375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "29, 28, 1135",
+    "time": 1791793797703,
+    "processes": [
+      {
+        "cpuSeconds": 17.21875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "39, 35, 1135",
+    "time": 1791793798013,
+    "processes": [
+      {
+        "cpuSeconds": 17.84375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "39, 35, 1135",
+    "time": 1791793798327,
+    "processes": [
+      {
+        "cpuSeconds": 18.4375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1135",
+    "time": 1791793798655,
+    "processes": [
+      {
+        "cpuSeconds": 19.125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1135",
+    "time": 1791793798966,
+    "processes": [
+      {
+        "cpuSeconds": 19.71875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1135",
+    "time": 1791793799276,
+    "processes": [
+      {
+        "cpuSeconds": 20.328125,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1134",
+    "time": 1791793799590,
+    "processes": [
+      {
+        "cpuSeconds": 20.9375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1134",
+    "time": 1791793799902,
+    "processes": [
+      {
+        "cpuSeconds": 21.5625,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1134",
+    "time": 1791793800229,
+    "processes": [
+      {
+        "cpuSeconds": 22.21875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 27, 1134",
+    "time": 1791793800539,
+    "processes": [
+      {
+        "cpuSeconds": 22.84375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 27, 1134",
+    "time": 1791793800851,
+    "processes": [
+      {
+        "cpuSeconds": 23.46875,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1134",
+    "time": 1791793801164,
+    "processes": [
+      {
+        "cpuSeconds": 24.09375,
+        "workingSetMB": 642.5546875,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "28, 27, 1134",
+    "time": 1791793801479,
+    "processes": [
+      {
+        "cpuSeconds": 24.71875,
+        "workingSetMB": 646.95703125,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "28, 27, 1134",
+    "time": 1791793801795,
+    "processes": [
+      {
+        "cpuSeconds": 25.34375,
+        "workingSetMB": 646.95703125,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "40, 34, 1134",
+    "time": 1791793802107,
+    "processes": [
+      {
+        "cpuSeconds": 25.96875,
+        "workingSetMB": 646.95703125,
+        "pid": 24972,
+        "privateMB": 1144.6171875
+      }
+    ]
+  },
+  {
+    "gpu": "40, 34, 1134",
+    "time": 1791793802415,
+    "processes": [
+      {
+        "cpuSeconds": 26.59375,
+        "workingSetMB": 764.21875,
+        "pid": 24972,
+        "privateMB": 1255.39453125
+      }
+    ]
+  },
+  {
+    "gpu": "22, 27, 1134",
+    "time": 1791793802724,
+    "processes": [
+      {
+        "cpuSeconds": 27.234375,
+        "workingSetMB": 764.26171875,
+        "pid": 24972,
+        "privateMB": 1255.39453125
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1134",
+    "time": 1791793803038,
+    "processes": []
+  },
+  {
+    "gpu": "31, 33, 1136",
+    "time": 1791793803348,
+    "processes": []
+  },
+  {
+    "gpu": "21, 27, 1136",
+    "time": 1791793803657,
+    "processes": []
+  },
+  {
+    "gpu": "30, 33, 1136",
+    "time": 1791793803968,
+    "processes": []
+  },
+  {
+    "gpu": "30, 33, 1136",
+    "time": 1791793804280,
+    "processes": [
+      {
+        "cpuSeconds": 0.09375,
+        "workingSetMB": 29.05859375,
+        "pid": 25744,
+        "privateMB": 475.8359375
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1136",
+    "time": 1791793804591,
+    "processes": [
+      {
+        "cpuSeconds": 0.390625,
+        "workingSetMB": 367.62109375,
+        "pid": 25744,
+        "privateMB": 475.8359375
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1136",
+    "time": 1791793804901,
+    "processes": [
+      {
+        "cpuSeconds": 0.875,
+        "workingSetMB": 618.2890625,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "30, 33, 1152",
+    "time": 1791793805214,
+    "processes": [
+      {
+        "cpuSeconds": 1.5,
+        "workingSetMB": 618.30859375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "25, 27, 1137",
+    "time": 1791793805522,
+    "processes": [
+      {
+        "cpuSeconds": 2.109375,
+        "workingSetMB": 618.30859375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "25, 27, 1139",
+    "time": 1791793805838,
+    "processes": [
+      {
+        "cpuSeconds": 2.6875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "40, 36, 1139",
+    "time": 1791793806149,
+    "processes": [
+      {
+        "cpuSeconds": 3.328125,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1140",
+    "time": 1791793806459,
+    "processes": [
+      {
+        "cpuSeconds": 3.921875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1140",
+    "time": 1791793806772,
+    "processes": [
+      {
+        "cpuSeconds": 4.515625,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1140",
+    "time": 1791793807082,
+    "processes": [
+      {
+        "cpuSeconds": 5.125,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1140",
+    "time": 1791793807391,
+    "processes": [
+      {
+        "cpuSeconds": 5.75,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1140",
+    "time": 1791793807703,
+    "processes": [
+      {
+        "cpuSeconds": 6.375,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1140",
+    "time": 1791793808017,
+    "processes": [
+      {
+        "cpuSeconds": 7,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1140",
+    "time": 1791793808329,
+    "processes": [
+      {
+        "cpuSeconds": 7.625,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "19, 24, 1140",
+    "time": 1791793808638,
+    "processes": [
+      {
+        "cpuSeconds": 8.234375,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "30, 31, 1140",
+    "time": 1791793808952,
+    "processes": [
+      {
+        "cpuSeconds": 8.859375,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "30, 31, 1140",
+    "time": 1791793809269,
+    "processes": [
+      {
+        "cpuSeconds": 9.484375,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "27, 27, 1139",
+    "time": 1791793809579,
+    "processes": [
+      {
+        "cpuSeconds": 10.09375,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "27, 27, 1139",
+    "time": 1791793809889,
+    "processes": [
+      {
+        "cpuSeconds": 10.703125,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1140",
+    "time": 1791793810201,
+    "processes": [
+      {
+        "cpuSeconds": 11.328125,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "22, 26, 1140",
+    "time": 1791793810510,
+    "processes": [
+      {
+        "cpuSeconds": 11.953125,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "22, 26, 1140",
+    "time": 1791793810824,
+    "processes": [
+      {
+        "cpuSeconds": 12.546875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "32, 33, 1140",
+    "time": 1791793811138,
+    "processes": [
+      {
+        "cpuSeconds": 13.171875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1140",
+    "time": 1791793811447,
+    "processes": [
+      {
+        "cpuSeconds": 13.796875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1140",
+    "time": 1791793811762,
+    "processes": [
+      {
+        "cpuSeconds": 14.421875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1140",
+    "time": 1791793812071,
+    "processes": [
+      {
+        "cpuSeconds": 15.078125,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1140",
+    "time": 1791793812383,
+    "processes": [
+      {
+        "cpuSeconds": 15.671875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1140",
+    "time": 1791793812696,
+    "processes": [
+      {
+        "cpuSeconds": 16.296875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "33, 34, 1138",
+    "time": 1791793813006,
+    "processes": [
+      {
+        "cpuSeconds": 16.921875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "33, 34, 1139",
+    "time": 1791793813319,
+    "processes": [
+      {
+        "cpuSeconds": 17.546875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "28, 27, 1139",
+    "time": 1791793813630,
+    "processes": [
+      {
+        "cpuSeconds": 18.171875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1139",
+    "time": 1791793813943,
+    "processes": [
+      {
+        "cpuSeconds": 18.796875,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "37, 33, 1139",
+    "time": 1791793814253,
+    "processes": [
+      {
+        "cpuSeconds": 19.390625,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1139",
+    "time": 1791793814569,
+    "processes": [
+      {
+        "cpuSeconds": 20.015625,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1139",
+    "time": 1791793814879,
+    "processes": [
+      {
+        "cpuSeconds": 20.640625,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "31, 32, 1139",
+    "time": 1791793815191,
+    "processes": [
+      {
+        "cpuSeconds": 21.265625,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1139",
+    "time": 1791793815504,
+    "processes": [
+      {
+        "cpuSeconds": 21.890625,
+        "workingSetMB": 642.3984375,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "20, 26, 1139",
+    "time": 1791793815816,
+    "processes": [
+      {
+        "cpuSeconds": 22.515625,
+        "workingSetMB": 646.80078125,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "30, 32, 1139",
+    "time": 1791793816125,
+    "processes": [
+      {
+        "cpuSeconds": 23.140625,
+        "workingSetMB": 646.80078125,
+        "pid": 25744,
+        "privateMB": 1144.46875
+      }
+    ]
+  },
+  {
+    "gpu": "30, 32, 1139",
+    "time": 1791793816437,
+    "processes": [
+      {
+        "cpuSeconds": 23.75,
+        "workingSetMB": 763.703125,
+        "pid": 25744,
+        "privateMB": 1254.90234375
+      }
+    ]
+  },
+  {
+    "gpu": "21, 26, 1139",
+    "time": 1791793816766,
+    "processes": [
+      {
+        "cpuSeconds": 24.390625,
+        "workingSetMB": 763.8359375,
+        "pid": 25744,
+        "privateMB": 1254.95703125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1133",
+    "time": 1791793817081,
+    "processes": []
+  },
+  {
+    "gpu": "29, 32, 1138",
+    "time": 1791793817394,
+    "processes": []
+  },
+  {
+    "gpu": "31, 30, 1138",
+    "time": 1791793817706,
+    "processes": []
+  },
+  {
+    "gpu": "36, 33, 1133",
+    "time": 1791793818021,
+    "processes": []
+  },
+  {
+    "gpu": "36, 33, 1133",
+    "time": 1791793818348,
+    "processes": []
+  },
+  {
+    "gpu": "22, 27, 1133",
+    "time": 1791793818672,
+    "processes": [
+      {
+        "cpuSeconds": 0.0625,
+        "workingSetMB": 12.83203125,
+        "pid": 17428,
+        "privateMB": 8.8828125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 32, 1130",
+    "time": 1791793818981,
+    "processes": [
+      {
+        "cpuSeconds": 0.359375,
+        "workingSetMB": 292.234375,
+        "pid": 17428,
+        "privateMB": 475.83203125
+      }
+    ]
+  },
+  {
+    "gpu": "30, 32, 1130",
+    "time": 1791793819294,
+    "processes": [
+      {
+        "cpuSeconds": 0.78125,
+        "workingSetMB": 602.71875,
+        "pid": 17428,
+        "privateMB": 1135.56640625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1130",
+    "time": 1791793819608,
+    "processes": [
+      {
+        "cpuSeconds": 1.40625,
+        "workingSetMB": 618.203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1130",
+    "time": 1791793819933,
+    "processes": [
+      {
+        "cpuSeconds": 2.03125,
+        "workingSetMB": 618.203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 26, 1130",
+    "time": 1791793820459,
+    "processes": [
+      {
+        "cpuSeconds": 2.5,
+        "workingSetMB": 618.20703125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 26, 1130",
+    "time": 1791793820889,
+    "processes": [
+      {
+        "cpuSeconds": 3.234375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1130",
+    "time": 1791793821365,
+    "processes": [
+      {
+        "cpuSeconds": 3.90625,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "31, 28, 1130",
+    "time": 1791793821688,
+    "processes": [
+      {
+        "cpuSeconds": 4.578125,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "35, 34, 1130",
+    "time": 1791793822019,
+    "processes": [
+      {
+        "cpuSeconds": 5.21875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "35, 34, 1130",
+    "time": 1791793822329,
+    "processes": [
+      {
+        "cpuSeconds": 5.796875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1130",
+    "time": 1791793822641,
+    "processes": [
+      {
+        "cpuSeconds": 6.390625,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1130",
+    "time": 1791793822948,
+    "processes": [
+      {
+        "cpuSeconds": 6.984375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1130",
+    "time": 1791793823259,
+    "processes": [
+      {
+        "cpuSeconds": 7.609375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1130",
+    "time": 1791793823571,
+    "processes": [
+      {
+        "cpuSeconds": 8.265625,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1130",
+    "time": 1791793823880,
+    "processes": [
+      {
+        "cpuSeconds": 8.84375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1139",
+    "time": 1791793824187,
+    "processes": [
+      {
+        "cpuSeconds": 9.46875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1139",
+    "time": 1791793824498,
+    "processes": [
+      {
+        "cpuSeconds": 10.0625,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1139",
+    "time": 1791793824812,
+    "processes": [
+      {
+        "cpuSeconds": 10.71875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1139",
+    "time": 1791793825124,
+    "processes": [
+      {
+        "cpuSeconds": 11.34375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1140",
+    "time": 1791793825436,
+    "processes": [
+      {
+        "cpuSeconds": 11.96875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "31, 29, 1140",
+    "time": 1791793825749,
+    "processes": [
+      {
+        "cpuSeconds": 12.59375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1140",
+    "time": 1791793826062,
+    "processes": [
+      {
+        "cpuSeconds": 13.21875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "34, 31, 1140",
+    "time": 1791793826372,
+    "processes": [
+      {
+        "cpuSeconds": 13.84375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1140",
+    "time": 1791793826682,
+    "processes": [
+      {
+        "cpuSeconds": 14.453125,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1140",
+    "time": 1791793826996,
+    "processes": [
+      {
+        "cpuSeconds": 15.03125,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1140",
+    "time": 1791793827306,
+    "processes": [
+      {
+        "cpuSeconds": 15.625,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "24, 29, 1140",
+    "time": 1791793827619,
+    "processes": [
+      {
+        "cpuSeconds": 16.25,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "24, 29, 1140",
+    "time": 1791793827929,
+    "processes": [
+      {
+        "cpuSeconds": 16.875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "29, 31, 1140",
+    "time": 1791793828241,
+    "processes": [
+      {
+        "cpuSeconds": 17.515625,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1135",
+    "time": 1791793828555,
+    "processes": [
+      {
+        "cpuSeconds": 18.109375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1135",
+    "time": 1791793828867,
+    "processes": [
+      {
+        "cpuSeconds": 18.734375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 29, 1149",
+    "time": 1791793829180,
+    "processes": [
+      {
+        "cpuSeconds": 19.359375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1134",
+    "time": 1791793829491,
+    "processes": [
+      {
+        "cpuSeconds": 19.96875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "36, 33, 1134",
+    "time": 1791793829804,
+    "processes": [
+      {
+        "cpuSeconds": 20.5625,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1134",
+    "time": 1791793830116,
+    "processes": [
+      {
+        "cpuSeconds": 21.1875,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "32, 30, 1134",
+    "time": 1791793830431,
+    "processes": [
+      {
+        "cpuSeconds": 21.8125,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "25, 28, 1134",
+    "time": 1791793830740,
+    "processes": [
+      {
+        "cpuSeconds": 22.4375,
+        "workingSetMB": 642.3203125,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1134",
+    "time": 1791793831051,
+    "processes": [
+      {
+        "cpuSeconds": 23.0625,
+        "workingSetMB": 646.72265625,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1134",
+    "time": 1791793831361,
+    "processes": [
+      {
+        "cpuSeconds": 23.6875,
+        "workingSetMB": 646.72265625,
+        "pid": 17428,
+        "privateMB": 1144.37890625
+      }
+    ]
+  },
+  {
+    "gpu": "25, 29, 1134",
+    "time": 1791793831671,
+    "processes": [
+      {
+        "cpuSeconds": 24.328125,
+        "workingSetMB": 762.0390625,
+        "pid": 17428,
+        "privateMB": 1254.48046875
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1134",
+    "time": 1791793831982,
+    "processes": [
+      {
+        "cpuSeconds": 24.921875,
+        "workingSetMB": 764.40234375,
+        "pid": 17428,
+        "privateMB": 1255.58203125
+      }
+    ]
+  },
+  {
+    "gpu": "27, 30, 1134",
+    "time": 1791793832294,
+    "processes": []
+  },
+  {
+    "gpu": "28, 31, 1134",
+    "time": 1791793832603,
+    "processes": []
+  },
+  {
+    "gpu": "28, 31, 1134",
+    "time": 1791793832911,
+    "processes": []
+  },
+  {
+    "gpu": "26, 30, 1149",
+    "time": 1791793833219,
+    "processes": []
+  },
+  {
+    "gpu": "32, 31, 1133",
+    "time": 1791793833531,
+    "processes": [
+      {
+        "cpuSeconds": 0.046875,
+        "workingSetMB": 3.43359375,
+        "pid": 5012,
+        "privateMB": 0.6484375
+      }
+    ]
+  },
+  {
+    "gpu": "32, 31, 1133",
+    "time": 1791793833842,
+    "processes": [
+      {
+        "cpuSeconds": 0.34375,
+        "workingSetMB": 266.02734375,
+        "pid": 5012,
+        "privateMB": 475.8203125
+      }
+    ]
+  },
+  {
+    "gpu": "31, 30, 1134",
+    "time": 1791793834157,
+    "processes": [
+      {
+        "cpuSeconds": 0.765625,
+        "workingSetMB": 602.72265625,
+        "pid": 5012,
+        "privateMB": 1135.609375
+      }
+    ]
+  },
+  {
+    "gpu": "26, 30, 1134",
+    "time": 1791793834487,
+    "processes": [
+      {
+        "cpuSeconds": 1.375,
+        "workingSetMB": 618.17578125,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "26, 30, 1134",
+    "time": 1791793834798,
+    "processes": [
+      {
+        "cpuSeconds": 2.015625,
+        "workingSetMB": 618.17578125,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "26, 29, 1134",
+    "time": 1791793835113,
+    "processes": [
+      {
+        "cpuSeconds": 2.609375,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "26, 29, 1134",
+    "time": 1791793835425,
+    "processes": [
+      {
+        "cpuSeconds": 3.234375,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "25, 29, 1134",
+    "time": 1791793835736,
+    "processes": [
+      {
+        "cpuSeconds": 3.859375,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "26, 29, 1134",
+    "time": 1791793836046,
+    "processes": [
+      {
+        "cpuSeconds": 4.453125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "26, 29, 1134",
+    "time": 1791793836359,
+    "processes": [
+      {
+        "cpuSeconds": 5.078125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1140",
+    "time": 1791793836672,
+    "processes": [
+      {
+        "cpuSeconds": 5.703125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "33, 29, 1140",
+    "time": 1791793836983,
+    "processes": [
+      {
+        "cpuSeconds": 6.328125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "33, 29, 1146",
+    "time": 1791793837294,
+    "processes": [
+      {
+        "cpuSeconds": 6.921875,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "35, 32, 1143",
+    "time": 1791793837606,
+    "processes": [
+      {
+        "cpuSeconds": 7.546875,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "35, 32, 1143",
+    "time": 1791793837914,
+    "processes": [
+      {
+        "cpuSeconds": 8.171875,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "31, 28, 1143",
+    "time": 1791793838225,
+    "processes": [
+      {
+        "cpuSeconds": 8.78125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1138",
+    "time": 1791793838539,
+    "processes": [
+      {
+        "cpuSeconds": 9.40625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "28, 31, 1138",
+    "time": 1791793838851,
+    "processes": [
+      {
+        "cpuSeconds": 10.03125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "23, 27, 1125",
+    "time": 1791793839164,
+    "processes": [
+      {
+        "cpuSeconds": 10.65625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "26, 30, 1129",
+    "time": 1791793839476,
+    "processes": [
+      {
+        "cpuSeconds": 11.28125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "26, 30, 1134",
+    "time": 1791793839789,
+    "processes": [
+      {
+        "cpuSeconds": 11.90625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "22, 27, 1134",
+    "time": 1791793840099,
+    "processes": [
+      {
+        "cpuSeconds": 12.53125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "22, 27, 1134",
+    "time": 1791793840413,
+    "processes": [
+      {
+        "cpuSeconds": 13.15625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "27, 31, 1134",
+    "time": 1791793840723,
+    "processes": [
+      {
+        "cpuSeconds": 13.78125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "24, 27, 1134",
+    "time": 1791793841037,
+    "processes": [
+      {
+        "cpuSeconds": 14.40625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "24, 27, 1134",
+    "time": 1791793841347,
+    "processes": [
+      {
+        "cpuSeconds": 15.015625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "35, 33, 1125",
+    "time": 1791793841656,
+    "processes": [
+      {
+        "cpuSeconds": 15.640625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 28, 1125",
+    "time": 1791793841967,
+    "processes": [
+      {
+        "cpuSeconds": 16.265625,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 28, 1129",
+    "time": 1791793842281,
+    "processes": [
+      {
+        "cpuSeconds": 16.859375,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1129",
+    "time": 1791793842594,
+    "processes": [
+      {
+        "cpuSeconds": 17.484375,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1129",
+    "time": 1791793842904,
+    "processes": [
+      {
+        "cpuSeconds": 18.09375,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "23, 28, 1129",
+    "time": 1791793843216,
+    "processes": [
+      {
+        "cpuSeconds": 18.6875,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1129",
+    "time": 1791793843526,
+    "processes": [
+      {
+        "cpuSeconds": 19.3125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "29, 32, 1129",
+    "time": 1791793843839,
+    "processes": [
+      {
+        "cpuSeconds": 19.921875,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "22, 26, 1134",
+    "time": 1791793844166,
+    "processes": [
+      {
+        "cpuSeconds": 20.578125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1134",
+    "time": 1791793844478,
+    "processes": [
+      {
+        "cpuSeconds": 21.203125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "31, 33, 1134",
+    "time": 1791793844787,
+    "processes": [
+      {
+        "cpuSeconds": 21.8125,
+        "workingSetMB": 642.32421875,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "22, 27, 1134",
+    "time": 1791793845099,
+    "processes": [
+      {
+        "cpuSeconds": 22.4375,
+        "workingSetMB": 646.7265625,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "22, 27, 1135",
+    "time": 1791793845411,
+    "processes": [
+      {
+        "cpuSeconds": 23.0625,
+        "workingSetMB": 646.7265625,
+        "pid": 5012,
+        "privateMB": 1144.42578125
+      }
+    ]
+  },
+  {
+    "gpu": "40, 36, 1135",
+    "time": 1791793845723,
+    "processes": [
+      {
+        "cpuSeconds": 23.671875,
+        "workingSetMB": 764.37109375,
+        "pid": 5012,
+        "privateMB": 1255.546875
+      }
+    ]
+  },
+  {
+    "gpu": "29, 29, 1135",
+    "time": 1791793846033,
+    "processes": [
+      {
+        "cpuSeconds": 24.3125,
+        "workingSetMB": 764.40625,
+        "pid": 5012,
+        "privateMB": 1255.546875
+      }
+    ]
+  }
+]

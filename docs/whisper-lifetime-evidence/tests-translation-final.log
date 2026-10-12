@@ -1,0 +1,60 @@
+
+> story-studio@1.0.0 test:translation
+> node --test scripts/translation-cache.test.cjs scripts/translation-capture.test.cjs scripts/translation-service.test.cjs scripts/whisper-backend.test.cjs scripts/whisper-runtime.test.cjs scripts/whisper-host.test.cjs scripts/whisper-session.test.cjs
+
+✔ offline cache reuses verified bytes and refuses corruption without attempting download (38.5806ms)
+✔ download integrity failure does not become a cached model (98.045ms)
+✔ 20 second limit stops and resamples to bounded mono 16 kHz without stopping shared microphone (33.5231ms)
+✔ cancel discards recording and removes timers without decoding or stopping shared tracks (5.2733ms)
+✔ microphone replacement cancels capture and reports a recoverable error (2.1953ms)
+✔ ended track cancels capture (1.762ms)
+✔ cancel during decoding suppresses result and closes decoding context (1.7164ms)
+✔ recorder start failure removes listeners and does not retain timers (1.131ms)
+✔ enable prepares both models and repeated utterances retain recognition and translation (158.5684ms)
+✔ target switching replaces only translator; model switching replaces only recognizer (40.0778ms)
+✔ idle cancellation retains engines and in-flight cancellation rejects stale output without reloading (34.4581ms)
+✔ Auto prepares independent CPU fallback while explicit GPU reports error (60.104ms)
+✔ idle native crash invalidates Ready and retry creates fresh engine (31.0625ms)
+✔ disabling during an utterance prevents stale translation and releases both models (27.1851ms)
+✔ invalid settings and invalid audio cannot start either engine (30.8058ms)
+✔ Auto without NVIDIA prepares CPU directly; explicit GPU is actionable (45.2759ms)
+✔ cancel while native files prepare never starts a native process (26.5584ms)
+✔ translator crash retains recognizer and preparation recovers only the worker (23.1004ms)
+✔ engine diagnostics never retain or broadcast private audio (22.7751ms)
+✔ text translation reuses model and language change releases old worker (21.5844ms)
+✔ new preparation waits for previous native cancellation acknowledgement (24.5446ms)
+✔ Auto inference failure replaces CUDA with resident CPU and updates diagnostics (20.9194ms)
+✔ caption IPC denies Presenter inference and strips private fields from published envelope (19.9472ms)
+✔ CUDA requires real model and compute allocations, not discovery or use_gpu (1.8262ms)
+✔ CUDA allocation without CUDA backend initialization is not proof of GPU execution (0.2191ms)
+✔ worker memoizes successful preparation and retries a failed preparation (9.2293ms)
+✔ bundled executable matches manifest (12.3449ms)
+✔ native host is bundled and rejects missing arguments (149.1372ms)
+✔ parent PID zero is rejected before loading model (40.8428ms)
+✔ verified runtime skips archive access and extraction (71.7227ms)
+✔ modified runtime dependency repairs from verified archive (10.9507ms)
+✔ missing runtime dependency repairs from verified archive (19.9999ms)
+✔ stream read error marks runtime invalid (18.523ms)
+✔ failed repair does not accept corrupt runtime (18.1691ms)
+✔ stream failure after stat is treated as invalid runtime (2.4613ms)
+✔ speech preparation launches the exact manifest-verified executable and reports verification first (3.8153ms)
+✔ session retains PID across inference and cancellation, then closes (6.9434ms)
+✔ unexpected close rejects request and reports crash once (1.2195ms)
+✔ CUDA ready waits for allocation evidence arriving on separate pipe (1.6049ms)
+✔ split UTF-8 output survives pipe chunk boundaries (1.0228ms)
+✔ PCM serialization clamps finite overshoot and rejects nonfinite without killing session (1.8862ms)
+✔ stop during preparation ignores late ready and awaits termination (9.5915ms)
+✔ cancel during preparation ignores late ready and awaits termination (8.9679ms)
+✔ cancellation deadline terminates hung inference (16.1951ms)
+✔ failed OS termination rejects stop with actionable error within deadline (15.9447ms)
+✔ preparation timeout rejects and closes the host (14.4613ms)
+✔ inference timeout rejects pending work and closes host (21.5328ms)
+✔ synchronous OS kill failure cannot escape timeout cleanup (24.8708ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 48
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1064.4043

@@ -1,0 +1,52 @@
+
+> story-studio@1.0.0 test:translation
+> node --test scripts/translation-cache.test.cjs scripts/translation-capture.test.cjs scripts/translation-service.test.cjs scripts/whisper-backend.test.cjs scripts/whisper-runtime.test.cjs
+
+✔ offline cache reuses verified bytes and refuses corruption without attempting download (14.9927ms)
+✔ download integrity failure does not become a cached model (36.9161ms)
+✔ 20 second limit stops and resamples to bounded mono 16 kHz without stopping shared microphone (24.3602ms)
+✔ cancel discards recording and removes timers without decoding or stopping shared tracks (2.6725ms)
+✔ microphone replacement cancels capture and reports a recoverable error (5.7962ms)
+✔ ended track cancels capture (2.0501ms)
+✔ cancel during decoding suppresses result and closes decoding context (2.0128ms)
+✔ recorder start failure removes listeners and does not retain timers (1.6928ms)
+✔ worker creation is lazy, same language reuses worker, switch terminates previous worker (4.1601ms)
+✔ bounded service rejects overlapping requests and cancellation discards old worker completion (7.8396ms)
+✔ idle edit cancellation retains warm worker while explicit off unloads it (1.4055ms)
+✔ language switching waits for previous worker termination before loading a new model (2.2017ms)
+✔ worker-reported initialization failure disposes broken engine and permits clean retry (1.6014ms)
+✔ cancel during asynchronous speech folder setup never launches a native process (7.3459ms)
+✔ cancel kills native process and waits for its exit before deleting private audio (11.1418ms)
+✔ new speech waits for cancelled native process exit before preparing runtime again (14.5909ms)
+✔ caption IPC denies Presenter inference and strips private fields from published envelope (26.5671ms)
+✔ CPU always disables GPU and reports actual backend (9.5997ms)
+✔ Auto falls back after preparation error without cancelling translation (42.5111ms)
+✔ Auto rejects false CUDA success and reruns CPU (14.6865ms)
+✔ GPU failure is actionable and never silently falls back (1.7314ms)
+✔ Auto skips CUDA download without NVIDIA (9.907ms)
+✔ cancelled GPU process never launches a CPU fallback (11.0609ms)
+✔ verified CUDA returns actual device and skips CPU (7.2721ms)
+✔ invalid execution selection is rejected before any worker or process (1.0191ms)
+✔ GPU diagnostic names the runtime-selected GPU rather than the first detected GPU (6.2616ms)
+✔ Auto falls back after preparation worker error and waits for termination (15.5251ms)
+✔ Auto falls back after preparation worker timeout and waits for termination (12.1544ms)
+✔ forced GPU retains actionable worker crash error (1.2652ms)
+✔ cancelling during failed GPU worker disposal prevents CPU preparation (1.1748ms)
+✔ CUDA requires real model and compute allocations, not discovery or use_gpu (2.9336ms)
+✔ CUDA allocation without CUDA backend initialization is not proof of GPU execution (0.2685ms)
+✔ worker memoizes successful preparation and retries a failed preparation (9.7603ms)
+✔ verified runtime skips archive access and extraction (24.9116ms)
+✔ modified runtime dependency repairs from verified archive (12.2357ms)
+✔ missing runtime dependency repairs from verified archive (8.8754ms)
+✔ stream read error marks runtime invalid (4.3231ms)
+✔ failed repair does not accept corrupt runtime (8.0458ms)
+✔ stream failure after stat is treated as invalid runtime (1.9448ms)
+✔ speech preparation launches the exact manifest-verified executable and reports verification first (2.2015ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 703.6208

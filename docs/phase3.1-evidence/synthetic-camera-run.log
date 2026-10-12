@@ -1,0 +1,9 @@
+WARMUP idle
+MEASURING idle
+SAVED idle 610 595
+WARMUP base-cpu
+MEASURING base-cpu
+SAVED base-cpu 686 669
+WARMUP base-cuda
+MEASURING base-cuda
+SAVED base-cuda 620 604

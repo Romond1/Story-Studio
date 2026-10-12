@@ -1,0 +1,475 @@
+{
+  "kind": "Standalone native Whisper helper resource sampling; not combined Electron performance",
+  "logicalProcessors": 8,
+  "exitCode": 0,
+  "samples": [
+    {
+      "timestamp": 1791787674151,
+      "pid": 16256,
+      "totalCpuSeconds": 0.015625,
+      "workingSetBytes": 7372800
+    },
+    {
+      "timestamp": 1791787674384,
+      "pid": 16256,
+      "totalCpuSeconds": 0.25,
+      "workingSetBytes": 155664384
+    },
+    {
+      "timestamp": 1791787674603,
+      "pid": 16256,
+      "totalCpuSeconds": 0.625,
+      "workingSetBytes": 244310016
+    },
+    {
+      "timestamp": 1791787674834,
+      "pid": 16256,
+      "totalCpuSeconds": 0.9375,
+      "workingSetBytes": 244330496
+    },
+    {
+      "timestamp": 1791787675050,
+      "pid": 16256,
+      "totalCpuSeconds": 1.296875,
+      "workingSetBytes": 244330496
+    },
+    {
+      "timestamp": 1791787675268,
+      "pid": 16256,
+      "totalCpuSeconds": 1.625,
+      "workingSetBytes": 244330496
+    },
+    {
+      "timestamp": 1791787675492,
+      "pid": 16256,
+      "totalCpuSeconds": 2.046875,
+      "workingSetBytes": 244330496
+    },
+    {
+      "timestamp": 1791787675704,
+      "pid": 16256,
+      "totalCpuSeconds": 2.484375,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787675924,
+      "pid": 16256,
+      "totalCpuSeconds": 2.890625,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787676143,
+      "pid": 16256,
+      "totalCpuSeconds": 3.28125,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787676364,
+      "pid": 16256,
+      "totalCpuSeconds": 3.640625,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787676588,
+      "pid": 16256,
+      "totalCpuSeconds": 3.859375,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787676813,
+      "pid": 16256,
+      "totalCpuSeconds": 3.96875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787677042,
+      "pid": 16256,
+      "totalCpuSeconds": 4.25,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787677274,
+      "pid": 16256,
+      "totalCpuSeconds": 4.453125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787677497,
+      "pid": 16256,
+      "totalCpuSeconds": 4.765625,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787677711,
+      "pid": 16256,
+      "totalCpuSeconds": 5.09375,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787677942,
+      "pid": 16256,
+      "totalCpuSeconds": 5.34375,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787678165,
+      "pid": 16256,
+      "totalCpuSeconds": 5.671875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787678385,
+      "pid": 16256,
+      "totalCpuSeconds": 5.9375,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787678643,
+      "pid": 16256,
+      "totalCpuSeconds": 6.265625,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787678906,
+      "pid": 16256,
+      "totalCpuSeconds": 6.53125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787679153,
+      "pid": 16256,
+      "totalCpuSeconds": 6.71875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787679398,
+      "pid": 16256,
+      "totalCpuSeconds": 6.828125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787679610,
+      "pid": 16256,
+      "totalCpuSeconds": 7.09375,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787679822,
+      "pid": 16256,
+      "totalCpuSeconds": 7.421875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787680039,
+      "pid": 16256,
+      "totalCpuSeconds": 7.8125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787680258,
+      "pid": 16256,
+      "totalCpuSeconds": 8.203125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787680492,
+      "pid": 16256,
+      "totalCpuSeconds": 8.59375,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787680721,
+      "pid": 16256,
+      "totalCpuSeconds": 8.8125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787680950,
+      "pid": 16256,
+      "totalCpuSeconds": 9.171875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787681185,
+      "pid": 16256,
+      "totalCpuSeconds": 9.5,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787681414,
+      "pid": 16256,
+      "totalCpuSeconds": 9.8125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787681623,
+      "pid": 16256,
+      "totalCpuSeconds": 10.140625,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787681843,
+      "pid": 16256,
+      "totalCpuSeconds": 10.46875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787682087,
+      "pid": 16256,
+      "totalCpuSeconds": 10.78125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787682324,
+      "pid": 16256,
+      "totalCpuSeconds": 11.046875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787682554,
+      "pid": 16256,
+      "totalCpuSeconds": 11.328125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787682788,
+      "pid": 16256,
+      "totalCpuSeconds": 11.53125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787683002,
+      "pid": 16256,
+      "totalCpuSeconds": 11.796875,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787683231,
+      "pid": 16256,
+      "totalCpuSeconds": 12.125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787683462,
+      "pid": 16256,
+      "totalCpuSeconds": 12.5,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787683700,
+      "pid": 16256,
+      "totalCpuSeconds": 12.828125,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787683928,
+      "pid": 16256,
+      "totalCpuSeconds": 13.234375,
+      "workingSetBytes": 261222400
+    },
+    {
+      "timestamp": 1791787684153,
+      "pid": 16256,
+      "totalCpuSeconds": 13.5625,
+      "workingSetBytes": 264302592
+    },
+    {
+      "timestamp": 1791787684372,
+      "pid": 16256,
+      "totalCpuSeconds": 13.890625,
+      "workingSetBytes": 264302592
+    },
+    {
+      "timestamp": 1791787684591,
+      "pid": 16256,
+      "totalCpuSeconds": 14.1875,
+      "workingSetBytes": 310439936
+    },
+    {
+      "timestamp": 1791787684810,
+      "pid": 16256,
+      "totalCpuSeconds": 14.328125,
+      "workingSetBytes": 311410688
+    },
+    {
+      "timestamp": 1791787685029,
+      "pid": 16256,
+      "totalCpuSeconds": 14.546875,
+      "workingSetBytes": 311418880
+    },
+    {
+      "timestamp": 1791787685256,
+      "pid": 16256,
+      "totalCpuSeconds": 14.6875,
+      "workingSetBytes": 311418880
+    },
+    {
+      "timestamp": 1791787685485,
+      "pid": 16256,
+      "totalCpuSeconds": 14.921875,
+      "workingSetBytes": 311431168
+    },
+    {
+      "timestamp": 1791787685706,
+      "pid": 16256,
+      "totalCpuSeconds": 15.140625,
+      "workingSetBytes": 311439360
+    },
+    {
+      "timestamp": 1791787685933,
+      "pid": 16256,
+      "totalCpuSeconds": 15.265625,
+      "workingSetBytes": 310820864
+    },
+    {
+      "timestamp": 1791787686163,
+      "pid": 16256,
+      "totalCpuSeconds": 15.484375,
+      "workingSetBytes": 311193600
+    },
+    {
+      "timestamp": 1791787688750,
+      "pid": 26512,
+      "totalCpuSeconds": 0.109375,
+      "workingSetBytes": 34267136
+    },
+    {
+      "timestamp": 1791787688969,
+      "pid": 26512,
+      "totalCpuSeconds": 0.375,
+      "workingSetBytes": 233517056
+    },
+    {
+      "timestamp": 1791787689187,
+      "pid": 26512,
+      "totalCpuSeconds": 0.796875,
+      "workingSetBytes": 244342784
+    },
+    {
+      "timestamp": 1791787689405,
+      "pid": 26512,
+      "totalCpuSeconds": 1.21875,
+      "workingSetBytes": 244342784
+    },
+    {
+      "timestamp": 1791787689622,
+      "pid": 26512,
+      "totalCpuSeconds": 1.65625,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787689827,
+      "pid": 26512,
+      "totalCpuSeconds": 2.046875,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787690044,
+      "pid": 26512,
+      "totalCpuSeconds": 2.484375,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787690261,
+      "pid": 26512,
+      "totalCpuSeconds": 2.921875,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787690484,
+      "pid": 26512,
+      "totalCpuSeconds": 3.328125,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787690701,
+      "pid": 26512,
+      "totalCpuSeconds": 3.734375,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787690915,
+      "pid": 26512,
+      "totalCpuSeconds": 4.109375,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787691120,
+      "pid": 26512,
+      "totalCpuSeconds": 4.5,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787691336,
+      "pid": 26512,
+      "totalCpuSeconds": 4.875,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787691554,
+      "pid": 26512,
+      "totalCpuSeconds": 5.28125,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787691759,
+      "pid": 26512,
+      "totalCpuSeconds": 5.6875,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787691976,
+      "pid": 26512,
+      "totalCpuSeconds": 6.078125,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787692196,
+      "pid": 26512,
+      "totalCpuSeconds": 6.546875,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787692413,
+      "pid": 26512,
+      "totalCpuSeconds": 6.9375,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787692631,
+      "pid": 26512,
+      "totalCpuSeconds": 7.375,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787692850,
+      "pid": 26512,
+      "totalCpuSeconds": 7.796875,
+      "workingSetBytes": 261218304
+    },
+    {
+      "timestamp": 1791787693068,
+      "pid": 26512,
+      "totalCpuSeconds": 8.21875,
+      "workingSetBytes": 262090752
+    },
+    {
+      "timestamp": 1791787693289,
+      "pid": 26512,
+      "totalCpuSeconds": 8.609375,
+      "workingSetBytes": 264298496
+    },
+    {
+      "timestamp": 1791787693503,
+      "pid": 26512,
+      "totalCpuSeconds": 9.03125,
+      "workingSetBytes": 311480320
+    },
+    {
+      "timestamp": 1791787693708,
+      "pid": 26512,
+      "totalCpuSeconds": 9.484375,
+      "workingSetBytes": 312373248
+    }
+  ]
+}

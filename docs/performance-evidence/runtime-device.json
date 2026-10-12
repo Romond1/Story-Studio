@@ -1,0 +1,21 @@
+{
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4070 Ti (0x00002782) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "gpuTimer": true,
+  "camera": [
+    {
+      "label": "UGREEN HDMI Capture (345f:2131)",
+      "settings": {
+        "aspectRatio": 1.7777777777777777,
+        "brightness": 51,
+        "contrast": 48,
+        "deviceId": "5ebaf9f0df16ca7ad8db4c3f12e2e6af09c511a32f683ee56dc411efc9e26fcf",
+        "frameRate": 30,
+        "groupId": "85edbb1bc449fa08cdb2eb4c1e8832ff5e2df88bf975f5ef1808f9d1802e89dd",
+        "height": 720,
+        "resizeMode": "none",
+        "saturation": 51,
+        "width": 1280
+      }
+    }
+  ]
+}

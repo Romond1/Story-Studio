@@ -1,0 +1,327 @@
+{
+  "rows": [
+    {
+      "test": "enable Base GPU + Japanese",
+      "ms": 4808.1305,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 85.5663,
+          "modelLoadMs": 303.1112,
+          "backendInitMs": 10.538,
+          "prepareMs": 399.2369,
+          "speechPid": 34508,
+          "translationLoadMs": 1110.1868000000004,
+          "prepareTotalMs": 4807.8475
+        }
+      }
+    },
+    {
+      "test": "target switch to it",
+      "ms": 940.7570999999998,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "it",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 85.5663,
+          "modelLoadMs": 303.1112,
+          "backendInitMs": 10.538,
+          "prepareMs": 399.2369,
+          "speechPid": 34508,
+          "translationLoadMs": 885.7863000000007,
+          "prepareTotalMs": 940.7399000000005
+        }
+      }
+    },
+    {
+      "test": "prepared it request",
+      "result": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "Si prega di aprire i libri e guardare la prima foto.",
+        "metrics": {
+          "inferenceMs": 285.3579,
+          "audioMs": 4080,
+          "transcriptionMs": 286.9997999999996,
+          "speechPid": 34508,
+          "workerWallMs": 378.3161,
+          "cpuMs": 718,
+          "rssMB": 360.56640625,
+          "rssDeltaMB": 228.39453125,
+          "translationMs": 378.07630000000063,
+          "translationLoadMs": 0,
+          "totalMs": 670.5189
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        }
+      }
+    },
+    {
+      "test": "target switch to ro",
+      "ms": 680.1621000000005,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ro",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 85.5663,
+          "modelLoadMs": 303.1112,
+          "backendInitMs": 10.538,
+          "prepareMs": 399.2369,
+          "speechPid": 34508,
+          "translationLoadMs": 605.4378000000006,
+          "prepareTotalMs": 680.1458000000002
+        }
+      }
+    },
+    {
+      "test": "prepared ro request",
+      "result": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "Vă rugăm să vă deschideți cărțile și să vă uitați la prima imagine.",
+        "metrics": {
+          "inferenceMs": 120.5991,
+          "audioMs": 4080,
+          "transcriptionMs": 121.26130000000012,
+          "speechPid": 34508,
+          "workerWallMs": 302.8000000000002,
+          "cpuMs": 531,
+          "rssMB": 285.296875,
+          "rssDeltaMB": 124.46484375,
+          "translationMs": 302.6289999999999,
+          "translationLoadMs": 0,
+          "totalMs": 425.0653000000002
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        }
+      }
+    },
+    {
+      "test": "target switch to ja",
+      "ms": 1186.3037000000004,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 85.5663,
+          "modelLoadMs": 303.1112,
+          "backendInitMs": 10.538,
+          "prepareMs": 399.2369,
+          "speechPid": 34508,
+          "translationLoadMs": 1123.8231000000005,
+          "prepareTotalMs": 1186.2860999999994
+        }
+      }
+    },
+    {
+      "test": "prepared ja request",
+      "result": {
+        "transcript": "Please open your books and look at the first picture.",
+        "translation": "本を開いて、最初の写真を見てください。",
+        "metrics": {
+          "inferenceMs": 116.1848,
+          "audioMs": 4080,
+          "transcriptionMs": 116.8697000000011,
+          "speechPid": 34508,
+          "workerWallMs": 463.6414999999997,
+          "cpuMs": 672,
+          "rssMB": 586.65625,
+          "rssDeltaMB": 386.9765625,
+          "translationMs": 463.4537,
+          "translationLoadMs": 0,
+          "totalMs": 583.3667999999998
+        },
+        "speechBackend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        }
+      }
+    },
+    {
+      "test": "switch Base to Small",
+      "ms": 3780.9570000000003,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "small.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 81.1125,
+          "modelLoadMs": 657.3424,
+          "backendInitMs": 13.2263,
+          "prepareMs": 751.7023,
+          "speechPid": 6600,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 3780.940199999999
+        }
+      }
+    },
+    {
+      "test": "switch Small to Base",
+      "ms": 2550.8315999999995,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 83.1746,
+          "modelLoadMs": 311.0701,
+          "backendInitMs": 11.8408,
+          "prepareMs": 406.113,
+          "speechPid": 28308,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 2550.8112
+        }
+      }
+    },
+    {
+      "test": "cancel in-flight request retains host",
+      "ms": 12.46810000000005,
+      "pid": 28308
+    },
+    {
+      "test": "recover crashed native host",
+      "ms": 489.09529999999904,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 87.182,
+          "modelLoadMs": 299.6766,
+          "backendInitMs": 10.4065,
+          "prepareMs": 397.2874,
+          "speechPid": 24628,
+          "translationLoadMs": 0,
+          "prepareTotalMs": 489.0509000000002
+        }
+      }
+    },
+    {
+      "test": "disable releases host and worker",
+      "ms": 72.98210000000108,
+      "pid": 24628,
+      "alive": false,
+      "state": {
+        "phase": "off"
+      }
+    },
+    {
+      "test": "Auto falls back after CUDA initialization unavailable",
+      "ms": 5853.166599999997,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "auto"
+        },
+        "backend": {
+          "backend": "cpu",
+          "reason": "CUDA allocation verification failed; Whisper did not confirm GPU model and compute buffers."
+        },
+        "metrics": {
+          "dllLoadMs": 4.3831,
+          "modelLoadMs": 173.7694,
+          "backendInitMs": 12.3683,
+          "prepareMs": 190.5452,
+          "speechPid": 28080,
+          "translationLoadMs": 1119.2596000000012,
+          "prepareTotalMs": 5853.141499999998
+        }
+      }
+    },
+    {
+      "test": "forced GPU missing hardware is actionable",
+      "state": {
+        "phase": "error",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "message": "GPU preparation failed: CUDA allocation verification failed; Whisper did not confirm GPU model and compute buffers. Select CPU or Auto, or update your NVIDIA driver."
+      }
+    },
+    {
+      "test": "GPU works again after temporary mask",
+      "ms": 3918.2328000000016,
+      "state": {
+        "phase": "ready",
+        "settings": {
+          "target": "ja",
+          "model": "base.en",
+          "execution": "gpu"
+        },
+        "backend": {
+          "backend": "cuda",
+          "device": "NVIDIA GeForce RTX 4070 Ti"
+        },
+        "metrics": {
+          "dllLoadMs": 80.8088,
+          "modelLoadMs": 322.1525,
+          "backendInitMs": 10.7486,
+          "prepareMs": 413.7344,
+          "speechPid": 10908,
+          "translationLoadMs": 1200.8100999999988,
+          "prepareTotalMs": 3918.203700000002
+        }
+      }
+    }
+  ]
+}

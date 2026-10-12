@@ -13,6 +13,13 @@ const node_vm_1 = __importDefault(require("node:vm"));
 const typescript_1 = __importDefault(require("typescript"));
 const cardV2Render_1 = require("./cardV2Render");
 const snapshot = (revision, sessionId = 'lesson') => ({ sessionId, revision, target: { kind: 'image', occurrenceId: 'story:slide1', src: 'media://asset/image.png' } });
+(0, node_test_1.default)('game presentation accepts only a registered game identity without source or runtime state', () => {
+    const target = { kind: 'game', occurrenceId: 'game:run-1', gameId: 'language-snake', instanceId: 'run-1' };
+    strict_1.default.deepEqual((0, presentationSnapshot_1.parsePresentSnapshot)({ ...snapshot(1), target: { ...target, src: 'https://tracker.test', runtime: { score: 9 }, teacherNotes: 'private' } }), { sessionId: 'lesson', revision: 1, target });
+    for (const changes of [{ gameId: 'chess' }, { instanceId: '' }, { instanceId: 4 }, { instanceId: 'x'.repeat(1025) }]) {
+        strict_1.default.equal((0, presentationSnapshot_1.parsePresentSnapshot)({ ...snapshot(1), target: { ...target, ...changes } }), null);
+    }
+});
 (0, node_test_1.default)('card overlays whitelist active student faces on ordinary presentation targets', () => {
     const card = (0, cardV2Render_1.buildCardV2FacePlan)({ id: 'card', style: { preset: 'classroom' }, faces: [{ id: 'front', layout: 'text', text: 'Visible answer' }] }, 'front', { x: 20, y: 30, width: 300, height: 200 });
     const raw = { engine: 'card-v2', version: 1, frame: { width: 1280, height: 720 }, cards: [{ ...card, teacherNotes: 'private', inactiveFaces: ['private'] }, { ...card, instanceId: 'hidden', concealed: true, image: { src: 'media://hidden.png', box: card.box }, texts: card.texts }], definitions: ['private'] };
@@ -112,7 +119,7 @@ const snapshot = (revision, sessionId = 'lesson') => ({ sessionId, revision, tar
         const render = () => { index = 0; const tree = exports.Present(); while (effects.length)
             effects.shift()(); return tree; };
         const tree = render();
-        const report = tree.props.children[0].props.children[0].props.report;
+        const report = tree.props.children[0].props.children[0].props.children[0].props.report;
         strict_1.default.equal(images.length, 1);
         strict_1.default.equal(applied.length, 0);
         if (order === 'cards-first') {
@@ -213,11 +220,17 @@ const snapshot = (revision, sessionId = 'lesson') => ({ sessionId, revision, tar
             if (name === 'node:path')
                 return node_path_1.default;
             if (name === '../shared/presentationSnapshot')
-                return { PresentSnapshotRelay: presentationSnapshot_1.PresentSnapshotRelay };
+                return { PresentSnapshotRelay: presentationSnapshot_1.PresentSnapshotRelay, parsePresentSnapshot: presentationSnapshot_1.parsePresentSnapshot };
+            if (name === '../shared/gameHost')
+                return require('./gameHost');
             if (name === '../shared/presentationMedia')
                 return require('./presentationMedia');
             if (name === '../shared/teachWorkspace')
                 return require('./teachWorkspace');
+            if (name === './cameraBroadcast')
+                return { installCameraBroadcast: () => ({ reset() { } }) };
+            if (name === './translationBroadcast')
+                return { installTranslationBroadcast: () => ({ reset() { } }) };
             throw new Error(`Unexpected dependency ${name}`);
         } });
     const control = new FakeWindow();
@@ -284,6 +297,25 @@ const snapshot = (revision, sessionId = 'lesson') => ({ sessionId, revision, tar
     events.get('present:media-signal')(event(first), signal);
     strict_1.default.equal(delivered(), before + 1);
     strict_1.default.ok(handles.get('present:snapshot')(event(first)).rendererGeneration > runtime.generation);
+    handles.get('present:publish')(controlEvent, { ...snapshot(4), target: { kind: 'game', occurrenceId: 'game:run-1', gameId: 'language-snake', instanceId: 'run-1' } });
+    const input = { instanceId: 'run-1', key: 'w', code: 'KeyW', phase: 'keydown', repeat: false };
+    const gameInputs = () => first.webContents.messages.filter(m => m.channel === 'present:game-input');
+    const sendInput = events.get('present:game-input');
+    strict_1.default.ok(sendInput, 'game input relay is installed');
+    sendInput(controlEvent, input);
+    strict_1.default.deepEqual(gameInputs().at(-1)?.data, input);
+    const inputCount = gameInputs().length;
+    for (const sender of [event(first), { sender: control.webContents, senderFrame: {} }])
+        sendInput(sender, input);
+    sendInput(controlEvent, { ...input, instanceId: 'retired-run' });
+    sendInput(controlEvent, { ...input, key: '<script>' });
+    strict_1.default.equal(gameInputs().length, inputCount);
+    first.webContents.emit('did-start-navigation', {}, 'present', false, true);
+    strict_1.default.deepEqual(JSON.parse(JSON.stringify(control.webContents.messages.filter(m => m.channel === 'present:game-ended').at(-1)?.data)), { instanceId: 'run-1', reason: 'reload' });
+    first.webContents.emit('did-finish-load');
+    strict_1.default.equal(handles.get('present:snapshot')(event(first)).snapshot.target.kind, 'empty', 'reload must not recreate a retired runtime');
+    sendInput(controlEvent, input);
+    strict_1.default.equal(gameInputs().length, inputCount);
     for (let revision = 2; revision <= 25; revision++)
         handles.get('present:publish')(controlEvent, snapshot(revision));
     strict_1.default.equal(handles.get('present:snapshot')(event(first)).snapshot.revision, 25);
@@ -312,6 +344,27 @@ const snapshot = (revision, sessionId = 'lesson') => ({ sessionId, revision, tar
     control.webContents.emit('render-process-gone');
     strict_1.default.equal(third.webContents.messages.slice(-1)[0].data.snapshot, null);
     strict_1.default.equal(control.destroyed, false);
+    const game = (instanceId, revision) => ({ ...snapshot(revision, 'fresh'), target: { kind: 'game', occurrenceId: `game:${instanceId}`, gameId: 'language-snake', instanceId } });
+    handles.get('present:publish')(controlEvent, game('run-closed', 1));
+    third.close();
+    strict_1.default.deepEqual(JSON.parse(JSON.stringify(control.webContents.messages.filter(m => m.channel === 'present:game-ended').at(-1)?.data)), { instanceId: 'run-closed', reason: 'closed' });
+    await handles.get('present:open')(controlEvent);
+    const fourth = windows[4];
+    strict_1.default.equal(handles.get('present:snapshot')(event(fourth)).snapshot.target.kind, 'empty');
+    handles.get('present:publish')(controlEvent, game('run-crashed', 2));
+    fourth.webContents.emit('render-process-gone');
+    strict_1.default.deepEqual(JSON.parse(JSON.stringify(control.webContents.messages.filter(m => m.channel === 'present:game-ended').at(-1)?.data)), { instanceId: 'run-crashed', reason: 'crashed' });
+    strict_1.default.equal(control.destroyed, false);
+    const launchGame = handles.get('present:launch-game');
+    strict_1.default.ok(launchGame, 'game launch registers ownership atomically before opening Present');
+    await strict_1.default.rejects(launchGame(event(fourth), game('untrusted', 3)), /Control/);
+    await launchGame(controlEvent, game('run-atomic', 3));
+    const fifth = windows[5];
+    strict_1.default.equal(handles.get('present:snapshot')(event(fifth)).snapshot.target.instanceId, 'run-atomic');
+    fifth.close();
+    strict_1.default.deepEqual(JSON.parse(JSON.stringify(control.webContents.messages.filter(m => m.channel === 'present:game-ended').at(-1)?.data)), { instanceId: 'run-atomic', reason: 'closed' });
+    await handles.get('present:open')(controlEvent);
+    strict_1.default.equal(handles.get('present:snapshot')(event(windows[6])).snapshot.target.kind, 'empty', 'a closed launched owner cannot be resurrected');
 });
 (0, node_test_1.default)('renderer revocation is applied even when snapshot sequence is unchanged', () => {
     const previous = { generation: 0, sequence: 2, snapshot: null, rendererGeneration: 1 };

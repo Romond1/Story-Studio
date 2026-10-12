@@ -1,9 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { CaptionApi, Caption } from '../shared/translation';
+const captionApi:CaptionApi={get:()=>ipcRenderer.invoke('translation:caption-get'),subscribe:listener=>{const handle=(_event:Electron.IpcRendererEvent,caption:Caption|null)=>listener(caption);ipcRenderer.on('translation:caption',handle);return()=>{ipcRenderer.removeListener('translation:caption',handle);};}};
+contextBridge.exposeInMainWorld('captionApi',captionApi);
 import type { CameraPresenterApi, CameraSettings } from '../shared/cameraProtocol';
 
 const cameraPresenter: CameraPresenterApi = {
   get: () => ipcRenderer.invoke('camera:present-get'),
   report: status => ipcRenderer.send('camera:status', status),
+  reportTracking: status => ipcRenderer.send('camera:tracking-status', status),
   subscribe: listener => {
     const handle = (_event: Electron.IpcRendererEvent, settings: CameraSettings) => listener(settings);
     ipcRenderer.on('camera:settings', handle);

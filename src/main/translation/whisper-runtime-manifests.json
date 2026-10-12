@@ -1,0 +1,101 @@
+{
+  "cpu": [
+    {
+      "path": "Release/ggml-base.dll",
+      "size": 528384,
+      "sha256": "3eefa9a256a7ef4774ec07d553ccecb771498a92000d0db7ab3443d79b795e86"
+    },
+    {
+      "path": "Release/ggml-cpu.dll",
+      "size": 603648,
+      "sha256": "91240f9a352783312430e3b5d816621675afd2dfb9df28161bea235c4b7f1ce3"
+    },
+    {
+      "path": "Release/ggml.dll",
+      "size": 67584,
+      "sha256": "4f681cca3014879e623b9b44f69b0864a9ddd530c32ce05c106105f4eec0897a"
+    },
+    {
+      "path": "Release/SDL2.dll",
+      "size": 2500096,
+      "sha256": "de23db1694a3c7a4a735e7ecd3d214b2023cc2267922c6c35d30c7fc7370d677"
+    },
+    {
+      "path": "Release/whisper-cli.exe",
+      "size": 481280,
+      "sha256": "dc1648751878e91acb5cfaa69bd85cff64ede44497a108844ad9d4f106cb14e8"
+    },
+    {
+      "path": "Release/whisper.dll",
+      "size": 483840,
+      "sha256": "4155edb6868810b56423cb0089fee85f4e8739fb86053b269f4e7c6350ec61ff"
+    }
+  ],
+  "cuda": [
+    {
+      "path": "Release/cublas64_12.dll",
+      "size": 100033536,
+      "sha256": "e40202fe4223c1cd2d2dce7beec59e1ed61c7801bd827309183be9b50e358f4c"
+    },
+    {
+      "path": "Release/cublasLt64_12.dll",
+      "size": 473551360,
+      "sha256": "2a896460bef60ed57ef32b0875812f355a6984e671d638bb632f5e8c1d7a831f"
+    },
+    {
+      "path": "Release/cudart64_12.dll",
+      "size": 553984,
+      "sha256": "d28e42265da7462162a54da6b7a99ea4fa2caf8139d862bb500db875d0b32dfc"
+    },
+    {
+      "path": "Release/ggml-base.dll",
+      "size": 529408,
+      "sha256": "6137709a3381ccb916593c175030fc2092c24048ccc56716c1680e2be266c555"
+    },
+    {
+      "path": "Release/ggml-cpu.dll",
+      "size": 606208,
+      "sha256": "72d9a96d134b38cef41e93e7ebea854fa2da943730fa6d9d0a79a342975feeb1"
+    },
+    {
+      "path": "Release/ggml-cuda.dll",
+      "size": 90296320,
+      "sha256": "96c444e4ede11b472afbab43558c377ff42a02895cd0a3191036144469519199"
+    },
+    {
+      "path": "Release/ggml.dll",
+      "size": 67584,
+      "sha256": "e200b88bb7b370f2077f6baac7340805de00985fbeb52af84b8fa6872b9e1744"
+    },
+    {
+      "path": "Release/nvblas64_12.dll",
+      "size": 331776,
+      "sha256": "e42a77405e6e4b1cc661dcfcddead35ec62dcf59c6f9be1a3b5fab73d1f4c616"
+    },
+    {
+      "path": "Release/nvrtc-builtins64_124.dll",
+      "size": 5367808,
+      "sha256": "79888dba26c51475ea21fc7b47d2b9dd5b1ffaecc8e5ea22a49fa5f5a722eb43"
+    },
+    {
+      "path": "Release/nvrtc64_120_0.dll",
+      "size": 44738048,
+      "sha256": "3aa3cd8aa10437e212760c0e1ed730807811ec3bc330216dbfde4b26211d2243"
+    },
+    {
+      "path": "Release/SDL2.dll",
+      "size": 2500096,
+      "sha256": "de23db1694a3c7a4a735e7ecd3d214b2023cc2267922c6c35d30c7fc7370d677"
+    },
+    {
+      "path": "Release/whisper-cli.exe",
+      "size": 480768,
+      "sha256": "874be925a5b76c05ddc07ca1651890badeaadb14e867a70625facfd29ca2f746"
+    },
+    {
+      "path": "Release/whisper.dll",
+      "size": 1307136,
+      "sha256": "52a14fbc2e721480acde11490ef5aa7edf97dddfac5cfc4333123a730f6ca467"
+    }
+  ]
+}

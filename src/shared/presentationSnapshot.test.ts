@@ -174,6 +174,7 @@ test('Present lifecycle stays passive, recovers latest snapshot and rejects fore
     if (name === '../shared/presentationMedia') return require('./presentationMedia');
     if (name === '../shared/teachWorkspace') return require('./teachWorkspace');
     if (name === './cameraBroadcast') return { installCameraBroadcast: () => ({ reset() {} }) };
+    if (name === './translationBroadcast') return { installTranslationBroadcast: () => ({ reset() {} }) };
     throw new Error(`Unexpected dependency ${name}`);
   } });
   const control = new FakeWindow(); exports.installPresentWindow(() => control);

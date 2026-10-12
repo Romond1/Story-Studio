@@ -1,5 +1,6 @@
 import { parsePresentViewport } from '../shared/teachWorkspace';
 import { installCameraBroadcast } from './cameraBroadcast';
+import { installTranslationBroadcast } from './translationBroadcast';
 import { BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'node:path';
 import { PresentSnapshotRelay, parsePresentSnapshot } from '../shared/presentationSnapshot';
@@ -14,6 +15,7 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   const relay = new PresentSnapshotRelay();
   let present: BrowserWindow | null = null;
   const camera = installCameraBroadcast(getControl, () => present);
+  const translation = installTranslationBroadcast(getControl, () => present);
   let bounds: Electron.Rectangle | null = null;
   let openedBefore = false;
   let mediaRuntime: MediaRuntime = { generation: 0, available: false };
@@ -49,7 +51,7 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   const send = () => {
     if (present && !present.isDestroyed() && !present.webContents.isDestroyed()) present.webContents.send('present:snapshot', envelope());
   };
-  const reset = () => { camera.reset(); mediaLifecycle(!!present && !present.isDestroyed()); relay.reset(); send(); if (present) reportStatus('connecting'); };
+  const reset = () => { translation.reset(); camera.reset(); mediaLifecycle(!!present && !present.isDestroyed()); relay.reset(); send(); if (present) reportStatus('connecting'); };
   const attached = new WeakSet<BrowserWindow>();
   attachInstalledControl = () => {
     const control = getControl();
@@ -137,8 +139,8 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
     window.webContents.on('will-navigate', event => event.preventDefault());
     window.webContents.on('did-start-navigation', (_event, _url, inPlace, mainFrame) => { if (mainFrame && !inPlace) { if (loaded) gameEnded('reload'); loaded = false; mediaLifecycle(false); reportStatus('connecting'); } });
     window.webContents.on('did-finish-load', () => { loaded = true; mediaLifecycle(true, false); send(); });
-    window.on('close', () => { camera.reset(); bounds = window.getBounds(); });
-    window.webContents.on('render-process-gone', () => camera.reset());
+    window.on('close', () => { translation.reset(); camera.reset(); bounds = window.getBounds(); });
+    window.webContents.on('render-process-gone', () => { translation.reset(); camera.reset(); });
     window.on('closed', () => { if (present === window) { gameEnded(crashed ? 'crashed' : 'closed'); present = null; mediaLifecycle(false); reportStatus(crashed ? 'error' : 'closed'); } });
     // Crashed Present never takes Control with it. Reopen creates a fresh renderer.
     window.webContents.on('render-process-gone', () => { crashed = true; if (!window.isDestroyed()) window.destroy(); });

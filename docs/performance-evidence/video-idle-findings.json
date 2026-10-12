@@ -1,0 +1,62 @@
+{
+  "seconds": 59.76279029999999,
+  "previewHz": 28.46252645603129,
+  "sourceAllPaused": true,
+  "sourceTimes": [
+    0
+  ],
+  "first": {
+    "control": [
+      {
+        "time": 10.994,
+        "paused": false,
+        "stream": true,
+        "frames": 248,
+        "dropped": 0
+      },
+      {
+        "time": 0,
+        "paused": true,
+        "stream": false,
+        "frames": 4,
+        "dropped": 0
+      }
+    ],
+    "presenter": [
+      {
+        "time": 0,
+        "paused": true,
+        "stream": false,
+        "frames": 4,
+        "dropped": 0
+      }
+    ]
+  },
+  "last": {
+    "control": [
+      {
+        "time": 70.753,
+        "paused": false,
+        "stream": true,
+        "frames": 1949,
+        "dropped": 0
+      },
+      {
+        "time": 0,
+        "paused": true,
+        "stream": false,
+        "frames": 4,
+        "dropped": 0
+      }
+    ],
+    "presenter": [
+      {
+        "time": 0,
+        "paused": true,
+        "stream": false,
+        "frames": 4,
+        "dropped": 0
+      }
+    ]
+  }
+}

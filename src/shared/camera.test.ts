@@ -10,6 +10,7 @@ test('camera protocol rejects malformed values and strips private extras', () =>
   assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, tolerance: NaN }), null);
   assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, preset: 'teacher-notes' }), null);
   assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, enabled: 'yes' }), null);
+  assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, tracking: { enabled: 'yes', markers: true, hat: true } }), null);
   assert.deepEqual(parseCameraSettings({ ...CAMERA_DEFAULTS, notes: 'private' }), CAMERA_DEFAULTS);
 });
 
@@ -61,6 +62,7 @@ test('camera IPC authenticates roles, filters payloads, and cancels pending cons
   vm.runInNewContext(source, { exports, require: (name: string) => {
     if (name === 'electron') return { ipcMain: { handle: (key: string, fn: any) => handles.set(key, fn), on: (key: string, fn: any) => events.set(key, fn) }, dialog: { showMessageBox: () => new Promise(resolve => { consent = resolve; }) } };
     if (name === '../shared/cameraProtocol') return require('./cameraProtocol');
+    if (name === '../shared/faceTrackingProtocol') return require('./faceTrackingProtocol');
     throw new Error(name);
   } });
   const relay = exports.installCameraBroadcast(() => control, () => present);
@@ -82,7 +84,17 @@ test('camera IPC authenticates roles, filters payloads, and cancels pending cons
   events.get('camera:status')!(event(present), { state: 'live', devices: [], teacherNotes: 'private' });
   assert.equal(get().status.state, 'live');
   assert.equal(get().status.teacherNotes, undefined);
+  events.get('camera:tracking-status')!(event(present), { state: 'tracking' });
+  assert.notEqual(get().trackingStatus?.state, 'tracking', 'disabled tracking cannot publish live state');
+  await handles.get('camera:set')!(event(control), { ...CAMERA_DEFAULTS, enabled: true, tracking: { enabled: true, markers: true, hat: true } });
+  events.get('camera:tracking-status')!(event(control), { state: 'tracking' });
+  assert.notEqual(get().trackingStatus?.state, 'tracking', 'Control cannot impersonate tracker');
+  events.get('camera:tracking-status')!(event(present), { state: 'tracking', landmarks: ['private'] });
+  assert.equal(get().trackingStatus.state, 'tracking');
+  assert.equal(get().trackingStatus.landmarks, undefined);
   relay.reset();
   events.get('camera:status')!(event(present), { state: 'live', devices: [] });
   assert.equal(get().status.state, 'off');
+  events.get('camera:tracking-status')!(event(present), { state: 'tracking' });
+  assert.notEqual(get().trackingStatus?.state, 'tracking', 'late worker status cannot revive disabled camera');
 });
