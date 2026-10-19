@@ -1,0 +1,10 @@
+{
+  "passed": [
+    "Edit creates a Bubble and saves authored text",
+    "Present renders authored content without Control tools",
+    "Teach navigation updates Present while diagnostics remain opt-in",
+    "Developer UI opens/closes privately; Edit/Teach transitions preserve content and camera state"
+  ],
+  "errors": [],
+  "temp": "D:\\Temp\\story-merlin-workflow-mwkey7"
+}

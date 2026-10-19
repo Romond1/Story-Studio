@@ -1,6 +1,13 @@
 .camera-layer { position: absolute; inset: 0; z-index: 20; isolation: isolate; pointer-events: none; overflow: hidden; }
 .camera-layer canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
 .camera-layer .face-tracking-overlay { position: absolute; inset: 0; }
+.merlin-diagnostics { margin-top: 12px; padding: 12px; border: 1px solid #798b9d; border-radius: 6px; background: #162332; color: #f4f7fa; }
+.merlin-diagnostics h4 { margin: 0 0 8px; font-size: 14px; }
+.merlin-diagnostics p { font-size: 12px; line-height: 1.5; color: #d2deea; overflow-wrap: anywhere; }
+.merlin-diagnostics fieldset { min-width: 0; padding: 0; margin: 0; border: 0; }
+.merlin-diagnostics .camera-toggle { align-items: flex-start; line-height: 1.4; }
+.merlin-diagnostic-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.merlin-diagnostics button { min-height: 32px; white-space: normal; }
 .camera-full canvas { object-fit: cover; }
 .camera-lower-left, .camera-lower-right { top: auto; width: 34%; height: 40%; bottom: 2%; }
 .camera-lower-left { left: 2%; right: auto; }

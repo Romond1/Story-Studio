@@ -1,7 +1,9 @@
 import * as T from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { FacePose } from '../../../shared/faceTracking';
-import type { TrackingSettings } from '../../../shared/faceTrackingProtocol';
+import { merlinOptions, type TrackingSettings } from '../../../shared/faceTrackingProtocol';
+import { configureFaceCamera, FACE_GEOMETRY_VFOV, readRigidFaceTransform } from '../../../shared/facePoseMath';
+import { MerlinTrackingDiagnostics } from './MerlinTrackingDiagnostics';
 
 interface ChainBoneState {
   bone: T.Bone;
@@ -19,9 +21,8 @@ interface ChainBoneState {
   damping: number;
 }
 
-// Level-1 root bones (Beard_C_1, Beard_L_1, Beard_R_1, Hair_L_1, Hair_R_1) have zero gravity/inertia weight
-// so hair and beard roots stay 100% locked to the temples, cheeks, and chin!
-// Only mid and lower segments (levels 2, 3, 4) bend with gravity and inertia.
+// Root bones have zero spring weight. Their legacy translation corrections are
+// gated separately, allowing rigid rest-pose comparison without deleting them.
 const SPRING_CHAINS: { name: string; gravityWeight: number; inertiaWeight: number; stiffness: number; damping: number }[] = [
   { name: 'Beard_C_1', gravityWeight: 0.0, inertiaWeight: 0.0, stiffness: 80, damping: 14.0 },
   { name: 'Beard_C_2', gravityWeight: 0.28, inertiaWeight: 0.38, stiffness: 46, damping: 8.0 },
@@ -41,26 +42,28 @@ const SPRING_CHAINS: { name: string; gravityWeight: number; inertiaWeight: numbe
   { name: 'Hair_R_3', gravityWeight: 0.32, inertiaWeight: 0.52, stiffness: 36, damping: 7.0 },
 ];
 
-// Calibrated transform from Blender glTF model meters -> MediaPipe canonical head centimeters
-// Anchored to unoccluded nose tip (lm 1), nose bridge (lm 6/168), and temples (lm 127/356)
+// Existing empirical model alignment (meters -> canonical centimeters).
+// Retained for comparison; physical head fit has not been validated.
 const MODEL_SCALE_CM = new T.Vector3(108.0, 102.0, 92.0);
 const MODEL_OFFSET_CM = new T.Vector3(-0.08, -1.15, -2.50);
 const NOSE_TIP_MODEL_M = new T.Vector3(0.0, -0.008, 0.082);
 const TEMPLE_MID_MODEL_M = new T.Vector3(0.0, 0.025, 0.015);
-const VFOV_DEG = 60.0;
+const VFOV_DEG = FACE_GEOMETRY_VFOV;
 
 /**
- * Isolated 3D Merlin identity overlay session (Phase 1 — Checkpoint C.1).
- * Uses MediaPipe's 4x4 metric facialTransformationMatrixes + matched 60 deg PerspectiveCamera
- * + cranial residual lock so the costume rotates around the true 3D cranial center and stays
- * locked to the temples, upper lip, and chin across extreme yaw, pitch, and roll.
+ * Existing Merlin asset with a rigid canonical head anchor. Legacy compensation
+ * remains available for developer comparison; anatomical registration is unvalidated.
  */
 export class MerlinCostumeOverlay {
   private renderer: T.WebGLRenderer | null = null;
   private scene = new T.Scene();
   private camera = new T.PerspectiveCamera(VFOV_DEG, 16 / 9, 1.0, 500.0);
   private headAnchor = new T.Group();
+  private mirrorRoot = new T.Group();
   private modelOffsetGroup = new T.Group();
+  private occlusionGroup = new T.Group();
+  private trackingDiagnostics: MerlinTrackingDiagnostics | null = null;
+  private motionMode = '';
   private costumeRoot: T.Object3D | null = null;
   private eyebrowsMesh: T.Object3D | null = null;
   private scalpPrototypeMesh: T.Object3D | null = null;
@@ -80,7 +83,6 @@ export class MerlinCostumeOverlay {
   private lastTime = 0;
   private prevPosCm = new T.Vector3();
   private prevVelCm = new T.Vector3();
-  private prevQuat = new T.Quaternion();
   private prevYaw = 0;
   private prevPitch = 0;
   private prevRoll = 0;
@@ -127,27 +129,29 @@ export class MerlinCostumeOverlay {
     const craniumOccluder = new T.Mesh(craniumGeo, occluderMat);
     craniumOccluder.position.set(0, 0.008, -0.008);
     craniumOccluder.renderOrder = -10;
-    this.modelOffsetGroup.add(craniumOccluder);
+    this.occlusionGroup.add(craniumOccluder);
 
     // 2. Forehead / eye-socket / glasses / zygomatic arch depth shield (top at Y = 0.082m, safely below the
-    // front hairline at Y = 0.092m!) so off-side hair and inner cheek roots are 100% occluded behind the real face & glasses.
+    // front hairline at Y = 0.092m). This is an approximate proxy, not measured face/glasses depth.
     const midFaceGeo = new T.SphereGeometry(1, 28, 22);
     midFaceGeo.scale(0.073, 0.062, 0.095);
     const midFaceOccluder = new T.Mesh(midFaceGeo, occluderMat);
     midFaceOccluder.position.set(0, 0.020, 0.025);
     midFaceOccluder.renderOrder = -10;
-    this.modelOffsetGroup.add(midFaceOccluder);
+    this.occlusionGroup.add(midFaceOccluder);
 
     // 3. Nose bridge & nasal dorsum depth shield (extends forward to Z = +0.105m at X = ±0.028m)
-    // so during 3/4 and profile yaw turns, far-side hair and cheek roots behind the nose/glasses are strictly clipped!
+    // Approximate nose coverage for comparison; individual nose/glasses fit remains unvalidated.
     const noseBridgeGeo = new T.SphereGeometry(1, 20, 16);
     noseBridgeGeo.scale(0.032, 0.042, 0.054);
     const noseBridgeOccluder = new T.Mesh(noseBridgeGeo, occluderMat);
     noseBridgeOccluder.position.set(0, 0.008, 0.052);
     noseBridgeOccluder.renderOrder = -10;
-    this.modelOffsetGroup.add(noseBridgeOccluder);
+    this.occlusionGroup.add(noseBridgeOccluder);
 
-    this.scene.add(this.headAnchor);
+    this.modelOffsetGroup.add(this.occlusionGroup);
+    this.mirrorRoot.add(this.headAnchor);
+    this.scene.add(this.mirrorRoot);
   }
 
   private ensureRenderer(width: number, height: number): T.WebGLRenderer | null {
@@ -171,13 +175,7 @@ export class MerlinCostumeOverlay {
     }
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.renderer.setSize(width, height, false);
-      this.camera.fov = VFOV_DEG;
-      this.camera.aspect = width / Math.max(1, height);
-      this.camera.near = 1.0;
-      this.camera.far = 500.0;
-      this.camera.position.set(0, 0, 0);
-      this.camera.lookAt(0, 0, -1);
-      this.camera.updateProjectionMatrix();
+      configureFaceCamera(this.camera, width, height);
     }
     return this.renderer;
   }
@@ -185,12 +183,13 @@ export class MerlinCostumeOverlay {
   private ensureModelLoaded() {
     if (this.loaded || this.loading || this.failed || this.disposed) return;
     this.loading = true;
+    this.canvas.dataset.merlinAsset = 'loading';
     const loader = new GLTFLoader();
     const url = new URL('face-tracking/merlin_identity.glb', document.baseURI).href;
     loader.load(
       url,
       gltf => {
-        if (this.disposed) return;
+        if (this.disposed) { this.disposeObjects(gltf.scene); return; }
         const root = gltf.scene;
         this.costumeRoot = root;
         this.chains = [];
@@ -264,12 +263,14 @@ export class MerlinCostumeOverlay {
 
         this.modelOffsetGroup.add(root);
         this.loaded = true;
+        this.canvas.dataset.merlinAsset = 'ready';
         this.loading = false;
       },
       undefined,
       () => {
         this.loading = false;
         this.failed = true;
+        this.canvas.dataset.merlinAsset = 'error';
       }
     );
   }
@@ -397,7 +398,22 @@ export class MerlinCostumeOverlay {
       this.canvas.width = 1;
       this.canvas.height = 1;
     }
+    this.resetMotion();
+    this.canvas.dataset.merlinPose = 'lost';
+  }
+
+  private resetMotion() {
     this.hasPrevPose = false;
+    this.lastTime = 0;
+    this.prevVelCm.set(0, 0, 0);
+    this.smoothedJawOpen = 0;
+    for (const c of this.chains) {
+      c.angleRoll = c.velRoll = c.anglePitch = c.velPitch = c.angleYaw = c.velYaw = 0;
+      c.bone.position.copy(c.restPos); c.bone.quaternion.copy(c.restQuat);
+    }
+    if (this.jawBone) {
+      this.jawBone.position.copy(this.jawRestPos); this.jawBone.quaternion.copy(this.jawRestQuat);
+    }
   }
 
   public updateAndRender(
@@ -408,7 +424,8 @@ export class MerlinCostumeOverlay {
     height: number,
     now: number
   ) {
-    if (!pose || !settings.enabled || !settings.merlin) {
+    const options = merlinOptions(settings);
+    if (!pose || !settings.enabled || (!settings.merlin && !options.enabled)) {
       this.clear();
       return;
     }
@@ -418,6 +435,13 @@ export class MerlinCostumeOverlay {
     if (!renderer || !this.loaded || !this.costumeRoot) {
       return;
     }
+
+    const motionMode = [options.hairRoots, options.pitchCompensation, options.residualRegistration,
+      options.springMotion, options.jawMotion].join(':');
+    if (motionMode !== this.motionMode) { this.resetMotion(); this.motionMode = motionMode; }
+    this.costumeRoot.visible = !!settings.merlin && options.costume;
+    this.occlusionGroup.visible = options.occlusion;
+    this.canvas.dataset.merlinMode = options.enabled ? 'diagnostic' : 'normal';
 
     if (this.eyebrowsMesh) {
       this.eyebrowsMesh.visible = !!settings.merlinEyebrows;
@@ -438,15 +462,13 @@ export class MerlinCostumeOverlay {
     this.lastTime = now;
 
     // 1. Extract rigid 3D head pose from MediaPipe's 4x4 facialTransformationMatrixes (column-major, in cm)
-    const rawMat = new T.Matrix4().fromArray(pose.matrix);
-    const posCm = new T.Vector3();
-    const rotQuat = new T.Quaternion();
-    const matScale = new T.Vector3();
-    rawMat.decompose(posCm, rotQuat, matScale);
+    const transform = readRigidFaceTransform(pose.matrix);
+    if (!transform) { this.clear(); return; }
+    const { position: posCm, rotation: rotQuat } = transform;
 
     // Guard against degenerate depth or sudden tracking spikes
     if (!Number.isFinite(posCm.z) || posCm.z > -10 || posCm.z < -200) {
-      return;
+      this.clear(); return;
     }
 
     // Extract head Euler angles (YXZ order: Yaw around Y, Pitch around X, Roll around Z)
@@ -455,12 +477,12 @@ export class MerlinCostumeOverlay {
     const pitch = euler.x;
     const roll = euler.z;
 
-    // 2. Apply cranial screen-space residual lock (Method C) using unoccluded nose tip (landmark 1)
-    // and temples (127/356) so the costume has sub-pixel registration regardless of individual facial proportions!
+    // Retained empirical screen-space registration. Disabled in the rigid preset.
     const fPx = (height / 2.0) / Math.tan((VFOV_DEG * Math.PI) / 360.0);
-    // When looking downward (pitch < 0 in OpenGL/MediaPipe), the nose tip projects further down than the upper lip;
-    // shift the predicted nose anchor upward in model Y (+Y) so errPxY > 0 and the model shifts downward, keeping the mustache below the nose tip!
-    const pitchDownCompY = Math.max(0, -pitch) * 0.045;
+    // Preserve the old empirical sign and amplitude for A/B comparison only.
+    // In the canonical right-handed frame, positive X rotation moves +Z toward -Y;
+    // the legacy assumption that negative pitch means looking down is unvalidated.
+    const pitchDownCompY = options.pitchCompensation ? Math.max(0, -pitch) * 0.045 : 0;
     const pNoseModel = new T.Vector3(
       NOSE_TIP_MODEL_M.x,
       NOSE_TIP_MODEL_M.y + pitchDownCompY,
@@ -469,7 +491,7 @@ export class MerlinCostumeOverlay {
     const pNoseCanon = pNoseModel.multiply(MODEL_SCALE_CM).add(MODEL_OFFSET_CM);
     const xcNose = pNoseCanon.applyQuaternion(rotQuat).add(posCm);
 
-    if (xcNose.z < -5) {
+    if (options.residualRegistration && xcNose.z < -5) {
       const predNoseX = (xcNose.x / -xcNose.z) * fPx + width * 0.5;
       const predNoseY = height * 0.5 - (xcNose.y / -xcNose.z) * fPx;
       const obsNoseX = pose.nose.x * width;
@@ -498,19 +520,9 @@ export class MerlinCostumeOverlay {
       posCm.y -= (errPxY / fPx) * -xcNose.z;
     }
 
-    // Smoothly damp sudden orientation jumps (SLERP) when tracking is near extreme profile/pitch limits
-    if (this.hasPrevPose) {
-      const angleStep = this.prevQuat.angleTo(rotQuat);
-      if (angleStep > 0.45) {
-        rotQuat.slerpQuaternions(this.prevQuat, rotQuat, 0.35);
-        posCm.lerpVectors(this.prevPosCm, posCm, 0.45);
-      }
-    }
-
-    // Mirror support: flip camera projection X when mirror is enabled so lighting and handedness stay clean
-    this.camera.projectionMatrix.elements[0] =
-      (mirror ? -1 : 1) * (1 / (Math.tan((VFOV_DEG * Math.PI) / 360.0) * this.camera.aspect));
-    this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+    // Smoothing belongs exclusively to FacePoseFilter, at observation timestamps.
+    // Reflect in camera space so Three.js can account for mirrored face winding.
+    this.mirrorRoot.scale.set(mirror ? -1 : 1, 1, 1);
 
     this.headAnchor.position.copy(posCm);
     this.headAnchor.quaternion.copy(rotQuat);
@@ -529,14 +541,13 @@ export class MerlinCostumeOverlay {
 
     this.prevPosCm.copy(posCm);
     this.prevVelCm.copy(velCm);
-    this.prevQuat.copy(rotQuat);
     this.prevYaw = yaw;
     this.prevPitch = pitch;
     this.prevRoll = roll;
     this.hasPrevPose = true;
 
     // 3. Separate Jaw Articulation from Rigid Head Pose
-    if (this.jawBone) {
+    if (this.jawBone && options.jawMotion) {
       let targetJawOpen = 0;
       if (pose.upperLip && pose.lowerLip) {
         const lipDx = (pose.lowerLip.x - pose.upperLip.x) * width;
@@ -565,15 +576,15 @@ export class MerlinCostumeOverlay {
     // Reset all bone positions to rest before computing world-to-local offsets
     for (const c of this.chains) {
       c.bone.position.copy(c.restPos);
+      if (!options.springMotion) c.bone.quaternion.copy(c.restQuat);
     }
-    this.costumeRoot.updateMatrixWorld(true);
+    this.costumeRoot.updateWorldMatrix(true, true);
     const modelGroupWorldInv = this.modelOffsetGroup.matrixWorld.clone().invert();
 
-    // Retract temple hair roots (Hair_L_1, Hair_R_1) to the true anatomical ear/temple plane in modelOffsetGroup space
-    // (+X right, +Y up, +Z forward) and tuck the far-side temple/cheek root behind the cranium/mid-face/nose occluders during yaw turns!
+    // Retained empirical root retraction in model space. Not an anatomical fit.
     const rightVecCam = new T.Vector3(1, 0, 0).applyQuaternion(rotQuat);
-    // Downward pitch angle in radians (in OpenGL/MediaPipe camera space, looking DOWN is pitch < 0)
-    const downPitchRad = Math.max(0, -pitch);
+    // Retained legacy pitch sign, disabled with all other pitch compensation.
+    const downPitchRad = options.pitchCompensation ? Math.max(0, -pitch) : 0;
 
     for (const c of this.chains) {
       if (
@@ -581,7 +592,7 @@ export class MerlinCostumeOverlay {
           c.bone.name === 'Hair_R_1' ||
           c.bone.name === 'Beard_L_1' ||
           c.bone.name === 'Beard_R_1') &&
-        c.bone.parent
+        c.bone.parent && options.hairRoots
       ) {
         const isLeft = c.bone.name.includes('_L_');
         const isHair = c.bone.name.startsWith('Hair_');
@@ -602,7 +613,7 @@ export class MerlinCostumeOverlay {
     this.costumeRoot.updateMatrixWorld(true);
 
     for (const c of this.chains) {
-      if (c.gravityWeight === 0 && c.inertiaWeight === 0) {
+      if (!options.springMotion || (c.gravityWeight === 0 && c.inertiaWeight === 0)) {
         c.bone.quaternion.copy(c.restQuat);
         continue;
       }
@@ -681,13 +692,37 @@ export class MerlinCostumeOverlay {
       }
     }
 
+    if (options.enabled && !this.trackingDiagnostics) {
+      this.trackingDiagnostics = new MerlinTrackingDiagnostics(this.scene, this.headAnchor, this.modelOffsetGroup, this.occlusionGroup);
+    }
+    this.trackingDiagnostics?.update(options, this.costumeRoot);
+    this.canvas.dataset.merlinPose = 'tracking';
     renderer.render(this.scene, this.camera);
+  }
+
+  private disposeObjects(root: T.Object3D) {
+    const geometries = new Set<T.BufferGeometry>(), materials = new Set<T.Material>(), textures = new Set<T.Texture>();
+    root.traverse(obj => {
+      const mesh = obj as T.Mesh;
+      if (mesh.geometry) geometries.add(mesh.geometry);
+      if (mesh.material) for (const mat of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+        materials.add(mat);
+        for (const value of Object.values(mat)) if (value instanceof T.Texture) textures.add(value);
+      }
+      const skinned = obj as T.SkinnedMesh;
+      if (skinned.isSkinnedMesh) skinned.skeleton.dispose();
+    });
+    geometries.forEach(geometry => geometry.dispose());
+    materials.forEach(material => material.dispose());
+    textures.forEach(texture => texture.dispose());
   }
 
   public dispose() {
     if (this.disposed) return;
     this.disposed = true;
     this.clear();
+    this.trackingDiagnostics?.dispose(); this.trackingDiagnostics = null;
+    this.disposeObjects(this.scene);
     if (this.renderer) {
       this.renderer.dispose();
       this.renderer = null;

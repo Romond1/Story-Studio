@@ -191,7 +191,7 @@ export function CameraLayer() {
     style={{ visibility: live && settings.preset !== 'hidden' ? 'visible' : 'hidden', ...(layout?{left:`${layout.x*100}%`,top:`${layout.y*100}%`,width:`${layout.width*100}%`,height:`${layout.height*100}%`,right:'auto',bottom:'auto'}:{}) }}>
     <canvas ref={canvas} style={{visibility:settings.personRemoval?'hidden':'visible'}} />
     <canvas ref={merlinCanvas} className="face-tracking-overlay merlin-costume-overlay" style={{visibility:settings.personRemoval?'hidden':'visible'}} />
-    <canvas ref={trackingCanvas} className="face-tracking-overlay" style={{visibility:settings.personRemoval?'hidden':'visible'}} />
+    <canvas ref={trackingCanvas} className="face-tracking-overlay face-landmark-overlay" style={{visibility:settings.personRemoval?'hidden':'visible'}} />
     {settings.editLayout && <><span className="camera-move-hint">Drag to move</span>{(['nw','ne','sw','se'] as const).map(corner=><button key={corner} type="button" data-corner={corner} className={`camera-resize camera-resize-${corner}`} aria-label={`Resize camera ${ {nw:'top left',ne:'top right',sw:'bottom left',se:'bottom right'}[corner]}`} title="Drag corner to resize; arrow keys also work" onKeyDown={e=>{
       if(!e.key.startsWith('Arrow'))return;e.preventDefault();e.stopPropagation();const rect=layer.current!.getBoundingClientRect(),p=layer.current!.parentElement!.getBoundingClientRect();const l=layout??{x:(rect.left-p.left)/p.width,y:(rect.top-p.top)/p.height,width:rect.width/p.width,height:rect.height/p.height};commit(transformCameraLayout(l,corner,e.key==='ArrowRight'?.02:e.key==='ArrowLeft'?-.02:0,e.key==='ArrowDown'?.02:e.key==='ArrowUp'?-.02:0));
     }}>{ {nw:'↖',ne:'↗',sw:'↙',se:'↘'}[corner]}</button>)}</>}

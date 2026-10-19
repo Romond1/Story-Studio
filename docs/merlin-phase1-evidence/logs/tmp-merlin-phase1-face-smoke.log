@@ -1,0 +1,12 @@
+PRESENTER INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+PASS Packaged classic worker runs real MediaPipe model locally: 478 landmarks, head matrix, private controls
+PASS Real Merlin GLB emits pixels; depth-only proxy stays invisible; hidden developer UI, rigid/compensated presets, toggles and diagnostic teardown work
+PASS Nose marker pixel and all camera/overlay dimensions align in both mirror states across Full/Left/Right presets
+PASS Hat and debug visibility are independent without restarting inference or camera
+PASS Actual no-face inference removes hat and recovers on returning face
+PASS Real inference follows horizontally/vertically moving and tilting portrait video
+PASS One webcam, one worker, one in-flight frame; <=640px input, <=12.5Hz admission, Hidden pauses inference
+PRESENTER INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+PASS Worker failure hides graphics but preserves camera; tracking restarts independently
+PRESENTER INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+PASS Tracking off terminates worker only; camera off terminates worker and ends capture tracks

@@ -1,0 +1,11 @@
+PASS Private permission cancellation leaves camera off
+PASS One video-only Presenter capture; no Control camera stream or student-facing controls
+PASS Actual WebGL2 key turns synthetic green transparent over the blue story
+PASS Scene navigation, mirror, brightness and contrast update without replacing capture
+PASS Four presets and story zoom preserve camera session and independent placement
+PASS Camera off ends all capture tracks
+PASS Missing camera reports privately and leaves story alive
+PASS Simulated OS permission denial is recoverable and private
+PASS Simulated device disconnect releases capture and allows retry
+PASS WebGL context loss hides only camera, releases tracks, and recovers after restore
+PASS Closing Presenter resets camera to off

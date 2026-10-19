@@ -1,4 +1,37 @@
-export interface TrackingSettings { enabled: boolean; markers: boolean; hat: boolean; merlin?: boolean; merlinEyebrows?: boolean }
+export interface MerlinDiagnostics {
+  enabled: boolean;
+  hairRoots: boolean;
+  pitchCompensation: boolean;
+  residualRegistration: boolean;
+  springMotion: boolean;
+  jawMotion: boolean;
+  costume: boolean;
+  occlusion: boolean;
+  axes: boolean;
+  referencePoints: boolean;
+  attachmentOrigins: boolean;
+  occluderWireframe: boolean;
+}
+export function createMerlinDiagnostics(mode: 'rigid' | 'compensated'): MerlinDiagnostics {
+  const compensated = mode === 'compensated';
+  return {
+    enabled: true, hairRoots: compensated, pitchCompensation: compensated,
+    residualRegistration: compensated, springMotion: compensated, jawMotion: compensated,
+    costume: true, occlusion: true, axes: true, referencePoints: true,
+    attachmentOrigins: true, occluderWireframe: true,
+  };
+}
+/** Ordinary teaching keeps the existing compensation behavior until webcam comparison. */
+export function merlinOptions(settings: TrackingSettings): MerlinDiagnostics {
+  return settings.merlinDiagnostics?.enabled ? settings.merlinDiagnostics : {
+    ...createMerlinDiagnostics('compensated'), enabled: false,
+    axes: false, referencePoints: false, attachmentOrigins: false, occluderWireframe: false,
+  };
+}
+export interface TrackingSettings {
+  enabled: boolean; markers: boolean; hat: boolean; merlin?: boolean; merlinEyebrows?: boolean;
+  merlinDiagnostics?: MerlinDiagnostics;
+}
 export const TRACKING_DEFAULTS: TrackingSettings = { enabled: false, markers: true, hat: true };
 export interface TrackingStatus {
   state: 'off' | 'initializing' | 'tracking' | 'face-lost' | 'error';
@@ -10,10 +43,20 @@ export function parseTrackingSettings(value: unknown): TrackingSettings | null {
   if (typeof v.enabled !== 'boolean' || typeof v.markers !== 'boolean' || typeof v.hat !== 'boolean') return null;
   if (v.merlin !== undefined && typeof v.merlin !== 'boolean') return null;
   if (v.merlinEyebrows !== undefined && typeof v.merlinEyebrows !== 'boolean') return null;
+  let merlinDiagnostics: MerlinDiagnostics | undefined;
+  if (v.merlinDiagnostics !== undefined) {
+    if (!v.merlinDiagnostics || typeof v.merlinDiagnostics !== 'object') return null;
+    merlinDiagnostics = createMerlinDiagnostics('rigid');
+    for (const key of Object.keys(merlinDiagnostics) as (keyof MerlinDiagnostics)[]) {
+      if (typeof v.merlinDiagnostics[key] !== 'boolean') return null;
+      merlinDiagnostics[key] = v.merlinDiagnostics[key];
+    }
+  }
   return {
     enabled: v.enabled, markers: v.markers, hat: v.hat,
     ...(v.merlin !== undefined ? { merlin: v.merlin } : {}),
     ...(v.merlinEyebrows !== undefined ? { merlinEyebrows: v.merlinEyebrows } : {}),
+    ...(merlinDiagnostics ? { merlinDiagnostics } : {}),
   };
 }
 export function parseTrackingStatus(value: unknown): TrackingStatus | null {

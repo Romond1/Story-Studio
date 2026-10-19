@@ -58,6 +58,20 @@ const commands = require('../dist-test/shared/lesson/commands');
       window.faceMetrics = { acquisitions: 0, activeWorkers: 0, createdWorkers: 0, inFlight: 0, maximumInFlight: 0, results: 0, latencies: [], frames: [], poses: [], cameraDraws: [] };
       const draw = WebGL2RenderingContext.prototype.drawArrays;
       WebGL2RenderingContext.prototype.drawArrays = function(...args) { window.faceMetrics.cameraDraws.push(performance.now()); return draw.apply(this, args); };
+      const drawElements = WebGL2RenderingContext.prototype.drawElements;
+      WebGL2RenderingContext.prototype.drawElements = function(...args) {
+        const result = drawElements.apply(this, args), probe = window.merlinPixelProbe;
+        if (probe && probe.samples < 32 && this.canvas.classList?.contains('merlin-costume-overlay') && !this.getParameter(this.FRAMEBUFFER_BINDING)) {
+          // Read during drawing: Three.js intentionally does not preserve its
+          // framebuffer after presentation. This sees only the 3D overlay,
+          // independently of the webcam/2D diagnostic layers underneath/above it.
+          const pixels = new Uint8Array(this.drawingBufferWidth * this.drawingBufferHeight * 4);
+          this.readPixels(0, 0, this.drawingBufferWidth, this.drawingBufferHeight, this.RGBA, this.UNSIGNED_BYTE, pixels);
+          let alpha = 0; for (let i = 3; i < pixels.length; i += 4) if (pixels[i]) alpha++;
+          probe.samples++; probe.maximumAlphaPixels = Math.max(probe.maximumAlphaPixels, alpha);
+        }
+        return result;
+      };
       const get = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
       navigator.mediaDevices.getUserMedia = async constraints => { window.faceMetrics.acquisitions++; const stream = await get(constraints); window.testCameraTracks = stream.getTracks(); return stream; };
       const OriginalWorker = window.Worker;
@@ -99,20 +113,79 @@ const commands = require('../dist-test/shared/lesson/commands');
     assert.deepEqual(await app.evaluate(() => global.blockedNetwork), []);
     pass(`${devUrl ? 'Development' : 'Packaged'} classic worker runs real MediaPipe model locally: 478 landmarks, head matrix, private controls`);
     const painted = () => present.evaluate(() => {
-      const canvas = document.querySelector('.face-tracking-overlay');
+      const canvas = document.querySelector('.face-landmark-overlay');
       return canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data.some((v, i) => i % 4 === 3 && v > 0);
     });
     const waitPainted = () => present.waitForFunction(() => {
-      const c = document.querySelector('.face-tracking-overlay');
+      const c = document.querySelector('.face-landmark-overlay');
       return c.width > 1 && c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((v,i) => i%4===3 && v);
     });
     await waitPainted();
     assert.equal(await painted(), true);
+    assert.equal(await control.getByRole('region', { name: 'Merlin developer diagnostics', exact: true }).count(), 0);
+    await control.keyboard.press('Control+Alt+Shift+M');
+    const diagnostics = control.getByRole('region', { name: 'Merlin developer diagnostics', exact: true });
+    await diagnostics.getByRole('button', { name: 'Rigid preset', exact: true }).click();
+    await present.waitForFunction(() => {
+      const canvas = document.querySelector('.merlin-costume-overlay');
+      return canvas.dataset.merlinAsset === 'ready' && canvas.dataset.merlinMode === 'diagnostic' && canvas.dataset.merlinPose === 'tracking';
+    });
+    let options = await control.evaluate(async () => (await window.cameraControl.get()).settings.tracking.merlinDiagnostics);
+    assert.ok(options.enabled && !options.hairRoots && !options.pitchCompensation && !options.residualRegistration && !options.springMotion && !options.jawMotion);
+    assert.equal(await present.locator('button, input, select').count(), 0, 'diagnostics must not add Presenter controls');
+    await diagnostics.scrollIntoViewIfNeeded();
+    await control.screenshot({ path: path.join(evidence, 'merlin-diagnostics-control.png') });
+    await present.screenshot({ path: path.join(evidence, 'merlin-rigid-present.png') });
+    const guidesOff = { axes: false, referencePoints: false, attachmentOrigins: false, occluderWireframe: false };
+    await set({ tracking: { merlinDiagnostics: { ...options, ...guidesOff } } });
+    await present.waitForTimeout(200);
+    await present.evaluate(() => { window.merlinPixelProbe = { samples: 0, maximumAlphaPixels: 0 }; });
+    await present.waitForFunction(() => window.merlinPixelProbe.maximumAlphaPixels > 100);
+    const costumePixels = await present.evaluate(() => { const result = window.merlinPixelProbe; window.merlinPixelProbe = null; return result; });
+    assert.ok(costumePixels.maximumAlphaPixels > 100, 'real GLB produces visible WebGL pixels with every guide disabled');
+    await set({ tracking: { merlinDiagnostics: { ...options, ...guidesOff, costume: false } } });
+    await present.waitForTimeout(200);
+    await present.evaluate(() => { window.merlinPixelProbe = { samples: 0, maximumAlphaPixels: 0 }; });
+    await present.waitForFunction(() => window.merlinPixelProbe.samples >= 3);
+    const depthOnlyPixels = await present.evaluate(() => { const result = window.merlinPixelProbe; window.merlinPixelProbe = null; return result; });
+    assert.equal(depthOnlyPixels.maximumAlphaPixels, 0, 'depth-only occluders emit no visible pixels when costume and guides are hidden');
+    await diagnostics.getByRole('button', { name: 'Rigid preset', exact: true }).click();
+    await diagnostics.getByLabel('Costume geometry', { exact: true }).uncheck();
+    await diagnostics.getByLabel('Depth occlusion', { exact: true }).uncheck();
+    await present.waitForTimeout(200);
+    await present.screenshot({ path: path.join(evidence, 'merlin-guides-only-present.png') });
+    await set({ mirror: true }); await present.waitForTimeout(200);
+    await present.screenshot({ path: path.join(evidence, 'merlin-guides-mirrored-present.png') });
+    await set({ mirror: false });
+    await diagnostics.getByRole('button', { name: 'Rigid preset', exact: true }).click();
+    for (const name of ['Costume geometry', 'Depth occlusion', 'Occluder wireframe', 'Canonical and observed references', 'Attachment origins', 'Head/model axes and pivots']) {
+      await diagnostics.getByLabel(name, { exact: true }).uncheck();
+      await diagnostics.getByLabel(name, { exact: true }).check();
+    }
+    await diagnostics.getByRole('button', { name: 'Compensated preset', exact: true }).click();
+    options = await control.evaluate(async () => (await window.cameraControl.get()).settings.tracking.merlinDiagnostics);
+    assert.ok(options.hairRoots && options.pitchCompensation && options.residualRegistration && options.springMotion && options.jawMotion);
+    await present.waitForTimeout(200);
+    await present.screenshot({ path: path.join(evidence, 'merlin-compensated-present.png') });
+    await app.evaluate(({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows().find(window => !window.getTitle().includes('— Present'));
+      window.setMinimumSize(320, 400); window.setSize(480, 850);
+    });
+    await diagnostics.scrollIntoViewIfNeeded();
+    assert.equal(await diagnostics.evaluate(element => element.scrollWidth > element.clientWidth + 1), false);
+    await control.screenshot({ path: path.join(evidence, 'merlin-diagnostics-narrow.png') });
+    await diagnostics.getByRole('button', { name: 'Close diagnostics', exact: true }).click();
+    await set({ tracking: { merlin: false } });
+    await present.waitForFunction(() => document.querySelector('.merlin-costume-overlay').width === 1);
+    assert.equal(await control.evaluate(async () => (await window.cameraControl.get()).settings.tracking.merlinDiagnostics), undefined);
+    pass('Real Merlin GLB emits pixels; depth-only proxy stays invisible; hidden developer UI, rigid/compensated presets, toggles and diagnostic teardown work');
     const inspect = async mirror => {
       await set({ mirror });
       await present.waitForTimeout(200);
-      return present.evaluate(mirror => {
-        const canvas = document.querySelector('.face-tracking-overlay'), ctx = canvas.getContext('2d'), nose = window.latestFace.landmarks[1];
+      const handle = await present.waitForFunction(mirror => {
+        const canvas = document.querySelector('.face-landmark-overlay');
+        if (!window.latestFace || canvas.width <= 1) return false;
+        const ctx = canvas.getContext('2d'), nose = window.latestFace.landmarks[1];
         const x = Math.round((mirror ? 1 - nose.x : nose.x) * canvas.width), y = Math.round(nose.y * canvas.height);
         // Latest inference and smoothed paint can differ slightly on a moving
         // fixture. Search a bounded 24px neighborhood for the tiny pink marker.
@@ -120,9 +193,11 @@ const commands = require('../dist-test/shared/lesson/commands');
         let marker = false;
         for (let i=0; i<pixels.length; i+=4) if (pixels[i]>230 && pixels[i+1]>70 && pixels[i+1]<150 && pixels[i+3]>230) marker = true;
         const source = document.querySelector('.camera-layer canvas'), cameraRect = source.getBoundingClientRect(), trackingRect = canvas.getBoundingClientRect();
-        return { marker, aligned: ['x','y','width','height'].every(k => Math.abs(cameraRect[k] - trackingRect[k]) < .01), fit: getComputedStyle(source).objectFit === getComputedStyle(canvas).objectFit,
+        const result = { marker, aligned: ['x','y','width','height'].every(k => Math.abs(cameraRect[k] - trackingRect[k]) < .01), fit: getComputedStyle(source).objectFit === getComputedStyle(canvas).objectFit,
           position: getComputedStyle(source).objectPosition === getComputedStyle(canvas).objectPosition, dimensions: source.width === canvas.width && source.height === canvas.height };
+        return result.marker && result.aligned && result.fit && result.position && result.dimensions ? result : false;
       }, mirror);
+      const result = await handle.jsonValue(); await handle.dispose(); return result;
     };
     for (const preset of ['full', 'lower-left', 'lower-right']) {
       await set({ preset });
@@ -136,7 +211,7 @@ const commands = require('../dist-test/shared/lesson/commands');
     await set({ preset: 'full', mirror: false }); await present.waitForTimeout(200);
     await present.screenshot({ path: path.join(evidence, 'tracked-full.png') });
     await control.getByLabel('Show landmark markers').uncheck(); await control.getByLabel('Show temporary hat').uncheck();
-    await present.waitForFunction(() => { const c = document.querySelector('.face-tracking-overlay'); return !c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((v,i) => i%4===3 && v); });
+    await present.waitForFunction(() => { const c = document.querySelector('.face-landmark-overlay'); return !c.getContext('2d').getImageData(0,0,c.width,c.height).data.some((v,i) => i%4===3 && v); });
     await control.getByLabel('Show temporary hat').check(); await waitPainted();
     assert.equal(await painted(), true);
     await set({ preset: 'lower-right' }); await present.waitForTimeout(200);
@@ -157,7 +232,7 @@ const commands = require('../dist-test/shared/lesson/commands');
       window.createImageBitmap = async () => empty.transferToImageBitmap();
     });
     await control.getByText('Face lost · looking for a face', { exact: true }).waitFor();
-    await present.waitForFunction(() => document.querySelector('.face-tracking-overlay').width === 1);
+    await present.waitForFunction(() => document.querySelector('.face-landmark-overlay').width === 1);
     assert.equal(await painted(), false);
     await present.evaluate(() => { window.createImageBitmap = window.originalBitmap; });
     await control.getByText('Tracking face', { exact: true }).waitFor();
@@ -179,7 +254,7 @@ const commands = require('../dist-test/shared/lesson/commands');
     pass('One webcam, one worker, one in-flight frame; <=640px input, <=12.5Hz admission, Hidden pauses inference');
     await present.evaluate(() => window.testFaceWorker.dispatchEvent(new ErrorEvent('error', { message: 'Synthetic worker failure', cancelable: true })));
     await control.getByText(/Face tracking worker failed/).waitFor();
-    await present.waitForFunction(() => document.querySelector('.face-tracking-overlay').width === 1);
+    await present.waitForFunction(() => document.querySelector('.face-landmark-overlay').width === 1);
     assert.equal(await painted(), false);
     assert.equal(await present.evaluate(() => window.testCameraTracks.every(t => t.readyState === 'live')), true);
     await control.getByLabel('Enable face tracking', { exact: true }).uncheck();
@@ -188,13 +263,13 @@ const commands = require('../dist-test/shared/lesson/commands');
     pass('Worker failure hides graphics but preserves camera; tracking restarts independently');
     await control.getByLabel('Enable face tracking', { exact: true }).uncheck();
     await present.waitForFunction(() => window.faceMetrics.activeWorkers === 0);
-    await present.waitForFunction(() => document.querySelector('.face-tracking-overlay').width === 1);
+    await present.waitForFunction(() => document.querySelector('.face-landmark-overlay').width === 1);
     assert.equal(await present.evaluate(() => window.testCameraTracks.every(t => t.readyState === 'live')), true);
     await control.getByLabel('Enable face tracking', { exact: true }).check();
     await control.getByText('Tracking face', { exact: true }).waitFor();
     await button('Turn camera off').click();
     await present.waitForFunction(() => window.faceMetrics.activeWorkers === 0 && window.testCameraTracks.every(t => t.readyState === 'ended'));
-    assert.equal(await present.locator('.face-tracking-overlay').evaluate(c => c.width), 1, 'camera off releases overlay backing store');
+    assert.equal(await present.locator('.face-landmark-overlay').evaluate(c => c.width), 1, 'camera off releases overlay backing store');
     pass('Tracking off terminates worker only; camera off terminates worker and ends capture tracks');
     assert.deepEqual(errors, []);
     await fs.writeFile(path.join(evidence, 'results.json'), JSON.stringify({ fixture: 'Google MediaPipe public portrait, synthetic video; not physical-camera tracking', results, errors, metrics }, null, 2));

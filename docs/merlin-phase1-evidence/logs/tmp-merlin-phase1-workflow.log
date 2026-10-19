@@ -1,0 +1,48 @@
+STEP PASS 01 Create student profiles
+STEP PASS 02 Create a class
+STEP PASS 03 Enroll multiple students in two classes
+EXTRA PASS 03 Select the teaching class before opening any episode
+STEP PASS 04 Select the class in Teach before loading the complete episode
+STEP PASS 05 Load the complete episode
+EXTRA PASS 04 Open the complete authored episode and load class participants
+STEP PASS 06 Launch Adventure and verify character artwork
+STEP PASS 07 Display the student roster in Present
+STEP PASS 08 Transition to Activation with derived character Card V2 and complete for two students
+locator.click: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator('summary').filter({ hasText: /^Activity participants/ })
+    - locator resolved to <summary>Activity participants (2)</summary>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is not visible
+    - retrying click action
+      - waiting 100ms
+    37 × waiting for element to be visible, enabled and stable
+       - element is not visible
+     - retrying click action
+       - waiting 500ms
+
+    at D:\AI\GitHub\Story-Studio\scripts\phase7f-workflow-smoke.cjs:20:3150 {
+  log: [
+    "  - waiting for locator('summary').filter({ hasText: /^Activity participants/ })",
+    '    - locator resolved to <summary>Activity participants (2)</summary>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not visible',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not visible',
+    '    - retrying click action',
+    '      - waiting 100ms',
+    '    37 × waiting for element to be visible, enabled and stable',
+    '       - element is not visible',
+    '     - retrying click action',
+    '       - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}

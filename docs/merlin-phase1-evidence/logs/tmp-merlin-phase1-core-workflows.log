@@ -1,0 +1,4 @@
+PASS Edit creates a Bubble and saves authored text
+PASS Present renders authored content without Control tools
+PASS Teach navigation updates Present while diagnostics remain opt-in
+PASS Developer UI opens/closes privately; Edit/Teach transitions preserve content and camera state

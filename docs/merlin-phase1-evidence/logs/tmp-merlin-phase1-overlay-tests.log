@@ -1,0 +1,12 @@
+✔ rigid diagnostic mode preserves the supplied head pose and all rest bones across yaw/pitch/distance (311.3211ms)
+✔ diagnostics can isolate costume, depth occlusion, and guides independently (69.0125ms)
+✔ mirror reflects in camera space without reversing the projection winding (70.8169ms)
+✔ comparison changes and loss reset dynamic state; compensation code remains available (51.4544ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1014.5541

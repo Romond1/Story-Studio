@@ -1,3 +1,5 @@
+import { POSE_SMOOTHING_MS, smoothRigidFaceMatrix } from './facePoseMath';
+
 export interface Landmark { x: number; y: number; z: number }
 export interface FaceObservation { timestamp: number; landmarks: Landmark[]; matrix: number[] }
 export interface FacePose {
@@ -37,10 +39,9 @@ export class FacePoseFilter {
       })) { this.pose = null; return null; }
     const previous = this.current(now);
     if (previous && observation.timestamp <= previous.timestamp) return previous;
-    const alpha = previous ? 1 - Math.exp(-(observation.timestamp - previous.timestamp) / 45) : 1;
-    const smoothedMatrix = previous && previous.matrix.length === 16
-      ? observation.matrix.map((v, i) => previous.matrix[i] + (v - previous.matrix[i]) * alpha)
-      : observation.matrix;
+    const alpha = previous ? 1 - Math.exp(-(observation.timestamp - previous.timestamp) / POSE_SMOOTHING_MS) : 1;
+    const smoothedMatrix = smoothRigidFaceMatrix(observation.matrix, previous?.matrix, alpha);
+    if (!smoothedMatrix) { this.pose = null; return null; }
     const result = { timestamp: observation.timestamp, matrix: smoothedMatrix } as FacePose;
     for (const name of Object.keys(anchors) as (keyof typeof anchors)[]) {
       const p = observation.landmarks[anchors[name]], old = previous?.[name] ?? p;

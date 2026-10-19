@@ -1,0 +1,17 @@
+{
+  "syntheticOnly": true,
+  "results": [
+    "Private permission cancellation leaves camera off",
+    "One video-only Presenter capture; no Control camera stream or student-facing controls",
+    "Actual WebGL2 key turns synthetic green transparent over the blue story",
+    "Scene navigation, mirror, brightness and contrast update without replacing capture",
+    "Four presets and story zoom preserve camera session and independent placement",
+    "Camera off ends all capture tracks",
+    "Missing camera reports privately and leaves story alive",
+    "Simulated OS permission denial is recoverable and private",
+    "Simulated device disconnect releases capture and allows retry",
+    "WebGL context loss hides only camera, releases tracks, and recovers after restore",
+    "Closing Presenter resets camera to off"
+  ],
+  "errors": []
+}
