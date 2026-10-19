@@ -1,3 +1,5 @@
+import {STUDENT_AVATARS} from "./students/model";
+import {LEGACY_BE_A_HERO_V1} from "./adventures/legacy-be-a-hero-v1";
 import type {
   RelicAnimationStyle,
   RelicStage,
@@ -19,11 +21,7 @@ export const DEFAULT_RELIC_SYSTEM: RelicSystem = {
     stage2: null,
     stage3: null,
   },
-  stageTitles: {
-    stage1: "Echo Fragment Found",
-    stage2: "Echo Core Restored",
-    stage3: "Echo Stone Awakened",
-  },
+  stageTitles: {...LEGACY_BE_A_HERO_V1.relicStageTitles},
   studentProgress: {},
   showOnStage: true,
   widgetPosition: "topRight",
@@ -203,6 +201,8 @@ export function normalizeStudentRosterSettings(value: unknown, now = new Date().
       return {
         id: item.id,
         name,
+        ...(typeof item.nickname === "string" ? {nickname:item.nickname} : {}),
+        ...(typeof item.avatar === "string" && (STUDENT_AVATARS as readonly string[]).includes(item.avatar) ? {avatar:item.avatar} : {}),
         archived: item.archived === true,
         createdAt: typeof item.createdAt === "string" ? item.createdAt : now,
         updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : now,

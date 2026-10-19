@@ -1,0 +1,31 @@
+✔ immutable scene commands and history preserve the episode envelope (41.5167ms)
+✔ catalog membership validates references and requires reassignment before entity deletion (5.5319ms)
+✔ episode discriminator never enters scene reader; strict capabilities and media identities (20.5091ms)
+✔ derived references accept physical images only and unify background/card/image lookup (5.3549ms)
+✔ catalog identity is scoped, duplicate display names are valid and unknown fields refuse (1.5409ms)
+✔ episode nested unknown payloads cannot become hidden runtime or unsupported content (0.8549ms)
+✔ legacy authored media fields use exact typed matching including unused definitions (5.4552ms)
+✔ Card V2 unplaced faces and content links are enumerated once (2.8508ms)
+✔ explicit builtins are complete but path-only files remain unregistered (0.4715ms)
+✔ unknown extensions, missing links and unresolved local/external media are explicit (0.329ms)
+✔ unknown nested authored extension payloads cannot silently claim complete coverage (0.3457ms)
+✔ Activation references existing scenes and captures participants without an authored card store (28.9694ms)
+✔ Activation reset creates a new run with the same captured participants and first scene (0.5971ms)
+✔ strict module authored schemas reject runtime and names without falling back (7.2072ms)
+✔ typed media enumeration and remapping preserve nonmedia text and original (0.7316ms)
+✔ episode activities preserve order and require capability and valid references (10.0032ms)
+✔ Final Boss preserves all optional authoring fields and enumerates every media-bearing field (2.3532ms)
+✔ module dependencies cover unplaced activities and flag unknown authored config (3.8924ms)
+✔ protocol rejects unknown fields, unsupported versions, transient configs and mismatched events (4.5458ms)
+✔ lifecycle rejects invalid transitions and reset requires fresh run identity (0.5673ms)
+✔ event ledger captures run and participants, deduplicates identical payload, rejects collision/stale/order (24.0944ms)
+✔ module capability rejects scores from Activation and accepts captured completion only (1.9491ms)
+✔ module transport rejects stale generations, mismatched runs and repeated renderer sequence (3.1946ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 288.4659

@@ -1,0 +1,18 @@
+✔ free camera layout stays bounded and legacy settings remain valid (1.6054ms)
+✔ all four resize corners preserve the opposite anchor and permit offscreen crop (0.5125ms)
+✔ camera protocol rejects malformed values and strips private extras (0.3209ms)
+✔ late permission completion releases its stream after off (5.0573ms)
+✔ device replacement never overlaps capture and releases old tracks (0.3589ms)
+✔ permission failure does not prevent a later retry (0.6216ms)
+✔ camera IPC authenticates roles, filters payloads, and cancels pending consent on reset (82.3149ms)
+✔ segmentation allows one frame, drops stale results and reduces expensive work (0.8646ms)
+✔ repeated excessive inference opens circuit until a new session (0.1643ms)
+✔ removal status validates finite telemetry and strips arbitrary payload (0.8259ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 751.6728

@@ -1,0 +1,17 @@
+✔ free camera layout stays bounded and legacy settings remain valid (1.5059ms)
+✔ camera protocol rejects malformed values and strips private extras (0.2016ms)
+✔ late permission completion releases its stream after off (4.7239ms)
+✔ device replacement never overlaps capture and releases old tracks (0.3385ms)
+✔ permission failure does not prevent a later retry (0.5922ms)
+✔ camera IPC authenticates roles, filters payloads, and cancels pending consent on reset (82.9785ms)
+✔ caption styling accepts safe values and rejects arbitrary CSS (1.8841ms)
+✔ silence and short noise never launch recognition (10.3749ms)
+✔ caption boundary rejects unsupported languages, invalid sizes and oversized content (0.361ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 417.1223

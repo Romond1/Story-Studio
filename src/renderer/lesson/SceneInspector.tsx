@@ -1,3 +1,4 @@
+import type { MediaRegistryView } from '../../shared/content/mediaRegistry';
 import { Children, cloneElement, isValidElement, useEffect, useId, useState, type ReactElement, type ReactNode } from 'react';
 import type { CardDefinition, CardFace, CardSet, CardStyle } from '../../shared/cardsV2';
 import type { LessonProject, LessonScene, SceneObject } from '../../shared/lesson/model';
@@ -5,7 +6,7 @@ import { BUBBLE_LIBRARY } from '../../shared/bubbleDefs';
 import { CARD_V2_PRESETS } from '../../shared/cardV2Render';
 
 export interface SceneInspectorProps {
-  project: LessonProject; scene?: LessonScene; object?: SceneObject;
+  registry: MediaRegistryView; project: LessonProject; scene?: LessonScene; object?: SceneObject;
   onSceneChange: (scene: LessonScene) => void;
   onObjectChange: (object: SceneObject) => void;
   onCardChange: (card: CardDefinition) => void;
@@ -48,8 +49,8 @@ export function SceneInspector(p: SceneInspectorProps) {
   const face = card?.faces.find(item => item.id === faceId) ?? card?.faces[0];
   useEffect(() => { setFaceId(''); }, [object?.id, card?.id]);
   useEffect(() => { if (face) p.onPreviewFace?.(face.id); }, [face?.id, object?.id, p.onPreviewFace]);
-  const images = project.assets.filter(asset => asset.mediaType === 'image');
-  const audioAssets = project.assets.filter(asset => asset.mediaType === 'audio');
+  const images = p.registry.images();
+  const audioAssets = p.registry.list('audio');
   const libraryCards = project.library.map(id => project.cards[id]).filter((item): item is CardDefinition => !!item);
   const selectedSetCards = libraryCards.filter(item => setCards.has(item.id));
   const selectedSet = project.cardSets.find(item => item.id === selectedSetId);
@@ -133,7 +134,7 @@ export function SceneInspector(p: SceneInspectorProps) {
           <Field label="Face name"><input maxLength={200} value={face.label} onChange={event => updateFace({ label: event.target.value })} /></Field>
           {face.layout !== 'image-only' && <Field label="Card text"><textarea rows={5} placeholder="Type a question, answer or hint…" maxLength={20000} value={face.text ?? ''} onChange={event => updateFace({ text: event.target.value })} /></Field>}
           <Field label="Face layout"><select value={face.layout} onChange={event => updateFace({ layout: event.target.value as CardFace['layout'] })}><option value="text">Text</option><option value="image-only">Image</option><option value="image-text">Image and text</option><option value="image-prompt">Image and prompt</option><option value="text-support">Text and supporting text</option></select></Field>
-          {face.layout.startsWith('image') && <><Field label="Face image"><select value={face.imageAssetId ?? ''} onChange={event => updateFace({ imageAssetId: event.target.value || undefined })}><option value="">Choose image from Media Pool…</option>{images.map(asset => <option key={asset.id} value={asset.id}>{asset.originalName || asset.filename}</option>)}</select></Field><Field label="Image description"><input value={face.alt ?? ''} maxLength={20000} onChange={event => updateFace({ alt: event.target.value })} /></Field>{!images.length && <p className="lesson-hint">Import an image in the Media Pool to use it on this face.</p>}</>}
+          {face.layout.startsWith('image') && <><Field label="Face image"><select value={face.imageAssetId ?? ''} onChange={event => updateFace({ imageAssetId: event.target.value || undefined })}><option value="">Choose image from Media Pool…</option>{images.map(asset => <option key={asset.id} value={asset.id}>{asset.label}</option>)}</select></Field><Field label="Image description"><input value={face.alt ?? ''} maxLength={20000} onChange={event => updateFace({ alt: event.target.value })} /></Field>{!images.length && <p className="lesson-hint">Import an image in the Media Pool to use it on this face.</p>}</>}
           {face.layout === 'text-support' && <Field label="Supporting text"><textarea rows={3} maxLength={20000} value={face.supportingText ?? ''} onChange={event => updateFace({ supportingText: event.target.value })} /></Field>}
           <div className="lesson-actions"><button disabled={card.faces[0].id === face.id} onClick={() => moveFace(-1)}>Face earlier</button><button disabled={card.faces[card.faces.length - 1].id === face.id} onClick={() => moveFace(1)}>Face later</button><button disabled={card.faces.length >= 32} onClick={() => { const added = { ...face, id: crypto.randomUUID(), label: `${face.label.slice(0, 190)} copy` }; p.onCardChange({ ...card, faces: [...card.faces, added] }); setFaceId(added.id); }}>Duplicate face</button><button disabled={card.faces.length === 1} onClick={removeFace}>Delete face</button></div>
           <Section title="Card appearance">
@@ -156,7 +157,7 @@ export function SceneInspector(p: SceneInspectorProps) {
           {object.kind === 'bubble' && <Field label="Bubble style"><select value={object.bubbleDefId ?? 'BD_CLASSIC'} onChange={event => p.onObjectChange({ ...object, bubbleDefId: event.target.value })}>{BUBBLE_LIBRARY.filter(definition => definition.type !== 'text').map(definition => <option key={definition.bubbleDefId} value={definition.bubbleDefId}>{definition.name}</option>)}</select></Field>}
           <div className="lesson-field-grid"><NumberField label="Font size" value={object.fontSize} min={8} max={160} onChange={value => p.onObjectChange({ ...object, fontSize: value })} /><Field label="Text color"><input type="color" value={object.color} onChange={event => p.onObjectChange({ ...object, color: event.target.value })} /></Field><Field label="Text alignment"><select value={object.align} onChange={event => p.onObjectChange({ ...object, align: event.target.value as typeof object.align })}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></Field></div>
         </>}
-        {object?.kind === 'image' && <Field label="Image"><select value={object.assetId} onChange={event => p.onObjectChange({ ...object, assetId: event.target.value })}>{images.map(asset => <option key={asset.id} value={asset.id}>{asset.originalName || asset.filename}</option>)}</select></Field>}
+        {object?.kind === 'image' && <Field label="Image"><select value={object.assetId} onChange={event => p.onObjectChange({ ...object, assetId: event.target.value })}>{images.map(asset => <option key={asset.id} value={asset.id}>{asset.label}</option>)}</select></Field>}
 
         {object && <Section title="Position and layer" open>
           <div className="lesson-field-grid">{(['x', 'y', 'width', 'height'] as const).map(key => <NumberField key={key} label={{ x: 'Left', y: 'Top', width: 'Width', height: 'Height' }[key]} value={object.box[key]} min={key === 'width' || key === 'height' ? 40 : 0} max={key === 'x' ? Math.max(0, scene.frame.width - object.box.width) : key === 'y' ? Math.max(0, scene.frame.height - object.box.height) : key === 'width' ? scene.frame.width - object.box.x : scene.frame.height - object.box.y} onChange={value => p.onObjectChange({ ...object, box: { ...object.box, [key]: value } })} />)}</div>
@@ -166,7 +167,7 @@ export function SceneInspector(p: SceneInspectorProps) {
 
         {!object && <>
           <Field label="Scene title" quiet><input maxLength={200} value={scene.title} onChange={event => p.onSceneChange({ ...scene, title: event.target.value })} /></Field>
-          <Field label="Background media" quiet><select value={scene.background.assetId ?? ''} onChange={event => p.onSceneChange({ ...scene, background: { ...scene.background, assetId: event.target.value || undefined } })}><option value="">Color only</option>{project.assets.filter(asset => asset.mediaType !== 'audio').map(asset => <option key={asset.id} value={asset.id}>{asset.originalName || asset.filename} · {asset.mediaType}</option>)}</select></Field>
+          <Field label="Background media" quiet><select value={scene.background.assetId ?? ''} onChange={event => p.onSceneChange({ ...scene, background: { ...scene.background, assetId: event.target.value || undefined } })}><option value="">Color only</option>{[...images, ...p.registry.list('video').map(asset => ({ id: asset.id, label: asset.originalName || asset.filename, mediaType: asset.mediaType }))].map(asset => <option key={asset.id} value={asset.id}>{asset.label} · {asset.mediaType}</option>)}</select></Field>
           <Field label="Background color"><input type="color" value={scene.background.color} onChange={event => p.onSceneChange({ ...scene, background: { ...scene.background, color: event.target.value } })} /></Field>
           <Section title="Canvas size">
             <Field label="Canvas preset"><select value={`${scene.frame.width}x${scene.frame.height}`} onChange={event => { const [width, height] = event.target.value.split('x').map(Number); frame(width, height); }}><option value={`${scene.frame.width}x${scene.frame.height}`}>Current · {scene.frame.width} × {scene.frame.height}</option><option value="1280x720">Wide · 16:9</option><option value="1024x768">Standard · 4:3</option><option value="900x1200">Portrait · 3:4</option><option value="1080x1080">Square · 1:1</option></select></Field>

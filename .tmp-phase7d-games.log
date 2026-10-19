@@ -1,0 +1,62 @@
+
+> story-studio@1.0.0 check:games
+> tsc -p tsconfig.final-boss.json && node --test games/language-snake/inputBridge.test.mjs games/final-boss-hero/hostBridge.test.mjs games/final-boss-hero/projectRoundTrip.test.cjs games/final-boss-hero/editorImport.test.cjs games/final-boss-hero/observePlayArea.test.cjs games/final-boss-hero/fitPlayArea.test.cjs games/final-boss-hero/boardProjection.test.cjs games/shared/hostedScheduler.test.mjs games/shared/hostedBridge.test.mjs games/language-snake/hostedConfig.test.mjs games/final-boss-hero/hostedAdapter.test.cjs
+
+✔ the original 48-tile star projection is included on both horizontal sides (6.5827ms)
+✔ the original capped 60-tile star includes its bottom projection (1.7808ms)
+✔ the default shield retains its original aspect and needs no upper projection gutter (1.4719ms)
+✔ same-id card import settles and subsequent native draft edits still autosave (233.025ms)
+✔ same-id cutscene import settles and subsequent native media edits still autosave (32.7046ms)
+✔ explicit empty card assignments remain unchecked through import, selection and native edits (121.4594ms)
+✔ unchecking every native game assignment survives subsequent title editing (95.9208ms)
+✔ initial and resized play areas fit all critical content without manual zoom (1.4004ms)
+✔ explicit wheel zoom is preserved when content observation runs (16.5071ms)
+✔ automatic fit centers smaller content and retains correct local pan coordinates (0.238ms)
+✔ dense Board Dash can automatically fit below the original minimum zoom (0.5481ms)
+✔ other mini-games retain their original minimum fitting zoom (0.2235ms)
+✔ reports readiness to the owning host with this instance (4.3427ms)
+✔ uses the opaque packaged origin and preserves parent identity (1.5667ms)
+✔ forwards only current parent input and retains original Shift shortcuts (0.4653ms)
+✔ reports a startup failure and stops media and animations (0.5926ms)
+✔ pagehide disposes the runtime, media sources and listeners exactly once (0.3754ms)
+✔ blocks host-free startup reports without blocking native configured modifiers (0.3062ms)
+✔ suppresses native arrow scrolling while preserving typing field defaults (0.3094ms)
+✔ strict hosted boot uses exact authored config and resets runtime without standalone fallback (10.694ms)
+✔ invalid/empty hosted library and private runtime fields reject without replacing active state (8.7959ms)
+✔ typed projection and reverse proposal preserve asset identities and never save grant URLs (8.0577ms)
+✔ all five game assignments and authored settings remain intact in strict hosted initialization (3.415ms)
+✔ hosted edits wait for Core ack, serialize only authored content and block local device persistence (35.7577ms)
+✔ hosted gameplay reports captured participant results without turning scores or power-up use into config edits (2.3783ms)
+✔ Save waits for the latest queued edit, and new registry selections roundtrip after preview (12.2743ms)
+✔ an older accepted proposal cannot mask a newer invalid media edit (21.7705ms)
+✔ defers geometry updates outside ResizeObserver delivery to avoid same-cycle feedback (3.9387ms)
+✔ coalesces simultaneous viewport/content notifications and native window resize (0.8943ms)
+✔ closing the game disconnects resize observation and cancels queued geometry updates (0.3158ms)
+✔ default project roundtrip preserves cards that omit optional game assignments (7.1796ms)
+✔ explicit empty game assignments remain empty during project import (1.4402ms)
+✔ explicit game assignments retain only supported unique game ids (1.1135ms)
+✔ Snake config hydration and export preserve asset identity without runtime state (1.4144ms)
+✔ Snake hosted export rejects unregistered embedded or filesystem media (0.6047ms)
+✔ accepts input from the owning parent for the current game session (2.3244ms)
+✔ rejects input from a different window or origin (0.4157ms)
+✔ rejects stale or absent game session identifiers (0.6157ms)
+✔ rejects modifier shortcuts while retaining ordinary game shortcuts (0.4306ms)
+✔ rejects malformed messages and unsupported keyboard event phases (0.2951ms)
+✔ accepts key release and repeat input for the owning session (0.2443ms)
+✔ accepts the local file origin used by the packaged application (0.225ms)
+✔ preserves Shift for native game shortcuts and rejects malformed modifiers (0.238ms)
+✔ host bridge authenticates sender, deduplicates commands and preserves lifecycle ordering (28.6104ms)
+✔ config proposals wait for matching acknowledgement and reject stale revision (3.6563ms)
+✔ host Save flush waits for prior proposal then exports latest config with matching request identity (3.1404ms)
+✔ module inventory reads wait for a matching Core response and reject on disposal (3.26ms)
+✔ pause freezes virtual time and preserves timeout/interval remaining delays without catchup (3.0091ms)
+✔ RAF timestamp shares virtual clock and cancellation/disposal never resurrects work (0.5588ms)
+✔ frame scheduler suspends detached audio and WebAudio and preserves prepaused media (2.8797ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 50
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5096.978

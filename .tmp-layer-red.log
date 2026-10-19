@@ -1,0 +1,1 @@
+src/shared/camera.test.ts(3,48): error TS2305: Module '"./cameraProtocol"' has no exported member 'transformCameraLayout'.

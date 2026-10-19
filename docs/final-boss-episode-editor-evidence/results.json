@@ -1,0 +1,20 @@
+{
+  "passed": [
+    "Existing episode assets appear in Present editor",
+    "Existing image assigned to hero and card without duplicate import",
+    "Image/video imported through Present, registered in episode, assigned and saved by stable ID",
+    "Clearing assignment retains shared asset",
+    "Cancelled native import leaves configuration and media intact",
+    "Media imported from Control updates the active Present pool automatically",
+    "Intro, backgrounds, cutscenes, rewards, power-ups and card drag/drop share stable asset references",
+    "Editor fits desktop, medium and narrow viewports",
+    "Existing Memory Reveal gameplay accepts guesses and resolves a round using episode card media",
+    "Edit/play and Present close/reopen preserve accepted game configuration",
+    "Full application restart restores authored configuration and media",
+    "Portable import works offline in fresh profile with original media paths unavailable",
+    "Failed native save preserves prior disk file, reports failure, and retries successfully",
+    "Missing physical media warns without discarding config and can be replaced from the pool"
+  ],
+  "temp": "D:\\Temp\\boss-episode-editor-cazV00",
+  "errors": []
+}

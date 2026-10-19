@@ -1,0 +1,25 @@
+{
+  "passed": [
+    "Native-file drag/drop creates thumbnails without navigation",
+    "Browse imports directly into review library",
+    "Shift/Ctrl multi-selection and batch preparation",
+    "Checkbox batch drag creates separate editable prepared questions",
+    "Presenter drag/resize, keyed layout, keyboard resize and edit-mode pointer passthrough",
+    "Live caption font/color/opacity/outline/alignment and transparent bottom-left points HUD",
+    "Portrait landscape square centered, contained, no empty caption; webcam and published subtitle remain visible",
+    "Missing image hides cleanly and same-image retry recovers",
+    "Pinned award retains image, normal award dismisses smoothly",
+    "Episode thumbnails and optional prepared private notes",
+    "Review imports leave episode asset pool unchanged",
+    "Narrow Control and Presenter resize",
+    "Application restart and deleted originals retain review images",
+    "Five cinematic camera modes and teacher orbit input",
+    "Orbit retains Blue/Red follow target and Side View orbits both racers",
+    "Manual override and undo preserved",
+    "Thirty-space configuration, ground checkpoint tiles and compact active HUD",
+    "Control zoom, authenticated Presenter wheel zoom and resize preserve zoom",
+    "Three course levels preserve cumulative points and saved course configuration"
+  ],
+  "errors": [],
+  "temp": "D:\\Temp\\dash-review-9lGVtr"
+}

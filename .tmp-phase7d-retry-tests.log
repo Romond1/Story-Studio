@@ -1,0 +1,16 @@
+✔ partial lost ACK retries exact captured recipients and IDs without double mint (2.9787ms)
+✔ negative changes retain failed archived target rather than replacing with selection (0.856ms)
+✔ invalid and empty group intents reject before any command allocation (0.6791ms)
+✔ root store retains lost ACK intent across remount and locks concurrent retry (0.6312ms)
+✔ roster projection never forwards identity or full names and scopes balances (2.2709ms)
+✔ strict projection parser strips extra private fields and rejects unsafe content (0.7004ms)
+✔ optional roster survives snapshot target branches without private fields (1.4158ms)
+✔ scores require matching captured session and adventure; active roster caps at eight (0.6932ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 184.0741

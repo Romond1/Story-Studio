@@ -1,3 +1,4 @@
+import {parseRosterPresentation,type RosterPresentation} from './students/rosterPresentation';
 import { parseRewardPresentation, type RewardPresentation } from './rewardPresentation';
 import { parseMovementPresentation, type MovementPresentation } from './movementPresentation';
 import type { SceneTransitionEvent } from './sceneTransition';
@@ -10,9 +11,10 @@ import { resolveImageAdjustments } from './imageAdjustments';
 import { parseCardV2RenderPlan, type CardV2RenderPlan } from './cardV2Render';
 import { parseScenePlan, type ScenePlan } from './lesson/projection';
 import { parseGameSession, type GameInputPacket } from './gameHost';
+import {parseDashView,type DashView} from './heroDash';
 /** Student-safe projection only. Control remains the sole lesson authority. */
 export type PresentTarget =
-  | { kind: 'game'; occurrenceId: string; gameId: string; instanceId: string }
+  | { kind: 'game'; occurrenceId: string; gameId: string; instanceId: string; moduleHost?: true; dash?:DashView }
   | { kind: 'scene'; occurrenceId: string; plan: ScenePlan; media?: MediaIntent }
   | { kind: 'cards-v2'; occurrenceId: string; plan: CardV2RenderPlan }
   | { kind: 'prompt'; occurrenceId: string; title: string; body: string; scene: StaticScene; activity: ActivityScene }
@@ -20,9 +22,13 @@ export type PresentTarget =
   | { kind: 'image'; occurrenceId: string; src: string; scene?: StaticScene; activity?: ActivityScene }
   | { kind: 'break' | 'board'; occurrenceId: string; scene: StaticScene; activity: ActivityScene }
   | { kind: 'empty' | 'unsupported' | 'badge'; occurrenceId: string };
-export interface PresentSnapshot { sessionId: string; revision: number; target: PresentTarget; cardsV2?: CardV2RenderPlan; transition?: SceneTransitionEvent; movement?: MovementPresentation; rewards?: RewardPresentation }
+export interface PresentSnapshot { roster?:RosterPresentation; sessionId: string; revision: number; target: PresentTarget; cardsV2?: CardV2RenderPlan; transition?: SceneTransitionEvent; movement?: MovementPresentation; rewards?: RewardPresentation }
 export interface PresentEnvelope { generation: number; sequence: number; snapshot: PresentSnapshot | null; rendererGeneration?: number }
 export interface PresentApi {
+  sendDashZoom?:(instanceId:string,zoom:number)=>void;
+  subscribeModuleHost?: (listener: (message: import('./modules/protocol').HostToModuleMessage) => void) => () => void;
+  requestModule?: (instanceId: string) => Promise<import('./modules/protocol').HostToModuleMessage | null>;
+  sendModuleEvent?: (message: import('./modules/protocol').ModuleToHostMessage) => void;
   subscribeGameInput(listener: (packet: GameInputPacket) => void): () => void;
   reportViewport?: (viewport: { width: number; height: number }) => void;
   subscribeMedia(listener: (packet: MediaPacket) => void): () => void;
@@ -38,6 +44,11 @@ const revision = (v: unknown): v is number => typeof v === 'number' && Number.is
 
 /** Reconstruct a whitelisted object: never forward project/teacher fields through IPC. */
 export function parsePresentSnapshot(value: unknown): PresentSnapshot | null {
+ const base=parsePresentSnapshotBody(value);if(!base||!object(value))return null;
+ const roster=value.roster===undefined?undefined:parseRosterPresentation(value.roster);
+ return roster===null?null:{...base,...(roster?{roster}:{})};
+}
+function parsePresentSnapshotBody(value: unknown): PresentSnapshot | null {
   if (!object(value) || !id(value.sessionId) || !revision(value.revision) || !object(value.target)) return null;
   const rewards = value.rewards === undefined ? undefined : parseRewardPresentation(value.rewards);
   if (rewards === null) return null;
@@ -49,7 +60,8 @@ export function parsePresentSnapshot(value: unknown): PresentSnapshot | null {
   if (!id(target.occurrenceId)) return null;
   if (target.kind === 'game') {
     const game = parseGameSession(target);
-    return game ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'game', occurrenceId: target.occurrenceId, ...game } } : null;
+    const dash=target.gameId==='hero-dash'?parseDashView(target.dash):undefined;
+    return game && dash!==null ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'game', occurrenceId: target.occurrenceId, ...game,...(dash?{dash}:{}) } } : null;
   }
   if (target.kind === 'scene') {
     const plan = parseScenePlan(target.plan);

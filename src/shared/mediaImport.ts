@@ -1,11 +1,13 @@
 import type { BreakMedia, ImportResult, ProjectData } from "./types";
 import { decorateImportedAssetsForContext } from "./mediaReferences";
+import { validateMediaImport } from './mediaImportValidation';
 
 export function applyMediaImportToProjectData(
   data: ProjectData,
   result: ImportResult,
   targetSectionId?: string | null,
 ): ProjectData {
+  validateMediaImport(data, result);
   const resolvedSectionId = targetSectionId ?? data.sections[0]?.id ?? null;
   const targetSection = resolvedSectionId
     ? data.sections.find((section) => section.id === resolvedSectionId)

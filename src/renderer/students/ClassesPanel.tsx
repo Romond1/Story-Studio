@@ -1,0 +1,15 @@
+import { useState } from 'react';
+import type { StudentSnapshot } from '../../shared/students/model';
+export function ClassesPanel({ snapshot, onChange }: { snapshot: StudentSnapshot; onChange: (value: StudentSnapshot) => void }) {
+  const [id,setId]=useState(''),[name,setName]=useState(''),[members,setMembers]=useState<string[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+  const selected=snapshot.classes.find(item=>item.id===id);
+  const perform=async(action:()=>Promise<StudentSnapshot>)=>{if(busy)return;setBusy(true);setError('');try{const value=await action();onChange(value);setNotice('Class saved.');return value;}catch(reason){setError(String(reason));}finally{setBusy(false);}};
+  return <section className="students-classes"><h2>Classes</h2><p>Students can belong to several classes. Membership never changes their permanent identity.</p>
+    <div className="students-actions"><button disabled={busy} onClick={()=>{setId('');setName('');setMembers([]);setNotice('');}}>New class</button>{snapshot.classes.map(item=><button key={item.id} aria-label={`Open class for ${item.name}`} onClick={()=>{setId(item.id);setName(item.name);setMembers(item.studentIds);setNotice('');}}>{item.name}{item.archived?' (archived)':''}{snapshot.activeClassId===item.id?' · Active':''}</button>)}</div>
+    <form onSubmit={event=>{event.preventDefault();void (async()=>{const value=await perform(()=>id?window.appApi.students.updateClass({id,name,studentIds:members}):window.appApi.students.createClass({name}));if(value&&!id){const created=value.classes.find(item=>!snapshot.classes.some(old=>old.id===item.id));if(created){setId(created.id);setMembers(created.studentIds);}}})();}}>
+      <label className="students-field">Class name<input required maxLength={200} value={name} onChange={event=>setName(event.target.value)} /></label>
+      {selected?<fieldset><legend>Enrollment</legend>{snapshot.studentRoster.map(student=><label className="students-enrollment" key={student.id}><input type="checkbox" aria-label={`Enroll ${student.name}`} checked={members.includes(student.id)} onChange={event=>setMembers(old=>event.target.checked?[...old,student.id]:old.filter(member=>member!==student.id))} />{student.name}{student.archived?' (archived; not active in lessons)':''}</label>)}</fieldset>:<p>Save the class, then choose its students.</p>}
+      <div className="students-actions"><button type="submit" disabled={busy||!name.trim()}>Save class</button>{selected&&<><button type="button" disabled={busy||selected.archived} onClick={()=>void perform(()=>window.appApi.students.selectClass({id:selected.id})).then(value=>{if(value)setNotice('Active class selected. Its active students are ready for teaching.');})}>Use class for teaching</button><button type="button" disabled={busy} onClick={()=>void perform(()=>window.appApi.students.setClassArchived({id:selected.id,archived:!selected.archived}))}>{selected.archived?'Restore class':'Archive class'}</button></>}</div>
+    </form>{error&&<p role="alert" className="lesson-error">{error}</p>}{notice&&<p role="status">{notice}</p>}
+  </section>;
+}

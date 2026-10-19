@@ -1,9 +1,18 @@
 * { box-sizing: border-box; }
 html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #08090c; }
-.present-surface { width: 100%; height: 100%; display: grid; place-items: center; color: #c7cad3; font-family: Inter, system-ui, Arial, sans-serif; }
+.present-surface { isolation: isolate; overflow: hidden; width: 100%; height: 100%; display: grid; place-items: center; color: #c7cad3; font-family: Inter, system-ui, Arial, sans-serif; }
 
 .present-surface p { max-width: 38rem; padding: 2rem; text-align: center; font-size: clamp(1rem, 2.3vw, 1.6rem); }
 .present-game { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: #08090c; }
 .present-game iframe { display: block; position: absolute; inset: 0; border: 0; }
 .present-game-loading { position: absolute; inset: 0; margin: auto; width: fit-content; height: fit-content; pointer-events: none; z-index: 1; }
 
+
+.present-roster { position:absolute; left:0; right:0; height:min(80px,25vh); box-sizing:border-box; display:flex; align-items:center; gap:8px; padding:6px 12px; background:#172033; color:#fff; z-index:1; }
+.present-roster-top {top:0}.present-roster-bottom {bottom:0}
+.present-roster-entries {display:flex; gap:10px; overflow-x:auto; min-width:0; flex:1; height:100%; align-items:center}
+.present-roster-entry {display:grid;grid-template-columns:auto 1fr;column-gap:6px;flex:1 0 95px;max-width:190px;min-width:0;font-size:clamp(11px,1.5vw,17px)}
+.present-roster-entry strong {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.present-roster-entry small {grid-column:1 / -1;font-size:10px;white-space:nowrap}.present-roster-remaining{flex:none;font-size:12px}
+
+/* Root order: content 0, roster 10, camera 20, translation 30. */
+.present-surface > .present-roster { z-index: 10; }

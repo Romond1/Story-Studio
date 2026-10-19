@@ -1,0 +1,23 @@
+{
+  "passed": [
+    "Native Mastery launch",
+    "Control awards and Present synchronization",
+    "Pause and undo",
+    "Episode image question",
+    "Private notes absent from Present",
+    "Live webcam preserved",
+    "Translation controls present",
+    "Local image import copied to episode",
+    "Race saved with durable asset references",
+    "Relaunch reloads cards",
+    "Reopen from disk retains imported image",
+    "Portable export and import into another folder with working images",
+    "Medium and long formats",
+    "Special bonus +3",
+    "Finish celebration",
+    "Manual position override and undo",
+    "Narrow Control no horizontal overflow"
+  ],
+  "errors": [],
+  "folder": "D:\\Temp\\hero-dash-ooTqhA\\episode"
+}

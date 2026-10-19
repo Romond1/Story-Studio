@@ -1,0 +1,65 @@
+{
+  "comparedAt": "2026-10-12T16:38:27.1295956Z",
+  "comparedBaselines": [
+    "docs/phase6b-evidence/audit.json",
+    "docs/phase6c-evidence/audit.json"
+  ],
+  "productionWrites": false,
+  "mediaContentHashed": false,
+  "episodes": [
+    {
+      "episode": 1,
+      "sha256": "3edb23f264a0999f9e06beaf2dbe8c0572f9269b7479e0affcfd6e4212823142",
+      "unchangedDuringOpen": true,
+      "matches6B": true,
+      "matches6C": true,
+      "registeredFiles": 169,
+      "missingFiles": 0
+    },
+    {
+      "episode": 2,
+      "sha256": "5f5dad6decae528d704bca93cafe83d335a00c32cbc5b94ceefe12aa4aebc43a",
+      "unchangedDuringOpen": true,
+      "matches6B": true,
+      "matches6C": true,
+      "registeredFiles": 339,
+      "missingFiles": 0
+    },
+    {
+      "episode": 3,
+      "sha256": "5dcc669a63dbb8ffed248eee1967105101678bcf4c69eb6008f3e57d96a1ed34",
+      "unchangedDuringOpen": true,
+      "matches6B": true,
+      "matches6C": true,
+      "registeredFiles": 216,
+      "missingFiles": 0
+    },
+    {
+      "episode": 4,
+      "sha256": "1c23ef0f248e1e346480c745840f18e91e1c83ec7f6319404f15385beb323d81",
+      "unchangedDuringOpen": true,
+      "matches6B": true,
+      "matches6C": true,
+      "registeredFiles": 174,
+      "missingFiles": 0
+    },
+    {
+      "episode": 5,
+      "sha256": "b79148e524d0edbc73ce50e5a98d268576822b25f6b86af83b82491e3ebe43de",
+      "unchangedDuringOpen": true,
+      "matches6B": true,
+      "matches6C": true,
+      "registeredFiles": 118,
+      "missingFiles": 0
+    },
+    {
+      "episode": 6,
+      "sha256": "27db02139da4068e9812c4d930be103b92ee86461e048db3b41a24321653bdb7",
+      "unchangedDuringOpen": true,
+      "matches6B": true,
+      "matches6C": true,
+      "registeredFiles": 100,
+      "missingFiles": 0
+    }
+  ]
+}

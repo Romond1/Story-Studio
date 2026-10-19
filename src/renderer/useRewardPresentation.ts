@@ -59,6 +59,7 @@ interface Runtime {
 }
 export function useRewardPresentation({
   scope,
+  resolveAsset,
   project,
   setProject,
   roster,
@@ -67,6 +68,7 @@ export function useRewardPresentation({
   setScoresRevealed,
 }: {
   scope: string;
+  resolveAsset?: (id: string) => string | undefined;
   project: ProjectState | null;
   setProject: (update: (p: ProjectState | null) => ProjectState | null) => void;
   roster: StudentRosterEntry[];
@@ -89,6 +91,7 @@ export function useRewardPresentation({
   const valid = () => runtime.current === current;
   const notify = () => refresh((n) => n + 1);
   const image = (p: ProjectState, id?: string | null) => {
+    if (resolveAsset) return id ? resolveAsset(id) : undefined;
     const asset = p.data.assets.find((a) => a.id === id);
     return asset
       ? visualMediaUrl(

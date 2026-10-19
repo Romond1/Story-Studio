@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "sizes": [
+    {
+      "width": 1184,
+      "height": 720,
+      "field": {
+        "x": 14,
+        "y": 390.140625,
+        "width": 179,
+        "height": 34.1875
+      },
+      "applyButton": {
+        "x": 14,
+        "y": 266.765625,
+        "width": 179,
+        "height": 51.1875
+      }
+    },
+    {
+      "width": 900,
+      "height": 720,
+      "field": {
+        "x": 14,
+        "y": 294.140625,
+        "width": 161,
+        "height": 34.1875
+      },
+      "applyButton": {
+        "x": 14,
+        "y": 284.765625,
+        "width": 161,
+        "height": 51.1875
+      }
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import type {StudentsApi} from '../shared/students/protocol';
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { TranslationControlApi } from '../shared/translation';
 const translationControl:TranslationControlApi={
@@ -8,6 +9,7 @@ const translationControl:TranslationControlApi={
   cancel:(unload?:boolean)=>ipcRenderer.invoke('translation:cancel',unload),
   format:(text,mode)=>ipcRenderer.invoke('translation:format',text,mode),
   publish:caption=>ipcRenderer.invoke('translation:publish',caption),
+  setAppearance:appearance=>ipcRenderer.invoke('translation:appearance',appearance),
   subscribeStatus:listener=>{const handle=(_event:Electron.IpcRendererEvent,status:string)=>listener(status);ipcRenderer.on('translation:status',handle);return()=>{ipcRenderer.removeListener('translation:status',handle);};},
 };
 contextBridge.exposeInMainWorld('translationControl',translationControl);
@@ -41,9 +43,25 @@ let latestDroppedFilePaths: string[] = [];
   true,
 );
 
+const mediaRegistry: import('../shared/mediaRegistryProtocol').MediaRegistryApi = {
+  getLease: folder => ipcRenderer.invoke('media-registry:lease', folder),
+  register: request => ipcRenderer.invoke('media-registry:register', request),
+  resolve: request => ipcRenderer.invoke('media-registry:resolve', request),
+};
 const api = {
+  onDashZoom:(listener:(packet:{instanceId:string;zoom:number})=>void)=>{const handle=(_event:Electron.IpcRendererEvent,packet:{instanceId:string;zoom:number})=>listener(packet);ipcRenderer.on('present:dash-zoom',handle);return()=>ipcRenderer.removeListener('present:dash-zoom',handle);},
+  heroDash:{list:()=>ipcRenderer.invoke('hero-dash:list'),importImages:(paths?:string[])=>ipcRenderer.invoke('hero-dash:import',paths),saveCollection:(id:string|undefined,config:import('../shared/heroDash').DashConfig,mediaMap:Record<string,string>)=>ipcRenderer.invoke('hero-dash:save',id,config,mediaMap),loadCollection:(id:string)=>ipcRenderer.invoke('hero-dash:load',id)},
+  progression: Object.fromEntries(['getSnapshot','registerRun','recordEvent','lifecycle','completeActivation','decideReward','requestReward','adjustReward','advanceRelic','completeEpisode','getRunInventory'].map(method=>[method,(input:unknown)=>ipcRenderer.invoke(`progression:${method}`,input)])),
+  mediaRegistry,
+  derivedMedia: { begin: (request: Parameters<import('../shared/episodeProtocol').DerivedMediaApi['begin']>[0]) => ipcRenderer.invoke('derived-media:begin', request), getSource: (request: import('../shared/episodeProtocol').DerivedSourceRequest) => ipcRenderer.invoke('derived-media:source', request), publish: (request: import('../shared/episodeProtocol').PublishDerivedRequest) => ipcRenderer.invoke('derived-media:publish', request) } satisfies import('../shared/episodeProtocol').DerivedMediaApi,
   launchGame: (snapshot: PresentSnapshot): Promise<void> => ipcRenderer.invoke('present:launch-game', snapshot),
   sendGameInput: (packet: import('../shared/gameHost').GameInputPacket): void => ipcRenderer.send('present:game-input', packet),
+  sendModuleHost: (message: import('../shared/modules/protocol').HostToModuleMessage): Promise<boolean> => ipcRenderer.invoke('present:module-host', message),
+  onModuleEvent: (listener: (message: import('../shared/modules/protocol').ModuleToHostMessage) => void): (() => void) => {
+    const handle = (_event: Electron.IpcRendererEvent, message: import('../shared/modules/protocol').ModuleToHostMessage) => listener(message);
+    ipcRenderer.on('present:module-event', handle);
+    return () => ipcRenderer.removeListener('present:module-event', handle);
+  },
   onGameEnded: (callback: (event: import('../shared/gameHost').GameEndedEvent) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, event: import('../shared/gameHost').GameEndedEvent) => callback(event);
     ipcRenderer.on('present:game-ended', listener);
@@ -82,6 +100,7 @@ const api = {
   importDroppedMedia: (filePaths: string[]): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-dropped-media', filePaths),
   getPendingDroppedFilePaths: (): string[] => latestDroppedFilePaths,
   getPathForFile: (file: any): string => webUtils.getPathForFile(file),
+  importAudioResult: (): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-audio-result'),
   importAudio: (): Promise<AssetItem[] | null> => ipcRenderer.invoke('project:import-audio'),
   importBubbleTemplate: (): Promise<AssetItem | null> => ipcRenderer.invoke('project:import-bubble-template'),
   saveProject: (
@@ -89,6 +108,7 @@ const api = {
     mode: 'save' | 'saveAs',
     expectedFolder: string,
   ): Promise<{ lastSavedAt: string; folderPath: string } | null> => ipcRenderer.invoke('project:save', data, mode, expectedFolder),
+  students: Object.fromEntries(['getSnapshot','createProfile','updateProfile','setArchived','mapLegacy','importProfile','createClass','updateClass','setClassArchived','selectClass'].map(method=>[method,(input:unknown)=>ipcRenderer.invoke('students:'+method,input)])) as unknown as StudentsApi,
   getStudentRoster: (): Promise<StudentRosterSettings> => ipcRenderer.invoke('settings:get-student-roster'),
   saveStudentRoster: (settings: StudentRosterSettings): Promise<StudentRosterSettings> =>
     ipcRenderer.invoke('settings:save-student-roster', settings),
@@ -107,6 +127,10 @@ const api = {
 
 contextBridge.exposeInMainWorld('appApi', api);
 contextBridge.exposeInMainWorld('lessonApi', {
+  exportPackage: (data: LessonProject, expectedFolder: string) => ipcRenderer.invoke('lesson:export-package', data, expectedFolder),
+  importPackage: () => ipcRenderer.invoke('lesson:import-package'),
+  convertProject: (data: LessonProject, adventure: import('../shared/episodeProtocol').EpisodeAdventure, expectedFolder: string) => ipcRenderer.invoke('lesson:convert', data, adventure, expectedFolder),
+  prepareGames: (data: LessonProject, expectedFolder: string): Promise<LessonProjectState> => ipcRenderer.invoke('lesson:prepare-games', data, expectedFolder),
   createDraft: (sequence: 'story' | 'activation'): Promise<LessonProjectState> => ipcRenderer.invoke('lesson:draft', sequence),
   createProject: (): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:create'),
   openProject: (): Promise<LessonProjectState | null> => ipcRenderer.invoke('lesson:open'),

@@ -1,3 +1,4 @@
+import { LEGACY_BE_A_HERO_V1 } from "../../src/shared/adventures/legacy-be-a-hero-v1";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Boxes, Check, Crown, Download, Eye, Flame, Ghost, ImagePlus, Music, Play, Save, Settings2, Shield, Sparkles, Swords, TimerReset, Trophy, Upload, Users, Volume2, VolumeX, X, Zap } from "lucide-react";
@@ -51,19 +52,7 @@ import {
 const DEFAULT_DIRECTION_LABELS = { up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT" };
 const SAVE_STORAGE_KEY = "story-studio-language-snake-save-v1";
 const SAVE_FILE_VERSION = 1;
-const DEFAULT_QUESTION_LINES = [
-  "CLUE: They followed the glowing s__________ through the forest.",
-  "Answer: shard",
-  "",
-  "UNSCRAMBLE: deeper / The / forest / into / shard / moving / is",
-  "Answer: The shard is moving deeper into the forest.",
-  "",
-  "WHO SAID: \"Do not rush, Yuki?\"",
-  "Answer: Kage",
-  "",
-  "FINISH: The kids found a big old c__________ in the forest.",
-  "Answer: castle",
-];
+const DEFAULT_QUESTION_LINES = [...LEGACY_BE_A_HERO_V1.snakeQuestionLines];
 const HERO_CROWN_SHORTCUTS = { spawn: "C", player1: "1", player2: "2", both: "B", cancel: "Esc" };
 const DEFAULT_SPLASH_SETUP = {
   mode: "versus",
@@ -238,7 +227,10 @@ function Splash({ setup, setSetup, onContinue }) {
   );
 }
 
-export default function App() {
+export default function App({ hosted = null } = {}) {
+  const [hostReady, setHostReady] = useState(false);
+  const hostConfigBaseline = useRef(null);
+  const hostCompleted = useRef(false);
   const [questionText, setQuestionText] = useState(DEFAULT_QUESTION_LINES.join("\n"));
   const [backgroundControls, setBackgroundControls] = useState({ blur: 2, brightness: 1, overlay: 0.18, panelOpacity: 0.62, boardOpacity: 0.42 });
   const [heroCrownSettings, setHeroCrownSettings] = useState(HERO_CROWN_DEFAULT_SETTINGS);
@@ -302,6 +294,7 @@ export default function App() {
   function resetCamera() { setCameraTilt(30); setCameraZoom(1); setCameraPan({ x: 0, y: 0 }); }
   function bindingForPlayer(playerId, index) { return playerKeyBindings[playerId] || directionKeysFromSet(PLAYER_KEY_SETS[index] || PLAYER_KEY_SETS[0]); }
   function handleSoundUpload(name, event) {
+    if (hosted) { event.target.value = ''; addMessage('Choose a registered sound in the lesson activity media settings.', 'info'); return; }
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -309,8 +302,9 @@ export default function App() {
     reader.readAsDataURL(file);
     event.target.value = "";
   }
-  function clearSoundUpload(name) { setCustomSound(name, null); setCustomAudioFlags((p) => { const n = { ...p }; delete n[name]; return n; }); }
+  function clearSoundUpload(name) { if (hosted) delete hosted.audioRefs.sounds?.[name]; setCustomSound(name, null); setCustomAudioFlags((p) => { const n = { ...p }; delete n[name]; return n; }); }
   function handleMusicUpload(event) {
+    if (hosted) { event.target.value = ''; addMessage('Choose registered music in the lesson activity media settings.', 'info'); return; }
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -318,7 +312,7 @@ export default function App() {
     reader.readAsDataURL(file);
     event.target.value = "";
   }
-  function clearMusicUpload() { setMusicTrack(null); setCustomMusicName(""); addMessage("Reverted to built-in music.", "info"); }
+  function clearMusicUpload() { if (hosted) delete hosted.audioRefs.music; setMusicTrack(null); setCustomMusicName(""); addMessage("Reverted to built-in music.", "info"); }
   const [soundOn, setSoundOn] = useState(true);
   const [musicOn, setMusicOn] = useState(false);
   const [shake, setShake] = useState({ key: 0, type: "soft" });
@@ -668,6 +662,7 @@ export default function App() {
   }
   function closePickupModal() { const movedPlayerId = pendingPickup?.playerId; setPendingPickup(null); setPickupAnswerRevealed(false); setPickupResolution(null); if (pendingTurnAfterPickup) setActiveTurn(pendingTurnAfterPickup); setPendingTurnAfterPickup(null); expireHeroCrownTile(movedPlayerId); maybeSpawnHeroCrown(); passTurnTick(); addMessage("Back to the board."); }
   function handleBackgroundChange(event) {
+    if (hosted) { event.target.value = ''; addMessage('Choose a registered background in the lesson activity media settings.', 'info'); return; }
     const file = event.target.files?.[0];
     if (!file) return;
     if (backgroundUrlRef.current) URL.revokeObjectURL(backgroundUrlRef.current);
@@ -754,6 +749,7 @@ export default function App() {
     return true;
   }
   function saveGameState() {
+    if (hosted) { void hosted.save().then(ack => addMessage(ack.accepted ? 'Activity configuration saved to the lesson.' : ack.reason || 'Configuration rejected.', ack.accepted ? 'success' : 'error')).catch(error => addMessage(String(error.message || error), 'error')); return; }
     try {
       localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(buildSavePayload()));
       addMessage("Game state saved on this device.", "success");
@@ -762,6 +758,7 @@ export default function App() {
     }
   }
   function loadSavedGameState() {
+    if (hosted) { addMessage('The lesson owns this activity configuration. Reopen or reset it from Control.', 'info'); return; }
     try {
       const saved = localStorage.getItem(SAVE_STORAGE_KEY);
       if (!saved) { addMessage("No saved state on this device yet.", "info"); return; }
@@ -772,6 +769,7 @@ export default function App() {
     }
   }
   function saveGameStateAsJson() {
+    if (hosted) { saveGameState(); return; }
     const blob = new Blob([JSON.stringify(buildSavePayload(), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -782,6 +780,7 @@ export default function App() {
     addMessage("Game setup exported as JSON.", "success");
   }
   function handleSaveFileChange(event) {
+    if (hosted) { event.target.value = ''; addMessage('Import standalone game files through an explicit lesson conversion, not into a running activity.', 'info'); return; }
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -796,6 +795,35 @@ export default function App() {
     reader.readAsText(file);
     event.target.value = "";
   }
+
+  if (hosted) hosted.read = () => buildSavePayload();
+  useEffect(() => {
+    if (!hosted) return;
+    const config = hosted.runtime;
+    applySavePayload({ ...config, matchSetup: config.setup, splashSetup: config.setup });
+    for (const [name, url] of Object.entries(config.sounds || {})) setCustomSound(name, url);
+    setMusicTrack(config.music || null);
+    setCustomAudioFlags(Object.fromEntries(Object.keys(config.sounds || {}).map(name => [name, 'Lesson asset'])));
+    setCustomMusicName(config.music ? 'Lesson asset' : '');
+    setHostReady(true);
+  }, []);
+  useEffect(() => {
+    if (!hosted || !hostReady) return;
+    hosted.ready({ start: () => { setSplashVisible(false); setGameStarted(true); }, read: () => hosted.read() });
+  }, [hostReady]);
+  const hostConfigKey = hosted && hostReady ? JSON.stringify([questionText, matchSetup, splashSetup, playerDirectionLabels, playerKeyBindings, heroCrownSettings, heroCrownChallengeText, enemySettings, backgroundControls, backgroundImage, customAudioFlags, customMusicName]) : '';
+  useEffect(() => {
+    if (!hosted || !hostReady) return;
+    if (hostConfigBaseline.current === null) { hostConfigBaseline.current = hostConfigKey; return; }
+    if (hostConfigBaseline.current === hostConfigKey) return;
+    hostConfigBaseline.current = hostConfigKey;
+    void hosted.save().then(ack => { if (!ack.accepted) addMessage(ack.reason || 'Activity configuration rejected.', 'error'); }).catch(error => addMessage(String(error.message || error), 'error'));
+  }, [hostConfigKey]);
+  useEffect(() => {
+    if (!hosted || !hostReady || !resultOverlay || hostCompleted.current) return;
+    hostCompleted.current = true;
+    hosted.complete(players, resultOverlay);
+  }, [hostReady, resultOverlay]);
 
   useEffect(() => {
     let frameId = 0;
@@ -819,6 +847,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (hosted) return;
     const debug = getSearchSetup();
     if (!debug) return;
     setSplashVisible(false);
@@ -913,6 +942,7 @@ export default function App() {
       resultOverlay,
     });
     window.advanceTime = (ms) => {
+      if (hosted) return;
       setAnimationTime((value) => value + ms / 1000);
       if (canRunCoopTimer({ gameStarted, mode: matchSetup.mode, paused: coopPaused, hasPendingPickup: !!pendingPickup || !!heroCrownChallenge, hasPickupResolution: !!pickupResolution, hasResultOverlay: !!resultOverlay })) setCoopState((prev) => advanceCoopTimer(prev, { seconds: ms / 1000, movesConsumed: 0 }));
     };

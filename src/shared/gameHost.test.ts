@@ -8,7 +8,7 @@ import ts from 'typescript';
 
 test('only implemented games are selectable in their supported sections', () => {
   assert.deepEqual(getGamesForSection('game').map(game => game.id), ['language-snake']);
-  assert.deepEqual(getGamesForSection('mastery').map(game => game.id), ['final-boss-hero']);
+  assert.deepEqual(getGamesForSection('mastery').map(game => game.id), ['hero-dash','final-boss-hero']);
   assert.equal(getGame('chess'), undefined);
   assert.equal(getGame('language-snake')?.entry, 'language-snake.html');
   assert.equal(getGame('final-boss-hero')?.entry, 'final-boss-hero.html');
@@ -51,6 +51,7 @@ test('Present alone mounts a game and gates forwarded input on the matching ifra
   vm.runInNewContext(source, { exports, URL, console, window: { location: { href: 'http://localhost/present.html' }, setTimeout: () => 1, clearTimeout: () => {}, addEventListener: (kind: string, listener: any) => listeners.set(kind, listener), removeEventListener: (kind: string) => listeners.delete(kind) }, require: (name: string) => {
     if (name === 'react') return fakeReact;
     if (name === '../../shared/gameHost') return require('./gameHost');
+    if (name === '../../shared/modules/protocol') return require('./modules/protocol');
     throw new Error(`Unexpected dependency ${name}`);
   } });
   const api = { subscribeGameInput: (listener: any) => { inputListener = listener; return () => { inputListener = null; }; } };

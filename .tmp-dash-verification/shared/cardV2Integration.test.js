@@ -1,0 +1,72 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const node_test_1 = __importDefault(require("node:test"));
+const strict_1 = __importDefault(require("node:assert/strict"));
+const cardsV2_1 = require("./cardsV2");
+const cardV2Render_1 = require("./cardV2Render");
+const presentationSession_1 = require("./presentationSession");
+const presentationSnapshot_1 = require("./presentationSnapshot");
+const staticScene_1 = require("./staticScene");
+function fixture() {
+    let n = 0;
+    const id = () => `v2-${++n}`;
+    const module = (0, cardsV2_1.createCardsV2)();
+    const card = (0, cardsV2_1.createCard)('question-answer-explanation', id);
+    card.faces[0].text = 'Question';
+    card.faces[1].text = 'Private answer';
+    module.cards[card.id] = card;
+    const set = { id: id(), label: 'Set', tags: ['episode-7'], entries: [{ id: id(), cardId: card.id }] };
+    module.sets[set.id] = set;
+    const activity = (0, cardsV2_1.createActivity)(module, set.id, id);
+    module.activities[activity.id] = activity;
+    const placement = { id: id(), label: 'Activity', activityId: activity.id };
+    module.placements[placement.id] = placement;
+    const data = { version: 4, createdAt: '', updatedAt: '', slides: [{ id: 'slide', assetId: 'image', sectionId: 'section', transition: 'none' }], assets: [], sections: [{ id: 'section', name: 'Story' }], cardsV2: module, boostPack: { activationSequence: [{ id: 'first', type: 'cardActivityRef', engine: 'card-v2', placementId: placement.id }, { id: 'second', type: 'cardActivityRef', engine: 'card-v2', placementId: placement.id }], languageSequence: [], gamesSequence: [] } };
+    return { module, card, activity, placement, data };
+}
+(0, node_test_1.default)('explicit V2 booster targets preserve checkpoint, occurrence identity and authored frame', () => {
+    const { data, placement } = fixture();
+    let session = (0, presentationSession_1.reducePresentationSession)((0, presentationSession_1.createPresentationSession)('session'), { type: 'project', projectId: 'project', slideId: 'slide', sectionId: 'section' });
+    session = (0, presentationSession_1.reducePresentationSession)(session, { type: 'select', changes: { mode: 'boost', boostTab: 'activation', boostItemId: 'first' } });
+    const first = (0, presentationSession_1.resolvePresentationTarget)(data, session);
+    strict_1.default.equal(first.kind, 'cards-v2');
+    strict_1.default.equal(first.contentId, placement.id);
+    strict_1.default.equal(first.capabilities.canDraw, false);
+    session = (0, presentationSession_1.navigatePresentation)(data, session, 1);
+    const second = (0, presentationSession_1.resolvePresentationTarget)(data, session);
+    strict_1.default.equal(second.kind, 'cards-v2');
+    strict_1.default.notEqual(first.occurrenceId, second.occurrenceId);
+    session = (0, presentationSession_1.reducePresentationSession)(session, { type: 'select', changes: { mode: 'story' } });
+    strict_1.default.equal(session.storySlideId, 'slide');
+    strict_1.default.equal(session.sectionId, 'section');
+    delete data.cardsV2.placements[placement.id];
+    session = (0, presentationSession_1.reducePresentationSession)(session, { type: 'select', changes: { mode: 'boost' } });
+    strict_1.default.equal((0, presentationSession_1.resolvePresentationTarget)(data, session).kind, 'invalid');
+});
+(0, node_test_1.default)('V2 Present relay preserves resolved geometry/face and omits inactive face content on recovery', () => {
+    const { module, card, activity, placement } = fixture();
+    const token = { sessionId: 'session', projectId: 'project', occurrenceId: 'first', targetRevision: 1, revision: 0 };
+    const core = new cardsV2_1.CardSessionAuthority(module, token);
+    core.dispatch(token, { type: 'StartActivity', placementId: placement.id });
+    const plan = (0, cardV2Render_1.buildCardV2RenderPlan)(module, activity, core.snapshot());
+    const raw = { sessionId: 'session', revision: 1, target: { kind: 'cards-v2', occurrenceId: 'first', plan, teacherNote: 'secret' } };
+    const projected = (0, presentationSnapshot_1.parsePresentSnapshot)(raw);
+    strict_1.default.ok(projected);
+    strict_1.default.equal(JSON.stringify(projected).includes('Private answer'), false);
+    strict_1.default.equal(JSON.stringify(projected).includes('teacherNote'), false);
+    strict_1.default.equal(projected.target.kind, 'cards-v2');
+    if (projected.target.kind !== 'cards-v2')
+        throw Error();
+    strict_1.default.deepEqual(projected.target.plan, plan);
+    const fit = (0, staticScene_1.fitLogicalFrame)(plan.frame, { width: 700, height: 500 });
+    strict_1.default.equal(fit.scale, Math.min(700 / plan.frame.width, 500 / plan.frame.height));
+    core.dispatch(core.currentToken(), { type: 'SetFace', instanceId: activity.instances[0].id, faceId: card.faces[1].id });
+    const updated = (0, presentationSnapshot_1.parsePresentSnapshot)({ ...raw, revision: 2, target: { ...raw.target, plan: (0, cardV2Render_1.buildCardV2RenderPlan)(module, activity, core.snapshot()) } });
+    strict_1.default.ok(updated);
+    strict_1.default.equal(updated.target.kind === 'cards-v2' && updated.target.plan.cards[0].texts.flatMap(t => t.lines.map(l => l.text)).join('').includes('Private answer'), true);
+    strict_1.default.equal(updated.transition, undefined);
+    strict_1.default.deepEqual((0, presentationSnapshot_1.parsePresentSnapshot)(JSON.parse(JSON.stringify(updated))), updated);
+});

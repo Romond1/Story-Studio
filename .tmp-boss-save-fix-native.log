@@ -1,0 +1,79 @@
+[
+  {
+    "game": "memoryReveal",
+    "before": {
+      "width": 902,
+      "height": 375,
+      "zoom": "Start Game\nZoom 100%\nReset",
+      "transform": "translate(0px, 181px) scale(1)"
+    },
+    "after": {
+      "width": 902,
+      "height": 375,
+      "zoom": "Start Game\nZoom 108%\nReset",
+      "transform": "translate(-35.1111px, 166.397px) scale(1.07788)"
+    }
+  },
+  {
+    "game": "matchPairs",
+    "before": {
+      "width": 902,
+      "height": 357,
+      "zoom": "Start Game\nZoom 100%\nReset",
+      "transform": "translate(0px, 189px) scale(1)"
+    },
+    "after": {
+      "width": 902,
+      "height": 357,
+      "zoom": "Start Game\nZoom 108%\nReset",
+      "transform": "translate(-35.1111px, 176.098px) scale(1.07788)"
+    }
+  },
+  {
+    "game": "laneBattle",
+    "before": {
+      "width": 902,
+      "height": 536,
+      "zoom": "Start Game\nZoom 100%\nReset",
+      "transform": "translate(0px, 100.5px) scale(1)"
+    },
+    "after": {
+      "width": 902,
+      "height": 536,
+      "zoom": "Start Game\nZoom 108%\nReset",
+      "transform": "translate(-35.1111px, 79.627px) scale(1.07788)"
+    }
+  },
+  {
+    "game": "openBox",
+    "before": {
+      "width": 660,
+      "height": 782,
+      "zoom": "Start Game\nZoom 94%\nReset",
+      "transform": "translate(139.99px, 0px) scale(0.942455)"
+    },
+    "after": {
+      "width": 660,
+      "height": 782,
+      "zoom": "Start Game\nZoom 102%\nReset",
+      "transform": "translate(115.767px, -28.6602px) scale(1.01586)"
+    }
+  },
+  {
+    "game": "boardDash",
+    "before": {
+      "width": 535,
+      "height": 655,
+      "zoom": "Start Game\nZoom 100%\nReset",
+      "transform": "translate(183.5px, 41px) scale(1)"
+    },
+    "after": {
+      "width": 535,
+      "height": 655,
+      "zoom": "Start Game\nZoom 108%\nReset",
+      "transform": "translate(162.666px, 15.4929px) scale(1.07788)"
+    }
+  }
+]
+PASS deleting a selected Board Dash card then Save episode preserves remaining edits
+PASS editor drag/drop, panel resizing, thumbnails, responsive layouts, stable zoom for all five games

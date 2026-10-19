@@ -1,0 +1,70 @@
+
+> story-studio@1.0.0 build:renderer
+> node scripts/prepare-face-tracking.mjs && vite build
+
+Prepared offline face tracking: tasks-vision 0.10.32, pinned model and classic worker.
+vite v6.4.1 building for production...
+transforming...
+✓ 2629 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/renderer/counter.html                                   0.59 kB │ gzip:   0.32 kB
+dist/renderer/present.html                                   0.85 kB │ gzip:   0.39 kB
+dist/renderer/final-boss-hero.html                           0.94 kB │ gzip:   0.41 kB
+dist/renderer/index.html                                     0.99 kB │ gzip:   0.41 kB
+dist/renderer/language-snake.html                            1.41 kB │ gzip:   0.71 kB
+dist/renderer/assets/jingle-CcsxfFlx.mp3                   172.20 kB
+dist/renderer/assets/start-ovljRe-g.png                    270.86 kB
+dist/renderer/assets/move-BjdcxoS3.png                     275.38 kB
+dist/renderer/assets/bonus-3G2iKrHZ.png                    277.41 kB
+dist/renderer/assets/steal-Bbvbdd0a.png                    278.32 kB
+dist/renderer/assets/finish-DGirEU8T.png                   286.18 kB
+dist/renderer/assets/back3-Ddfgxbk_.png                    299.24 kB
+dist/renderer/assets/roll-again-C9oqkwkt.png               307.60 kB
+dist/renderer/assets/Intro screen BG image-DXuM3lol.png  1,040.67 kB
+dist/renderer/assets/Mastery-zENZf6Eg.png                1,109.32 kB
+dist/renderer/assets/Story-BnyBuAVE.png                  1,122.26 kB
+dist/renderer/assets/Game-BnmGhXEJ.png                   1,201.10 kB
+dist/renderer/assets/Settings-CuX5KJ7Z.png               1,221.57 kB
+dist/renderer/assets/Legacy-DxCbACgM.png                 1,263.87 kB
+dist/renderer/assets/touch_head-Ci7XU97b.gif             1,266.23 kB
+dist/renderer/assets/Activation-CvfGSiK-.png             1,272.74 kB
+dist/renderer/assets/Users-Bhd_WQYX.png                  1,316.07 kB
+dist/renderer/assets/touch_nose-CQwO4mh6.gif             1,464.79 kB
+dist/renderer/assets/touch_color-BvPzw3EM.gif            2,244.75 kB
+dist/renderer/assets/hero_pose_yuki-BGnRlw7m.gif         2,537.21 kB
+dist/renderer/assets/hero_pose_mia-B42ZlbNQ.gif          4,728.31 kB
+dist/renderer/assets/run-D4HmEjGJ.gif                    5,376.55 kB
+dist/renderer/assets/present-pmfhFaCw.css                    1.51 kB │ gzip:   0.62 kB
+dist/renderer/assets/languageSnake-rHRMGHnH.css              2.26 kB │ gzip:   0.85 kB
+dist/renderer/assets/counter-i7KkxKf4.css                   11.89 kB │ gzip:   3.31 kB
+dist/renderer/assets/gameHost-BiX5QpPp.css                  71.35 kB │ gzip:  15.14 kB
+dist/renderer/assets/main-CvKeVbOY.css                     118.38 kB │ gzip:  22.37 kB
+dist/renderer/assets/finalBossHero-CO-EqTLQ.css            121.37 kB │ gzip:  24.59 kB
+dist/renderer/assets/index-BdIFmHC0.js                       0.07 kB │ gzip:   0.08 kB
+dist/renderer/assets/inputBridge-Dzn7b9pw.js                 0.68 kB │ gzip:   0.40 kB
+dist/renderer/assets/modulepreload-polyfill-B5Qt9EMX.js      0.71 kB │ gzip:   0.40 kB
+dist/renderer/assets/languageSnake-Ctf7bfgm.js               0.89 kB │ gzip:   0.52 kB
+dist/renderer/assets/legacyMain-CZOTk_t6.js                  2.17 kB │ gzip:   1.19 kB
+dist/renderer/assets/legacy-be-a-hero-v1-DlyGbi21.js         2.61 kB │ gzip:   0.83 kB
+dist/renderer/assets/moduleEntry-GGiATwtH.js                 3.82 kB │ gzip:   1.91 kB
+dist/renderer/assets/hostedBridge-spzDZ4UH.js                5.44 kB │ gzip:   2.01 kB
+dist/renderer/assets/finalBossHero-Z7sy6p2k.js               6.01 kB │ gzip:   2.47 kB
+dist/renderer/assets/hostedScheduler-C5DD7bOb.js             6.57 kB │ gzip:   2.59 kB
+dist/renderer/assets/hostedSession-DMST_nVo.js               7.98 kB │ gzip:   3.26 kB
+dist/renderer/assets/counter-Cdrxabl9.js                    12.92 kB │ gzip:   3.49 kB
+dist/renderer/assets/protocol-CcPJD_JM.js                   17.24 kB │ gzip:   6.15 kB
+dist/renderer/assets/battleStore-DROolNri.js                44.37 kB │ gzip:  11.80 kB
+dist/renderer/assets/index-tUWw1UFN.js                      70.70 kB │ gzip:  27.91 kB
+dist/renderer/assets/client-w9JAA0s4.js                    143.47 kB │ gzip:  45.95 kB
+dist/renderer/assets/gameHost-BcCLjZNO.js                  171.39 kB │ gzip:  55.30 kB
+dist/renderer/assets/App-CrNfer-N.js                       219.50 kB │ gzip:  67.51 kB
+dist/renderer/assets/App-Y2U6rHu_.js                       305.21 kB │ gzip:  82.68 kB
+dist/renderer/assets/present-BK1ncShK.js                   590.27 kB │ gzip: 157.37 kB
+dist/renderer/assets/main-5CNjbXBs.js                      734.20 kB │ gzip: 197.39 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 16.39s

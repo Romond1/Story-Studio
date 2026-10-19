@@ -1,0 +1,15 @@
+# Phase 6E portable episode plan
+
+Begin implementation only after the 6D native gate passes. Continue on the existing branch, without commits or production writes.
+
+The editable episode remains the single authored authority, including a versioned inline adventure definition snapshot (identity, display metadata, reward/relic definitions and their registry references). Add a required capability and strict nested validation. Do not copy legacy studentProgress or game session state into this snapshot. Definitions use stable IDs and explicit adventure scope; same display names are permitted.
+
+Export constructs a new folder package from an explicit authored projection. Include project.json, manifest.json, all physical assets (including unused imports), derived descriptors/sources, module configurations/occurrences, catalog metadata, and a hashed immutable adventure-definition snapshot. Validate exact agreement between the episode's definition snapshot and the bundled file. Materialize recognized Boss builtin media into new physical asset records using deterministic IDs, exact bytes and typed reference remapping. Original authored IDs and source files remain unchanged; no sample substitution or remote downloads.
+
+Main enumerates only projected files. Never use recursive source-folder copying for export. Validate paths, case-folded collisions, symlinks/junctions, counts, byte limits, hashes and complete dependency closure before publication. Build in a sibling staging folder and publish into a selected empty destination only after validation. Retain a precise report on failures and preserve the current project.
+
+Import reads the package manifest first, validates the complete listed file set and strict episode/definitions/modules, stages verified bytes, then publishes an editable project folder and returns a prepared activation candidate. Do not leave a stale package manifest in the editable import. Source packages remain immutable. Ordinary Open/Save must not ignore a package manifest and silently invalidate its hashes; direct package opening should require the validated import path.
+
+Expose Export portable episode and Import portable episode in Control with the existing operation lock and normal dirty/history handling. Export flushes active hosted settings first. Definition editing uses ordinary immutable episode commands/history. Private profile, roster, accepted event ledger, inventories, session scores, browser recovery and application settings are excluded by construction.
+
+Tests cover tampered hashes, unsupported capabilities/modules, missing assets, wrong image types, duplicate IDs/paths, unsafe paths, symlink escapes, unlisted files, interrupted staging and unchanged active/source projects. Native proof uses an isolated synthetic episode with all modules, derived media, manual entities, reward/relic definitions and a deliberately planted private source file. Export/import with a fresh profile and network disabled; remove original-source access and verify all configurations/media and gameplay. Recheck package privacy and production read-only audit before completing 6E.

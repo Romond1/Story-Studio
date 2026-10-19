@@ -1,0 +1,12 @@
+{
+  "passed": [
+    "Legacy Media Pool and CardV2 editor image use decoded scoped grants",
+    "Legacy CardV2 image renders in actual Present",
+    "Legacy dialogue preload and actual playback succeed",
+    "Legacy reward presentation renders scoped custom background"
+  ],
+  "errors": [],
+  "temporary": "D:\\Temp\\story-phase6b-legacy-JLoKmw",
+  "sourceUnchanged": true,
+  "originalLessonsTouched": false
+}

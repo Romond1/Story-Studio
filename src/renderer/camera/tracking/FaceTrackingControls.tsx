@@ -14,6 +14,10 @@ export function FaceTrackingControls({ settings, status, cameraEnabled, disabled
         onChange={e => onChange({ ...settings, markers: e.target.checked })} />Show landmark markers</label>
       <label className="camera-toggle"><input type="checkbox" checked={settings.hat}
         onChange={e => onChange({ ...settings, hat: e.target.checked })} />Show temporary hat</label>
+      <label className="camera-toggle"><input type="checkbox" checked={!!settings.merlin}
+        onChange={e => onChange({ ...settings, merlin: e.target.checked })} />Show 3D Merlin costume · experimental</label>
+      {settings.merlin && <label className="camera-toggle"><input type="checkbox" checked={!!settings.merlinEyebrows}
+        onChange={e => onChange({ ...settings, merlinEyebrows: e.target.checked })} />Show Merlin 3D eyebrows (optional)</label>}
     </fieldset>
     <p role="status">{status?.message || labels[status?.state ?? 'off']}</p>
     {status?.state === 'error' && <small>Turn tracking off and on to retry. The camera can keep running.</small>}

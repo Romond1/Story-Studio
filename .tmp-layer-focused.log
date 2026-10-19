@@ -1,0 +1,30 @@
+✔ free camera layout stays bounded and legacy settings remain valid (1.869ms)
+✔ all four resize corners preserve the opposite anchor and permit offscreen crop (0.3189ms)
+✔ camera protocol rejects malformed values and strips private extras (0.3535ms)
+✔ late permission completion releases its stream after off (9.7697ms)
+✔ device replacement never overlaps capture and releases old tracks (0.5426ms)
+✔ permission failure does not prevent a later retry (0.8489ms)
+✔ camera IPC authenticates roles, filters payloads, and cancels pending consent on reset (118.808ms)
+✔ only teacher awards advance racers; pause blocks awards, finish clamps, undo restores (3.3344ms)
+✔ question projection omits private notes and unselected cards; resolving hides question (0.795ms)
+✔ saved configuration accepts asset references and rejects unsafe media and invalid rewards (0.6488ms)
+✔ episode activity save/reopen keeps image associations; package remap visits the question media (3.4716ms)
+✔ snapshot relay strips teacher notes and rejects temporary image URLs (2.6122ms)
+✔ medium and long formats use the same finish rules and explicit teacher bonus (0.9634ms)
+✔ manual position override is explicit, bounded, works while paused and supports undo (0.3458ms)
+✔ spontaneous imported image and pinned questions need no prepared card (0.3499ms)
+✔ review defaults to twenty spaces, supports ten to thirty and preserves legacy tracks (0.4818ms)
+✔ completing an asynchronous save preserves newer moves and never replaces another race (0.4376ms)
+✔ removing the last selected prepared card clamps the cursor and hides its image (0.35ms)
+✔ centered questions retain their large contained size regardless of camera or captions (0.385ms)
+✔ Ctrl toggles, Shift ranges and batch preparation keep source ordering and existing cards (0.7166ms)
+✔ zoom is bounded; teacher advances levels without losing points and undo restores finish (0.4814ms)
+✔ orbit retains the selected follow target independently of the rewarded racer (0.3149ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1386.3958

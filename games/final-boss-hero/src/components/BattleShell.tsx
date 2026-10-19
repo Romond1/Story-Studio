@@ -7,7 +7,6 @@ import {
   type CSSProperties,
   type MouseEvent,
   type ReactNode,
-  type WheelEvent,
 } from "react";
 import { useScoreFeedback } from "../animations/scoreFeedback";
 import { useScreenShake } from "../animations/screenShake";
@@ -17,9 +16,10 @@ import { miniGameRegistry } from "../miniGames/registry";
 import type { MiniGameTransitionCue } from "../miniGames/types";
 import { useBattleStore } from "../store/battleStore";
 import { BattleIntroScreen } from "./BattleIntroScreen";
+import { CoreInventory } from './CoreInventory';
 import { observePlayArea } from "./observePlayArea";
 import {
-  clamp as clampZoom,
+  wheelZoom,
   clampOffsets,
   computePlayAreaFitZoom,
   computeNextZoomView,
@@ -38,7 +38,6 @@ import type {
 import { isMiniGameId } from "../types/game";
 
 const MAX_PLAY_ZOOM = 3.5;
-const PLAY_ZOOM_STEP = 0.08;
 const POWER_UP_DEFAULT_COSTS: Record<PowerUpEffectType, number> = {
   heal: 15,
   peek: 10,
@@ -200,6 +199,7 @@ export function BattleShell() {
   const autoFitRef = useRef(true);
   const panDragRef = useRef({ active: false, lastX: 0, lastY: 0 });
   const [isPanning, setIsPanning] = useState(false);
+  const [playViewportWidth, setPlayViewportWidth] = useState(0);
   const [powerUpTargetSide, setPowerUpTargetSide] = useState<BattleSide>("hero");
   const [powerUpMessage, setPowerUpMessage] = useState("");
   const [powerUpFlashSide, setPowerUpFlashSide] = useState<BattleSide | null>(null);
@@ -716,13 +716,12 @@ export function BattleShell() {
     const viewport = viewportRef.current;
     const content = contentRef.current;
     if (!viewport || !content) return null;
-    const currentZoom = Math.max(playAreaViewRef.current.zoom, 0.001);
-
+    setPlayViewportWidth(viewport.clientWidth);
     const metrics: PlayAreaMetrics = {
       viewportWidth: viewport.clientWidth,
       viewportHeight: viewport.clientHeight,
-      contentWidth: Math.max(content.scrollWidth, content.offsetWidth, 1) / currentZoom,
-      contentHeight: Math.max(content.scrollHeight, content.offsetHeight, 1) / currentZoom,
+      contentWidth: Math.max(content.scrollWidth, content.offsetWidth, 1),
+      contentHeight: Math.max(content.scrollHeight, content.offsetHeight, 1),
       fitZoom: 1,
     };
     metrics.fitZoom = computePlayAreaFitZoom(metrics, Boolean(content.querySelector('.board-dash-game')));
@@ -754,14 +753,10 @@ export function BattleShell() {
     autoFitRef.current = true;
     const current = playAreaViewRef.current;
     if (current.zoom !== 1 || current.offsetX !== 0 || current.offsetY !== 0) {
-      // A new game/setup must be measured at its natural width. Fixed-font HUDs
-      // cannot grow back from the narrow columns of a previous dense board.
+      // Each game starts with its own natural fit, independent of prior zoom.
       const initial = { zoom: 1, offsetX: 0, offsetY: 0 };
       playAreaViewRef.current = initial;
       setPlayAreaView(initial);
-      // React has not applied the new CSS zoom yet. The stable observer fits
-      // the resulting content on its next frame, outside observer delivery.
-      if (current.zoom !== 1) return;
     }
     reclampOffsets();
   }, [activeMiniGameId, showIntroScreen, reclampOffsets, setPlayAreaView]);
@@ -811,7 +806,7 @@ export function BattleShell() {
 
   useEffect(() => () => stopPanDrag(), [stopPanDrag]);
 
-  const handlePlayAreaWheel = (event: WheelEvent<HTMLDivElement>) => {
+  const handlePlayAreaWheel = useCallback((event: globalThis.WheelEvent) => {
     if (showIntroScreen) {
       return;
     }
@@ -824,8 +819,8 @@ export function BattleShell() {
     if (!metrics) return;
     autoFitRef.current = false;
     const current = playAreaViewRef.current;
-    const nextZoom = clampZoom(
-      current.zoom + (event.deltaY < 0 ? 1 : -1) * PLAY_ZOOM_STEP,
+    const nextZoom = wheelZoom(
+      current.zoom, event.deltaY, event.deltaMode,
       metrics.fitZoom,
       MAX_PLAY_ZOOM,
     );
@@ -839,7 +834,15 @@ export function BattleShell() {
     );
     playAreaViewRef.current = nextView;
     setPlayAreaView(nextView);
-  };
+  }, [showIntroScreen, readMetrics, setPlayAreaView]);
+
+  useEffect(()=>{
+    const viewport=viewportRef.current;
+    if(!viewport)return;
+    // React's delegated wheel listener is passive; consume scrolling here.
+    viewport.addEventListener('wheel',handlePlayAreaWheel,{passive:false});
+    return()=>viewport.removeEventListener('wheel',handlePlayAreaWheel);
+  },[handlePlayAreaWheel]);
 
   const handlePlayAreaMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.button !== 1 || !panAvailable) return;
@@ -1050,6 +1053,7 @@ export function BattleShell() {
       <main className="battle-main">
         <aside className="fighter-panel hero-panel">
           <h2>Hero</h2>
+          <CoreInventory />
           {battleEffects.shieldCharges.hero > 0 ? (
             <div className="fighter-shield-indicator">
               <span className="fighter-shield-ring" />
@@ -1181,7 +1185,6 @@ export function BattleShell() {
                       <div
                         ref={viewportRef}
                         className={`gameplay-zoom-viewport ${panAvailable ? "is-pan-enabled" : ""} ${isPanning ? "is-panning" : ""}`}
-                        onWheel={handlePlayAreaWheel}
                         onMouseDown={handlePlayAreaMouseDown}
                   onAuxClick={(event) => event.button === 1 && event.preventDefault()}
                   onDragStart={(event) => event.preventDefault()}
@@ -1189,8 +1192,11 @@ export function BattleShell() {
                   <div
                     className="gameplay-zoom-layer"
                     style={{
-                      "--play-area-zoom": playAreaView.zoom,
-                      transform: `translate(${playAreaView.offsetX}px, ${playAreaView.offsetY}px)`,
+                      "--play-area-zoom": 1,
+                      width: playViewportWidth || '100%',
+                      minWidth: 0,
+                      zoom: playAreaView.zoom,
+                      transform: `translate(${playAreaView.offsetX / playAreaView.zoom}px, ${playAreaView.offsetY / playAreaView.zoom}px)`,
                     } as CSSProperties}
                   >
                     <div ref={contentRef} className="gameplay-content-stage">

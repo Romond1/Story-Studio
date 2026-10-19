@@ -3,12 +3,12 @@ import { addObject, independentCard } from './commands';
 import { translateBoxes } from './objectSelection';
 import { LESSON_LIMITS } from './limits';
 export interface ObjectClipboard { objects: SceneObject[]; cards: LessonProject['cards']; projectId: string }
-export function copyObjects(project: LessonProject, sceneId: string, ids: string[]): ObjectClipboard {
+export function copyObjects<T extends LessonProject>(project: T, sceneId: string, ids: string[]): ObjectClipboard {
   const objects = project.scenes[sceneId]?.objects.filter(o => ids.includes(o.id)) ?? [];
   const cards = Object.fromEntries(objects.flatMap(o => o.kind === 'card' ? [[o.cardId, project.cards[o.cardId]]] : []));
   return clone({ objects, cards, projectId: project.id });
 }
-export function pasteObjects(project: LessonProject, sceneId: string, copied: ObjectClipboard): { project: LessonProject; objectIds: string[] } {
+export function pasteObjects<T extends LessonProject>(project: T, sceneId: string, copied: ObjectClipboard): { project: T; objectIds: string[] } {
   const scene = project.scenes[sceneId]; if (!scene || copied.projectId !== project.id) return { project, objectIds: [] };
   const cardCount = copied.objects.filter(o => o.kind === 'card').length;
   if (Object.keys(project.cards).length + cardCount > LESSON_LIMITS.cards) throw new Error('This lesson has reached its Card limit.');

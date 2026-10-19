@@ -7,10 +7,18 @@ import { PresentSnapshotRelay, parsePresentSnapshot } from '../shared/presentati
 import type { PresentStatus } from '../shared/presentStatus';
 import { parseMediaPacket, packetMatches, type MediaRuntime } from '../shared/presentationMedia';
 import { parseGameInput, type GameEndedEvent } from '../shared/gameHost';
+import { ModuleTransport } from './moduleTransport';
+import { parseHostToModuleMessage, type HostToModuleMessage, type ModuleToHostMessage } from '../shared/modules/protocol';
+export interface ProgressionTransportObserver {
+  authorizeInitialize(message:HostToModuleMessage):boolean;
+  acceptedModule(message:ModuleToHostMessage):void;
+  hostCommand(message:HostToModuleMessage):void;
+  retire(instanceId?:string):void;
+}
 
 let attachInstalledControl: (() => void) | null = null;
 /** Transitional transport. This module cannot change a lesson or issue Core commands. */
-export function installPresentWindow(getControl: () => BrowserWindow | null): void {
+export function installPresentWindow(getControl: () => BrowserWindow | null, progression?:ProgressionTransportObserver): void {
   if (attachInstalledControl) { attachInstalledControl(); return; }
   const relay = new PresentSnapshotRelay();
   let present: BrowserWindow | null = null;
@@ -20,6 +28,13 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   let openedBefore = false;
   let mediaRuntime: MediaRuntime = { generation: 0, available: false };
   let lastEndedGame: string | null = null;
+  let moduleInstance: string | undefined;
+  const modules = new ModuleTransport(() => {
+    const target = relay.envelope.snapshot?.target;
+    return { ...mediaRuntime, available: mediaRuntime.available && target?.kind === 'game' && target.instanceId !== lastEndedGame,
+      ...(target?.kind === 'game' ? { instanceId: target.instanceId, moduleType: target.gameId } : {}) };
+  }, message => { if (present && !present.isDestroyed()) present.webContents.send('present:module-host', message); },
+  message => { progression?.acceptedModule(message); const control = getControl(); if (control && !control.isDestroyed()) control.webContents.send('present:module-event', message); });
   const envelope = () => {
     const value = relay.envelope;
     const target = value.snapshot?.target;
@@ -32,6 +47,8 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
     const target = relay.envelope.snapshot?.target;
     if (target?.kind !== 'game' || target.instanceId === lastEndedGame) return;
     lastEndedGame = target.instanceId;
+    progression?.retire(target.instanceId);
+    modules.clear();
     const control = getControl();
     if (control && !control.isDestroyed() && !control.webContents.isDestroyed()) control.webContents.send('present:game-ended', { instanceId: target.instanceId, reason });
   };
@@ -49,9 +66,12 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   const authorized = (event: Electron.IpcMainInvokeEvent | Electron.IpcMainEvent, window: BrowserWindow | null) =>
     !!window && !window.isDestroyed() && event.sender === window.webContents && event.senderFrame === window.webContents.mainFrame;
   const send = () => {
+    const target = relay.envelope.snapshot?.target;
+    const instance = target?.kind === 'game' ? target.instanceId : undefined;
+    if (instance !== moduleInstance) { if(moduleInstance)progression?.retire(moduleInstance); modules.clear(); moduleInstance = instance; }
     if (present && !present.isDestroyed() && !present.webContents.isDestroyed()) present.webContents.send('present:snapshot', envelope());
   };
-  const reset = () => { translation.reset(); camera.reset(); mediaLifecycle(!!present && !present.isDestroyed()); relay.reset(); send(); if (present) reportStatus('connecting'); };
+  const reset = () => { progression?.retire(); modules.clear(); translation.reset(); camera.reset(); mediaLifecycle(!!present && !present.isDestroyed()); relay.reset(); send(); if (present) reportStatus('connecting'); };
   const attached = new WeakSet<BrowserWindow>();
   attachInstalledControl = () => {
     const control = getControl();
@@ -75,12 +95,32 @@ export function installPresentWindow(getControl: () => BrowserWindow | null): vo
   screen.on('display-removed', keepPresentReachable);
   screen.on('display-metrics-changed', keepPresentReachable);
 
+  ipcMain.on('present:dash-zoom',(event,value:unknown)=>{
+    if(!authorized(event,present)||!value||typeof value!=='object')return;
+    const packet=value as {instanceId?:unknown;zoom?:unknown},target=relay.envelope.snapshot?.target;
+    if(target?.kind!=='game'||target.gameId!=='hero-dash'||target.instanceId!==packet.instanceId||target.instanceId===lastEndedGame||typeof packet.zoom!=='number'||!Number.isFinite(packet.zoom)||packet.zoom<.65||packet.zoom>1.8)return;
+    const control=getControl();if(control&&!control.isDestroyed())control.webContents.send('present:dash-zoom',{instanceId:target.instanceId,zoom:packet.zoom});
+  });
   ipcMain.on('present:game-input', (event, value: unknown) => {
     if (!authorized(event, getControl())) return;
     const packet = parseGameInput(value);
     const target = relay.envelope.snapshot?.target;
     if (!packet || target?.kind !== 'game' || packet.instanceId !== target.instanceId || packet.instanceId === lastEndedGame || !present || present.isDestroyed() || present.webContents.isDestroyed()) return;
     present.webContents.send('present:game-input', packet);
+  });
+
+  ipcMain.handle('present:module-host', (event, value: unknown) => {
+    if (!authorized(event, getControl())) throw new Error('Only Control may configure activities.');
+    const message=parseHostToModuleMessage(value);if(!message)return false;
+    if(message.type==='initialize'&&progression&&!progression.authorizeInitialize(message))return false;
+    const accepted=modules.send(message);if(accepted)progression?.hostCommand(message);return accepted;
+  });
+  ipcMain.handle('present:module-get', (event, instanceId: unknown) => {
+    if (!authorized(event, present)) throw new Error('Only Present may request its activity.');
+    return typeof instanceId === 'string' ? modules.get(instanceId) : null;
+  });
+  ipcMain.on('present:module-event', (event, value: unknown) => {
+    if (authorized(event, present)) modules.receive(value);
   });
 
   ipcMain.handle('present:media-runtime', event => {

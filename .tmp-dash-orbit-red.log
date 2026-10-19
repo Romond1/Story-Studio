@@ -1,0 +1,5 @@
+src/shared/heroDash.test.ts(81,123): error TS2339: Property 'orbitTarget' does not exist on type 'DashState'.
+src/shared/heroDash.test.ts(82,57): error TS2339: Property 'orbitTarget' does not exist on type 'DashState'.
+src/shared/heroDash.test.ts(83,105): error TS2339: Property 'orbitTarget' does not exist on type 'DashState'.
+src/shared/heroDash.test.ts(84,148): error TS2339: Property 'orbitTarget' does not exist on type 'DashState'.
+src/shared/heroDash.test.ts(84,213): error TS2339: Property 'orbitTarget' does not exist on type 'DashView'.

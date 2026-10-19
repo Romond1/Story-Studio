@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld('captionApi',captionApi);
 import type { CameraPresenterApi, CameraSettings } from '../shared/cameraProtocol';
 
 const cameraPresenter: CameraPresenterApi = {
+  reportRemoval: status => ipcRenderer.send('camera:removal-status',status),
+  setLayout: layout => ipcRenderer.send('camera:layout', layout),
   get: () => ipcRenderer.invoke('camera:present-get'),
   report: status => ipcRenderer.send('camera:status', status),
   reportTracking: status => ipcRenderer.send('camera:tracking-status', status),
@@ -18,6 +20,14 @@ contextBridge.exposeInMainWorld('cameraPresenter', cameraPresenter);
 import type { PresentApi, PresentEnvelope } from '../shared/presentationSnapshot';
 
 const api: PresentApi = {
+  sendDashZoom:(instanceId,zoom)=>ipcRenderer.send('present:dash-zoom',{instanceId,zoom}),
+  requestModule: instanceId => ipcRenderer.invoke('present:module-get', instanceId),
+  sendModuleEvent: message => ipcRenderer.send('present:module-event', message),
+  subscribeModuleHost(listener) {
+    const handle = (_event: Electron.IpcRendererEvent, message: import('../shared/modules/protocol').HostToModuleMessage) => listener(message);
+    ipcRenderer.on('present:module-host', handle);
+    return () => ipcRenderer.removeListener('present:module-host', handle);
+  },
   subscribeGameInput(listener) {
     const handle = (_event: Electron.IpcRendererEvent, packet: import('../shared/gameHost').GameInputPacket) => listener(packet);
     ipcRenderer.on('present:game-input', handle);

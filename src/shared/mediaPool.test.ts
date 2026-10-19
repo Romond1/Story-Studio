@@ -37,6 +37,24 @@ test('partial copy failures are returned alongside successful assets, never hidd
   assert.equal(result.failures?.[0].name,'missing.png');
   assert.equal(registerPoolImport(data,result).assets.length,1);
 });
+
+test('authored usage ignores prose containing asset paths', () => {
+  const image = { id: 'img', relativePath: 'assets/img.png', filename: 'img.png', originalName: 'img.png', mediaType: 'image' as const, sizeBytes: 1, importedAt: '' };
+  const fixture = { ...data, assets: [image], sections: [{ id: 'one', name: 'Notes about /assets/img.png' }] };
+  assert.equal(mediaUsage(fixture, 'img'), 0);
+});
+
+test('pool imports refuse asset and bin identity collisions without changing authored data', () => {
+  const image = { id: 'img', relativePath: 'assets/img.png', filename: 'img.png', originalName: 'img.png', mediaType: 'image' as const, sizeBytes: 1, importedAt: '' };
+  const existing = { ...data, assets: [image], mediaBins: [{ id: 'bin', name: 'Original' }] };
+  const before = JSON.stringify(existing);
+  assert.throws(() => registerPoolImport(existing, { importedAssets: [image], createdSlides: [] }), /duplicate|collision/i);
+  assert.throws(() => registerPoolImport(existing, { importedAssets: [], importedBins: [{ id: 'bin', name: 'Other' }], createdSlides: [] }), /duplicate|collision/i);
+  assert.equal(JSON.stringify(existing), before);
+  assert.throws(() => registerPoolImport(existing, { importedAssets: [{ ...image, id: 'different' }], createdSlides: [] }), /path.*collision/i);
+  assert.throws(() => registerPoolImport(existing, { importedAssets: [{ ...image, id: 'different', relativePath: '../escape.png' }], createdSlides: [] }), /unsafe/i);
+  assert.throws(() => registerPoolImport(existing, { importedAssets: [], importedBins: [{ id: 'new', name: 'New', parentId: 'absent' }], createdSlides: [] }), /bin/i);
+});
 test('break placement creates BreakMedia wrappers and audio remains a pool asset',()=>{
   const image={id:'img',relativePath:'assets/img.png',filename:'img.png',originalName:'1 landscape.png',mediaType:'image' as const,sizeBytes:1,importedAt:''};
   const audio={...image,id:'audio',mediaType:'audio' as const,relativePath:'assets/music.mp3'};

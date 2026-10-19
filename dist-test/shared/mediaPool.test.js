@@ -60,6 +60,22 @@ const data = { version: 4, createdAt: '', updatedAt: '', assets: [], slides: [],
     strict_1.default.equal(result.failures?.[0].name, 'missing.png');
     strict_1.default.equal((0, mediaPool_1.registerPoolImport)(data, result).assets.length, 1);
 });
+(0, node_test_1.default)('authored usage ignores prose containing asset paths', () => {
+    const image = { id: 'img', relativePath: 'assets/img.png', filename: 'img.png', originalName: 'img.png', mediaType: 'image', sizeBytes: 1, importedAt: '' };
+    const fixture = { ...data, assets: [image], sections: [{ id: 'one', name: 'Notes about /assets/img.png' }] };
+    strict_1.default.equal((0, mediaPool_1.mediaUsage)(fixture, 'img'), 0);
+});
+(0, node_test_1.default)('pool imports refuse asset and bin identity collisions without changing authored data', () => {
+    const image = { id: 'img', relativePath: 'assets/img.png', filename: 'img.png', originalName: 'img.png', mediaType: 'image', sizeBytes: 1, importedAt: '' };
+    const existing = { ...data, assets: [image], mediaBins: [{ id: 'bin', name: 'Original' }] };
+    const before = JSON.stringify(existing);
+    strict_1.default.throws(() => (0, mediaPool_1.registerPoolImport)(existing, { importedAssets: [image], createdSlides: [] }), /duplicate|collision/i);
+    strict_1.default.throws(() => (0, mediaPool_1.registerPoolImport)(existing, { importedAssets: [], importedBins: [{ id: 'bin', name: 'Other' }], createdSlides: [] }), /duplicate|collision/i);
+    strict_1.default.equal(JSON.stringify(existing), before);
+    strict_1.default.throws(() => (0, mediaPool_1.registerPoolImport)(existing, { importedAssets: [{ ...image, id: 'different' }], createdSlides: [] }), /path.*collision/i);
+    strict_1.default.throws(() => (0, mediaPool_1.registerPoolImport)(existing, { importedAssets: [{ ...image, id: 'different', relativePath: '../escape.png' }], createdSlides: [] }), /unsafe/i);
+    strict_1.default.throws(() => (0, mediaPool_1.registerPoolImport)(existing, { importedAssets: [], importedBins: [{ id: 'new', name: 'New', parentId: 'absent' }], createdSlides: [] }), /bin/i);
+});
 (0, node_test_1.default)('break placement creates BreakMedia wrappers and audio remains a pool asset', () => {
     const image = { id: 'img', relativePath: 'assets/img.png', filename: 'img.png', originalName: '1 landscape.png', mediaType: 'image', sizeBytes: 1, importedAt: '' };
     const audio = { ...image, id: 'audio', mediaType: 'audio', relativePath: 'assets/music.mp3' };

@@ -1,23 +1,20 @@
 import { visualMediaUrl } from '../shared/visualMedia';
 import type { OverlayItem, BubbleTemplate } from '../shared/types';
+import { createContext } from 'react';
+import { compatibilityMediaUrl } from '../shared/content/mediaResolution';
+import type { MediaPathResolver } from '../shared/content/mediaRenderResolution';
+/** Standalone previews keep explicit compatibility; App supplies its current scoped lookup. */
+export const MediaPathResolverContext = createContext<MediaPathResolver>(compatibilityMediaUrl);
 export function toMediaUrl(relativePath: string): string {
-  if (!relativePath || typeof relativePath !== 'string') return "";
-  const normalizedRelative = relativePath
-    .replace(/\\/g, "/")
-    .replace(/^\/+/, "");
-  const encodedRelative = normalizedRelative
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-  return `media://${encodedRelative}`;
+  return typeof relativePath === 'string' ? compatibilityMediaUrl(relativePath) ?? '' : '';
 }
 
-export function resolvePassiveOverlays(overlays: OverlayItem[], definitions?: BubbleTemplate[], visualScope = ''): OverlayItem[] {
+export function resolvePassiveOverlays(overlays: OverlayItem[], definitions?: BubbleTemplate[], visualScope = '', resolve: (path: string) => string = toMediaUrl): OverlayItem[] {
   return overlays.map(overlay => {
     const custom = definitions?.find(d => `BD_CUSTOM_${d.templateName}` === overlay.bubbleDefId);
     return { ...overlay,
       ...(custom && !overlay.textRect ? { textRect: custom.defaultTextRect } : {}),
-      customImageSrc: overlay.customImageSrc ? visualMediaUrl(toMediaUrl(overlay.customImageSrc), visualScope) : custom ? visualMediaUrl(toMediaUrl(custom.imageSrc), visualScope) : undefined,
+      customImageSrc: overlay.customImageSrc ? visualMediaUrl(resolve(overlay.customImageSrc), visualScope) : custom ? visualMediaUrl(resolve(custom.imageSrc), visualScope) : undefined,
     };
   });
 }

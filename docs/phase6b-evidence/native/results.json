@@ -1,0 +1,14 @@
+{
+  "passed": [
+    "Native UI import, nested bins, one asset shared by story and activation",
+    "Unplaced library card included in complete authored reference usage",
+    "SaveAs and reopen preserve IDs/bins/cards and render scoped image in Control and Present",
+    "Old scoped URL rejected after switch to project with identical relative path",
+    "Missing file resolves to explicit missing diagnostic",
+    "Imported source image and original project bytes unchanged; no renderer errors"
+  ],
+  "errors": [],
+  "temporary": "D:\\Temp\\story-phase6b-3fBMdr",
+  "sourceHash": "a01e8f74be231822651454946bb94d92fe6d1b90d1c7374405caae8457595b57",
+  "originalLessonsTouched": false
+}

@@ -14,6 +14,8 @@ exports.getActiveRelicStudentIds = getActiveRelicStudentIds;
 exports.setRelicProgressForStudents = setRelicProgressForStudents;
 exports.applyRelicProgressDelta = applyRelicProgressDelta;
 exports.getRelicImageAssetIdForProgress = getRelicImageAssetIdForProgress;
+const model_1 = require("./students/model");
+const legacy_be_a_hero_v1_1 = require("./adventures/legacy-be-a-hero-v1");
 exports.DEFAULT_RELIC_SYSTEM = {
     enabled: true,
     relicTitle: "",
@@ -24,11 +26,7 @@ exports.DEFAULT_RELIC_SYSTEM = {
         stage2: null,
         stage3: null,
     },
-    stageTitles: {
-        stage1: "Echo Fragment Found",
-        stage2: "Echo Core Restored",
-        stage3: "Echo Stone Awakened",
-    },
+    stageTitles: { ...legacy_be_a_hero_v1_1.LEGACY_BE_A_HERO_V1.relicStageTitles },
     studentProgress: {},
     showOnStage: true,
     widgetPosition: "topRight",
@@ -194,6 +192,8 @@ function normalizeStudentRosterSettings(value, now = new Date().toISOString()) {
         return {
             id: item.id,
             name,
+            ...(typeof item.nickname === "string" ? { nickname: item.nickname } : {}),
+            ...(typeof item.avatar === "string" && model_1.STUDENT_AVATARS.includes(item.avatar) ? { avatar: item.avatar } : {}),
             archived: item.archived === true,
             createdAt: typeof item.createdAt === "string" ? item.createdAt : now,
             updatedAt: typeof item.updatedAt === "string" ? item.updatedAt : now,

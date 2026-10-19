@@ -1,3 +1,27 @@
+import { EpisodeContentPanel } from '../episode/EpisodeContentPanel';
+import {createDash,dashProjection,dashAction,type DashState} from '../../shared/heroDash';
+import {HeroDashControl} from '../games/heroDash/HeroDashControl';
+import { CameraControls } from '../camera/CameraControls';
+import { TranslationControls } from '../translation/TranslationControls';
+
+import { createModuleTemplate } from '../../shared/modules/templates';
+import { AdventureDefinitionEditor } from '../episode/AdventureDefinitionEditor';
+import { ProgressionPanel } from '../episode/ProgressionPanel';
+import { StudentsWorkspace } from '../students/StudentsWorkspace';
+import type { StudentClass, StudentSnapshot } from '../../shared/students/model';
+import { TeachRoster } from '../students/TeachRoster';
+import { GroupRewardControls } from '../students/GroupRewardControls';
+import type { GroupRewardPlan } from '../../shared/students/groupRewards';
+import type { ProgressionState } from '../../shared/progression/model';
+import { projectRosterPresentation } from '../../shared/students/rosterPresentation';
+import { EpisodeActivities } from '../episode/EpisodeActivities';
+import { ActivationActivities } from '../episode/ActivationActivities';
+import { useEpisodeModuleHost } from '../episode/useEpisodeModuleHost';
+import { putEpisodeActivity, putActivityOccurrence } from '../../shared/episode/commands';
+import type { EpisodeActivity, RunContext, ActivityEvent } from '../../shared/modules/model';
+import type { StudentRosterEntry } from '../../shared/types';
+import { useDerivedMedia } from '../episode/useDerivedMedia';
+import { useMediaRegistry } from '../useMediaRegistry';
 import { copyObjects, pasteObjects, type ObjectClipboard } from '../../shared/lesson/objectClipboard';
 import { previewDrawings, translateBoxes, type DrawingPreview } from '../../shared/lesson/objectSelection';
 import { DrawingToolbar, type DrawingTool } from './DrawingToolbar';
@@ -9,13 +33,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addCard, addObject, addText, duplicateEntry as duplicateSceneEntry, createScene, fitBox, insertCardSet, insertScene, layerObject, putCard, putObject, putScene, removeEntry, reorderEntry } from '../../shared/lesson/commands';
 import { makeId, sceneAt, type EditorSelection, type LessonProject, type LessonProjectState, type LessonScene, type LessonSession, type Rect, type SequenceKind } from '../../shared/lesson/model';
 import { cardAction, createSession, exitActivation, navigate, reconcileSession, startActivation, stepScene, resetScene, moveLiveCard, setLiveDrawings, undoLiveDrawing, redoLiveDrawing } from '../../shared/lesson/session';
-import { parseLessonProject } from '../../shared/lesson/validation';
+import { parseSceneDocument } from '../../shared/lesson/validation';
 import { ProjectHistory } from '../../shared/projectHistory';
 import { projectScene } from '../../shared/lesson/projection';
 import { SceneSurface } from './SceneSurface';
 import { SceneInspector } from './SceneInspector';
 import { LessonTimeline } from './LessonTimeline';
-import { LessonMediaPool, lessonMediaUrl, LESSON_ASSET_DRAG } from './LessonMediaPool';
+import { LessonMediaPool, LESSON_ASSET_DRAG } from './LessonMediaPool';
 import { LessonTeachControls } from './LessonTeachControls';
 import { SceneAudioOwner } from './SceneAudioOwner';
 import { audioManager } from '../audio/AudioManager';
@@ -27,6 +51,7 @@ import { Beginning } from '../Beginning';
 import storyIcon from '../../../assets/Splash Screen/Story.png';
 import activationIcon from '../../../assets/Splash Screen/Activation.png';
 import { mergeLessonMediaImport } from '../../shared/lesson/mediaImport';
+import type { EditorOperation, EditorResult } from '../../shared/modules/protocol';
 import { GameHost } from '../games/GameHost';
 import { getGamesForSection, type GameSection, type GameSession } from '../../shared/gameHost';
 
@@ -42,6 +67,8 @@ export function LessonApp() {
   const [beginning, setBeginning] = useState(true);
   const [gameSection, setGameSection] = useState<GameSection | null>(null);
   const [activeGame, setActiveGame] = useState<GameSession | null>(null);
+  const [dash,setDash]=useState<DashState>(()=>createDash());
+  useEffect(()=>window.appApi.onDashZoom?.(packet=>{if(activeGameRef.current?.gameId==='hero-dash'&&activeGameRef.current.instanceId===packet.instanceId)setDash(state=>dashAction(state,{type:'zoom',zoom:packet.zoom}));}),[]);
   const activeGameRef = useRef(activeGame); activeGameRef.current = activeGame;
   const [gameNotice, setGameNotice] = useState('');
   const gameLaunch = useRef(false);
@@ -55,6 +82,27 @@ export function LessonApp() {
   const layout = useWorkspaceLayout();
   const latest = useRef(project); latest.current = project;
   const history = useRef(new ProjectHistory<LessonProject>());
+  const [selectedActivityId, setSelectedActivityId] = useState('');
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [roster, setRoster] = useState<StudentRosterEntry[]>([]);
+  const [classes, setClasses] = useState<StudentClass[]>([]);
+  const [activeClassId, setActiveClassId] = useState<string | null>(null);
+  const classIdentity = useRef<string | null>(null);
+  const applyStudents = (value: StudentSnapshot) => {
+    const active = value.studentRoster.filter(student => !student.archived);
+    setRoster(active);setClasses(value.classes);setActiveClassId(value.activeClassId);
+    if(classIdentity.current !== value.activeClassId){classIdentity.current=value.activeClassId;const group=value.classes.find(item=>item.id===value.activeClassId);setParticipants(group?.studentIds.filter(id=>active.some(student=>student.id===id))??[]);}
+    else setParticipants(old=>old.filter(id=>id.startsWith('guest:')||active.some(student=>student.id===id)));
+  };
+  const [studentsOpen, setStudentsOpen] = useState(false);
+  const [studentsView, setStudentsView] = useState<'profiles'|'hero'>('profiles');
+  const [detailsStudentId,setDetailsStudentId]=useState('');
+  const [rosterVisible,setRosterVisible]=useState(false),[rosterPosition,setRosterPosition]=useState<'top'|'bottom'>('bottom');
+  const [showScores,setShowScores]=useState(false),[showRewards,setShowRewards]=useState(false),[showRelics,setShowRelics]=useState(false);
+  const [rosterProgress,setRosterProgress]=useState<ProgressionState|null>(null);
+  const groupRewardPlans=useRef(new Map<string,GroupRewardPlan>());
+  const [activationPaused, setActivationPaused] = useState(false);
+  const activationVideoPlaying = useRef(false);
   const [selection, setSelection] = useState<EditorSelection>(emptySelection);
   const [multiSelection, setMultiSelection] = useState<{ entryId: string | null; ids: string[] }>({ entryId: null, ids: [] });
   const objectClipboard = useRef<ObjectClipboard | null>(null);
@@ -70,10 +118,66 @@ export function LessonApp() {
   const [presentStatus, setPresentStatus] = useState<PresentStatus | null>(null);
   const audio = useRef(new SceneAudioOwner(audioManager));
   const revision = useRef(0);
+  const [progressionRevision, setProgressionRevision] = useState(0);
+  const progressionChanged = () => setProgressionRevision(value => value + 1);
+  useEffect(()=>{let live=true;void window.appApi.progression.getSnapshot().then(value=>{if(live)setRosterProgress(value);}).catch(reason=>{if(live)setError(String(reason));});return()=>{live=false;};},[progressionRevision,project?.format==='story-studio-episode'?project.adventure.id:null]);
+  const rosterProjection=useMemo(()=>{if(!rosterVisible||beginning)return undefined;const value=projectRosterPresentation({roster,participantIds:participants,progression:rosterProgress,adventureId:project?.format==='story-studio-episode'?project.adventure.id:undefined,sessionId:session.id,position:rosterPosition,showScores,showRewards,showRelics});return value.entries.length?value:undefined;},[rosterVisible,beginning,roster,participants,rosterProgress,project,session.id,rosterPosition,showScores,showRewards,showRelics]);
+  const hosted = useEpisodeModuleHost(() => latest.current, value => { history.current.record(value); latest.current = value; setProject(value); }, progressionChanged, handleHostedEditor);
+  const registerRun = async (context: RunContext, activity: EpisodeActivity) => {
+    const current = latest.current;
+    if (current?.format !== 'story-studio-episode' || !file) throw new Error('Open an episode before starting an activity.');
+    const result = await window.appApi.progression.registerRun({ expectedFolder: file.folderPath, activityId: activity.id, context, moduleType: activity.moduleType, ...(current.adventureDefinition ? { adventureDefinition: current.adventureDefinition } : {}), ...(activity.rewardBindings ? { rewardBindings: activity.rewardBindings } : {}) });
+    if (!result.accepted) throw new Error(result.reason ?? 'Core could not register this activity.');
+  };
+  const recordActivation = async (event: ActivityEvent) => {
+    if (event.type !== 'activity-completed') throw new Error('Unsupported Activation result.');
+    const result = await window.appApi.progression.completeActivation({ commandId: event.eventId, runId: event.context.runId, outcome: event.payload.outcome });
+    if (result.accepted) { progressionChanged(); setNotice(`Activation completed for ${event.context.participantIds.length} participants. Result recorded for this session.`); }
+    return result;
+  };
   const editScene = project ? sceneAt(project, selection) : undefined;
   const liveScene = project ? sceneAt(project, session.cursor) : undefined;
   const displayed = mode === 'edit' ? editScene : liveScene;
-  const resolve = (id: string) => { const asset = project?.assets.find(item => item.id === id); return asset && lessonMediaUrl(asset.relativePath, project!.id); };
+  const mediaRegistry = useMediaRegistry(project ? { format: 'scene', data: project } : null, file?.folderPath ?? null, file?.activationToken);
+  const derivedMedia = useDerivedMedia(project, mediaRegistry.view);
+  const resolve = useCallback((id: string) => derivedMedia.urls.get(id) ?? mediaRegistry.resolve(id), [derivedMedia.urls, mediaRegistry.resolve]);
+  const editorMedia = useRef({project,resolve,pending:true,registry:mediaRegistry.registry});
+  editorMedia.current={project,resolve,pending:mediaRegistry.pending||derivedMedia.pending,registry:mediaRegistry.registry};
+  const hostedCatalogue=mediaRegistry.pending||derivedMedia.pending?null:[
+    ...(mediaRegistry.registry?.list().map(asset=>({id:asset.id,name:asset.originalName||asset.filename,mediaType:asset.mediaType,url:resolve(asset.id)}))??[]),
+    ...(mediaRegistry.registry?.images().filter(asset=>!project?.assets.some(item=>item.id===asset.id)).map(asset=>({id:asset.id,name:asset.label,mediaType:'image' as const,url:resolve(asset.id)}))??[])
+  ].map(({url,...asset})=>url?{...asset,url}:asset);
+  const hostedCatalogueKey=JSON.stringify(hostedCatalogue);
+  useEffect(()=>{if(hostedCatalogue&&hosted.state==='running')hosted.updateMedia(hostedCatalogue);},[hostedCatalogueKey,hosted.state]);
+  async function handleHostedEditor(kind:EditorOperation,isCurrent:()=>boolean):Promise<EditorResult>{
+    const catalogue=async()=>{
+      // Wait for the normal registry effect to publish grants after an import.
+      const until=Date.now()+10000;
+      while(isCurrent()&&(editorMedia.current.pending||editorMedia.current.project!==latest.current)&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,30));
+      if(!isCurrent())throw new Error('The episode changed while the editor request was pending.');
+      if(editorMedia.current.pending)throw new Error('Episode media is still loading. Refresh the media pool.');
+      const view=editorMedia.current;
+      const physical=view.registry?.list().map(asset=>({id:asset.id,name:asset.originalName||asset.filename,mediaType:asset.mediaType,url:view.resolve(asset.id)}))??[];
+      const derived=view.registry?.images().filter(asset=>!physical.some(item=>item.id===asset.id)).map(asset=>({id:asset.id,name:asset.label,mediaType:'image' as const,url:view.resolve(asset.id)}))??[];
+      return [...physical,...derived].map(({url,...asset})=>url?{...asset,url}:asset);
+    };
+    if(kind==='media-list')return {ok:true,assets:await catalogue()};
+    if(operation.current)throw new Error('Story Studio is busy. Please retry after the current operation finishes.');
+    operation.current=true;setBusy(true);setError('');
+    try{
+      if(!isCurrent())throw new Error('This episode is no longer active.');
+      if(kind==='episode-save')return {ok:true,cancelled:!await saveEpisode('save')};
+      const imported=await window.appApi.importMedia();
+      if(!isCurrent())throw new Error('The episode changed during import.');
+      if(!imported)return {ok:true,cancelled:true};
+      const current=latest.current;if(!current)throw new Error('No episode is open.');
+      const next=mergeLessonMediaImport(current,imported);
+      parseSceneDocument(next);history.current.record(next);latest.current=next;setProject(next);
+      const reason=imported.failures?.map(item=>`${item.name}: ${item.reason}`).join('\n');
+      return {ok:true,assets:await catalogue(),importedIds:imported.importedAssets.map(asset=>asset.id),...(reason?{reason}:{})};
+    }catch(failure){setError(String(failure));throw failure;}
+    finally{operation.current=false;setBusy(false);}
+  }
   const videoAsset = liveScene && project?.assets.find(asset => asset.id === liveScene.background.assetId && asset.mediaType === 'video');
   const mediaIdentity = videoAsset ? `${project!.id}:${session.cursor!.entryId}:${session.visit}:${videoAsset.id}` : null;
   const restoreGameMedia = !activeGame && !!gameMediaReturn.current && gameMediaReturn.current.identity === mediaIdentity && (gameMediaSuspended.current || !gameSection);
@@ -86,7 +190,7 @@ export function LessonApp() {
     }
   }, [restoreGameMedia, gameSection, media.intent?.identity]);
   const liveKey = `${session.id}:${session.cursor?.entryId}:${session.visit}`;
-  const livePlan = useMemo(() => project && liveScene ? projectScene(project, liveScene.id, session, resolve) : null, [project, liveScene, session]);
+  const livePlan = useMemo(() => project && liveScene ? projectScene(project, liveScene.id, session, resolve) : null, [project, liveScene, session, resolve]);
   const presentationPlan = useMemo(() => livePlan && drawingPreview?.key === liveKey ? { ...livePlan, drawings: previewDrawings(livePlan.drawings, drawingPreview.value) } : livePlan, [livePlan, drawingPreview, liveKey]);
   const editPlan = useMemo(() => {
     if (!project || !editScene) return null;
@@ -98,7 +202,7 @@ export function LessonApp() {
     } : undefined;
     const result = projectScene(project, editScene.id, editorSession, resolve);
     return result && editView?.sceneId === editScene.id ? { ...result, viewport: editView.viewport } : result;
-  }, [project, editScene, selection.entryId, selection.sequence, selection.objectId, facePreview, editView]);
+  }, [project, editScene, selection.entryId, selection.sequence, selection.objectId, facePreview, editView, resolve]);
   const previewFace = useCallback((faceId: string) => {
     if (selection.objectId && editScene) setFacePreview(previous => previous?.sceneId === editScene.id && previous.objectId === selection.objectId && previous.faceId === faceId ? previous : { sceneId: editScene.id, objectId: selection.objectId!, faceId });
   }, [selection.objectId, editScene?.id]);
@@ -136,21 +240,22 @@ export function LessonApp() {
   const clearDrawing = () => { if (!window.confirm('Clear this scene drawing? You can undo this action.')) return; if (mode === 'edit' && editScene) changeScene({ ...editScene, drawings: [] }); else setSession(old => setLiveDrawings(old, [])); };
   useEffect(() => {
     void audioManager.initializeFromAppSettings(window.appApi).catch(reason => setError(String(reason)));
+    void window.appApi.students.getSnapshot().then(applyStudents).catch(reason => setError(String(reason)));
     const unsubscribe = window.appApi.onPresentStatus(setPresentStatus);
     void window.appApi.getPresentStatus().then(setPresentStatus);
     return () => { unsubscribe(); audio.current.stop(); };
   }, []);
   useEffect(() => {
-    const snapshot = { sessionId: session.id, revision: ++revision.current, target: activeGame
-      ? { kind: 'game' as const, occurrenceId: activeGame.instanceId, ...activeGame }
+    const snapshot = { sessionId: session.id, revision: ++revision.current, ...(rosterProjection?{roster:rosterProjection}:{}), target: activeGame
+      ? { kind: 'game' as const, occurrenceId: activeGame.instanceId, ...activeGame, ...(activeGame.gameId==='hero-dash'?{dash:dashProjection(dash,resolve)}:{}) }
       : presentationPlan
       ? { kind: 'scene' as const, occurrenceId: `${session.cursor!.entryId}:${session.visit}`, plan: presentationPlan, ...(media.intent && videoAsset ? { media: media.intent } : {}) }
       : { kind: 'empty' as const, occurrenceId: 'empty' } };
     void window.appApi.publishPresentSnapshot(snapshot).then(ok => { if (!ok) setError('The presentation rejected this scene. Your authored changes are still available.'); }).catch(reason => setError(String(reason)));
-  }, [presentationPlan, session.id, JSON.stringify(media.intent), activeGame]);
+  }, [presentationPlan, session.id, JSON.stringify(media.intent), activeGame, rosterProjection, dash, resolve]);
   useEffect(() => window.appApi.onGameEnded(event => {
     if (activeGameRef.current?.instanceId !== event.instanceId) return;
-    activeGameRef.current = null; setActiveGame(null);
+    hosted.stop(); activeGameRef.current = null; setActiveGame(null);
     setGameNotice(event.reason === 'closed' ? 'Present closed. The game ended; your lesson is preserved.' : 'Present restarted or stopped unexpectedly. The game ended; launch a new run to continue.');
   }), []);
   useEffect(() => {
@@ -158,13 +263,14 @@ export function LessonApp() {
     if (!beginning && !gameSection && mode === 'teach' && liveScene) void owner.play(liveScene.audio.filter(track => track.autoplay), resolve).catch(reason => setError(String(reason)));
     else owner.stop();
     return () => owner.stop();
-  }, [beginning, gameSection, mode, session.visit, project?.id, JSON.stringify(liveScene?.audio)]);
+  }, [beginning, gameSection, mode, session.visit, project?.id, JSON.stringify(liveScene?.audio), resolve]);
   useEffect(() => {
     return window.appApi.onRequestClose(() => { if (!history.current.isDirty || window.confirm('Discard unsaved lesson changes and close?')) window.appApi.forceClose(); });
   }, []);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (beginning || gameSection) return;
+      if (activationPaused) return;
       if (event.defaultPrevented || (event.target as HTMLElement)?.closest?.('[role="dialog"], [role="menu"], form')) return;
       const tag = (event.target as HTMLElement)?.tagName;
       if (['INPUT','TEXTAREA','SELECT'].includes(tag) || (event.target as HTMLElement)?.isContentEditable) return;
@@ -190,18 +296,57 @@ export function LessonApp() {
   const load = (kind: 'new' | 'open') => run(async () => {
     if (history.current.isDirty && !window.confirm('Discard unsaved changes and continue?')) return;
     const candidate = kind === 'new' ? await window.lessonApi.createProject() : await window.lessonApi.openProject(); if (!candidate) return;
-    const data = parseLessonProject(candidate.data);
+    const data = parseSceneDocument(candidate.data);
     await media.revoke(); audio.current.stop(); window.lessonApi.activateProject(candidate.activationToken);
     const sequence = project ? selection.sequence : entrySequence;
     const entryId = data.sequences[sequence][0]?.id ?? null;
     history.current.reset(data); latest.current = data; setProject(data); setFile(candidate); setActiveBinId(''); setSession(navigate(data, createSession(), entryId ? { sequence, entryId } : null)); setMode(project ? mode : 'teach'); setDrawing(false); setEditView(null);
     setSelection({ sequence, entryId, objectId: null }); setNotice(kind === 'new' ? 'Switch to Edit to import media or add a scene.' : 'Lesson opened.');
+    if (gameSection) await prepareGameProject(data, candidate);
   });
-  const save = (saveMode: 'save' | 'saveAs') => run(async () => {
-    if (!project || !file) return;
-    const written = project; parseLessonProject(written);
-    const saved = await window.lessonApi.saveProject(written, saveMode, file.folderPath); if (!saved) return;
+  const save = (saveMode: 'save' | 'saveAs') => run(async () => { await saveEpisode(saveMode); });
+  async function saveEpisode(saveMode: 'save' | 'saveAs') {
+    if (!project || !file) throw new Error('Open an episode before saving.');
+    let written = project;
+    if (hosted.isActive) { await hosted.flush(); written = latest.current ?? project; }
+    parseSceneDocument(written);
+    const saved = await window.lessonApi.saveProject(written, saveMode, file.folderPath); if (!saved) return false;
+    if (hosted.isActive && saved.folderPath !== file.folderPath) { hosted.stop(); activeGameRef.current = null; setActiveGame(null); setGameNotice('Lesson saved in a new folder. Launch the activity again to use its new media scope.'); }
     history.current.markSaved(written); setFile({ ...file, ...saved, data: written, isDraft: false }); setNotice('Lesson saved.');
+    return true;
+  }
+  const convertEpisode = (adventure: { id: string; version: string }) => run(async () => {
+    if (!project || !file || project.format !== 'story-studio-scene') return;
+    const candidate = await window.lessonApi.convertProject(project, adventure, file.folderPath);
+    if (!candidate) return;
+    const data = parseSceneDocument(candidate.data);
+    await media.revoke(); audio.current.stop(); window.lessonApi.activateProject(candidate.activationToken);
+    history.current.reset(data); latest.current = data; setProject(data); setFile(candidate);
+    setSession(old => reconcileSession(data, old));
+    setNotice(`Episode copy created. Original backup: ${candidate.backupPath}. Migration report: ${candidate.migrationReport}`);
+  });
+  const exportPackage = () => run(async () => {
+    if (!file || latest.current?.format !== 'story-studio-episode') return;
+    if (hosted.isActive) await hosted.flush();
+    const current = latest.current;
+    if (current?.format !== 'story-studio-episode') return;
+    const result = await window.lessonApi.exportPackage(current, file.folderPath);
+    if (result) setNotice(`Portable episode exported to ${result.folderPath}`);
+  });
+  const importPackage = () => run(async () => {
+    if (hosted.isActive) await hosted.flush();
+    if (history.current.isDirty && !window.confirm('Discard unsaved changes and import an episode?')) return;
+    const candidate = await window.lessonApi.importPackage();
+    if (!candidate) return;
+    const data = parseSceneDocument(candidate.data);
+    hosted.stop(); activeGameRef.current = null; setActiveGame(null);
+    await media.revoke(); audio.current.stop(); window.lessonApi.activateProject(candidate.activationToken);
+    const sequence = 'story', entryId = data.sequences.story[0]?.id ?? null;
+    history.current.reset(data); latest.current = data; setProject(data); setFile(candidate); setActiveBinId('');
+    setSession(navigate(data, createSession(), entryId ? { sequence, entryId } : null));
+    setSelection({ sequence, entryId, objectId: null }); setDrawing(false); setEditView(null);
+    setGameSection(null); setBeginning(false);
+    setNotice('Portable episode verified and imported. You can edit and save this copy.');
   });
   const importMedia = async (kind: 'files' | 'folder' | 'drop', paths?: string[], destinationBinId = activeBinId) => {
     await run(async () => {
@@ -210,7 +355,7 @@ export function LessonApp() {
       if (!imported) return;
       const current = latest.current; if (!current || current.id !== project.id) return;
       const next = mergeLessonMediaImport(current, imported, destinationBinId);
-      parseLessonProject(next);
+      parseSceneDocument(next);
       history.current.record(next); latest.current = next; setProject(next);
       setNotice(`${imported.importedAssets.length} media files imported. Select media to add scenes.`);
       if (imported.failures?.length) setError(imported.failures.map(failure => `${failure.name}: ${failure.reason}`).join('\n'));
@@ -218,7 +363,7 @@ export function LessonApp() {
   };
   const addScenes = (assetIds?: string[], beforeEntryId?: string) => editCommand(() => {
     if (!project || busy) return; let next = project; let entryId: string | null = null;
-    const assets = assetIds?.map(id => project.assets.find(asset => asset.id === id)).filter(asset => asset && asset.mediaType !== 'audio');
+    const assets = assetIds?.map(id => { const physical = mediaRegistry.registry?.get(id); const image = mediaRegistry.registry?.images().find(item => item.id === id); return physical ?? (image ? { ...image, originalName: image.label } : undefined); }).filter(asset => asset && asset.mediaType !== 'audio');
     if (assetIds && !assets?.length) return;
     for (const asset of assets?.length ? assets : [undefined]) {
       const result = insertScene(next, selection.sequence, createScene(asset?.originalName ?? 'New scene', asset?.id), beforeEntryId); next = result.project; entryId = result.entryId;
@@ -256,39 +401,132 @@ export function LessonApp() {
     if (!project) return; const entry = project.sequences[selection.sequence].find(item => item.id === entryId); if (!entry) return;
     const result = duplicateSceneEntry(project, selection.sequence, entryId, destination, linked); apply(result.project); setSelection({ sequence: destination, entryId: result.entryId, objectId: null });
   });
-  const enterGames = (section: GameSection) => {
-    if (section === gameSection) return;
+  const enterGames = async (section: GameSection) => {
+    if (section === gameSection || operation.current || gameLaunch.current) return;
+    if (activeGameRef.current?.moduleHost && presentStatus?.state !== 'error') { try { await hosted.flush(); } catch (reason) { setError(String(reason)); return; } }
+    operation.current = true; setBusy(true); setError('');
+    try {
+      let current = latest.current, currentFile = file;
+      if (!current || !currentFile) {
+        currentFile = await window.lessonApi.createDraft('story');
+        current = parseSceneDocument(currentFile.data);
+        window.lessonApi.activateProject(currentFile.activationToken);
+        history.current.reset(current); latest.current = current; setProject(current); setFile(currentFile);
+      }
+      await prepareGameProject(current, currentFile);
+    } catch (reason) { setError(String(reason)); return; }
+    finally { operation.current = false; setBusy(false); }
     if (!gameSection) gameMediaReturn.current = media.intent ? { identity: media.intent.identity, position: media.status?.positionSec ?? media.intent.positionSec } : null;
     void media.command('pause'); audio.current.stop(); setDrawing(false);
-    activeGameRef.current = null; setActiveGame(null); setGameSection(section); setGameNotice('');
+    hosted.stop(); activeGameRef.current = null; setActiveGame(null); setGameSection(section); setGameNotice('');
   };
-  const exitGame = () => { activeGameRef.current = null; setActiveGame(null); setGameNotice(''); };
+  async function prepareGameProject(current: LessonProject, currentFile: LessonProjectState) {
+    if (current.format === 'story-studio-episode') return;
+    const candidate = await window.lessonApi.prepareGames(current, currentFile.folderPath);
+    const data = parseSceneDocument(candidate.data);
+    await media.revoke(); audio.current.stop(); window.lessonApi.activateProject(candidate.activationToken);
+    history.current.reset(data); latest.current = data; setProject(data); setFile(candidate);
+    setSession(old => reconcileSession(data, old));
+  }
+  const exitGame = async () => {
+    if (activeGameRef.current?.moduleHost && presentStatus?.state !== 'error') { try { await hosted.flush(); } catch (reason) { setError(String(reason)); return false; } }
+    hosted.stop(); activeGameRef.current = null; setActiveGame(null); setGameNotice(''); return true;
+  };
+  const saveActivity = (activity: EpisodeActivity) => {
+    const current = latest.current; if (current?.format !== 'story-studio-episode') return;
+    let next = putEpisodeActivity(current, activity);
+    if (!next.occurrences?.some(item => item.activityId === activity.id)) next = putActivityOccurrence(next, { id: crypto.randomUUID(), activityId: activity.id, section: activity.moduleType === 'language-snake' ? 'challenge' : (activity.moduleType === 'final-boss-hero' || activity.moduleType === 'hero-dash') ? 'mastery' : 'activation' });
+    apply(next); setSelectedActivityId(activity.id);
+  };
   const launchGame = async (gameId: string) => {
     if (!gameSection || gameLaunch.current || !getGamesForSection(gameSection).some(game => game.id === gameId)) return;
     gameLaunch.current = true; setBusy(true); setError('');
-    const next = { gameId, instanceId: crypto.randomUUID() };
+    let episode = latest.current?.format === 'story-studio-episode' ? latest.current : null;
+    let activity = episode?.activities?.find(item => item.id === selectedActivityId && item.moduleType === gameId) ?? episode?.activities?.find(item => item.moduleType === gameId);
+    let occurrence = episode?.occurrences?.find(item => item.activityId === activity?.id);
+    const next: GameSession = { gameId, instanceId: crypto.randomUUID(), ...(gameId==='hero-dash'?{}:{moduleHost:true as const}) };
     try {
+      if (!episode || (gameId !== 'final-boss-hero' && gameId !== 'language-snake' && gameId !== 'hero-dash')) throw new Error('Open a lesson before launching.');
+      if (!activity) {
+        activity = { id: crypto.randomUUID(), moduleType: gameId, moduleVersion: 1, configVersion: 1, config: createModuleTemplate(gameId) } as EpisodeActivity;
+        episode = putEpisodeActivity(episode, activity);
+      }
+      if (!occurrence) {
+        occurrence = { id: crypto.randomUUID(), activityId: activity.id, section: gameId !== 'language-snake' ? 'mastery' : 'challenge' };
+        episode = putActivityOccurrence(episode, occurrence);
+      }
+      if (episode !== latest.current) { history.current.record(episode); latest.current = episode; setProject(episode); }
+      setSelectedActivityId(activity.id);
+      if (activeGameRef.current?.moduleHost && presentStatus?.state !== 'error') await hosted.flush();
+      hosted.stop();
       void media.command('pause'); audio.current.stop();
       if (media.intent) gameMediaReturn.current = { identity: media.intent.identity, position: media.status?.positionSec ?? media.intent.positionSec };
       gameMediaSuspended.current = !!gameMediaReturn.current;
       activeGameRef.current = next; setActiveGame(next); setGameNotice('');
-      await window.appApi.launchGame({ sessionId: session.id, revision: ++revision.current, target: { kind: 'game', occurrenceId: next.instanceId, ...next } });
+      const race=activity.moduleType==='hero-dash'?createDash(activity.config):undefined;
+      if(race)setDash(race);
+      await window.appApi.launchGame({ sessionId: session.id, revision: ++revision.current, target: { kind: 'game', occurrenceId: next.instanceId, ...next, ...(race?{dash:dashProjection(race,resolve)}:{}) } });
+      if (episode && activity && occurrence && next.moduleHost) {
+        const activityId = activity.id;
+        const fresh = latest.current?.format === 'story-studio-episode' ? latest.current.activities?.find(item => item.id === activityId) ?? activity : activity;
+        const context = { sessionId: session.id, runId: crypto.randomUUID(), instanceId: next.instanceId, occurrenceId: occurrence.id, episodeId: episode.id, adventureId: episode.adventure.id, participantIds: [...participants] };
+        await registerRun(context, fresh);
+        await hosted.initialize(fresh, context, resolve);
+      }
     } catch (reason) {
       if (activeGameRef.current?.instanceId === next.instanceId) { activeGameRef.current = null; setActiveGame(null); }
       setError(`The game could not open Present: ${String(reason)}`);
     } finally { gameLaunch.current = false; setBusy(false); }
   };
-  if (gameSection) return <div className="lesson-app">
-    <header className="lesson-header"><a className="studio-brand studio-home-link" href="#" aria-label="Story Studio" onClick={event => { event.preventDefault(); exitGame(); setGameSection(null); setBeginning(true); }}><span aria-hidden="true">✦</span> Story Studio</a><span className="lesson-project-title">{project?.title ?? 'Game library'}{dirty ? ' • Unsaved' : ''}</span>
-      <div className="lesson-toolbar"><button onClick={() => setAudioOpen(true)}>Audio settings</button></div></header>
-    {error && <div className="lesson-error" role="alert">{error}<button onClick={() => setError('')}>Dismiss</button></div>}
-    <nav className="lesson-phase-tabs" aria-label="Game sections"><button aria-pressed={gameSection === 'game'} title="Apply what you've learned through interactive games." onClick={() => enterGames('game')}>Challenge</button><button aria-pressed={gameSection === 'mastery'} title="Demonstrate your skills and complete the learning journey." onClick={() => enterGames('mastery')}>Mastery</button></nav>
+  const studentsWorkspace = studentsOpen ? <StudentsWorkspace onClose={() => setStudentsOpen(false)} onChange={applyStudents} initialView={studentsView} initialStudentId={detailsStudentId} lesson={project?.format === 'story-studio-episode' && file ? {project,folder:file.folderPath,participants,refreshKey:progressionRevision,onChange:progressionChanged}:undefined} /> : null;
+  const classControls = <div className="lesson-panel-content"><label className="lesson-field">Active class<select aria-label="Active class" disabled={busy || !!activeGame} value={activeClassId ?? ''} onChange={event=>void window.appApi.students.selectClass({id:event.target.value||null}).then(applyStudents).catch(reason=>setError(String(reason)))}><option value="">Individual session</option>{classes.filter(item=>!item.archived).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label><button disabled={!activeClassId || busy || !!activeGame} onClick={()=>void window.appApi.students.getSnapshot().then(value=>{applyStudents(value);const group=value.classes.find(item=>item.id===value.activeClassId);setParticipants(group?.studentIds.filter(id=>value.studentRoster.some(student=>student.id===id&&!student.archived))??[]);}).catch(reason=>setError(String(reason)))}>Load class participants</button><button onClick={()=>setStudentsOpen(true)}>Manage students and classes</button></div>;
+  const rosterSettings=<details><summary>Present roster settings</summary><label className="lesson-check"><input type="checkbox" checked={rosterVisible} onChange={event=>setRosterVisible(event.target.checked)} />Show roster in Present</label><label className="lesson-field">Roster placement<select value={rosterPosition} onChange={event=>setRosterPosition(event.target.value as 'top'|'bottom')}><option value="bottom">Bottom</option><option value="top">Top</option></select></label><label className="lesson-check"><input type="checkbox" checked={showScores} onChange={event=>setShowScores(event.target.checked)} />Show session scores</label><label className="lesson-check"><input type="checkbox" checked={showRewards} onChange={event=>setShowRewards(event.target.checked)} />Show reward totals</label><label className="lesson-check"><input type="checkbox" checked={showRelics} onChange={event=>setShowRelics(event.target.checked)} />Show relic progress</label><p>Present uses nicknames or anonymous student labels. It shows up to eight selected participants and reserves a separate strip above or below the story.</p></details>;
+  const teachRoster=<TeachRoster roster={roster} participants={participants} onParticipants={setParticipants} onDetails={id=>{setDetailsStudentId(id);setStudentsView('hero');setStudentsOpen(true);}} classControls={classControls} disabled={busy||!!activeGame} game={!!gameSection} progress={rosterProgress} adventureId={project?.format==='story-studio-episode'?project.adventure.id:undefined}>{rosterSettings}{project?.format==='story-studio-episode'&&file&&<GroupRewardControls project={project} folder={file.folderPath} participants={participants} roster={roster} onChange={progressionChanged} intentStore={groupRewardPlans.current} refreshKey={progressionRevision} />}</TeachRoster>;
+  const finishLesson=async()=>{if(await exitGame()){audio.current.stop();void media.command('pause');setSession(createSession());setGameSection(null);setMode('edit');setBeginning(true);setRosterVisible(false);}};
+  const createGameLesson = () => run(async () => {
+    const candidate = await window.lessonApi.createDraft('story');
+    const data = parseSceneDocument(candidate.data);
+    window.lessonApi.activateProject(candidate.activationToken);
+    history.current.reset(data); latest.current = data; setProject(data); setFile(candidate); setBeginning(false);
+  });
+  const leaveForPhase = async (sequence: SequenceKind) => {
+    if (busy || !await exitGame()) return;
+    if (!latest.current) await createGameLesson();
+    const current = latest.current; if (!current) return;
+    const entryId = current.sequences[sequence][0]?.id ?? null;
+    setSelection({ sequence, entryId, objectId: null });
+    setSession(old => navigate(current, old, entryId ? { sequence, entryId } : null));
+    setGameSection(null); setBeginning(false);
+  };
+  if (gameSection) return <div className="lesson-app">{studentsWorkspace}
+    <header className="lesson-header"><a className="studio-brand studio-home-link" href="#" aria-label="Story Studio" onClick={async event => { event.preventDefault(); if (await exitGame()) { setGameSection(null); setBeginning(true); } }}><span aria-hidden="true">✦</span> Story Studio</a><span className="lesson-project-title">{project?.title ?? 'Game library'}{dirty ? ' • Unsaved' : ''}</span>
+      <div className="lesson-toolbar"><button disabled={busy || !project} onClick={() => void save('save')}>Save lesson</button><button disabled={busy} onClick={() => void importPackage()}>Import portable episode</button><button disabled={busy || project?.format !== 'story-studio-episode'} onClick={() => void exportPackage()}>Export portable episode</button><button onClick={() => {setStudentsView('profiles');setStudentsOpen(true);}}>Students</button><button onClick={() => {setDetailsStudentId('');setStudentsView('hero');setStudentsOpen(true);}}>Hero Board</button><button onClick={() => setAudioOpen(true)}>Audio settings</button><button disabled={busy} onClick={()=>void finishLesson()}>Finish lesson</button></div></header>
+    {mediaRegistry.diagnostics.length > 0 && <p className="lesson-error" role="status">Media unavailable: {mediaRegistry.diagnostics.map(item => `${item.assetId ?? item.path ?? "Project"}: ${item.code}`).join(", ")}</p>}{error && <div className="lesson-error" role="alert">{error}<button onClick={() => setError('')}>Dismiss</button></div>}
+    <nav className="lesson-phase-tabs" aria-label="Game sections"><button disabled={busy} onClick={() => void leaveForPhase('story')}>Adventure</button><button disabled={busy} onClick={() => void leaveForPhase('activation')}>Discovery</button><button aria-pressed={gameSection === 'game'} title="Apply what you've learned through interactive games." onClick={() => enterGames('game')}>Challenge</button><button aria-pressed={gameSection === 'mastery'} title="Demonstrate your skills and complete the learning journey." onClick={() => enterGames('mastery')}>Mastery</button></nav>
+    <div className="game-control-workspace"><div className="game-control-content">
+    {notice && <p className="lesson-notice" role="status">{notice}</p>}
     <GameHost section={gameSection} session={activeGame} status={presentStatus} notice={gameNotice} hasLesson={!!project} busy={busy}
       onLaunch={id => void launchGame(id)} onRestart={() => activeGame && void launchGame(activeGame.gameId)} onExit={exitGame}
-      onBack={() => { exitGame(); setGameSection(null); setBeginning(!project); }} onFocus={() => void window.appApi.openPresent().catch(reason => setError(String(reason)))} />
+      onBack={async () => { if (await exitGame()) { setGameSection(null); setBeginning(!project); } }} onFocus={() => void window.appApi.openPresent().catch(reason => setError(String(reason)))} />
+    {activeGame?.gameId==='hero-dash' && <HeroDashControl key={activeGame.instanceId} state={dash} busy={busy}
+      onChange={next=>{setDash(next);if(next.config!==dash.config)saveActivity({id:selectedActivityId,moduleType:'hero-dash',moduleVersion:1,configVersion:1,config:next.config});}}
+      images={(mediaRegistry.registry?.images()??[]).map(image=>({id:image.id,label:image.label,url:resolve(image.id)}))}
+      onImport={()=>void importMedia('files')} onSave={()=>void save('save')}
+      collections={project?.format==='story-studio-episode'?(project.activities??[]).filter(a=>a.moduleType==='hero-dash').map(a=>({id:a.id,title:a.moduleType==='hero-dash'?a.config.title:''})):[]}
+      onLoad={id=>{if(project?.format!=='story-studio-episode')return;const activity=project.activities?.find(a=>a.id===id);if(activity?.moduleType==='hero-dash'){setSelectedActivityId(id);setDash(createDash(activity.config));}}}
+      onNew={()=>{const id=crypto.randomUUID();const race=createDash();saveActivity({id,moduleType:'hero-dash',moduleVersion:1,configVersion:1,config:race.config});setDash(race);}} />}
+    {project?.format === 'story-studio-episode' && <div className="game-setup-grid">
+      <details className="game-setup-compartment"><summary>Students and presentation</summary>{teachRoster}</details>
+      {!activeGame && <details className="game-setup-compartment game-activity-compartment" open><summary>Lesson activity configuration</summary><EpisodeActivities project={project} moduleType={gameSection === 'game' ? 'language-snake' : 'final-boss-hero'} registry={mediaRegistry.registry!} selectedId={selectedActivityId || project.activities?.find(item => item.moduleType === (gameSection === 'game' ? 'language-snake' : 'final-boss-hero'))?.id || ''} onSelect={setSelectedActivityId} onSave={saveActivity} disabled={busy} /></details>}
+      {activeGame?.moduleHost && <div className="lesson-toolbar"><span role="status">Activity: {hosted.state}</span><button disabled={hosted.state !== 'running'} onClick={() => void hosted.command('pause').catch(reason => setError(String(reason)))}>Pause activity</button><button disabled={hosted.state !== 'paused'} onClick={() => void hosted.command('resume').catch(reason => setError(String(reason)))}>Resume activity</button><span>{hosted.events.length} accepted activity events</span></div>}
+      {hosted.error && <p role="alert" className="lesson-error">{hosted.error}</p>}
+      {file && <details className="game-setup-compartment"><summary>Progress and rewards</summary><ProgressionPanel project={project} folder={file.folderPath} roster={roster} participants={participants} refreshKey={progressionRevision} onChange={progressionChanged} /></details>}
+    </div>}
+
+    </div><aside className="game-control-present" aria-label="Game presentation controls"><h2>Present controls</h2><button className="studio-present" onClick={() => void window.appApi.openPresent().catch(reason => setError(String(reason)))}>Open Present</button><CameraControls /><TranslationControls /></aside></div>
     <AudioSettingsWorkspace open={audioOpen} onClose={() => setAudioOpen(false)} />
   </div>;
-  if (beginning) return <div className="lesson-app"><Beginning onChoose={destination => {
+  if (beginning) return <div className="lesson-app">{studentsWorkspace}<Beginning onUsers={() => {setStudentsView('profiles');setStudentsOpen(true);}} onChoose={destination => {
     if (destination === 'settings') { setAudioOpen(true); return; }
     if (destination === 'legacy') { if (!dirty || window.confirm('Discard unsaved lesson changes and open Legacy?')) window.location.search = '?legacy=1'; return; }
     if (destination === 'game' || destination === 'mastery') { enterGames(destination); return; }
@@ -298,7 +536,7 @@ export function LessonApp() {
       let current = project;
       if (!current) {
         const candidate = await window.lessonApi.createDraft(destination);
-        current = parseLessonProject(candidate.data);
+        current = parseSceneDocument(candidate.data);
         window.lessonApi.activateProject(candidate.activationToken);
         history.current.reset(current); latest.current = current; setProject(current); setFile(candidate);
         setNotice('Unsaved lesson · Add cards or import media. Choose a folder when you save.');
@@ -309,17 +547,19 @@ export function LessonApp() {
       setBeginning(false);
     });
   }} />{error && <p className="lesson-error" role="alert">{error}</p>}<AudioSettingsWorkspace open={audioOpen} onClose={() => setAudioOpen(false)} /></div>;
-  return <div className="lesson-app">
+  return <div className="lesson-app">{studentsWorkspace}
     <header className="lesson-header"><a className="studio-brand studio-home-link" href="#" aria-label="Story Studio" title="Choose a mode" aria-disabled={busy || undefined} onClick={event => { event.preventDefault(); if (busy) return; void media.command('pause'); setBeginning(true); }}><span aria-hidden="true">✦</span> Story Studio</a><span className="lesson-project-title">{project?.title ?? `${entrySequence === 'story' ? 'Adventure' : 'Discovery'} · Teach`}{dirty ? ' • Unsaved' : ''}</span>
-      <div className="lesson-toolbar"><button disabled={busy} onClick={() => void load('new')}>New project</button><button disabled={busy} onClick={() => void load('open')}>Open project</button><button className="studio-primary" disabled={busy || !project || (!dirty && !file?.isDraft)} onClick={() => void save('save')}>Save</button><button disabled={busy || !project} onClick={() => void save('saveAs')}>Save as</button><button onClick={() => setAudioOpen(true)}>Audio settings</button></div>
+      <div className="lesson-toolbar"><button disabled={busy} onClick={() => void load('new')}>New project</button><button disabled={busy} onClick={() => void load('open')}>Open project</button><button className="studio-primary" disabled={busy || !project || (!dirty && !file?.isDraft)} onClick={() => void save('save')}>Save</button><button disabled={busy || !project} onClick={() => void save('saveAs')}>Save as</button><button disabled={busy} onClick={() => void importPackage()}>Import portable episode</button><button disabled={busy || project?.format !== 'story-studio-episode'} onClick={() => void exportPackage()}>Export portable episode</button><button onClick={() => {setStudentsView('profiles');setStudentsOpen(true);}}>Students</button><button onClick={() => {setDetailsStudentId('');setStudentsView('hero');setStudentsOpen(true);}}>Hero Board</button><button onClick={() => setAudioOpen(true)}>Audio settings</button><button disabled={busy} onClick={()=>void finishLesson()}>Finish lesson</button></div>
       <div className="lesson-toolbar"><button aria-pressed={mode === 'edit'} onClick={() => { setMode('edit'); setDrawing(false); void media.command('pause'); }}>Edit</button><button disabled={!project} aria-pressed={mode === 'teach'} onClick={teach}>Teach</button><button className="studio-present" disabled={!project || busy} onClick={() => void openPresent()}>Open Present</button></div>
     </header>
-    {error && <div className="lesson-error" role="alert">{error}<button onClick={() => setError('')}>Dismiss</button></div>}
-    {project && <>
+    {mediaRegistry.diagnostics.length > 0 && <p className="lesson-error" role="status">Media unavailable: {mediaRegistry.diagnostics.map(item => `${item.assetId ?? item.path ?? "Project"}: ${item.code}`).join(", ")}</p>}{error && <div className="lesson-error" role="alert">{error}<button onClick={() => setError('')}>Dismiss</button></div>}
+    {derivedMedia.errors.length > 0 && <p className="lesson-error" role="alert">{derivedMedia.errors.join("; ")}</p>}{project && <>
       <nav className="lesson-phase-tabs" aria-label="Lesson phases"><button aria-pressed={currentSequence === 'story'} title="Experience the story and enter its world." onClick={() => selectPhase('story')}><img src={storyIcon} alt="" />Adventure</button><button aria-pressed={currentSequence === 'activation'} title="Explore and understand new language and concepts." onClick={() => selectPhase('activation')}><img src={activationIcon} alt="" />Discovery</button><button title="Apply what you've learned through interactive games." onClick={() => enterGames('game')}>Challenge</button><button title="Demonstrate your skills and complete the learning journey." onClick={() => enterGames('mastery')}>Mastery</button><span>{mode === 'edit' ? 'Edit' : 'Live'} / {currentSequence === 'story' ? 'Adventure' : 'Discovery'} / {displayed?.title ?? 'Choose a scene'}</span></nav>
       <div className="lesson-workspace" style={layout.style}>
-        <main className="lesson-main">
-          {mode === 'edit' && <LessonMediaPool key={project.id} project={project} binId={activeBinId} onBinChange={setActiveBinId} onImport={importMedia} onInsert={addScenes} onChange={apply} />}
+        <main className="lesson-main" style={activationPaused ? { pointerEvents: 'none', opacity: .7 } : undefined}>
+          {mode === 'edit' && <div className="lesson-content-rail"><EpisodeContentPanel key={`${file?.activationToken}:${project.id}:${project.format}`} project={project} registry={mediaRegistry.registry!} resolve={resolve} onChange={apply} onConvert={convertEpisode} onInsert={addScenes} busy={busy} />
+          {project.format === 'story-studio-episode' && <AdventureDefinitionEditor project={project} registry={mediaRegistry.registry!} onChange={apply} busy={busy} />}
+          <LessonMediaPool key={project.id} project={project} registry={mediaRegistry.registry!} resolveAsset={resolve} binId={activeBinId} onBinChange={setActiveBinId} onImport={importMedia} onInsert={addScenes} onChange={apply} /></div>}
           {mode === 'edit' && layout.splitter('pool')}
           <div className="lesson-toolbar lesson-canvas-tools">
             {mode === 'edit' ? <><button className="studio-creative" onClick={() => addScenes()}>Add scene</button><button className="studio-creative" disabled={!editScene} onClick={() => add('card')}>Add Card</button><button className="studio-creative" disabled={!editScene} onClick={() => add('bubble')}>Add Bubble</button><button className="studio-creative" disabled={!editScene} onClick={() => add('text')}>Add Text</button><button disabled={!editScene} aria-pressed={drawing} onClick={() => setDrawing(!drawing)}>Draw</button><button disabled={!object} onClick={duplicateSelected}>Duplicate</button><button disabled={!object} onClick={removeSelected}>Delete</button><button disabled={!history.current.canUndo || busy} onClick={() => historyStep('undo')}>Undo</button><button disabled={!history.current.canRedo || busy} onClick={() => historyStep('redo')}>Redo</button><button disabled={!editScene} onClick={() => { if (selection.entryId) setSession(old => navigate(project, old, { sequence: selection.sequence, entryId: selection.entryId! })); }}>Show in Present</button></>
@@ -350,21 +590,33 @@ export function LessonApp() {
           </div>
           {mode === 'teach' && videoAsset && <div className="lesson-toolbar"><button onClick={() => void media.command('play')}>Play video</button><button onClick={() => void media.command('pause')}>Pause video</button><button onClick={() => void media.command('replay')}>Replay video</button><label>Video position<input aria-label="Video position" type="range" min="0" max={media.status?.durationSec || 1} step=".1" value={media.status?.positionSec ?? 0} onChange={e => void media.command('seek', Number(e.target.value))} /></label><span>{media.error ?? (media.available ? media.status?.state ?? 'Ready' : 'Open Present to play video')}</span></div>}
           {layout.splitter('timeline')}
-          <LessonTimeline onHistory={historyStep} onProjectChange={apply} project={project} sequence={currentSequence} selectedEntryId={mode === 'edit' ? selection.entryId : session.cursor?.entryId ?? null} live={session.cursor} readOnly={mode === 'teach'}
+          <LessonTimeline resolveAsset={resolve} onHistory={historyStep} onProjectChange={apply} project={project} sequence={currentSequence} selectedEntryId={mode === 'edit' ? selection.entryId : session.cursor?.entryId ?? null} live={session.cursor} readOnly={mode === 'teach'}
             onSelect={entryId => { if (mode === 'edit') setSelection(old => ({ ...old, entryId, objectId: null })); else setSession(old => navigate(project, old, { sequence: currentSequence, entryId })); }} onAdd={addScenes}
             onReorder={(id, before) => apply(reorderEntry(project, selection.sequence, id, before))}
             onDelete={id => { const next = removeEntry(project, selection.sequence, id); apply(next); setSelection(old => ({ ...old, entryId: next.sequences[old.sequence][0]?.id ?? null, objectId: null })); }}
             onCopy={duplicateEntry} onCopyToActivation={(id, linked) => duplicateEntry(id, linked, 'activation')} onSection={(id, section) => apply({ ...project, sequences: { ...project.sequences, [selection.sequence]: project.sequences[selection.sequence].map(entry => entry.id === id ? { ...entry, section } : entry) } })} />
         </main>
         {layout.splitter('inspector')}
-        {mode === 'edit' ? <div className="lesson-side"><label>Lesson title<input value={project.title} onChange={e => apply({ ...project, title: e.target.value })} /></label>
+        <div className="lesson-side">
+        {teachRoster}
+        {project.format === 'story-studio-episode' && <div className="lesson-panel-content">
+          <ActivationActivities project={project} onChange={apply} participants={participants} sessionId={session.id} readOnly={mode === 'teach'} disabled={busy}
+            onRegisterRun={registerRun} onLifecycle={(context, state) => window.appApi.progression.lifecycle({ runId: context.runId, state })}
+            onStart={sceneId => { const entry = project.sequences.activation.find(item => item.sceneId === sceneId); if (!entry) { setError('Activation scene has no sequence entry.'); return; } setMode('teach'); setSession(old => navigate(project, old.cursor?.sequence === 'activation' ? old : startActivation(project, old), { sequence: 'activation', entryId: entry.id })); }}
+            onPaused={paused => { setActivationPaused(paused); if (paused) { activationVideoPlaying.current = !!media.intent?.playing; audio.current.pause(); void media.command('pause'); } else { audio.current.resume(); if (activationVideoPlaying.current) void media.command('play'); activationVideoPlaying.current = false; } }}
+            onStop={() => { setActivationPaused(false); setSession(old => exitActivation(project, old)); }}
+            onEvent={recordActivation} />
+          {file && <details className="game-setup-compartment"><summary>Progress and rewards</summary><ProgressionPanel project={project} folder={file.folderPath} roster={roster} participants={participants} refreshKey={progressionRevision} onChange={progressionChanged} /></details>}
+        </div>}
+        {mode === 'edit' ? <div><label>Lesson title<input value={project.title} onChange={e => apply({ ...project, title: e.target.value })} /></label>
           {editScene && Object.values(project.sequences).flat().filter(entry => entry.sceneId === editScene.id).length > 1 && <p className="lesson-shared-note">Shared scene: changes appear wherever this scene is reused. Use an independent copy to edit separately.</p>}
-          <SceneInspector project={project} scene={editScene} object={object} onSelectObject={id => selectMany(id ? [id] : [])} onPreviewFace={previewFace} onSceneChange={changeScene} onObjectChange={item => editScene && apply(putObject(project, editScene.id, item))} onCardChange={card => apply(putCard(project, card))} onDelete={removeSelected} onDuplicate={duplicateSelected} onLayer={direction => editScene && object && apply(layerObject(project, editScene.id, object.id, direction))}
+          <SceneInspector registry={mediaRegistry.registry!} project={project} scene={editScene} object={object} onSelectObject={id => selectMany(id ? [id] : [])} onPreviewFace={previewFace} onSceneChange={changeScene} onObjectChange={item => editScene && apply(putObject(project, editScene.id, item))} onCardChange={card => apply(putCard(project, card))} onDelete={removeSelected} onDuplicate={duplicateSelected} onLayer={direction => editScene && object && apply(layerObject(project, editScene.id, object.id, direction))}
             onSaveSet={set => apply({ ...project, cardSets: [...project.cardSets.filter(item => item.id !== set.id), set] })}
             onInsertSet={id => { if (!editScene) return; try { const result = insertCardSet(project, editScene.id, id); apply(result.project); setSelection(old => ({ ...old, objectId: result.objectIds[0] ?? null })); } catch (reason) { setError(String(reason)); } }}
             onLibrarySave={() => object?.kind === 'card' && apply({ ...project, library: [...new Set([...project.library, object.cardId])] })}
             onLibraryInsert={(id, linked) => editCommand(() => { if (!editScene) return; const result = addCard(project, editScene.id, id, linked); apply(result.project); setSelection(old => ({ ...old, objectId: result.objectId })); })} />
-        </div> : <LessonTeachControls project={project} scene={liveScene} session={session} onSession={setSession} selectedId={liveObject} onSelect={setLiveObject} drawing={drawing} onDrawing={setDrawing} onPlayAudio={() => { if (liveScene) void audio.current.play(liveScene.audio, resolve).catch(reason => setError(String(reason))); }} onStopAudio={() => audio.current.stop()} />}
+        </div> : <LessonTeachControls project={project} scene={liveScene} session={session} onSession={activationPaused ? () => {} : setSession} selectedId={liveObject} onSelect={setLiveObject} drawing={drawing} onDrawing={setDrawing} onPlayAudio={() => { if (liveScene && !activationPaused) void audio.current.play(liveScene.audio, resolve).catch(reason => setError(String(reason))); }} onStopAudio={() => audio.current.stop()} />}
+        </div>
       </div>
     </>}
     {menus.content}

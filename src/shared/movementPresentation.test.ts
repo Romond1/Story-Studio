@@ -41,3 +41,12 @@ test('safe legacy Windows paths and filename punctuation remain valid movement m
  assert.equal(event.event.gifRelativePath, 'assets/my #1?.gif');
  assert.equal(parseMovementPresentation({ ...event, event: { ...event.event, gifRelativePath: '../private.gif' } }), null);
 });
+test('movement render URLs are scoped runtime fields, never authored paths', () => {
+ const event=createMovementPresentation('render',DEFAULT_MOVEMENT_EVENTS[0],1,{width:800,height:600});
+ const rendered={...event,gifSrc:'media://scoped/lease/grant'};
+ assert.equal(parseMovementPresentation(rendered)?.gifSrc,rendered.gifSrc);
+ assert.equal(parseMovementPresentation({...event,gifSrc:'https://tracker.test/a.gif'}),null);
+ assert.equal(parseMovementPresentation({...event,gifSrc:'media://assets/raw.gif'}),null);
+ assert.equal(parseMovementPresentation({...event,gifSrc:''})?.gifSrc,'');
+ assert.equal(event.event.gifRelativePath,DEFAULT_MOVEMENT_EVENTS[0].gifRelativePath);
+});

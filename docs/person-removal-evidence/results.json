@@ -1,0 +1,218 @@
+{
+  "fixture": "Public MediaPipe portrait in moving synthetic webcam; not physical camera",
+  "passed": [
+    "Real landscape model removes room background offline while sharing one live camera with tracking",
+    "Single acquisition, single segmentation worker and one frame in flight; video remains responsive",
+    "Segmentation failure hides output without exposing room or stopping capture",
+    "Toggle off restores original only by teacher choice; key mode releases segmentation worker",
+    "Hidden releases person inference; camera off releases all workers and capture"
+  ],
+  "errors": [],
+  "measurements": {
+    "baseline": {
+      "video": {
+        "fps": 29.987005630774174,
+        "p95ms": 39.09999996423721
+      },
+      "ui": {
+        "fps": 59.999000016666386,
+        "p95ms": 16.800000000000182
+      },
+      "acquisitions": 1,
+      "activeWorkers": 0,
+      "maxInFlight": 0,
+      "samples": [
+        {
+          "presentCpu": 2.7837983491472658,
+          "presentWorkingSetMB": 137.78515625,
+          "workingSetMB": 915.796875
+        },
+        {
+          "presentCpu": 2.2998274729911587,
+          "presentWorkingSetMB": 138.53125,
+          "workingSetMB": 918.125
+        },
+        {
+          "presentCpu": 2.3511620880630035,
+          "presentWorkingSetMB": 141.16015625,
+          "workingSetMB": 916.66796875
+        }
+      ],
+      "removal": {
+        "state": "off"
+      }
+    },
+    "personRemoval": {
+      "video": {
+        "fps": 29.998368289501173,
+        "p95ms": 40.90000003576279
+      },
+      "ui": {
+        "fps": 59.99925000937488,
+        "p95ms": 16.80000000000109
+      },
+      "acquisitions": 1,
+      "activeWorkers": 1,
+      "maxInFlight": 1,
+      "samples": [
+        {
+          "presentCpu": 3.496783723495037,
+          "presentWorkingSetMB": 302.23046875,
+          "workingSetMB": 1086.125
+        },
+        {
+          "presentCpu": 3.7065410568819472,
+          "presentWorkingSetMB": 374.88671875,
+          "workingSetMB": 1158.5390625
+        },
+        {
+          "presentCpu": 3.502882589111828,
+          "presentWorkingSetMB": 446.37109375,
+          "workingSetMB": 1227.08203125
+        },
+        {
+          "presentCpu": 3.5790232532820334,
+          "presentWorkingSetMB": 517.82421875,
+          "workingSetMB": 1298.28515625
+        }
+      ],
+      "removal": {
+        "state": "running",
+        "fps": 10,
+        "inferenceMs": 8.7,
+        "maskAgeMs": 33,
+        "renderFps": 30
+      }
+    },
+    "trackingOnly": {
+      "video": {
+        "fps": 29.98400852884419,
+        "p95ms": 38.19999998807907
+      },
+      "ui": {
+        "fps": 59.9990000166664,
+        "p95ms": 16.799999999999272
+      },
+      "acquisitions": 1,
+      "activeWorkers": 1,
+      "maxInFlight": 1,
+      "samples": [
+        {
+          "presentCpu": 6.034983893569986,
+          "presentWorkingSetMB": 655.46875,
+          "workingSetMB": 1448.16015625
+        },
+        {
+          "presentCpu": 6.153134651574418,
+          "presentWorkingSetMB": 702.70703125,
+          "workingSetMB": 1497.79296875
+        },
+        {
+          "presentCpu": 5.9130942963926225,
+          "presentWorkingSetMB": 705.046875,
+          "workingSetMB": 1498.16796875
+        }
+      ],
+      "removal": {
+        "state": "off"
+      }
+    },
+    "personAndTracking": {
+      "video": {
+        "fps": 30.003529827026565,
+        "p95ms": 41.19999998807907
+      },
+      "ui": {
+        "fps": 59.99886794588782,
+        "p95ms": 16.80000000000291
+      },
+      "acquisitions": 1,
+      "activeWorkers": 2,
+      "maxInFlight": 1,
+      "samples": [
+        {
+          "presentCpu": 7.27194088584407,
+          "presentWorkingSetMB": 751.24609375,
+          "workingSetMB": 1545.9609375
+        },
+        {
+          "presentCpu": 6.874539398526874,
+          "presentWorkingSetMB": 753.68359375,
+          "workingSetMB": 1548.05859375
+        },
+        {
+          "presentCpu": 7.221397413484109,
+          "presentWorkingSetMB": 745.79296875,
+          "workingSetMB": 1538.5546875
+        },
+        {
+          "presentCpu": 6.778206354876827,
+          "presentWorkingSetMB": 749.109375,
+          "workingSetMB": 1541.77734375
+        },
+        {
+          "presentCpu": 6.7925441286036445,
+          "presentWorkingSetMB": 747.26953125,
+          "workingSetMB": 1539.98046875
+        },
+        {
+          "presentCpu": 6.7216680080714095,
+          "presentWorkingSetMB": 752.01171875,
+          "workingSetMB": 1544.2421875
+        },
+        {
+          "presentCpu": 7.391702236904275,
+          "presentWorkingSetMB": 733.05859375,
+          "workingSetMB": 1524.9375
+        },
+        {
+          "presentCpu": 6.804616210413312,
+          "presentWorkingSetMB": 736.37109375,
+          "workingSetMB": 1528.375
+        },
+        {
+          "presentCpu": 7.373529810696764,
+          "presentWorkingSetMB": 746.3359375,
+          "workingSetMB": 1543.75
+        },
+        {
+          "presentCpu": 6.869174666005445,
+          "presentWorkingSetMB": 748.8671875,
+          "workingSetMB": 1545.8671875
+        },
+        {
+          "presentCpu": 6.691118482006265,
+          "presentWorkingSetMB": 749.74609375,
+          "workingSetMB": 1548.12890625
+        },
+        {
+          "presentCpu": 6.866034269403132,
+          "presentWorkingSetMB": 752.3984375,
+          "workingSetMB": 1550.45703125
+        },
+        {
+          "presentCpu": 6.966402150613873,
+          "presentWorkingSetMB": 752.734375,
+          "workingSetMB": 1550.91796875
+        },
+        {
+          "presentCpu": 7.013208987587409,
+          "presentWorkingSetMB": 758.20703125,
+          "workingSetMB": 1556.69140625
+        },
+        {
+          "presentCpu": 6.960840848970654,
+          "presentWorkingSetMB": 747.40625,
+          "workingSetMB": 1546.1796875
+        }
+      ],
+      "removal": {
+        "state": "running",
+        "fps": 10,
+        "inferenceMs": 10.1,
+        "maskAgeMs": 100,
+        "renderFps": 30
+      }
+    }
+  }
+}

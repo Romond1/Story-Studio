@@ -1,0 +1,14 @@
+✔ same-named adventures and rewards remain separate; only awarded badges are achievements (2.3976ms)
+✔ class and student filters intersect without hiding archived history (0.5154ms)
+✔ episode filtering uses matching adventure history or completion while balances stay lifetime (0.5348ms)
+✔ receipt definitions use accepted chronological snapshots, current definition explicitly overrides (0.4579ms)
+✔ captured definitions label historical balances; missing definitions expose IDs without invented badges (1.0084ms)
+✔ participation includes captured and completed students without inventing balances or achievements (0.2425ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 95.223

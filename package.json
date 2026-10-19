@@ -17,8 +17,10 @@
     "build:main": "tsc -p tsconfig.main.json && node scripts/prepare-translation.mjs",
     "test": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/*.test.js dist-test/shared/lesson/*.test.js",
     "check:audio": "npm test && npm run build:renderer && npm run build:main",
-    "check:games": "tsc -p tsconfig.final-boss.json && node --test games/language-snake/inputBridge.test.mjs games/final-boss-hero/hostBridge.test.mjs games/final-boss-hero/projectRoundTrip.test.cjs games/final-boss-hero/editorImport.test.cjs games/final-boss-hero/observePlayArea.test.cjs games/final-boss-hero/fitPlayArea.test.cjs games/final-boss-hero/boardProjection.test.cjs",
+    "check:games": "tsc -p tsconfig.final-boss.json && node --test games/language-snake/inputBridge.test.mjs games/final-boss-hero/hostBridge.test.mjs games/final-boss-hero/projectRoundTrip.test.cjs games/final-boss-hero/editorImport.test.cjs games/final-boss-hero/observePlayArea.test.cjs games/final-boss-hero/fitPlayArea.test.cjs games/final-boss-hero/boardProjection.test.cjs games/shared/hostedScheduler.test.mjs games/shared/hostedBridge.test.mjs games/language-snake/hostedConfig.test.mjs games/final-boss-hero/hostedAdapter.test.cjs",
     "check:release": "npm run check:audio && npm run check:games",
+    "test:hero-dash": "node scripts/hero-dash-refinement-smoke.cjs",
+    "test:hero-dash:visual": "node scripts/hero-dash-refinement-smoke.cjs --visual-phase",
     "test:counter": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/counterGame.test.js",
     "test:translation": "node --test scripts/translation-cache.test.cjs scripts/translation-capture.test.cjs scripts/translation-service.test.cjs scripts/whisper-backend.test.cjs scripts/whisper-runtime.test.cjs scripts/whisper-host.test.cjs scripts/whisper-session.test.cjs"
   },
@@ -30,6 +32,13 @@
     },
     "files": [
       "dist/**/*",
+      "games/final-boss-hero/assets/board-dash/start.png",
+      "games/final-boss-hero/assets/board-dash/finish.png",
+      "games/final-boss-hero/assets/board-dash/move.png",
+      "games/final-boss-hero/assets/board-dash/bonus.png",
+      "games/final-boss-hero/assets/board-dash/back3.png",
+      "games/final-boss-hero/assets/board-dash/roll-again.png",
+      "games/final-boss-hero/assets/board-dash/steal.png",
       "package.json"
     ],
     "linux": {
@@ -59,12 +68,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-rnd": "^10.5.2",
+    "three": "0.180.0",
     "zustand": "4.5.7"
   },
   "devDependencies": {
     "@types/node": "^22.13.9",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@types/three": "0.180.0",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",

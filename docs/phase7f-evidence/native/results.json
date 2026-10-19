@@ -1,0 +1,564 @@
+{
+  "passed": [
+    "01 Create student profiles",
+    "02 Create a class",
+    "03 Enroll multiple students in two classes",
+    "04 Select the class in Teach before loading the complete episode",
+    "05 Load the complete episode",
+    "06 Launch Adventure and verify character artwork",
+    "07 Display the student roster in Present",
+    "08 Transition to Activation with derived character Card V2 and complete for two students",
+    "09 Launch Challenge with authored questions and derived artwork",
+    "10 Record actual activity result for two captured permanent identities",
+    "11 Approve and grant rewards exactly once to captured students",
+    "12 Update student relic progress through teacher UI",
+    "13 Open Mastery",
+    "14 Verify updated inventory and retained relic progress in Mastery",
+    "15 Finish lesson and clear Present",
+    "16 Close and restart Story Studio",
+    "17 Reopen class and confirm exact progress persistence plus idempotent event/decision replay",
+    "18 Open another episode with the same student identities and progress",
+    "19 Switch adventures and confirm media and progression scope",
+    "20 Export lesson without private student data"
+  ],
+  "extraPassed": [
+    "03 Select the teaching class before opening any episode",
+    "04 Open the complete authored episode and load class participants",
+    "09 Teacher request creates two pending rewards; default policy grants nothing before approval",
+    "11 Hero Board displays the two approved permanent student inventories",
+    "14 Profile archive and restore preserve awarded history and relic stages",
+    "18 Second adventure uses the same asset ID and character display name but distinct cyan pixels in Control/Present; old gold grant is rejected"
+  ],
+  "temp": "D:\\Temp\\story-phase7f-iYjinQ",
+  "errors": [],
+  "actualEvents": [
+    {
+      "version": 1,
+      "eventId": "8479d4b1-1090-4e9a-839e-63bb2467f631",
+      "context": {
+        "sessionId": "ee7414e0-f785-426b-a762-0550c517a253",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "instanceId": "b27dfe58-06cd-4719-90eb-555cb7025959",
+        "occurrenceId": "snake-occurrence",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "adventureId": "native-adventure-a",
+        "participantIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ]
+      },
+      "sequence": 4,
+      "type": "score-reported",
+      "payload": {
+        "scores": [
+          {
+            "participantId": "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+            "score": 0
+          },
+          {
+            "participantId": "6efa2991-e2f7-482e-afde-4fb38abe447a",
+            "score": 0
+          }
+        ]
+      }
+    },
+    {
+      "version": 1,
+      "eventId": "e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752",
+      "context": {
+        "sessionId": "ee7414e0-f785-426b-a762-0550c517a253",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "instanceId": "b27dfe58-06cd-4719-90eb-555cb7025959",
+        "occurrenceId": "snake-occurrence",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "adventureId": "native-adventure-a",
+        "participantIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ]
+      },
+      "sequence": 5,
+      "type": "activity-completed",
+      "payload": {
+        "participantIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ],
+        "outcome": "lost"
+      }
+    }
+  ],
+  "replay": [
+    {
+      "accepted": true,
+      "revision": 4,
+      "duplicate": true
+    },
+    {
+      "accepted": true,
+      "revision": 5,
+      "duplicate": true
+    },
+    {
+      "accepted": true,
+      "revision": 7,
+      "duplicate": true
+    },
+    {
+      "accepted": true,
+      "revision": 8,
+      "duplicate": true
+    }
+  ],
+  "finalSnapshot": {
+    "version": 1,
+    "revision": 12,
+    "runs": [
+      {
+        "context": {
+          "sessionId": "ee7414e0-f785-426b-a762-0550c517a253",
+          "runId": "c0afd667-adbf-4c7e-ae9c-1ed782984034",
+          "instanceId": "activation",
+          "occurrenceId": "activation-occurrence",
+          "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+          "adventureId": "native-adventure-a",
+          "participantIds": [
+            "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+            "6efa2991-e2f7-482e-afde-4fb38abe447a"
+          ]
+        },
+        "moduleType": "activation-cards",
+        "adventureDefinition": {
+          "id": "native-adventure-a",
+          "version": "1",
+          "name": "Same display adventure",
+          "description": "Synthetic progression definitions",
+          "rewards": [
+            {
+              "id": "reward-star",
+              "name": "Star",
+              "kind": "collectible",
+              "iconAssetId": "reward-art"
+            }
+          ],
+          "relics": [
+            {
+              "id": "relic-star",
+              "name": "Star relic",
+              "imageAssetId": "reward-art",
+              "stages": [
+                {
+                  "id": "stage-first",
+                  "name": "First",
+                  "requiredProgress": 1,
+                  "imageAssetId": "reward-art"
+                },
+                {
+                  "id": "stage-second",
+                  "name": "Second",
+                  "requiredProgress": 3,
+                  "imageAssetId": "reward-art"
+                }
+              ]
+            }
+          ]
+        },
+        "lastSequence": 1
+      },
+      {
+        "context": {
+          "sessionId": "ee7414e0-f785-426b-a762-0550c517a253",
+          "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+          "instanceId": "b27dfe58-06cd-4719-90eb-555cb7025959",
+          "occurrenceId": "snake-occurrence",
+          "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+          "adventureId": "native-adventure-a",
+          "participantIds": [
+            "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+            "6efa2991-e2f7-482e-afde-4fb38abe447a"
+          ]
+        },
+        "moduleType": "language-snake",
+        "adventureDefinition": {
+          "id": "native-adventure-a",
+          "version": "1",
+          "name": "Same display adventure",
+          "description": "Synthetic progression definitions",
+          "rewards": [
+            {
+              "id": "reward-star",
+              "name": "Star",
+              "kind": "collectible",
+              "iconAssetId": "reward-art"
+            }
+          ],
+          "relics": [
+            {
+              "id": "relic-star",
+              "name": "Star relic",
+              "imageAssetId": "reward-art",
+              "stages": [
+                {
+                  "id": "stage-first",
+                  "name": "First",
+                  "requiredProgress": 1,
+                  "imageAssetId": "reward-art"
+                },
+                {
+                  "id": "stage-second",
+                  "name": "Second",
+                  "requiredProgress": 3,
+                  "imageAssetId": "reward-art"
+                }
+              ]
+            }
+          ]
+        },
+        "lastSequence": 5
+      },
+      {
+        "context": {
+          "sessionId": "ee7414e0-f785-426b-a762-0550c517a253",
+          "runId": "2c3883e8-69c3-46cc-9e62-a439ba4f8677",
+          "instanceId": "8d7bac71-61ad-43b2-b7f5-5aa01ae27f48",
+          "occurrenceId": "boss-occurrence",
+          "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+          "adventureId": "native-adventure-a",
+          "participantIds": [
+            "6efa2991-e2f7-482e-afde-4fb38abe447a",
+            "ce1914ca-5f9d-4fba-b2c2-5f5086099d60"
+          ]
+        },
+        "moduleType": "final-boss-hero",
+        "adventureDefinition": {
+          "id": "native-adventure-a",
+          "version": "1",
+          "name": "Same display adventure",
+          "description": "Synthetic progression definitions",
+          "rewards": [
+            {
+              "id": "reward-star",
+              "name": "Star",
+              "kind": "collectible",
+              "iconAssetId": "reward-art"
+            }
+          ],
+          "relics": [
+            {
+              "id": "relic-star",
+              "name": "Star relic",
+              "imageAssetId": "reward-art",
+              "stages": [
+                {
+                  "id": "stage-first",
+                  "name": "First",
+                  "requiredProgress": 1,
+                  "imageAssetId": "reward-art"
+                },
+                {
+                  "id": "stage-second",
+                  "name": "Second",
+                  "requiredProgress": 3,
+                  "imageAssetId": "reward-art"
+                }
+              ]
+            }
+          ]
+        },
+        "lastSequence": 0
+      }
+    ],
+    "receipts": [
+      {
+        "key": "[\"command\",\"register:c0afd667-adbf-4c7e-ae9c-1ed782984034\"]",
+        "canonical": "{\"commandId\":\"register:c0afd667-adbf-4c7e-ae9c-1ed782984034\",\"run\":{\"adventureDefinition\":{\"description\":\"Synthetic progression definitions\",\"id\":\"native-adventure-a\",\"name\":\"Same display adventure\",\"relics\":[{\"id\":\"relic-star\",\"imageAssetId\":\"reward-art\",\"name\":\"Star relic\",\"stages\":[{\"id\":\"stage-first\",\"imageAssetId\":\"reward-art\",\"name\":\"First\",\"requiredProgress\":1},{\"id\":\"stage-second\",\"imageAssetId\":\"reward-art\",\"name\":\"Second\",\"requiredProgress\":3}]}],\"rewards\":[{\"iconAssetId\":\"reward-art\",\"id\":\"reward-star\",\"kind\":\"collectible\",\"name\":\"Star\"}],\"version\":\"1\"},\"context\":{\"adventureId\":\"native-adventure-a\",\"episodeId\":\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"instanceId\":\"activation\",\"occurrenceId\":\"activation-occurrence\",\"participantIds\":[\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"6efa2991-e2f7-482e-afde-4fb38abe447a\"],\"runId\":\"c0afd667-adbf-4c7e-ae9c-1ed782984034\",\"sessionId\":\"ee7414e0-f785-426b-a762-0550c517a253\"},\"moduleType\":\"activation-cards\"},\"type\":\"register-run\"}",
+        "result": {
+          "accepted": true,
+          "revision": 1
+        }
+      },
+      {
+        "key": "[\"event\",\"native-adventure-a\",\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"c0afd667-adbf-4c7e-ae9c-1ed782984034\",\"d5cd6efe-b7d2-41fd-8cab-cd35b6d0eb2e\"]",
+        "canonical": "{\"event\":{\"context\":{\"adventureId\":\"native-adventure-a\",\"episodeId\":\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"instanceId\":\"activation\",\"occurrenceId\":\"activation-occurrence\",\"participantIds\":[\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"6efa2991-e2f7-482e-afde-4fb38abe447a\"],\"runId\":\"c0afd667-adbf-4c7e-ae9c-1ed782984034\",\"sessionId\":\"ee7414e0-f785-426b-a762-0550c517a253\"},\"eventId\":\"d5cd6efe-b7d2-41fd-8cab-cd35b6d0eb2e\",\"payload\":{\"outcome\":\"completed\",\"participantIds\":[\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"6efa2991-e2f7-482e-afde-4fb38abe447a\"]},\"type\":\"activity-completed\",\"version\":1},\"type\":\"record-event\"}",
+        "result": {
+          "accepted": true,
+          "revision": 2
+        }
+      },
+      {
+        "key": "[\"command\",\"register:bcd6af49-737b-44ed-a4cc-e8002dc0e62a\"]",
+        "canonical": "{\"commandId\":\"register:bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"run\":{\"adventureDefinition\":{\"description\":\"Synthetic progression definitions\",\"id\":\"native-adventure-a\",\"name\":\"Same display adventure\",\"relics\":[{\"id\":\"relic-star\",\"imageAssetId\":\"reward-art\",\"name\":\"Star relic\",\"stages\":[{\"id\":\"stage-first\",\"imageAssetId\":\"reward-art\",\"name\":\"First\",\"requiredProgress\":1},{\"id\":\"stage-second\",\"imageAssetId\":\"reward-art\",\"name\":\"Second\",\"requiredProgress\":3}]}],\"rewards\":[{\"iconAssetId\":\"reward-art\",\"id\":\"reward-star\",\"kind\":\"collectible\",\"name\":\"Star\"}],\"version\":\"1\"},\"context\":{\"adventureId\":\"native-adventure-a\",\"episodeId\":\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"instanceId\":\"b27dfe58-06cd-4719-90eb-555cb7025959\",\"occurrenceId\":\"snake-occurrence\",\"participantIds\":[\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"6efa2991-e2f7-482e-afde-4fb38abe447a\"],\"runId\":\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"sessionId\":\"ee7414e0-f785-426b-a762-0550c517a253\"},\"moduleType\":\"language-snake\"},\"type\":\"register-run\"}",
+        "result": {
+          "accepted": true,
+          "revision": 3
+        }
+      },
+      {
+        "key": "[\"event\",\"native-adventure-a\",\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"8479d4b1-1090-4e9a-839e-63bb2467f631\"]",
+        "canonical": "{\"event\":{\"context\":{\"adventureId\":\"native-adventure-a\",\"episodeId\":\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"instanceId\":\"b27dfe58-06cd-4719-90eb-555cb7025959\",\"occurrenceId\":\"snake-occurrence\",\"participantIds\":[\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"6efa2991-e2f7-482e-afde-4fb38abe447a\"],\"runId\":\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"sessionId\":\"ee7414e0-f785-426b-a762-0550c517a253\"},\"eventId\":\"8479d4b1-1090-4e9a-839e-63bb2467f631\",\"payload\":{\"scores\":[{\"participantId\":\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"score\":0},{\"participantId\":\"6efa2991-e2f7-482e-afde-4fb38abe447a\",\"score\":0}]},\"type\":\"score-reported\",\"version\":1},\"type\":\"record-event\"}",
+        "result": {
+          "accepted": true,
+          "revision": 4
+        }
+      },
+      {
+        "key": "[\"event\",\"native-adventure-a\",\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752\"]",
+        "canonical": "{\"event\":{\"context\":{\"adventureId\":\"native-adventure-a\",\"episodeId\":\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"instanceId\":\"b27dfe58-06cd-4719-90eb-555cb7025959\",\"occurrenceId\":\"snake-occurrence\",\"participantIds\":[\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"6efa2991-e2f7-482e-afde-4fb38abe447a\"],\"runId\":\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"sessionId\":\"ee7414e0-f785-426b-a762-0550c517a253\"},\"eventId\":\"e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752\",\"payload\":{\"outcome\":\"lost\",\"participantIds\":[\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"6efa2991-e2f7-482e-afde-4fb38abe447a\"]},\"type\":\"activity-completed\",\"version\":1},\"type\":\"record-event\"}",
+        "result": {
+          "accepted": true,
+          "revision": 5
+        }
+      },
+      {
+        "key": "[\"command\",\"e71773cb-5696-4f1a-b8f9-c31f448283d8\"]",
+        "canonical": "{\"commandId\":\"e71773cb-5696-4f1a-b8f9-c31f448283d8\",\"eventKey\":\"[\\\"event\\\",\\\"native-adventure-a\\\",\\\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\\\",\\\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\\\",\\\"e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752\\\"]\",\"quantity\":1,\"rewardId\":\"reward-star\",\"type\":\"request-reward\"}",
+        "result": {
+          "accepted": true,
+          "revision": 6,
+          "requestIds": [
+            "[\"request\",\"[\\\"command\\\",\\\"e71773cb-5696-4f1a-b8f9-c31f448283d8\\\"]\",0]",
+            "[\"request\",\"[\\\"command\\\",\\\"e71773cb-5696-4f1a-b8f9-c31f448283d8\\\"]\",1]"
+          ]
+        }
+      },
+      {
+        "key": "[\"command\",\"ec2fe4dd-08d6-48dc-8895-6f8653390b17\"]",
+        "canonical": "{\"commandId\":\"ec2fe4dd-08d6-48dc-8895-6f8653390b17\",\"decision\":\"approve\",\"requestId\":\"[\\\"request\\\",\\\"[\\\\\\\"command\\\\\\\",\\\\\\\"e71773cb-5696-4f1a-b8f9-c31f448283d8\\\\\\\"]\\\",0]\",\"rewardId\":\"reward-star\",\"type\":\"decide-reward\"}",
+        "result": {
+          "accepted": true,
+          "revision": 7
+        }
+      },
+      {
+        "key": "[\"command\",\"90480af1-0aff-4710-86eb-70707d572ae1\"]",
+        "canonical": "{\"commandId\":\"90480af1-0aff-4710-86eb-70707d572ae1\",\"decision\":\"approve\",\"requestId\":\"[\\\"request\\\",\\\"[\\\\\\\"command\\\\\\\",\\\\\\\"e71773cb-5696-4f1a-b8f9-c31f448283d8\\\\\\\"]\\\",1]\",\"rewardId\":\"reward-star\",\"type\":\"decide-reward\"}",
+        "result": {
+          "accepted": true,
+          "revision": 8
+        }
+      },
+      {
+        "key": "[\"command\",\"3730640f-31be-4317-94b5-1d7150408c37\"]",
+        "canonical": "{\"adventureDefinition\":{\"description\":\"Synthetic progression definitions\",\"id\":\"native-adventure-a\",\"name\":\"Same display adventure\",\"relics\":[{\"id\":\"relic-star\",\"imageAssetId\":\"reward-art\",\"name\":\"Star relic\",\"stages\":[{\"id\":\"stage-first\",\"imageAssetId\":\"reward-art\",\"name\":\"First\",\"requiredProgress\":1},{\"id\":\"stage-second\",\"imageAssetId\":\"reward-art\",\"name\":\"Second\",\"requiredProgress\":3}]}],\"rewards\":[{\"iconAssetId\":\"reward-art\",\"id\":\"reward-star\",\"kind\":\"collectible\",\"name\":\"Star\"}],\"version\":\"1\"},\"commandId\":\"3730640f-31be-4317-94b5-1d7150408c37\",\"progress\":3,\"reason\":\"Native private relic adjustment\",\"relicId\":\"relic-star\",\"studentId\":\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"type\":\"advance-relic\"}",
+        "result": {
+          "accepted": true,
+          "revision": 9
+        }
+      },
+      {
+        "key": "[\"command\",\"register:2c3883e8-69c3-46cc-9e62-a439ba4f8677\"]",
+        "canonical": "{\"commandId\":\"register:2c3883e8-69c3-46cc-9e62-a439ba4f8677\",\"run\":{\"adventureDefinition\":{\"description\":\"Synthetic progression definitions\",\"id\":\"native-adventure-a\",\"name\":\"Same display adventure\",\"relics\":[{\"id\":\"relic-star\",\"imageAssetId\":\"reward-art\",\"name\":\"Star relic\",\"stages\":[{\"id\":\"stage-first\",\"imageAssetId\":\"reward-art\",\"name\":\"First\",\"requiredProgress\":1},{\"id\":\"stage-second\",\"imageAssetId\":\"reward-art\",\"name\":\"Second\",\"requiredProgress\":3}]}],\"rewards\":[{\"iconAssetId\":\"reward-art\",\"id\":\"reward-star\",\"kind\":\"collectible\",\"name\":\"Star\"}],\"version\":\"1\"},\"context\":{\"adventureId\":\"native-adventure-a\",\"episodeId\":\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"instanceId\":\"8d7bac71-61ad-43b2-b7f5-5aa01ae27f48\",\"occurrenceId\":\"boss-occurrence\",\"participantIds\":[\"6efa2991-e2f7-482e-afde-4fb38abe447a\",\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\"],\"runId\":\"2c3883e8-69c3-46cc-9e62-a439ba4f8677\",\"sessionId\":\"ee7414e0-f785-426b-a762-0550c517a253\"},\"moduleType\":\"final-boss-hero\"},\"type\":\"register-run\"}",
+        "result": {
+          "accepted": true,
+          "revision": 10
+        }
+      },
+      {
+        "key": "[\"command\",\"3ed0575a-5666-4c18-b2a0-3f26510996df\"]",
+        "canonical": "{\"adventureId\":\"native-adventure-a\",\"commandId\":\"3ed0575a-5666-4c18-b2a0-3f26510996df\",\"episodeId\":\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"reason\":\"Teacher marked episode complete\",\"studentIds\":[\"6efa2991-e2f7-482e-afde-4fb38abe447a\",\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\"],\"type\":\"complete-episode\"}",
+        "result": {
+          "accepted": true,
+          "revision": 11
+        }
+      },
+      {
+        "key": "[\"command\",\"ea6a15a3-67e2-4864-9434-1395a951c846\"]",
+        "canonical": "{\"adventureDefinition\":{\"description\":\"Synthetic progression definitions\",\"id\":\"native-adventure-b\",\"name\":\"Same display adventure\",\"relics\":[{\"id\":\"relic-star\",\"imageAssetId\":\"reward-art\",\"name\":\"Star relic\",\"stages\":[{\"id\":\"stage-first\",\"imageAssetId\":\"reward-art\",\"name\":\"First\",\"requiredProgress\":1},{\"id\":\"stage-second\",\"imageAssetId\":\"reward-art\",\"name\":\"Second\",\"requiredProgress\":3}]}],\"rewards\":[{\"iconAssetId\":\"reward-art\",\"id\":\"reward-star\",\"kind\":\"collectible\",\"name\":\"Star\"}],\"version\":\"1\"},\"commandId\":\"ea6a15a3-67e2-4864-9434-1395a951c846\",\"delta\":2,\"reason\":\"Native private second adventure adjustment\",\"rewardId\":\"reward-star\",\"studentId\":\"ce1914ca-5f9d-4fba-b2c2-5f5086099d60\",\"type\":\"adjust-reward\"}",
+        "result": {
+          "accepted": true,
+          "revision": 12
+        }
+      }
+    ],
+    "requests": [
+      {
+        "id": "[\"request\",\"[\\\"command\\\",\\\"e71773cb-5696-4f1a-b8f9-c31f448283d8\\\"]\",0]",
+        "eventId": "e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "studentId": "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+        "moduleRewardId": "reward-star",
+        "rewardId": "reward-star",
+        "quantity": 1,
+        "status": "approved",
+        "decisionCommandId": "ec2fe4dd-08d6-48dc-8895-6f8653390b17"
+      },
+      {
+        "id": "[\"request\",\"[\\\"command\\\",\\\"e71773cb-5696-4f1a-b8f9-c31f448283d8\\\"]\",1]",
+        "eventId": "e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "studentId": "6efa2991-e2f7-482e-afde-4fb38abe447a",
+        "moduleRewardId": "reward-star",
+        "rewardId": "reward-star",
+        "quantity": 1,
+        "status": "approved",
+        "decisionCommandId": "90480af1-0aff-4710-86eb-70707d572ae1"
+      }
+    ],
+    "students": [
+      {
+        "studentId": "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+        "adventureId": "native-adventure-a",
+        "inventory": {
+          "reward-star": 1
+        },
+        "relics": {
+          "relic-star": 3
+        },
+        "completedEpisodes": [
+          "0ce69d04-0b45-4c4f-af87-b9c742a8eb52"
+        ]
+      },
+      {
+        "studentId": "6efa2991-e2f7-482e-afde-4fb38abe447a",
+        "adventureId": "native-adventure-a",
+        "inventory": {
+          "reward-star": 1
+        },
+        "relics": {},
+        "completedEpisodes": [
+          "0ce69d04-0b45-4c4f-af87-b9c742a8eb52"
+        ]
+      },
+      {
+        "studentId": "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+        "adventureId": "native-adventure-b",
+        "inventory": {
+          "reward-star": 2
+        },
+        "relics": {},
+        "completedEpisodes": []
+      }
+    ],
+    "history": [
+      {
+        "id": "[\"event\",\"native-adventure-a\",\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"c0afd667-adbf-4c7e-ae9c-1ed782984034\",\"d5cd6efe-b7d2-41fd-8cab-cd35b6d0eb2e\"]",
+        "recordedAt": "2026-10-12T17:18:21.646Z",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "runId": "c0afd667-adbf-4c7e-ae9c-1ed782984034",
+        "eventId": "d5cd6efe-b7d2-41fd-8cab-cd35b6d0eb2e",
+        "kind": "activity-completed",
+        "studentIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ]
+      },
+      {
+        "id": "[\"event\",\"native-adventure-a\",\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"8479d4b1-1090-4e9a-839e-63bb2467f631\"]",
+        "recordedAt": "2026-10-12T17:18:33.738Z",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "eventId": "8479d4b1-1090-4e9a-839e-63bb2467f631",
+        "kind": "score-reported",
+        "studentIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ],
+        "scores": [
+          {
+            "studentId": "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+            "score": 0
+          },
+          {
+            "studentId": "6efa2991-e2f7-482e-afde-4fb38abe447a",
+            "score": 0
+          }
+        ]
+      },
+      {
+        "id": "[\"event\",\"native-adventure-a\",\"0ce69d04-0b45-4c4f-af87-b9c742a8eb52\",\"bcd6af49-737b-44ed-a4cc-e8002dc0e62a\",\"e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752\"]",
+        "recordedAt": "2026-10-12T17:18:33.763Z",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "eventId": "e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752",
+        "kind": "activity-completed",
+        "studentIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ]
+      },
+      {
+        "id": "[\"command\",\"e71773cb-5696-4f1a-b8f9-c31f448283d8\"]",
+        "recordedAt": "2026-10-12T17:18:34.048Z",
+        "kind": "reward-requested",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "eventId": "e6ac2bc4-7c2e-476c-8d84-9bb1eeb52752",
+        "studentIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60",
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ],
+        "rewardId": "reward-star"
+      },
+      {
+        "id": "[\"command\",\"ec2fe4dd-08d6-48dc-8895-6f8653390b17\"]",
+        "recordedAt": "2026-10-12T17:18:34.595Z",
+        "kind": "reward-approved",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "studentIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60"
+        ],
+        "rewardId": "reward-star",
+        "delta": 1
+      },
+      {
+        "id": "[\"command\",\"90480af1-0aff-4710-86eb-70707d572ae1\"]",
+        "recordedAt": "2026-10-12T17:18:34.678Z",
+        "kind": "reward-approved",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "runId": "bcd6af49-737b-44ed-a4cc-e8002dc0e62a",
+        "studentIds": [
+          "6efa2991-e2f7-482e-afde-4fb38abe447a"
+        ],
+        "rewardId": "reward-star",
+        "delta": 1
+      },
+      {
+        "id": "[\"command\",\"3730640f-31be-4317-94b5-1d7150408c37\"]",
+        "recordedAt": "2026-10-12T17:18:35.390Z",
+        "kind": "relic-progress",
+        "adventureId": "native-adventure-a",
+        "studentIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60"
+        ],
+        "relicId": "relic-star",
+        "progress": 3,
+        "reason": "Native private relic adjustment"
+      },
+      {
+        "id": "[\"command\",\"3ed0575a-5666-4c18-b2a0-3f26510996df\"]",
+        "recordedAt": "2026-10-12T17:18:37.161Z",
+        "kind": "episode-completed",
+        "adventureId": "native-adventure-a",
+        "episodeId": "0ce69d04-0b45-4c4f-af87-b9c742a8eb52",
+        "studentIds": [
+          "6efa2991-e2f7-482e-afde-4fb38abe447a",
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60"
+        ],
+        "reason": "Teacher marked episode complete"
+      },
+      {
+        "id": "[\"command\",\"ea6a15a3-67e2-4864-9434-1395a951c846\"]",
+        "recordedAt": "2026-10-12T17:18:41.813Z",
+        "kind": "reward-adjusted",
+        "adventureId": "native-adventure-b",
+        "studentIds": [
+          "ce1914ca-5f9d-4fba-b2c2-5f5086099d60"
+        ],
+        "rewardId": "reward-star",
+        "delta": 2,
+        "reason": "Native private second adventure adjustment"
+      }
+    ]
+  }
+}

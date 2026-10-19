@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { resolveAuthoredMediaUrl } from './content/mediaRenderResolution';
+import { canonicalMediaPath } from './content/mediaResolution';
 
 /** Exercise real App callbacks, with broadcast effects observed at the boundary. */
 function harness(mode:'edit'|'teach') {
@@ -16,13 +18,15 @@ function harness(mode:'edit'|'teach') {
   const clip={url:'media://assets/shared.mp3',volume:.5};
   const slide={id:'edit-slide',bgm:clip},section={id:'edit-section',bgm:[clip]};
   const calls:string[]=[];
+  const urls:string[]=[];
   const context:any={appMode:mode,project:{data:{slides:[slide],sections:[section]}},currentSlide:slide,selectedSection:section,
-    audioManager:{stopClip:()=>calls.push('stopClip'),stopSectionMusic:()=>calls.push('stopSectionMusic'),setVolume:()=>calls.push('setVolume')},
+    resolveAuthoredMediaUrl,mediaRegistry:{resolvePath:(value:string)=>canonicalMediaPath(value)==='assets/shared.mp3'?'media://scoped/current/grant':undefined},
+    audioManager:{stopClip:(url:string)=>{calls.push('stopClip');urls.push(url);},stopSectionMusic:()=>calls.push('stopSectionMusic'),setVolume:(url:string)=>{calls.push('setVolume');urls.push(url);}},
     setProject:(p:any)=>{context.latest=p;},setIsDirty:()=>{},updateSection:(_id:string,value:any)=>{context.sectionUpdate=value;},
     isPlainTeacherKey:()=>true,claimTeacherKey:()=>{},activeOverlayId:null};
   vm.createContext(context);
   const code=ts.transpileModule(declarations.join('\n')+'\nglobalThis.commands={removeSlideAudio,removeSectionBgm,handleKeyDown};',{compilerOptions:{target:ts.ScriptTarget.ES2021}}).outputText;
-  vm.runInContext(code,context);return {context,calls,commands:context.commands};
+  vm.runInContext(code,context);return {context,calls,urls,commands:context.commands};
 }
 test('removing Edit slide/section audio changes authored content without stopping Live',()=>{
   const {commands,calls,context}=harness('edit');commands.removeSlideAudio('bgm');commands.removeSectionBgm(0);
@@ -34,6 +38,13 @@ test('Edit section volume shortcuts update authored volume without changing broa
   assert.equal(context.sectionUpdate.bgm[0].volume,.55);assert.deepEqual(calls,[]);
 });
 test('Teach explicit audio removal still stops playback',()=>{
-  const {commands,calls}=harness('teach');commands.removeSlideAudio('bgm');commands.removeSectionBgm(0);
+  const {commands,calls,urls}=harness('teach');commands.removeSlideAudio('bgm');commands.removeSectionBgm(0);
   assert.deepEqual(calls,['stopClip','stopClip','stopSectionMusic']);
+  assert.deepEqual(urls,['media://scoped/current/grant','media://scoped/current/grant']);
+});
+test('Teach volume uses the current grant while the authored URL remains stable',()=>{
+  const {commands,calls,urls,context}=harness('teach');commands.handleKeyDown({code:'NumpadAdd',key:'+'});
+  assert.deepEqual(calls,['setVolume']);assert.deepEqual(urls,['media://scoped/current/grant']);
+  assert.equal(context.sectionUpdate.bgm[0].volume,.55);
+  assert.equal(context.sectionUpdate.bgm[0].url,'media://assets/shared.mp3');
 });

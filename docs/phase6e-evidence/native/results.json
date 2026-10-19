@@ -1,0 +1,94 @@
+{
+  "passed": [
+    "Export flushes actual hosted edits and leaves source project and private bytes unchanged",
+    "Manifest hashes, complete unused media, derived/catalog/module/definition closure, builtin materialization, and private-file exclusion verified",
+    "Fresh offline profile imports with original source absent and renders source-dependent derived story pixels",
+    "Imported Activation uses preserved Card V2 derived art and captures completion",
+    "Imported offline Snake runs real completion and persists another native edit through ordinary Save",
+    "Imported offline Boss renders derived and materialized media, saves native edits, and completes real gameplay",
+    "Tamper, unlisted file, missing asset, unsafe path, unsupported capability, definition mismatch and ordinary package Open reject without changing active project or publishing output"
+  ],
+  "errors": [],
+  "temp": "D:\\Temp\\story-phase6e-lsexzu",
+  "sourceHash": {
+    "assets/split.png": "803af8f0a9437bd19b1a1f7d9d1f9a5f3c1eeedd94510734661248ce085882dd",
+    "assets/unused.png": "803af8f0a9437bd19b1a1f7d9d1f9a5f3c1eeedd94510734661248ce085882dd",
+    "private/student-records.json": "c78b437dd0e211ee7aa7f84b67217da37ec0f2392d289011e840cd0c07404b38",
+    "project.json": "aa48dd336f0cd722ab3a2e7da679f28fc41a3264805fe9d2e6a6dc66e415682a"
+  },
+  "packageHash": {
+    "assets/builtin-c54079cf6cff40d32bb52ebf.png": "007d798b555e8668c0b1d13c103f56462bb8fe065b8327bdac8c3a193af22f62",
+    "assets/split.png": "803af8f0a9437bd19b1a1f7d9d1f9a5f3c1eeedd94510734661248ce085882dd",
+    "assets/unused.png": "803af8f0a9437bd19b1a1f7d9d1f9a5f3c1eeedd94510734661248ce085882dd",
+    "definitions/adventure.json": "9e489bed464b660cb774e52642ce63af97304fb031bdb2c7705f84a299313eff",
+    "manifest.json": "e06338ec3310bbb5ccf8057d8e31ab43117c060c6dde53fd488ad4aad253a264",
+    "project.json": "1e54d0c4f23c1e08c1fb25586cb236dc9a4df32dda1e5ecc5eb97bff2cd37e1d"
+  },
+  "manifest": {
+    "format": "story-studio-package",
+    "version": 1,
+    "episodeId": "d409a048-d324-4f58-be92-9a2fe5fc9742",
+    "adventure": {
+      "id": "portable-adventure",
+      "version": "1"
+    },
+    "requiredCapabilities": [
+      "derived-images-v1",
+      "manual-catalog-v1",
+      "bundled-modules-v1",
+      "adventure-definitions-v1"
+    ],
+    "materializedBuiltins": [
+      {
+        "ref": "builtin:final-boss-hero/assets/board-dash/finish.png",
+        "moduleVersion": 1,
+        "assetId": "builtin-c54079cf6cff40d32bb52ebf",
+        "sha256": "007d798b555e8668c0b1d13c103f56462bb8fe065b8327bdac8c3a193af22f62"
+      }
+    ],
+    "files": [
+      {
+        "path": "assets/split.png",
+        "bytes": 1229,
+        "sha256": "803af8f0a9437bd19b1a1f7d9d1f9a5f3c1eeedd94510734661248ce085882dd"
+      },
+      {
+        "path": "assets/unused.png",
+        "bytes": 1229,
+        "sha256": "803af8f0a9437bd19b1a1f7d9d1f9a5f3c1eeedd94510734661248ce085882dd"
+      },
+      {
+        "path": "assets/builtin-c54079cf6cff40d32bb52ebf.png",
+        "bytes": 286182,
+        "sha256": "007d798b555e8668c0b1d13c103f56462bb8fe065b8327bdac8c3a193af22f62"
+      },
+      {
+        "path": "project.json",
+        "bytes": 12982,
+        "sha256": "1e54d0c4f23c1e08c1fb25586cb236dc9a4df32dda1e5ecc5eb97bff2cd37e1d"
+      },
+      {
+        "path": "definitions/adventure.json",
+        "bytes": 601,
+        "sha256": "9e489bed464b660cb774e52642ce63af97304fb031bdb2c7705f84a299313eff"
+      }
+    ],
+    "definitions": [
+      {
+        "kind": "adventure",
+        "adventureId": "portable-adventure",
+        "version": "1",
+        "bundledPath": "definitions/adventure.json",
+        "sha256": "9e489bed464b660cb774e52642ce63af97304fb031bdb2c7705f84a299313eff"
+      }
+    ],
+    "adventureDependencies": [
+      {
+        "adventureId": "portable-adventure",
+        "version": "1",
+        "bundledPath": "definitions/adventure.json",
+        "sha256": "9e489bed464b660cb774e52642ce63af97304fb031bdb2c7705f84a299313eff"
+      }
+    ]
+  }
+}

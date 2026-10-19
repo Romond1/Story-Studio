@@ -12,14 +12,15 @@ const deferred = () => { let resolve!: () => void; const promise = new Promise<v
 const flush = () => new Promise<void>(resolve => setImmediate(resolve));
 function engine() {
   const loads: { url: string; done: ReturnType<typeof deferred> }[] = [];
-  const plays: { url: string; volume: number; loop: boolean }[] = [], stops: string[] = [];
+  const plays: { url: string; volume: number; loop: boolean }[] = [], stops: string[] = [], pauses: string[] = [];
   const value = {
     preload: (url: string) => { const done = deferred(); loads.push({ url, done }); return done.promise; },
     getDuration: () => 2,
     playClip: (url: string, volume: number, loop: boolean) => { plays.push({ url, volume, loop }); },
+    pauseClip: (url: string) => { pauses.push(url); },
     stopClip: (url: string) => { stops.push(url); },
   };
-  return { value, loads, plays, stops };
+  return { value, loads, plays, stops, pauses };
 }
 
 test('scene audio stop fences late preload completion without starting a playback', async () => {
@@ -48,13 +49,13 @@ test('navigation to the same source retires old load and plays only the new requ
 });
 
 /** Use the real mixer, replacing only browser I/O and Web Audio primitives. */
-function mixerWithFailedInitialLoad() {
-  const exports: any = {}, retry = deferred(); let fetches = 0, starts = 0;
+function mixerWithFailedInitialLoad(failInitial = true) {
+  const exports: any = {}, retry = deferred(); let fetches = 0, starts = 0; const offsets: number[] = [];
   const source = readFileSync('src/renderer/audio/AudioController.ts', 'utf8').replaceAll('import.meta', '__hotMeta');
   const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021 } }).outputText;
   vm.runInNewContext(js, {
     exports, console, setTimeout, clearTimeout, performance, __hotMeta: {},
-    fetch: async () => { fetches++; if (fetches === 1) throw Error('Synthetic missing audio'); await retry.promise; return { arrayBuffer: async () => new ArrayBuffer(1) }; },
+    fetch: async () => { fetches++; if (failInitial && fetches === 1) throw Error('Synthetic missing audio'); await retry.promise; return { arrayBuffer: async () => new ArrayBuffer(1) }; },
     navigator: { mediaDevices: {} },
     require: (name: string) => require(path.join(process.cwd(), 'dist-test/shared', path.basename(name))),
   });
@@ -63,11 +64,11 @@ function mixerWithFailedInitialLoad() {
   const node = () => ({ connect() {}, disconnect() {} });
   controller.context = {
     state: 'running', currentTime: 1, decodeAudioData: async () => ({ duration: 2 }),
-    createBufferSource: () => ({ ...node(), start() { starts++; }, stop() {}, onended: null }),
+    createBufferSource: () => ({ ...node(), start(_when: number, offset: number) { starts++; offsets.push(offset); }, stop() {}, onended: null }),
     createGain: () => ({ ...node(), gain: { value: 1, setValueAtTime() {} } }),
   };
   controller.ensureGraph = () => ({ mediaBus: node() });
-  return { controller, retry, counts: () => ({ fetches, starts }) };
+  return { controller, retry, offsets, counts: () => ({ fetches, starts }) };
 }
 
 test('failed mixer preload never escapes scene ownership through an internal playClip retry', async () => {
@@ -75,4 +76,26 @@ test('failed mixer preload never escapes scene ownership through an internal pla
   await assert.rejects(owner.play([track('broken')], id => `media://${id}`), /load|audio/i);
   owner.stop(); mixer.retry.resolve(); await flush();
   assert.deepEqual(mixer.counts(), { fetches: 1, starts: 0 });
+});
+
+test('scene audio pause preserves loaded tracks and resumes without preload or stop', async () => {
+ const e=engine(),owner=new SceneAudioOwner(e.value);const pending=owner.play([track('voice')],id=>id);e.loads[0].done.resolve();await pending;
+ owner.pause();owner.pause();assert.deepEqual(e.pauses,['voice']);assert.equal(e.stops.length,0);
+ owner.resume();owner.resume();assert.equal(e.plays.length,2);assert.equal(e.loads.length,1);assert.deepEqual(e.plays[1],e.plays[0]);
+});
+test('pause before preload completion defers playback until resume', async () => {
+ const e=engine(),owner=new SceneAudioOwner(e.value);const pending=owner.play([track('voice')],id=>id);owner.pause();e.loads[0].done.resolve();await pending;
+ assert.equal(e.plays.length,0);owner.resume();assert.equal(e.plays.length,1);assert.equal(e.loads.length,1);
+});
+test('stop while paused fences late loads and resume cannot resurrect them', async () => {
+ const e=engine(),owner=new SceneAudioOwner(e.value);const pending=owner.play([track('voice')],id=>id);owner.pause();owner.stop();owner.resume();e.loads[0].done.resolve();await pending;owner.resume();assert.equal(e.plays.length,0);
+});
+test('pause does not restart tracks that naturally finished', async () => {
+ const e=engine(),owner=new SceneAudioOwner({...e.value,isPlaying:()=>false});const pending=owner.play([track('voice')],id=>id);e.loads[0].done.resolve();await pending;owner.pause();owner.resume();assert.equal(e.plays.length,1);assert.equal(e.pauses.length,0);
+});
+
+test('scene audio resumes the real mixer at its paused offset', async () => {
+ const mixer=mixerWithFailedInitialLoad(false),owner=new SceneAudioOwner(mixer.controller);mixer.retry.resolve();await owner.play([track('voice')],id=>id);
+ mixer.controller.context.currentTime=1.75;owner.pause();mixer.controller.context.currentTime=5;owner.resume();
+ assert.deepEqual(mixer.offsets,[0,.75]);assert.deepEqual(mixer.counts(),{fetches:1,starts:2});owner.stop();
 });

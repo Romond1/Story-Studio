@@ -1,3 +1,4 @@
+import type {StudentsApi} from '../shared/students/protocol';
 /// <reference types="vite/client" />
 
 import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
@@ -11,6 +12,10 @@ declare global {
     cameraControl?: import('../shared/cameraProtocol').CameraControlApi;
     cameraPresenter?: import('../shared/cameraProtocol').CameraPresenterApi;
     lessonApi: {
+      exportPackage: (data: LessonProject, expectedFolder: string) => Promise<{folderPath:string}|null>;
+      importPackage: () => Promise<LessonProjectState|null>;
+      convertProject: import('../shared/episodeProtocol').ConvertEpisode;
+      prepareGames: (data: LessonProject, expectedFolder: string) => Promise<LessonProjectState>;
       createDraft: (sequence: 'story' | 'activation') => Promise<LessonProjectState>;
       createProject: () => Promise<LessonProjectState | null>;
       openProject: () => Promise<LessonProjectState | null>;
@@ -19,6 +24,13 @@ declare global {
       saveProject: (data: LessonProject, mode: 'save' | 'saveAs', expectedFolder: string) => Promise<{ lastSavedAt: string; folderPath: string } | null>;
     };
     appApi: {
+      onDashZoom:(listener:(packet:{instanceId:string;zoom:number})=>void)=>()=>void;
+      heroDash:import('../shared/heroDashLibrary').DashLibraryApi;
+      progression: import('../shared/progression/protocol').ProgressionApi;
+      sendModuleHost: (message: import('../shared/modules/protocol').HostToModuleMessage) => Promise<boolean>;
+      onModuleEvent: (listener: (message: import('../shared/modules/protocol').ModuleToHostMessage) => void) => () => void;
+      derivedMedia: import('../shared/episodeProtocol').DerivedMediaApi;
+      mediaRegistry: import('../shared/mediaRegistryProtocol').MediaRegistryApi;
       sendGameInput: (packet: import('../shared/gameHost').GameInputPacket) => void;
       onGameEnded: (callback: (event: import('../shared/gameHost').GameEndedEvent) => void) => () => void;
       getPresentMediaRuntime: () => Promise<import('../shared/presentationMedia').MediaRuntime>;
@@ -41,11 +53,13 @@ declare global {
       getPendingDroppedFilePaths: () => string[];
       getPathForFile: (file: File) => string;
       importAudio: () => Promise<AssetItem[] | null>;
+      importAudioResult: () => Promise<ImportResult | null>;
       saveProject: (
         data: ProjectData,
         mode: 'save' | 'saveAs',
         expectedFolder: string,
       ) => Promise<{ lastSavedAt: string; folderPath: string } | null>;
+      students: StudentsApi;
       getStudentRoster: () => Promise<StudentRosterSettings>;
       saveStudentRoster: (settings: StudentRosterSettings) => Promise<StudentRosterSettings>;
       getAudioSettings: () => Promise<AudioSettingsV1>;

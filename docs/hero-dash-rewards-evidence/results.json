@@ -1,0 +1,11 @@
+{
+  "passed": [
+    "Each +1/+2/+3 shows rainbow Correct/confetti, runs and completes three raised-arm hops",
+    "Retry does not show correct",
+    "Blue celebrates and reset cancels rewards",
+    "Yuki finish waits for arrival, shows ten-second winner close-up/balloons/confetti then restores chosen zoom",
+    "Undo cancels winner without another correct reward",
+    "Manual finish adjustment stays neutral"
+  ],
+  "errors": []
+}

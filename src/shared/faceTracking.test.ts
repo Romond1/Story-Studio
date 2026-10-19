@@ -60,7 +60,23 @@ test('tracking smooths successive observations but resets after loss', () => {
 });
 test('tracking protocol rejects invalid booleans and strips private payloads', () => {
   assert.equal(parseTrackingSettings({ enabled: 1, markers: true, hat: true }), null);
+  assert.equal(parseTrackingSettings({ enabled: true, markers: false, hat: true, merlin: 'yes' }), null);
   assert.deepEqual(parseTrackingSettings({ enabled: true, markers: false, hat: true, secret: 'private' }), { enabled: true, markers: false, hat: true });
+  assert.deepEqual(parseTrackingSettings({ enabled: true, markers: false, hat: true, merlin: true, merlinEyebrows: false }), { enabled: true, markers: false, hat: true, merlin: true, merlinEyebrows: false });
   assert.equal(parseTrackingStatus({ state: 'teacher-notes' }), null);
   assert.deepEqual(parseTrackingStatus({ state: 'tracking', landmarks: ['private'] }), { state: 'tracking', message: undefined });
+});
+test('lip landmarks (13 and 14) are smoothed when present for 3D jaw articulation', () => {
+  const filter = new FacePoseFilter();
+  const obs1 = observation(100);
+  obs1.landmarks[13] = { x: .5, y: .58, z: -.04 };
+  obs1.landmarks[14] = { x: .5, y: .60, z: -.04 };
+  const pose1 = filter.update(obs1, 110)!;
+  assert.ok(pose1.upperLip && pose1.lowerLip);
+  assert.equal(pose1.lowerLip.y, .60);
+  const obs2 = observation(150);
+  obs2.landmarks[13] = { x: .5, y: .58, z: -.04 };
+  obs2.landmarks[14] = { x: .5, y: .66, z: -.04 };
+  const pose2 = filter.update(obs2, 160)!;
+  assert.ok(pose2.lowerLip!.y > .60 && pose2.lowerLip!.y < .66);
 });

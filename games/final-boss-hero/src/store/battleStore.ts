@@ -1272,6 +1272,7 @@ export const useBattleStore = create<BattleStoreState>((set, get) => ({
       activeEncounter: {
         ...state.activeEncounter,
         selectedCardIds: state.activeEncounter.selectedCardIds.filter((id) => id !== cardId),
+        boardDashCardIds: state.activeEncounter.boardDashCardIds.filter((id) => id !== cardId),
       },
     })),
   toggleMiniGameEnabled: (gameId) =>

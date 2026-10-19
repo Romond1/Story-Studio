@@ -1,0 +1,130 @@
+{
+  "passed": [
+    "UI creates duplicate display names as two distinct permanent identities",
+    "Present has no private students API or profile display names",
+    "Nickname and safe avatar edits retain identity and leave the other same-name profile unchanged",
+    "Archive/restore preserves the same ID and all private progression while filtering active lists",
+    "Legacy source IDs require explicit mapping or separate creation; reimport is stable and transfers no balances",
+    "Invalid duplicate source IDs are rejected without changing profiles or mappings",
+    "Profiles, explicit legacy mappings and retained progress survive process restart; desktop and narrow editor actions remain reachable"
+  ],
+  "temp": "D:\\Temp\\story-phase7a-SYR7vr",
+  "errors": [],
+  "sizes": [
+    {
+      "width": 1184,
+      "field": {
+        "x": 472.078125,
+        "y": 269.953125,
+        "width": 624.921875,
+        "height": 35.59375
+      },
+      "save": {
+        "x": 472.078125,
+        "y": 503.125,
+        "width": 94.21875,
+        "height": 32
+      }
+    },
+    {
+      "width": 620,
+      "field": {
+        "x": 25,
+        "y": 566.609375,
+        "width": 536,
+        "height": 35.59375
+      },
+      "save": {
+        "x": 25,
+        "y": 544.78125,
+        "width": 94.21875,
+        "height": 32
+      }
+    }
+  ],
+  "profiles": {
+    "version": 1,
+    "studentRoster": [
+      {
+        "name": "Native Twin",
+        "id": "8980dd5b-e1e7-4708-901c-27ec2e0db341",
+        "archived": false,
+        "createdAt": "2026-10-12T16:51:45.795Z",
+        "updatedAt": "2026-10-12T16:51:47.750Z",
+        "nickname": "Edited public nickname",
+        "avatar": "moon"
+      },
+      {
+        "name": "Native Twin",
+        "nickname": "Second twin",
+        "avatar": "cat",
+        "id": "959056e1-e125-4a86-b53d-934330215884",
+        "archived": false,
+        "createdAt": "2026-10-12T16:51:46.063Z",
+        "updatedAt": "2026-10-12T16:51:46.063Z"
+      },
+      {
+        "name": "Native Twin",
+        "id": "d40da912-7951-4fe7-905a-3f478f10585a",
+        "archived": false,
+        "createdAt": "2026-10-12T16:51:48.050Z",
+        "updatedAt": "2026-10-12T16:51:48.050Z"
+      }
+    ],
+    "legacyMappings": [
+      {
+        "source": "synthetic-legacy-source-v1",
+        "sourceStudentId": "legacy-one",
+        "targetStudentId": "8980dd5b-e1e7-4708-901c-27ec2e0db341",
+        "createdAt": "2026-10-12T16:51:47.983Z"
+      },
+      {
+        "source": "synthetic-legacy-source-v1",
+        "sourceStudentId": "legacy-two",
+        "targetStudentId": "d40da912-7951-4fe7-905a-3f478f10585a",
+        "createdAt": "2026-10-12T16:51:48.050Z"
+      }
+    ]
+  },
+  "progression": {
+    "version": 1,
+    "revision": 1,
+    "runs": [],
+    "receipts": [
+      {
+        "key": "[\"command\",\"native-profile-preserved-reward\"]",
+        "canonical": "{\"adventureDefinition\":{\"description\":\"Synthetic progression definitions\",\"id\":\"profile-preservation-adventure\",\"name\":\"Same display adventure\",\"relics\":[{\"id\":\"relic-star\",\"imageAssetId\":\"reward-art\",\"name\":\"Star relic\",\"stages\":[{\"id\":\"stage-first\",\"imageAssetId\":\"reward-art\",\"name\":\"First\",\"requiredProgress\":1},{\"id\":\"stage-second\",\"imageAssetId\":\"reward-art\",\"name\":\"Second\",\"requiredProgress\":3}]}],\"rewards\":[{\"iconAssetId\":\"reward-art\",\"id\":\"reward-star\",\"kind\":\"collectible\",\"name\":\"Star\"}],\"version\":\"1\"},\"commandId\":\"native-profile-preserved-reward\",\"delta\":2,\"reason\":\"Synthetic retained profile history\",\"rewardId\":\"reward-star\",\"studentId\":\"8980dd5b-e1e7-4708-901c-27ec2e0db341\",\"type\":\"adjust-reward\"}",
+        "result": {
+          "accepted": true,
+          "revision": 1
+        }
+      }
+    ],
+    "requests": [],
+    "students": [
+      {
+        "studentId": "8980dd5b-e1e7-4708-901c-27ec2e0db341",
+        "adventureId": "profile-preservation-adventure",
+        "inventory": {
+          "reward-star": 2
+        },
+        "relics": {},
+        "completedEpisodes": []
+      }
+    ],
+    "history": [
+      {
+        "id": "[\"command\",\"native-profile-preserved-reward\"]",
+        "recordedAt": "2026-10-12T16:51:47.013Z",
+        "kind": "reward-adjusted",
+        "adventureId": "profile-preservation-adventure",
+        "studentIds": [
+          "8980dd5b-e1e7-4708-901c-27ec2e0db341"
+        ],
+        "rewardId": "reward-star",
+        "delta": 2,
+        "reason": "Synthetic retained profile history"
+      }
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+
+> story-studio@1.0.0 build:main
+> tsc -p tsconfig.main.json && node scripts/prepare-translation.mjs
+

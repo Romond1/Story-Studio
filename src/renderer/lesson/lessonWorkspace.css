@@ -1,3 +1,11 @@
+.game-control-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 370px); flex: 1; min-height: 0; overflow: auto; gap: 16px; padding: 16px; }
+.game-control-content, .game-control-present { min-width: 0; }
+.game-control-media, .game-control-present { padding: 16px; border: 1px solid var(--lesson-border); border-radius: 10px; background: var(--lesson-surface); }
+.game-control-present { align-self: start; display: grid; gap: 14px; }
+.game-control-workspace h2 { margin: 0 0 10px; font-size: 18px; }
+.game-control-media > .lesson-pool { height: 340px; display: flex; flex-direction: column; }
+.game-control-workspace .game-host { overflow: visible; padding: 20px 0; }
+@media (max-width: 900px) { .game-control-workspace { grid-template-columns: minmax(0, 1fr); } }
 .lesson-app {
   --lesson-bg: #10141b;
   --lesson-surface: #1a202b;
@@ -46,15 +54,16 @@
 .lesson-phase-tabs button small { margin-left: 6px; }
 .lesson-workspace { display: flex; flex: 1; min-height: 0; overflow: hidden; }
 .lesson-main { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
-.lesson-main:has(> .lesson-pool) { display: grid; grid-template-columns: minmax(190px, 225px) minmax(0, 1fr); grid-template-rows: auto minmax(220px, 1fr) auto auto; }
-.lesson-main > .lesson-pool { grid-column: 1; grid-row: 1 / 3; min-height: 0; overflow: auto; border-right: 1px solid var(--lesson-border); }
-.lesson-main:has(> .lesson-pool) > .lesson-canvas-tools { grid-column: 2; grid-row: 1; }
-.lesson-main:has(> .lesson-pool) > .lesson-canvas { grid-column: 2; grid-row: 2; }
-.lesson-main:has(> .lesson-pool) > .lesson-timeline { grid-column: 1 / -1; grid-row: 3; }
-.lesson-main:has(> .lesson-pool) > .lesson-toolbar:not(.lesson-canvas-tools) { grid-column: 1 / -1; }
-.lesson-main:has(> .lesson-pool) > .lesson-toolbar:last-child { padding: 4px 10px; }
-.lesson-main:has(> .lesson-pool) > .lesson-toolbar:last-child button { min-height: 28px; font-size: 12px; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { display: grid; grid-template-columns: minmax(190px, 225px) minmax(0, 1fr); grid-template-rows: auto minmax(220px, 1fr) auto auto; }
+.lesson-main > :is(.lesson-pool, .lesson-content-rail) { grid-column: 1; grid-row: 1 / 3; min-height: 0; overflow: auto; border-right: 1px solid var(--lesson-border); }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-canvas-tools { grid-column: 2; grid-row: 1; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-canvas { grid-column: 2; grid-row: 2; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-timeline { grid-column: 1 / -1; grid-row: 3; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-toolbar:not(.lesson-canvas-tools) { grid-column: 1 / -1; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-toolbar:last-child { padding: 4px 10px; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-toolbar:last-child button { min-height: 28px; font-size: 12px; }
 .lesson-side { width: 330px; min-width: 270px; max-width: 38vw; overflow: auto; border-left: 1px solid var(--lesson-border); background: var(--lesson-surface); }
+.lesson-side > .lesson-side { width: auto; min-width: 0; max-width: none; border: 0; overflow: visible; }
 .lesson-side > label { display: flex; flex-direction: column; gap: 5px; padding: 10px 12px; color: var(--lesson-muted); }
 .lesson-shared-note { margin: 0; padding: 10px 12px; color: var(--lesson-muted); font-size: 12px; }
 .lesson-canvas { flex: 1; min-height: 220px; position: relative; overflow: hidden; background: #0a0e14; }
@@ -189,8 +198,8 @@
   .lesson-app { height: auto; min-height: 100vh; overflow: auto; }
   .lesson-workspace { flex-direction: column; overflow: visible; }
   .lesson-main { overflow: visible; }
-  .lesson-main:has(> .lesson-pool) { display: flex; }
-  .lesson-main > .lesson-pool { max-height: 340px; border-right: 0; }
+  .lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { display: flex; }
+  .lesson-main > :is(.lesson-pool, .lesson-content-rail) { max-height: 340px; border-right: 0; }
   .lesson-canvas { height: 52vw; min-height: 230px; flex: 0 0 auto; }
   .lesson-side { width: 100%; max-width: none; min-width: 0; border-left: 0; border-top: 1px solid var(--lesson-border); overflow: visible; }
   .lesson-pool-assets { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
@@ -205,10 +214,10 @@
 }
 
 /* Local workspace dimensions never alter the authored logical scene. */
-.lesson-main:has(> .lesson-pool) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 30vw) 6px minmax(0, 1fr); grid-template-rows: auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
-.lesson-main:has(> .lesson-pool) > .lesson-canvas-tools { grid-column: 3; }
-.lesson-main:has(> .lesson-pool) > .lesson-canvas { grid-column: 3; min-height: 100px; }
-.lesson-main:has(> .lesson-pool) > .lesson-timeline { grid-row: 4; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 30vw) 6px minmax(0, 1fr); grid-template-rows: auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-canvas-tools { grid-column: 3; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-canvas { grid-column: 3; min-height: 100px; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-timeline { grid-row: 4; }
 .lesson-main > .lesson-timeline { height: min(var(--workspace-timeline, 220px), 36vh); min-height: 0; flex: 0 0 min(var(--workspace-timeline, 220px), 36vh); display: flex; flex-direction: column; overflow: hidden; }
 .lesson-timeline-strip { min-height: 0; flex: 1; }
 .lesson-side { width: clamp(250px, var(--workspace-inspector, 330px), 38vw); flex-shrink: 0; min-width: 0; }
@@ -234,11 +243,11 @@
   .lesson-main > .lesson-timeline { height: var(--workspace-timeline, 220px); flex-basis: var(--workspace-timeline, 220px); }
 }
 /* Compact tools share the canvas column; timeline and media retain full height. */
-.lesson-main:has(> .lesson-pool) { grid-template-rows: auto auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
-.lesson-main > .lesson-pool, .lesson-splitter-pool { grid-row: 1 / 4; }
-.lesson-main:has(> .lesson-pool) > .lesson-canvas { grid-row: 3; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { grid-template-rows: auto auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
+.lesson-main > :is(.lesson-pool, .lesson-content-rail), .lesson-splitter-pool { grid-row: 1 / 4; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-canvas { grid-row: 3; }
 .lesson-drawing-row { grid-column: 3; grid-row: 2; }
-.lesson-main:has(> .lesson-pool) > .lesson-timeline { grid-row: 5; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-timeline { grid-row: 5; }
 .lesson-splitter-timeline { grid-row: 4; }
 .lesson-drawing-tools { gap: 4px; padding: 4px 8px; }
 .lesson-drawing-tools button { font-size: 12px; min-height: 28px; padding: 3px 7px; }
@@ -282,7 +291,39 @@
 .lesson-section-form label { display: flex; gap: 6px; align-items: center; }
 .lesson-timeline[data-density="overview"] .lesson-timeline-item { padding-top: 22px !important; }
 @media (min-width: 701px) and (max-width: 1100px) {
-  .lesson-main:has(> .lesson-pool) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 23vw) 6px minmax(0, 1fr); }
+  .lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 23vw) 6px minmax(0, 1fr); }
   .lesson-canvas-tools { flex-wrap: nowrap; overflow-x: auto; }
   .lesson-canvas-tools button { flex-shrink: 0; }
 }
+/* Compact game setup: launch first, small optional compartments below. */
+.game-control-content { display:flex; flex-direction:column; gap:14px; align-self:start; }
+.game-control-workspace .game-host { flex:none; padding:0; background:transparent; }
+.game-control-workspace .game-host-heading { margin-bottom:10px; }
+.game-control-workspace .game-host-heading h1 { margin:0; font-size:24px; }
+.game-control-workspace .game-host-eyebrow,.game-control-workspace .game-host-intro { display:none; }
+.game-control-workspace .game-library { display:block; }
+.game-control-workspace .game-library-card { padding:14px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px 16px; }
+.game-control-workspace .game-library-card .game-host-icon { display:none; }
+.game-control-workspace .game-library-card h2 { margin:0; }
+.game-control-workspace .game-library-card p { margin:0; font-size:13px; grid-column:1; }
+.game-control-workspace .game-library-card button { grid-column:2; grid-row:1 / 4; }
+.game-control-workspace .game-session-panel { padding:14px; max-width:none; display:flex; flex-direction:column; gap:10px; }
+.game-control-workspace .game-host-actions { order:-1; }
+.game-control-workspace .game-session-heading { order:-2; }
+.game-control-workspace .game-help summary { cursor:pointer; font-size:13px; color:var(--lesson-muted); padding:6px 0; }
+.game-control-workspace .game-keyboard { padding:10px; margin-top:6px; }
+.game-setup-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr)); gap:12px; align-items:start; }
+.game-setup-compartment { min-width:0; border:1px solid var(--lesson-border); border-radius:10px; background:var(--lesson-surface); overflow:hidden; }
+.game-setup-compartment>summary { padding:12px 14px; cursor:pointer; font-weight:600; font-size:14px; }
+.game-activity-compartment { grid-column:1; grid-row:1 / span 3; }
+.game-setup-compartment .lesson-panel-content { padding:10px 14px; }
+.game-setup-compartment p { font-size:12px; line-height:1.5; margin:0 0 10px; }
+.game-setup-compartment .lesson-field { margin:8px 0; font-size:12px; }
+.game-setup-compartment input,.game-setup-compartment select,.game-setup-compartment textarea { min-width:0; max-width:100%; }
+.game-setup-compartment details { margin-top:8px; border-top:1px solid var(--lesson-border); padding-top:8px; }
+.game-setup-compartment details>summary { cursor:pointer; font-size:13px; padding:4px 0; }
+@media(max-width:600px){ .game-control-workspace .game-library-card { grid-template-columns:minmax(0,1fr); } .game-control-workspace .game-library-card button { grid-column:1; grid-row:auto; justify-self:start; } }
+.game-setup-compartment .lesson-panel-content { gap:6px; }
+.game-setup-compartment .lesson-field { margin:4px 0; }
+.game-setup-compartment details { margin-top:0; padding-top:5px; }
+.game-setup-compartment details>summary { padding:6px 0; }

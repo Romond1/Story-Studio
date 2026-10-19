@@ -1,0 +1,28 @@
+✔ Activation references existing scenes and captures participants without an authored card store (27.1311ms)
+✔ Activation reset creates a new run with the same captured participants and first scene (0.4029ms)
+✔ Activation completion waits for durable acknowledgment and preserves retry event identity (1.3535ms)
+✔ strict module authored schemas reject runtime and names without falling back (21.5495ms)
+✔ typed media enumeration and remapping preserve nonmedia text and original (0.7192ms)
+✔ episode activities preserve order and require capability and valid references (12.8408ms)
+✔ Final Boss preserves all optional authoring fields and enumerates every media-bearing field (3.2027ms)
+✔ module dependencies cover unplaced activities and flag unknown authored config (7.0515ms)
+✔ activity reward bindings require declared source keys and exact adventure reward identities (2.161ms)
+✔ protocol rejects unknown fields, unsupported versions, transient configs and mismatched events (4.6295ms)
+✔ lifecycle rejects invalid transitions and reset requires fresh run identity (0.6201ms)
+✔ event ledger captures run and participants, deduplicates identical payload, rejects collision/stale/order (22.4228ms)
+✔ module capability rejects scores from Activation and accepts captured completion only (0.5525ms)
+✔ durable event replay survives serialization without duplicate request and rejects collision (13.0054ms)
+✔ teacher decisions grant exactly once, guests never grant, snapshots retain identity (6.3974ms)
+✔ stale, paused, unknown student and corrupt durable state fail closed (2.0088ms)
+✔ teacher request uses captured completion, manual progress isolates adventures (7.1494ms)
+✔ prototype-named reward identities use only own authored dictionary values (0.7086ms)
+✔ durable store rejects receipt identity mismatch and balances without receipts (3.2681ms)
+✔ unknown reward stays actionable, archived approvals fail and captured definition is immutable (2.2743ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 244.12

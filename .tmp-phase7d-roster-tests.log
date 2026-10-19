@@ -1,0 +1,12 @@
+✔ roster projection never forwards identity or full names and scopes balances (1.6152ms)
+✔ strict projection parser strips extra private fields and rejects unsafe content (0.5959ms)
+✔ optional roster survives snapshot target branches without private fields (0.8452ms)
+✔ scores require matching captured session and adventure; active roster caps at eight (0.2944ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 127.7097

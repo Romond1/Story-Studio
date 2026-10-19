@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PresentSnapshotRelay = void 0;
 exports.parsePresentSnapshot = parsePresentSnapshot;
 exports.assessPresentEnvelope = assessPresentEnvelope;
+const rosterPresentation_1 = require("./students/rosterPresentation");
 const rewardPresentation_1 = require("./rewardPresentation");
 const movementPresentation_1 = require("./movementPresentation");
 const presentationMedia_1 = require("./presentationMedia");
@@ -12,12 +13,20 @@ const imageAdjustments_1 = require("./imageAdjustments");
 const cardV2Render_1 = require("./cardV2Render");
 const projection_1 = require("./lesson/projection");
 const gameHost_1 = require("./gameHost");
+const heroDash_1 = require("./heroDash");
 const object = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const id = (v) => typeof v === 'string' && v.length > 0 && v.length <= 1024;
 const finite = (v) => typeof v === 'number' && Number.isFinite(v);
 const revision = (v) => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0;
 /** Reconstruct a whitelisted object: never forward project/teacher fields through IPC. */
 function parsePresentSnapshot(value) {
+    const base = parsePresentSnapshotBody(value);
+    if (!base || !object(value))
+        return null;
+    const roster = value.roster === undefined ? undefined : (0, rosterPresentation_1.parseRosterPresentation)(value.roster);
+    return roster === null ? null : { ...base, ...(roster ? { roster } : {}) };
+}
+function parsePresentSnapshotBody(value) {
     if (!object(value) || !id(value.sessionId) || !revision(value.revision) || !object(value.target))
         return null;
     const rewards = value.rewards === undefined ? undefined : (0, rewardPresentation_1.parseRewardPresentation)(value.rewards);
@@ -34,7 +43,8 @@ function parsePresentSnapshot(value) {
         return null;
     if (target.kind === 'game') {
         const game = (0, gameHost_1.parseGameSession)(target);
-        return game ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'game', occurrenceId: target.occurrenceId, ...game } } : null;
+        const dash = target.gameId === 'hero-dash' ? (0, heroDash_1.parseDashView)(target.dash) : undefined;
+        return game && dash !== null ? { sessionId: value.sessionId, revision: value.revision, target: { kind: 'game', occurrenceId: target.occurrenceId, ...game, ...(dash ? { dash } : {}) } } : null;
     }
     if (target.kind === 'scene') {
         const plan = (0, projection_1.parseScenePlan)(target.plan);

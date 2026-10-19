@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
+import { randomUUID } from 'node:crypto';
 import ts from 'typescript';
 import { updateSectionInProjectData } from './sectionMutations';
 import { ProjectHistory } from './projectHistory';
@@ -14,10 +15,12 @@ import { applyPresentationDrawing, createPresentationSession, presentationToken,
 
 // Exercise the real IPC handlers, replacing only Electron's window/dialog boundary.
 function mainHarness() {
+  const privateId = randomUUID();
   const handlers = new Map<string, (...args: any[]) => any>();
   let selection: string | null = null;
+  const control = { mainFrame: {} };
   const electron = {
-    app: { requestSingleInstanceLock: () => true, whenReady: () => ({ then() {} }), on() {} },
+    app: { requestSingleInstanceLock: () => true, whenReady: () => ({ then() {} }), on() {}, getPath: () => path.join(os.tmpdir(), `story-persistence-harness-${privateId}`) },
     BrowserWindow: function () {},
     dialog: { showOpenDialog: async () => ({ canceled: !selection, filePaths: selection ? [selection] : [] }) },
     ipcMain: {
@@ -35,18 +38,19 @@ function mainHarness() {
     cache.set(filename, module.exports);
     const nativeRequire = createRequire(filename);
     let source = readFileSync(filename, 'utf8');
-    if (filename.endsWith(`${path.sep}main.ts`)) source += '\nmainWindow = {} as BrowserWindow;';
+    if (filename.endsWith(`${path.sep}main.ts`)) source += '\nmainWindow = { webContents: __control } as unknown as BrowserWindow;';
     const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021, esModuleInterop: true } }).outputText;
     vm.runInNewContext(js, {
-      module, exports: module.exports, __dirname: path.dirname(filename), console, process,
+      module, exports: module.exports, __dirname: path.dirname(filename), console, process, __control: control,
       require: (id: string) => id === 'electron' ? electron : id.startsWith('.') ? load(path.resolve(path.dirname(filename), `${id}.ts`)) : nativeRequire(id),
     }, { filename });
     return module.exports;
   }
   load(path.resolve('src/main/main.ts'));
-  const call = (name: string, ...args: any[]) => handlers.get(name)!(null, ...args);
+  const call = (name: string, ...args: any[]) => handlers.get(name)!({ sender: control, senderFrame: control.mainFrame }, ...args);
   return {
     call,
+    untrusted: (name: string, ...args: any[]) => handlers.get(name)!({ sender: {}, senderFrame: {} }, ...args),
     select: (folder: string | null) => { selection = folder; },
     open: async (folder: string) => {
       const candidate = await call('project:open-path', folder);
@@ -798,4 +802,36 @@ test('legacy open and unrelated save do not create Card V2 data', async t => {
   assert.equal('cardsV2' in active.data, false);
   await api.call('project:save', active.data, 'save', root);
   assert.equal('cardsV2' in JSON.parse(await fs.readFile(path.join(root, 'project.json'), 'utf8')), false);
+});
+
+ test('media registry and imports reject non-Control senders', async () => {
+ const api=mainHarness();
+ for(const channel of ['media-registry:lease','media-registry:register','media-registry:resolve']) assert.throws(()=>api.untrusted(channel,{}),/Control window required/);
+ await assert.rejects(api.untrusted('project:import-dropped-media',[]),/Control window required/);
+ });
+test('IPC media lease retires only after successful Save As and indexes unsaved imported assets',async t=>{
+ const root=await sandbox(t),source=path.join(root,'source'),target=path.join(root,'target');await fs.mkdir(source);await fs.mkdir(target);await fs.writeFile(path.join(source,'project.json'),JSON.stringify(fixture()));
+ const api=mainHarness(),active=await api.open(source);const lease=await api.call('media-registry:lease',source);
+ const input=path.join(root,'new.png');await fs.writeFile(input,'new bytes');const imported=await api.call('project:import-dropped-media',[input]);const asset=imported.importedAssets[0];
+ assert.equal((await api.call('media-registry:register',{leaseId:lease.id,expectedFolder:source,revision:0,assets:[asset],legacyPaths:[]})).ok,true);
+ assert.equal((await api.call('media-registry:resolve',{leaseId:lease.id,revision:0,assetId:asset.id})).ok,true);
+ api.select(null);assert.equal(await api.call('project:save',{...active.data,assets:[asset]},'saveAs',source),null);
+ assert.equal((await api.call('media-registry:lease',source)).id,lease.id);
+ api.select(target);await api.call('project:save',{...active.data,assets:[asset]},'saveAs',source);
+ assert.equal(await api.call('media-registry:lease',source),null);
+ assert.notEqual((await api.call('media-registry:lease',target)).id,lease.id);
+ assert.equal((await api.call('media-registry:resolve',{leaseId:lease.id,revision:0,assetId:asset.id})).code,'stale-project');
+});
+test('additive audio import result preserves copy failure diagnostics',async t=>{
+ const root=await sandbox(t);await fs.writeFile(path.join(root,'project.json'),JSON.stringify(fixture()));const api=mainHarness();await api.open(root);
+ api.select(path.join(root,'missing.mp3'));const result=await api.call('project:import-audio-result');
+ assert.equal(result.importedAssets.length,0);assert.equal(result.failures.length,1);assert.equal(result.failures[0].name,'missing.mp3');
+});
+for (const version of [2, 3]) test(`legacy v${version} open preserves source JSON bytes and unregistered media`,async t=>{
+ const root=await sandbox(t);await fs.mkdir(path.join(root,'assets'));await fs.writeFile(path.join(root,'assets','legacy.png'),'image');
+ const data={...fixture(),version,sections:[{id:'story',name:'Story',background:'media://assets/legacy.png'}],unknownExtension:{keep:'opaque'}};
+ const original=JSON.stringify(data,null,2)+'\n';await fs.writeFile(path.join(root,'project.json'),original);
+ const api=mainHarness(),opened=await api.open(root);
+ assert.equal(await fs.readFile(path.join(root,'project.json'),'utf8'),original);
+ assert.equal(opened.data.assets.length,0);assert.equal(opened.data.sections[0].background,'media://assets/legacy.png');assert.equal(opened.data.unknownExtension.keep,'opaque');
 });

@@ -1,0 +1,14 @@
+{
+  "passed": [
+    "Authored Activation scene activity supports pause, resume, next, fresh reset, and captured participant completion",
+    "Native Snake authoring acknowledged and saved through normal lesson Save",
+    "Host pause freezes simulation clock and state; resume advances without reset",
+    "Snake completion captures both launch participants",
+    "Reset starts a fresh runtime instance",
+    "Native Boss edit saves exact authored media identities",
+    "Real Memory Reveal play emits score, completion, and reward requests for both captured participants",
+    "Close/reopen restores authored settings without grants or participant runtime data; source image immutable"
+  ],
+  "temp": "D:\\Temp\\story-phase6d-JaQPUo",
+  "errors": []
+}

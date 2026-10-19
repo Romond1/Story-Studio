@@ -1,0 +1,34 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+module.exports=async({page,present,evidence,passed})=>{
+ const edit=page.getByLabel('Move / resize in Presenter',{exact:true});await edit.check();
+ const camera=present.locator('.camera-layer');await present.locator('.camera-editing').waitFor();
+ const before=await camera.boundingBox();
+ await present.mouse.move(before.x+before.width/2,before.y+before.height/2);await present.mouse.down();await present.mouse.move(before.x+before.width/2-140,before.y+before.height/2-130,{steps:8});await present.mouse.up();
+ await present.waitForFunction(()=>!!document.querySelector('.camera-free'));
+ const moved=await camera.boundingBox();assert.ok(moved.x<before.x-80&&moved.y<before.y-80);
+ let settings=await page.evaluate(async()=> (await window.cameraControl.get()).settings);assert.ok(settings.layout.x>=0&&settings.layout.y>=0);
+ const handle=present.getByRole('button',{name:'Resize camera bottom right'}),h=await handle.boundingBox();
+ await present.mouse.move(h.x+h.width/2,h.y+h.height/2);await present.mouse.down();await present.mouse.move(h.x+h.width/2-70,h.y+h.height/2-50,{steps:6});await present.mouse.up();
+ const resized=await camera.boundingBox();assert.ok(resized.width<moved.width-40&&resized.height<moved.height-25);
+ await page.getByLabel('Green-screen chroma key',{exact:true}).check();await handle.focus();await present.keyboard.press('ArrowRight');
+ const oldWidth=resized.width;assert.ok((await camera.boundingBox()).width>oldWidth);
+ await present.screenshot({path:path.join(evidence,'camera-free-edit.png')});
+ await edit.uncheck();await present.waitForFunction(()=>getComputedStyle(document.querySelector('.camera-layer')).pointerEvents==='none');
+ settings=await page.evaluate(async()=> (await window.cameraControl.get()).settings);assert.ok(settings.layout.width>0);
+ await page.getByRole('button',{name:'Reset camera placement',exact:true}).click();await page.getByLabel('Green-screen chroma key',{exact:true}).uncheck();
+ passed.push('Presenter drag/resize, keyed layout, keyboard resize and edit-mode pointer passthrough');
+};
+module.exports.caption=async({page,present,evidence,passed})=>{
+ await page.locator('.caption-appearance summary').click();
+ await page.getByLabel('Text color',{exact:true}).fill('#ffe080');await page.getByLabel('Caption font',{exact:true}).selectOption('serif');
+ await page.getByLabel('Caption background opacity',{exact:true}).fill('0');await page.getByLabel('Bold text',{exact:true}).check();await page.getByLabel('Dark text outline',{exact:true}).check();
+ await page.getByLabel('Caption font size',{exact:true}).fill('42');await page.getByLabel('Text alignment',{exact:true}).selectOption('left');await page.getByLabel('Caption position',{exact:true}).selectOption('bottom');
+ await present.waitForFunction(()=>{const e=document.querySelector('.translation-caption'),s=getComputedStyle(e);return s.fontSize==='42px'&&s.color==='rgb(255, 224, 128)'&&s.backgroundColor==='rgba(0, 0, 0, 0)'&&s.fontWeight==='700'&&s.textAlign==='left';});
+ await present.screenshot({path:path.join(evidence,'caption-styled.png')});
+ await page.getByRole('button',{name:'Reset caption appearance',exact:true}).click();
+ await page.locator('.caption-appearance summary').click();
+ assert.equal(await present.locator('.dash-race-heading,.dash-course-chip,.dash-leader,.dash-feedback').count(),0);
+ const hud=await present.locator('.dash-scoreboard').boundingBox(),viewport=present.viewportSize()??await present.evaluate(()=>({width:innerWidth,height:innerHeight}));assert.ok(hud.y>viewport.height/2&&hud.x<60);
+ assert.equal(await present.locator('.dash-score').first().evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)');
+ passed.push('Live caption font/color/opacity/outline/alignment and transparent bottom-left points HUD');
+};

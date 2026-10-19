@@ -5,10 +5,15 @@ exports.registerPoolImport = registerPoolImport;
 exports.insertPoolAssets = insertPoolAssets;
 exports.mediaUsage = mediaUsage;
 const mediaReferences_1 = require("./mediaReferences");
+const mediaImportValidation_1 = require("./mediaImportValidation");
+const mediaRegistry_1 = require("./content/mediaRegistry");
 function createMediaSlide(asset, sectionId, id) {
     return { id: id(), assetId: asset.id, sectionId, transition: 'fade', ...(asset.mediaType === 'video' ? { videoAudio: { enabled: true, volume: 1 } } : {}) };
 }
 function registerPoolImport(data, result, binId) {
+    (0, mediaImportValidation_1.validateMediaImport)(data, result);
+    if (binId && !data.mediaBins?.some(bin => bin.id === binId))
+        throw new Error('The destination bin no longer exists. Copied files have been preserved.');
     const assets = (0, mediaReferences_1.decorateImportedAssetsForContext)(data, result.importedAssets, null).map(a => ({ ...a, ...(!a.binId && binId ? { binId } : {}) }));
     const bins = (result.importedBins ?? []).map(bin => ({ ...bin, ...(!bin.parentId && binId ? { parentId: binId } : {}) }));
     return { ...data, assets: [...data.assets, ...assets], ...(bins.length ? { mediaBins: [...(data.mediaBins ?? []), ...bins] } : {}) };
@@ -37,21 +42,5 @@ function insertPoolAssets(data, assetIds, sectionId, beforeId, id) {
 }
 /** Count authored references, including non-slide image/audio usages. */
 function mediaUsage(data, assetId) {
-    const asset = data.assets.find(a => a.id === assetId);
-    if (!asset)
-        return 0;
-    let count = 0;
-    const visit = (value) => {
-        if (typeof value === 'string') {
-            if (value === assetId || value === asset.relativePath || value === `media:///${asset.relativePath}` || value.includes(`/${asset.relativePath}`))
-                count++;
-        }
-        else if (Array.isArray(value))
-            value.forEach(visit);
-        else if (value && typeof value === 'object')
-            Object.values(value).forEach(visit);
-    };
-    const { assets, mediaBins, ...content } = data;
-    visit(content);
-    return count;
+    return (0, mediaRegistry_1.createMediaRegistry)({ format: 'legacy', data }).usages(assetId).length;
 }

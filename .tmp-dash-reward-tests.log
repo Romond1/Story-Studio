@@ -1,0 +1,10 @@
+✔ only positive awards trigger correct rewards, including prepared rewards (1.5155ms)
+✔ arrival cheer makes exactly three hops and settles back on the ground (0.7305ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 82.8846

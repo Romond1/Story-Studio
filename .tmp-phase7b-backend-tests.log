@@ -1,0 +1,16 @@
+✔ classes preserve distinct identity, multiple enrollment and archived membership across restart (182.2074ms)
+✔ invalid membership and persisted class references fail closed (43.0413ms)
+✔ older settings default classes without rewriting and concurrent updates retain all domains (61.6033ms)
+✔ profile read is nonmutating; duplicate names remain distinct through edits and archive (88.3713ms)
+✔ malformed and duplicate-ID settings fail closed without rewriting or replacing the source (13.8058ms)
+✔ legacy mapping requires explicit source identity and cannot merge equal names or retarget a saved mapping (41.4255ms)
+✔ oversized updates reject before replacing settings or its recovery backup (41.8999ms)
+✔ serialized audio and profile updates retain both and backup previous valid snapshot (86.4367ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 399.6494

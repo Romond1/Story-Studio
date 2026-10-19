@@ -3,7 +3,7 @@ import { createScene, insertScene } from './commands';
 import { LESSON_LIMITS } from './limits';
 
 /** Preserve sequence and audio exactly while upgrading old display labels. */
-export function migrateSections(project: LessonProject): LessonProject {
+export function migrateSections<T extends LessonProject>(project: T): T {
   if (project.sections) return project;
   const sections: NonNullable<LessonProject['sections']> = [];
   const sequences = { ...project.sequences };
@@ -19,18 +19,18 @@ export function migrateSections(project: LessonProject): LessonProject {
   }
   return sections.length ? { ...project, sections, sequences } : project;
 }
-export function addSection(project: LessonProject, sequence: SequenceKind, name = 'New section') {
+export function addSection<T extends LessonProject>(project: T, sequence: SequenceKind, name = 'New section') {
   project = migrateSections(project);
   if ((project.sections?.length ?? 0) >= LESSON_LIMITS.sections) throw new Error(`This lesson can contain at most ${LESSON_LIMITS.sections} sections.`);
   const sectionId = makeId();
   return { project: { ...project, sections: [...(project.sections ?? []), { id: sectionId, name: name.trim().slice(0, 500) || 'New section', sequence }] }, sectionId };
 }
-export function renameSection(project: LessonProject, sectionId: string, name: string): LessonProject {
+export function renameSection<T extends LessonProject>(project: T, sectionId: string, name: string): T {
   name = name.trim().slice(0, 500); if (!name) return project;
   return { ...project, sections: project.sections?.map(s => s.id === sectionId ? { ...s, name } : s),
     sequences: { story: project.sequences.story.map(e => e.sectionId === sectionId ? { ...e, section: name } : e), activation: project.sequences.activation.map(e => e.sectionId === sectionId ? { ...e, section: name } : e) } };
 }
-export function moveEntryToSection(project: LessonProject, sequence: SequenceKind, entryId: string, sectionId?: string, beforeEntryId?: string): LessonProject {
+export function moveEntryToSection<T extends LessonProject>(project: T, sequence: SequenceKind, entryId: string, sectionId?: string, beforeEntryId?: string): T {
   const section = project.sections?.find(s => s.id === sectionId && s.sequence === sequence);
   if (sectionId && !section) throw new Error('Section no longer exists in this sequence.');
   const original = project.sequences[sequence].find(e => e.id === entryId);
@@ -49,7 +49,7 @@ export function moveEntryToSection(project: LessonProject, sequence: SequenceKin
   entries.splice(index, 0, { ...original, sectionId, section: section?.name ?? '' });
   return { ...project, sequences: { ...project.sequences, [sequence]: entries } };
 }
-export function insertBreak(project: LessonProject, sequence: SequenceKind, beforeEntryId?: string, sectionId?: string) {
+export function insertBreak<T extends LessonProject>(project: T, sequence: SequenceKind, beforeEntryId?: string, sectionId?: string) {
   const scene = createScene('Break');
   scene.objects = [
     { kind: 'text', id: makeId(), visible: true, text: 'Review together', fontSize: 52, color: '#ffffff', align: 'center', box: { x: 160, y: 170, width: 960, height: 100 } },
@@ -63,7 +63,7 @@ export function insertBreak(project: LessonProject, sequence: SequenceKind, befo
 }
 
 /** Containers follow sequence order; disjoint legacy runs remain in place. */
-export function timelineGroups(project: LessonProject, sequence: SequenceKind) {
+export function timelineGroups<T extends LessonProject>(project: T, sequence: SequenceKind) {
   const groups: { key: string; sectionId?: string; entries: LessonProject['sequences']['story'] }[] = [];
   for (const entry of project.sequences[sequence]) {
     const previous = groups[groups.length - 1];
@@ -83,7 +83,7 @@ export function timelineGroups(project: LessonProject, sequence: SequenceKind) {
 }
 
 /** One immutable transaction moves every child, keeping scene and entry identities. */
-export function moveSection(project: LessonProject, sequence: SequenceKind, sectionId: string, beforeSectionId?: string, beforeEntryId?: string): LessonProject {
+export function moveSection<T extends LessonProject>(project: T, sequence: SequenceKind, sectionId: string, beforeSectionId?: string, beforeEntryId?: string): T {
   const all = project.sections?.filter(s => s.sequence === sequence) ?? [];
   const visualIds = [...new Set(timelineGroups(project, sequence).map(g => g.sectionId).filter((id): id is string => !!id))];
   const own = visualIds.map(id => all.find(s => s.id === id)).filter((s): s is typeof all[number] => !!s);
@@ -102,7 +102,7 @@ export function moveSection(project: LessonProject, sequence: SequenceKind, sect
 }
 
 /** Cut transfers occurrences, never duplicates or detaches linked scenes. */
-export function moveTimelineEntries(project: LessonProject, source: SequenceKind, destination: SequenceKind, ids: string[], sectionId?: string, beforeEntryId?: string): LessonProject {
+export function moveTimelineEntries<T extends LessonProject>(project: T, source: SequenceKind, destination: SequenceKind, ids: string[], sectionId?: string, beforeEntryId?: string): T {
   const section = project.sections?.find(s => s.id === sectionId && s.sequence === destination);
   if (sectionId && !section) throw new Error('Section no longer exists in this sequence.');
   const moving = project.sequences[source].filter(e => ids.includes(e.id));
@@ -117,7 +117,7 @@ export function moveTimelineEntries(project: LessonProject, source: SequenceKind
 }
 
 /** Explicit append boundary keeps disjoint ungrouped/legacy runs independent. */
-export function timelineGroupBoundary(project: LessonProject, sequence: SequenceKind, group: ReturnType<typeof timelineGroups>[number]): string | undefined {
+export function timelineGroupBoundary<T extends LessonProject>(project: T, sequence: SequenceKind, group: ReturnType<typeof timelineGroups>[number]): string | undefined {
   const last = group.entries[group.entries.length - 1];
   if (!last) return undefined;
   const index = project.sequences[sequence].findIndex(e => e.id === last.id);
@@ -125,7 +125,7 @@ export function timelineGroupBoundary(project: LessonProject, sequence: Sequence
 }
 
 /** Explicit membership makes empty/collapsed targets identical to populated targets. */
-export function insertSectionMedia(project: LessonProject, sequence: SequenceKind, assetIds: string[], sectionId?: string, beforeEntryId?: string) {
+export function insertSectionMedia<T extends LessonProject>(project: T, sequence: SequenceKind, assetIds: string[], sectionId?: string, beforeEntryId?: string) {
   if (sectionId && !project.sections?.some(s => s.id === sectionId && s.sequence === sequence)) throw new Error('Section no longer exists.');
   const assets = assetIds.map(id => { const asset = project.assets.find(a => a.id === id && a.mediaType !== 'audio'); if (!asset) throw new Error('Drop image or video media here.'); return asset; });
   const entryIds: string[] = [];

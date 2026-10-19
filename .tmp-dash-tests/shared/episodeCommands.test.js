@@ -1,0 +1,45 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const node_test_1 = __importDefault(require("node:test"));
+const strict_1 = __importDefault(require("node:assert/strict"));
+const commands_1 = require("./lesson/commands");
+const sections_1 = require("./lesson/sections");
+const commands_2 = require("./episode/commands");
+const projectHistory_1 = require("./projectHistory");
+const objectClipboard_1 = require("./lesson/objectClipboard");
+const mediaImport_1 = require("./lesson/mediaImport");
+(0, node_test_1.default)('immutable scene commands and history preserve the episode envelope', () => {
+    const original = (0, commands_1.createLesson)('Source'), before = JSON.stringify(original);
+    let episode = (0, commands_2.createEpisodeFromScene)(original, { id: 'adventure', version: '1' });
+    const history = new projectHistory_1.ProjectHistory();
+    history.reset(episode);
+    const added = (0, commands_1.insertScene)(episode, 'story', (0, commands_1.createScene)());
+    episode = added.project;
+    episode = (0, commands_1.putScene)(episode, { ...episode.scenes[Object.keys(episode.scenes)[0]], title: 'Edited' });
+    episode = (0, commands_1.addCard)(episode, Object.keys(episode.scenes)[0]).project;
+    episode = (0, sections_1.addSection)(episode, 'story', 'Act').project;
+    const sceneId = Object.keys(episode.scenes)[0];
+    episode = (0, objectClipboard_1.pasteObjects)(episode, sceneId, (0, objectClipboard_1.copyObjects)(episode, sceneId, episode.scenes[sceneId].objects.map(object => object.id))).project;
+    episode = (0, mediaImport_1.mergeLessonMediaImport)(episode, { importedAssets: [{ id: 'new', filename: 'new.png', originalName: 'new.png', relativePath: 'assets/new.png', mediaType: 'image', sizeBytes: 1, importedAt: '' }], createdSlides: [] });
+    history.record(episode);
+    strict_1.default.equal(episode.format, 'story-studio-episode');
+    strict_1.default.equal(episode.adventure.id, 'adventure');
+    strict_1.default.deepEqual(episode.catalog.entities, []);
+    strict_1.default.equal(JSON.stringify(original), before);
+    strict_1.default.equal(history.undo()?.format, 'story-studio-episode');
+    strict_1.default.equal(history.redo()?.format, 'story-studio-episode');
+});
+(0, node_test_1.default)('catalog membership validates references and requires reassignment before entity deletion', () => {
+    let episode = (0, commands_2.createEpisodeFromScene)((0, commands_1.createLesson)('Catalog'), { id: 'a', version: '1' });
+    episode = (0, commands_2.putCatalogEntity)(episode, { id: 'entity', adventureId: 'a', kind: 'item', name: 'Key', tags: ['manual'], assetIds: [] });
+    strict_1.default.equal(episode.catalog.entities[0].tagAnnotations?.[0].source, 'manual');
+    strict_1.default.throws(() => (0, commands_2.putCatalogCollection)(episode, { id: 'c', adventureId: 'a', name: 'Collection', entityIds: ['missing'] }), /references/);
+    episode = (0, commands_2.putCatalogCollection)(episode, { id: 'c', adventureId: 'a', name: 'Collection', entityIds: ['entity'] });
+    strict_1.default.throws(() => (0, commands_2.removeCatalogEntity)(episode, 'entity'), /referenced/);
+    episode = (0, commands_2.removeCatalogCollection)(episode, 'c');
+    episode = (0, commands_2.removeCatalogEntity)(episode, 'entity');
+    strict_1.default.equal(episode.catalog.entities.length, 0);
+});

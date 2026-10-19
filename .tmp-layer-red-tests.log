@@ -1,0 +1,89 @@
+✖ free camera layout stays bounded and legacy settings remain valid (10.7521ms)
+✖ all four resize corners preserve the opposite anchor and permit offscreen crop (0.4161ms)
+✔ camera protocol rejects malformed values and strips private extras (0.583ms)
+✔ late permission completion releases its stream after off (8.9682ms)
+✔ device replacement never overlaps capture and releases old tracks (2.2939ms)
+✔ permission failure does not prevent a later retry (2.8381ms)
+✔ camera IPC authenticates roles, filters payloads, and cancels pending consent on reset (143.314ms)
+✔ only teacher awards advance racers; pause blocks awards, finish clamps, undo restores (3.4128ms)
+✔ question projection omits private notes and unselected cards; resolving hides question (0.7428ms)
+✔ saved configuration accepts asset references and rejects unsafe media and invalid rewards (2.542ms)
+✔ episode activity save/reopen keeps image associations; package remap visits the question media (1.7958ms)
+✔ snapshot relay strips teacher notes and rejects temporary image URLs (2.0504ms)
+✔ medium and long formats use the same finish rules and explicit teacher bonus (0.7216ms)
+✔ manual position override is explicit, bounded, works while paused and supports undo (0.3139ms)
+✔ spontaneous imported image and pinned questions need no prepared card (0.4109ms)
+✔ review defaults to twenty spaces, supports ten to thirty and preserves legacy tracks (0.6536ms)
+✔ completing an asynchronous save preserves newer moves and never replaces another race (0.9341ms)
+✔ removing the last selected prepared card clamps the cursor and hides its image (28.8324ms)
+✖ centered questions retain their large contained size regardless of camera or captions (2.1161ms)
+✔ Ctrl toggles, Shift ranges and batch preparation keep source ordering and existing cards (0.5811ms)
+✔ zoom is bounded; teacher advances levels without losing points and undo restores finish (0.4392ms)
+✔ orbit retains the selected follow target independently of the rewarded racer (0.298ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 19
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1855.0293
+
+✖ failing tests:
+
+test at dist-test\shared\camera.test.js:13:25
+✖ free camera layout stays bounded and legacy settings remain valid (10.7521ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    ok((0, cameraProtocol_1.parseCameraSettings)({ ...cameraProtocol_1.CAMERA_DEFAULTS, layout: { x: -.5, y: -.3, width: 1.5, height: 1.4 } }))
+  
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\dist-test\shared\camera.test.js:17:22)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at dist-test\shared\camera.test.js:21:25
+✖ all four resize corners preserve the opposite anchor and permit offscreen crop (0.4161ms)
+  TypeError: (0 , cameraProtocol_1.transformCameraLayout) is not a function
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\dist-test\shared\camera.test.js:24:65)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)
+
+test at dist-test\shared\heroDash.test.js:138:25
+✖ centered questions retain their large contained size regardless of camera or captions (2.1161ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   height: 184,
+  +   width: 552
+  -   height: 287,
+  -   width: 860
+    }
+  
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\dist-test\shared\heroDash.test.js:143:26)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:785:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { width: 552, height: 184 },
+    expected: { width: 860, height: 287 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

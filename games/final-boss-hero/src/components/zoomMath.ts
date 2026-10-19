@@ -21,6 +21,12 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+/** Trackpads emit many small pixel deltas; wheel mice may use line units. */
+export function wheelZoom(current:number,deltaY:number,deltaMode:number,min:number,max:number):number {
+  const pixels=deltaY*(deltaMode===1?16:deltaMode===2?800:1);
+  return clamp(current*Math.exp(-clamp(pixels,-160,160)*0.0015),min,max);
+}
+
 export function computeFitZoom(metrics: PlayAreaMetrics, minZoom = 0.4): number {
   const widthFit = metrics.viewportWidth / metrics.contentWidth;
   const heightFit = metrics.viewportHeight / metrics.contentHeight;

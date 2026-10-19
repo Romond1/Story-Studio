@@ -1,7 +1,12 @@
+import {StudentSettingsRepository} from './studentSettingsRepository';
+import {HeroDashLibrary} from './heroDashLibrary';
+import {StudentService} from './studentService';
+import { DerivedMediaService } from './derivedMediaService';
+import { MediaRegistryService } from './mediaRegistryService';
 import { blocksMouseNavigation } from '../shared/mouseNavigation';
 import { importProjectMedia, detectMediaType } from './mediaImportService';
 // src/main/main.ts
-import { app, BrowserWindow, dialog, ipcMain, protocol } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, protocol, nativeImage } from 'electron';
 import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -19,7 +24,6 @@ import type {
   SequenceItem,
   Slide,
   SparkStudent,
-  StoryStudioSettings,
   StoryReferenceItem,
   StudentRosterSettings,
 } from '../shared/types';
@@ -28,12 +32,16 @@ import { normalizeAudioSettings } from '../shared/audioSettings';
 import { normalizeSlideVideoAudio } from '../shared/videoAudio';
 import { normalizeSlideVideoTrim } from '../shared/videoTrim';
 import { normalizeSlideImageAdjustments } from '../shared/imageAdjustments';
-import { normalizeRelicSystem, normalizeStudentRosterSettings } from '../shared/relics';
+import { normalizeRelicSystem } from '../shared/relics';
 import { normalizeSparkStudents } from '../shared/sparkRewards';
 import { installPresentWindow } from './presentWindow';
 import { LegacyCardPersistence } from './legacyCardPersistence';
 import { assertCardsV2 } from '../shared/cardsV2';
 import { installLessonPersistence } from './lessonPersistence';
+import { rejectPackageFolder } from './episodePackageService';
+import { ProgressionRepository } from './progressionRepository';
+import { ProgressionService } from './progressionService';
+import { installProgressionIPC } from './progressionIPC';
 import type { LessonProject, LessonProjectState } from '../shared/lesson/model';
 
 const PROJECT_FILENAME = 'project.json';
@@ -59,14 +67,46 @@ let creatingMainWindow = false;
 let currentProjectFolder: string | null = null;
 let activeProjectFormat: 'legacy' | 'lesson' | null = null;
 let activeLessonId: string | null = null;
-let pendingProject: { token: string; folderPath: string; format: 'legacy' | 'lesson'; id?: string; cards?: LegacyCardPersistence } | null = null;
+let activeDocumentFormat: string | null = null;
+let activeAdventureId: string | null = null;
+let pendingProject: { token: string; folderPath: string; format: 'legacy' | 'lesson'; id?: string; documentFormat?: string; adventureId?: string; cards?: LegacyCardPersistence } | null = null;
 const loadedCardBaselines = new WeakMap<ProjectState, LegacyCardPersistence>();
 let activeCardPersistence: LegacyCardPersistence | null = null;
 let projectWriteInProgress = false;
 let projectImportsInProgress = 0;
+const mediaRegistry = new MediaRegistryService();
+const heroDashLibrary=new HeroDashLibrary(path.join(app.getPath('userData'),'hero-dash'));
+ipcMain.handle('hero-dash:list',event=>{requireControl(event);return heroDashLibrary.list();});
+ipcMain.handle('hero-dash:import',(event,paths?:string[])=>{requireControl(event);return withProjectWrite(async()=>{
+ if(paths===undefined){const result=await dialog.showOpenDialog(getWindow(),{title:'Hero Dash — Browse Images',properties:['openFile','multiSelections'],filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','gif','bmp']}]});if(result.canceled)return {images:[],failures:[]};paths=result.filePaths;}
+ return heroDashLibrary.importImages(paths);
+});});
+ipcMain.handle('hero-dash:save',(event,id:string|undefined,config:unknown,mediaMap:Record<string,string>)=>{requireControl(event);return withProjectWrite(()=>heroDashLibrary.saveCollection(id,config as import('../shared/heroDash').DashConfig,async ref=>{
+ const url=mediaMap?.[ref];if(typeof url!=='string'||!url.startsWith('media://'))throw Error('Episode image is unavailable.');
+ if(new URL(url).hostname==='scoped-derived'){const bytes=await derivedMedia.read(url);if(!bytes)throw Error('Derived image is unavailable.');return {bytes,name:'Episode image.png'};}
+ const resolved=new URL(url).hostname==='scoped'?await mediaRegistry.resolveUrl(url):await mediaRegistry.resolveLegacyUrl(url);if(!resolved)throw Error('Episode image reference expired.');
+ if((await fs.stat(resolved)).size>50*1024*1024)throw Error('Image exceeds 50 MB.');return {bytes:await fs.readFile(resolved),name:path.basename(resolved)};
+}));});
+ipcMain.handle('hero-dash:load',(event,id:string)=>{requireControl(event);return heroDashLibrary.loadCollection(id);});
+const derivedMedia = new DerivedMediaService(mediaRegistry, bytes => nativeImage.createFromBuffer(Buffer.from(bytes)).getSize());
+function requireControl(event: Electron.IpcMainInvokeEvent): void {
+  if (!event || !mainWindow || event.sender !== mainWindow.webContents || event.senderFrame !== mainWindow.webContents.mainFrame) throw new Error('Control window required.');
+}
+ipcMain.handle('derived-media:begin', (event, request) => { requireControl(event); return derivedMedia.begin(request); });
+const progression = new ProgressionService(new ProgressionRepository(path.join(app.getPath('userData'),'progression','progression-v1.json')),{
+  getScope:()=>{const lease=currentProjectFolder?mediaRegistry.getLease(currentProjectFolder):null;return currentProjectFolder&&activeDocumentFormat==='story-studio-episode'&&activeLessonId&&activeAdventureId&&lease?{folderPath:currentProjectFolder,episodeId:activeLessonId,adventureId:activeAdventureId,leaseId:lease.id}:null;},
+  getRoster:async()=>(await readStoryStudioSettings()).studentRoster,
+});
+installProgressionIPC(progression,requireControl);
+ipcMain.handle('derived-media:source', (event, request) => { requireControl(event); return derivedMedia.getSource(request); });
+ipcMain.handle('derived-media:publish', (event, request) => { requireControl(event); return derivedMedia.publish(request); });
+ipcMain.handle('media-registry:lease', (event, folder) => { requireControl(event); return mediaRegistry.getLease(folder); });
+ipcMain.handle('media-registry:register', (event, request) => { requireControl(event); return mediaRegistry.register(request); });
+ipcMain.handle('media-registry:resolve', (event, request) => { requireControl(event); return mediaRegistry.resolve(request); });
 
 function handleProjectImport(channel: string, handler: Parameters<typeof ipcMain.handle>[1]) {
   ipcMain.handle(channel, async (event, ...args) => {
+    requireControl(event);
     if (projectWriteInProgress) throw new Error('Project is saving. Import after saving finishes.');
     projectImportsInProgress++;
     try {
@@ -98,9 +138,13 @@ function activateProjectCandidate(token: unknown, format: 'legacy' | 'lesson'): 
   if (!pendingProject || pendingProject.token !== token || pendingProject.format !== format) {
     return 'Project candidate expired. Please open the project again.';
   }
+  mediaRegistry.activate(pendingProject.folderPath);
   currentProjectFolder = pendingProject.folderPath;
   activeProjectFormat = pendingProject.format;
   activeLessonId = pendingProject.id ?? null;
+  activeDocumentFormat = pendingProject.documentFormat ?? null;
+  activeAdventureId = pendingProject.adventureId ?? null;
+  progression.retire();
   activeCardPersistence = pendingProject.cards ?? null;
   pendingProject = null;
   return null;
@@ -147,44 +191,9 @@ function settingsPath(): string {
   return path.join(app.getPath('userData'), 'story-studio-settings.json');
 }
 
-async function readStoryStudioSettings(): Promise<StoryStudioSettings> {
-  try {
-    const raw = await fs.readFile(settingsPath(), 'utf8');
-    const parsed = JSON.parse(raw);
-    return {
-      version: 1,
-      studentRoster: normalizeStudentRosterSettings(parsed).studentRoster,
-      audio: normalizeAudioSettings(parsed?.audio),
-    };
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException)?.code;
-    if (code !== 'ENOENT') {
-      console.warn('[settings] Could not read Story Studio settings:', error);
-    }
-    return {
-      version: 1,
-      studentRoster: [],
-      audio: normalizeAudioSettings(undefined),
-    };
-  }
-}
-
-async function writeStoryStudioSettings(settings: StoryStudioSettings): Promise<StoryStudioSettings> {
-  const normalized: StoryStudioSettings = {
-    version: 1,
-    studentRoster: normalizeStudentRosterSettings({
-      version: 1,
-      studentRoster: settings.studentRoster,
-    }).studentRoster,
-    audio: normalizeAudioSettings(settings.audio),
-  };
-  const targetPath = settingsPath();
-  await fs.mkdir(path.dirname(targetPath), { recursive: true });
-  const tmpPath = `${targetPath}.tmp`;
-  await fs.writeFile(tmpPath, JSON.stringify(normalized, null, 2), 'utf8');
-  await fs.rename(tmpPath, targetPath);
-  return normalized;
-}
+const studentSettings = new StudentSettingsRepository(settingsPath());
+const students = new StudentService(studentSettings);
+async function readStoryStudioSettings() { return studentSettings.read(); }
 
 async function ensureFolderIsEmpty(folder: string): Promise<void> {
   const entries = await fs.readdir(folder);
@@ -233,6 +242,7 @@ async function writeProjectAtomic(folder: string, data: ProjectData | LessonProj
 }
 
 async function loadProject(folder: string): Promise<ProjectState> {
+  await rejectPackageFolder(folder);
   const raw = await fs.readFile(projectPath(folder), 'utf8');
   const parsed = JSON.parse(raw) as ProjectData;
   if (parsed && typeof parsed === 'object' && 'format' in parsed) {
@@ -637,26 +647,9 @@ function normalizeProjectData(data: ProjectData): ProjectData {
   };
 }
 
-function resolveMediaPathFromUrl(rawUrl: string): { resolvedPath: string } | { status: number; message: string } {
-  if (!currentProjectFolder) {
-    return { status: 400, message: 'No project is open' };
-  }
-
-  try {
-    const requestUrl = new URL(rawUrl);
-    const relativePath = decodeURIComponent(`${requestUrl.host}${requestUrl.pathname}`).replace(/^\/+/, '');
-    const projectRoot = path.resolve(currentProjectFolder);
-    const resolvedPath = path.resolve(projectRoot, relativePath);
-    const rootWithSeparator = projectRoot.endsWith(path.sep) ? projectRoot : `${projectRoot}${path.sep}`;
-
-    if (resolvedPath !== projectRoot && !resolvedPath.startsWith(rootWithSeparator)) {
-      return { status: 403, message: 'Forbidden' };
-    }
-
-    return { resolvedPath };
-  } catch {
-    return { status: 400, message: 'Invalid media URL' };
-  }
+async function resolveMediaPathFromUrl(rawUrl: string): Promise<{ resolvedPath: string } | { status: number; message: string }> {
+  const resolvedPath = await mediaRegistry.resolveLegacyUrl(rawUrl);
+  return resolvedPath ? { resolvedPath } : { status: 403, message: 'Missing or unsafe media path' };
 }
 
 function getMimeType(filePath: string): string {
@@ -716,7 +709,14 @@ async function serveMediaFile(request: Request, filePath: string): Promise<Respo
 function registerMediaProtocol(): void {
   if (typeof protocol.handle === 'function') {
     protocol.handle('media', async (request) => {
-      const result = resolveMediaPathFromUrl(request.url);
+      if(new URL(request.url).hostname==='hero-dash'){const file=await heroDashLibrary.resolveUrl(request.url);return file?serveMediaFile(request,file):new Response('Review image unavailable',{status:404});}
+      if (new URL(request.url).hostname === 'scoped-derived') {
+        const bytes = await derivedMedia.read(request.url);
+        return bytes ? new Response(Buffer.from(bytes), { headers: { 'Content-Type': 'image/png', 'Content-Length': String(bytes.byteLength) } }) : new Response('Expired derived grant', { status: 403 });
+      }
+      const scoped = new URL(request.url).hostname === 'scoped';
+      const scopedPath = scoped ? await mediaRegistry.resolveUrl(request.url) : null;
+      const result = scoped ? (scopedPath ? { resolvedPath: scopedPath } : { status: 403, message: 'Expired or invalid media grant' }) : await resolveMediaPathFromUrl(request.url);
       if ('status' in result) {
         return new Response(result.message, { status: result.status });
       }
@@ -730,8 +730,10 @@ function registerMediaProtocol(): void {
     return;
   }
 
-  protocol.registerFileProtocol('media', (request, callback) => {
-    const result = resolveMediaPathFromUrl(request.url);
+  protocol.registerFileProtocol('media', async (request, callback) => {
+    const scoped = new URL(request.url).hostname === 'scoped';
+      const scopedPath = scoped ? await mediaRegistry.resolveUrl(request.url) : null;
+      const result = scoped ? (scopedPath ? { resolvedPath: scopedPath } : { status: 403, message: 'Expired or invalid media grant' }) : await resolveMediaPathFromUrl(request.url);
     if ('status' in result) {
       callback({ error: -10 });
       return;
@@ -764,7 +766,7 @@ function createMainWindow(): void {
     if (blocksMouseNavigation(!!currentProjectFolder, input.key)) event.preventDefault();
   });
 
-  installPresentWindow(() => mainWindow);
+  installPresentWindow(() => mainWindow,{authorizeInitialize:message=>progression.authorizeInitialize(message),acceptedModule:message=>progression.acceptedModule(message),hostCommand:message=>progression.hostCommand(message),retire:instanceId=>progression.retire(instanceId)});
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
     void mainWindow.loadURL(devUrl);
@@ -914,6 +916,7 @@ handleProjectImport('project:import-dropped-media', async (_, filePaths: string[
 
 async function saveProject(data: ProjectData, mode: SaveMode, expectedFolder: string) {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
+  await rejectPackageFolder(currentProjectFolder);
   if (expectedFolder !== currentProjectFolder) throw new Error('Active project changed. Save cancelled; please try again.');
   if (activeProjectFormat !== 'legacy' || (data && typeof data === 'object' && 'format' in data)) {
     throw new Error('Cannot save legacy data over a project with a different format.');
@@ -946,6 +949,7 @@ async function saveProject(data: ProjectData, mode: SaveMode, expectedFolder: st
     await ensureFolderIsEmpty(targetFolder);
     await copyProjectFolder(sourceFolder, targetFolder);
     const lastSavedAt = await writeProjectAtomic(targetFolder, authoredData, true);
+    mediaRegistry.activate(targetFolder);
     currentProjectFolder = targetFolder;
     pendingProject = null;
     return { lastSavedAt, folderPath: targetFolder };
@@ -961,49 +965,34 @@ ipcMain.handle('project:save', async (_, data: ProjectData, mode: SaveMode = 'sa
 
 installLessonPersistence({
   getWindow,
-  getActive: () => ({ folderPath: currentProjectFolder, format: activeProjectFormat, id: activeLessonId }),
+  getBackupRoot: () => path.join(app.getPath('userData'), 'migration-backups'),
+  getPackageContext: () => ({leaseId: currentProjectFolder ? mediaRegistry.getLease(currentProjectFolder)?.id ?? null : null, builtinRoot: app.isPackaged ? path.join(app.getAppPath(), 'games') : path.resolve(__dirname, '../../../games')}),
+  authorize: requireControl,
+  getActive: () => ({ folderPath: currentProjectFolder, format: activeProjectFormat, id: activeLessonId, documentFormat: activeDocumentFormat }),
   prepare: (project): LessonProjectState => {
     const activationToken = randomUUID();
-    pendingProject = { token: activationToken, folderPath: project.folderPath, format: 'lesson', id: project.data.id };
+    pendingProject = { token: activationToken, folderPath: project.folderPath, format: 'lesson', id: project.data.id, documentFormat: project.data.format, ...(project.data.format==='story-studio-episode'?{adventureId:project.data.adventure.id}:{}) };
     return { ...project, activationToken };
   },
   activate: token => activateProjectCandidate(token, 'lesson'),
-  adoptSavedFolder: folderPath => { currentProjectFolder = folderPath; pendingProject = null; },
+  adoptSavedFolder: folderPath => { progression.retire(); mediaRegistry.activate(folderPath); currentProjectFolder = folderPath; pendingProject = null; },
   withWrite: withProjectWrite,
   ensureFolderIsEmpty,
   copyProjectFolder,
   writeAtomic: writeProjectAtomic,
 });
 
-ipcMain.handle('settings:get-student-roster', async (): Promise<StudentRosterSettings> => {
-  const settings = await readStoryStudioSettings();
-  return { version: 1, studentRoster: settings.studentRoster };
-});
+ipcMain.handle('settings:get-student-roster', async (event):Promise<StudentRosterSettings> => {requireControl(event);return students.getSnapshot();});
+ipcMain.handle('settings:save-student-roster', async (event,settings:StudentRosterSettings):Promise<StudentRosterSettings> => {requireControl(event);return students.saveLegacy(settings);});
+ipcMain.handle('settings:get-audio', async (event):Promise<AudioSettingsV1> => {requireControl(event);return (await studentSettings.read()).audio;});
+ipcMain.handle('settings:save-audio', async (event,settings:AudioSettingsV1):Promise<AudioSettingsV1> => {requireControl(event);return (await studentSettings.update(current=>({...current,audio:normalizeAudioSettings(settings)}))).audio;});
+for(const method of ['getSnapshot','createProfile','updateProfile','setArchived','mapLegacy','importProfile','createClass','updateClass','setClassArchived','selectClass'] as const){
+ ipcMain.handle('students:'+method,async(event,input)=>{requireControl(event);return (students[method] as (input:any)=>Promise<unknown>).call(students,input);});
+}
 
-ipcMain.handle('settings:save-student-roster', async (_, settings: StudentRosterSettings): Promise<StudentRosterSettings> => {
-  const current = await readStoryStudioSettings();
-  const roster = normalizeStudentRosterSettings(settings);
-  const saved = await writeStoryStudioSettings({
-    ...current,
-    studentRoster: roster.studentRoster,
-  });
-  return { version: 1, studentRoster: saved.studentRoster };
-});
-
-ipcMain.handle('settings:get-audio', async (): Promise<AudioSettingsV1> => {
-  return (await readStoryStudioSettings()).audio;
-});
-
-ipcMain.handle('settings:save-audio', async (_, settings: AudioSettingsV1): Promise<AudioSettingsV1> => {
-  const current = await readStoryStudioSettings();
-  return (await writeStoryStudioSettings({
-    ...current,
-    audio: normalizeAudioSettings(settings),
-  })).audio;
-});
-
-handleProjectImport('project:import-audio', async (): Promise<AssetItem[] | null> => {
+async function importAudioResult(): Promise<ImportResult | null> {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
+  const folder = currentProjectFolder;
 
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
     title: 'Import Audio',
@@ -1014,70 +1003,19 @@ handleProjectImport('project:import-audio', async (): Promise<AssetItem[] | null
   });
   if (canceled || filePaths.length === 0) return null;
 
-  const importedAssets: AssetItem[] = [];
+  return importProjectMedia(folder, filePaths.filter(file => detectMediaType(path.extname(file)) === 'audio'), '');
+}
+handleProjectImport('project:import-audio-result', importAudioResult);
+handleProjectImport('project:import-audio', async () => (await importAudioResult())?.importedAssets ?? null);
 
-  for (const sourcePath of filePaths) {
-    const ext = path.extname(sourcePath).toLowerCase();
-    const mediaType = detectMediaType(ext);
-    if (mediaType !== 'audio') continue;
-
-    const id = randomUUID();
-    const filename = `${id}${ext}`;
-    const targetPath = path.join(currentProjectFolder, ASSETS_DIR, filename);
-    const stat = await fs.stat(sourcePath);
-    await fs.copyFile(sourcePath, targetPath);
-
-    importedAssets.push({
-      id,
-      relativePath: path.join(ASSETS_DIR, filename).replaceAll('\\', '/'),
-      filename,
-      originalName: path.basename(sourcePath),
-      mediaType,
-      sizeBytes: stat.size,
-      importedAt: new Date().toISOString()
-    });
-  }
-
-  return importedAssets;
-});
-
-handleProjectImport('import-bubble-template', async (): Promise<{ success: boolean; relativePath?: string }> => {
+handleProjectImport('import-bubble-template', async (): Promise<{ success: boolean; relativePath?: string; asset?: AssetItem }> => {
   if (!currentProjectFolder) return { success: false };
-
+  const folder = currentProjectFolder;
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
-    title: 'Import Bubble Template',
-    properties: ['openFile'],
-    filters: [{ name: 'PNG', extensions: ['png'] }]
+    title: 'Import Bubble Template', properties: ['openFile'], filters: [{ name: 'PNG', extensions: ['png'] }]
   });
-
-  if (canceled || filePaths.length === 0) return { success: false };
-
-  const sourcePath = filePaths[0];
-  const bubblesDir = path.join(currentProjectFolder, ASSETS_DIR, 'bubbles');
-
-  try {
-    // Ensure bubbles directory exists
-    await fs.mkdir(bubblesDir, { recursive: true });
-
-    const originalExt = path.extname(sourcePath);
-    const originalBase = path.basename(sourcePath, originalExt);
-    let fileName = path.basename(sourcePath);
-    let targetPath = path.join(bubblesDir, fileName);
-    let counter = 1;
-
-    // Unique filename check
-    while (await fs.stat(targetPath).then(() => true).catch(() => false)) {
-      fileName = `${originalBase}_${counter}${originalExt}`;
-      targetPath = path.join(bubblesDir, fileName);
-      counter++;
-    }
-
-    await fs.copyFile(sourcePath, targetPath);
-
-    const relativePath = path.join(ASSETS_DIR, 'bubbles', fileName).replace(/\\/g, '/');
-    return { success: true, relativePath };
-  } catch (err) {
-    console.error('Failed to import bubble template:', err);
-    return { success: false };
-  }
+  if (canceled || !filePaths.length) return { success: false };
+  const result = await importProjectMedia(folder, filePaths.filter(file => path.extname(file).toLowerCase() === '.png'), '');
+  const asset = result.importedAssets[0];
+  return asset ? { success: true, relativePath: asset.relativePath, asset } : { success: false };
 });

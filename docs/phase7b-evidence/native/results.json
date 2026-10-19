@@ -1,0 +1,126 @@
+{
+  "passed": [
+    "Three permanent students join two distinct classes with one shared identity; active class is selected before opening a lesson",
+    "Teach loads only the selected class membership using existing student IDs",
+    "Class rename, unenrollment, archive and restore preserve identities and progress; archiving clears selection without fallback",
+    "Archived students remain enrolled historically but are excluded from active class loading; restoration reuses the same membership",
+    "Classes and active selection survive restart; temporary guests never persist and retained progress is unchanged"
+  ],
+  "temp": "D:\\Temp\\story-phase7b-8lu6Q5",
+  "errors": [],
+  "students": [
+    {
+      "name": "Native Alice",
+      "id": "6fca0662-74d8-420e-bad7-4232931acbf0",
+      "archived": false,
+      "createdAt": "2026-10-12T16:55:49.461Z",
+      "updatedAt": "2026-10-12T16:55:49.461Z"
+    },
+    {
+      "name": "Native Bob",
+      "id": "e8f3ae27-ea72-42fb-9007-88265f763fca",
+      "archived": false,
+      "createdAt": "2026-10-12T16:55:49.632Z",
+      "updatedAt": "2026-10-12T16:55:49.632Z"
+    },
+    {
+      "name": "Native Carol",
+      "id": "eae55fc0-3600-4587-b70b-3a807f5c271a",
+      "archived": false,
+      "createdAt": "2026-10-12T16:55:49.765Z",
+      "updatedAt": "2026-10-12T16:55:49.765Z"
+    }
+  ],
+  "classes": {
+    "version": 1,
+    "studentRoster": [
+      {
+        "name": "Native Alice",
+        "id": "6fca0662-74d8-420e-bad7-4232931acbf0",
+        "archived": false,
+        "createdAt": "2026-10-12T16:55:49.461Z",
+        "updatedAt": "2026-10-12T16:55:49.461Z"
+      },
+      {
+        "name": "Native Bob",
+        "id": "e8f3ae27-ea72-42fb-9007-88265f763fca",
+        "archived": false,
+        "createdAt": "2026-10-12T16:55:49.632Z",
+        "updatedAt": "2026-10-12T16:55:49.632Z"
+      },
+      {
+        "name": "Native Carol",
+        "id": "eae55fc0-3600-4587-b70b-3a807f5c271a",
+        "archived": false,
+        "createdAt": "2026-10-12T16:55:49.765Z",
+        "updatedAt": "2026-10-12T16:55:52.103Z"
+      }
+    ],
+    "legacyMappings": [],
+    "classes": [
+      {
+        "id": "b04331ff-fd3b-4778-861b-5f13b9a120da",
+        "name": "Class One Renamed",
+        "studentIds": [
+          "6fca0662-74d8-420e-bad7-4232931acbf0"
+        ],
+        "archived": false,
+        "createdAt": "2026-10-12T16:55:49.906Z",
+        "updatedAt": "2026-10-12T16:55:51.635Z"
+      },
+      {
+        "id": "cef58ebb-c18d-47da-8ee5-3dec3026eadd",
+        "name": "Class Two",
+        "studentIds": [
+          "6fca0662-74d8-420e-bad7-4232931acbf0",
+          "eae55fc0-3600-4587-b70b-3a807f5c271a"
+        ],
+        "archived": false,
+        "createdAt": "2026-10-12T16:55:50.435Z",
+        "updatedAt": "2026-10-12T16:55:50.554Z"
+      }
+    ],
+    "activeClassId": "cef58ebb-c18d-47da-8ee5-3dec3026eadd"
+  },
+  "progression": {
+    "version": 1,
+    "revision": 1,
+    "runs": [],
+    "receipts": [
+      {
+        "key": "[\"command\",\"native-class-retained-progress\"]",
+        "canonical": "{\"adventureDefinition\":{\"description\":\"Synthetic progression definitions\",\"id\":\"class-preservation-adventure\",\"name\":\"Same display adventure\",\"relics\":[{\"id\":\"relic-star\",\"imageAssetId\":\"reward-art\",\"name\":\"Star relic\",\"stages\":[{\"id\":\"stage-first\",\"imageAssetId\":\"reward-art\",\"name\":\"First\",\"requiredProgress\":1},{\"id\":\"stage-second\",\"imageAssetId\":\"reward-art\",\"name\":\"Second\",\"requiredProgress\":3}]}],\"rewards\":[{\"iconAssetId\":\"reward-art\",\"id\":\"reward-star\",\"kind\":\"collectible\",\"name\":\"Star\"}],\"version\":\"1\"},\"commandId\":\"native-class-retained-progress\",\"delta\":2,\"reason\":\"Synthetic class history\",\"rewardId\":\"reward-star\",\"studentId\":\"6fca0662-74d8-420e-bad7-4232931acbf0\",\"type\":\"adjust-reward\"}",
+        "result": {
+          "accepted": true,
+          "revision": 1
+        }
+      }
+    ],
+    "requests": [],
+    "students": [
+      {
+        "studentId": "6fca0662-74d8-420e-bad7-4232931acbf0",
+        "adventureId": "class-preservation-adventure",
+        "inventory": {
+          "reward-star": 2
+        },
+        "relics": {},
+        "completedEpisodes": []
+      }
+    ],
+    "history": [
+      {
+        "id": "[\"command\",\"native-class-retained-progress\"]",
+        "recordedAt": "2026-10-12T16:55:51.302Z",
+        "kind": "reward-adjusted",
+        "adventureId": "class-preservation-adventure",
+        "studentIds": [
+          "6fca0662-74d8-420e-bad7-4232931acbf0"
+        ],
+        "rewardId": "reward-star",
+        "delta": 2,
+        "reason": "Synthetic class history"
+      }
+    ]
+  }
+}

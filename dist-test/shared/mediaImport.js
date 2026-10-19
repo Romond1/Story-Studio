@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applyMediaImportToProjectData = applyMediaImportToProjectData;
 const mediaReferences_1 = require("./mediaReferences");
+const mediaImportValidation_1 = require("./mediaImportValidation");
 function applyMediaImportToProjectData(data, result, targetSectionId) {
+    (0, mediaImportValidation_1.validateMediaImport)(data, result);
     const resolvedSectionId = targetSectionId ?? data.sections[0]?.id ?? null;
     const targetSection = resolvedSectionId
         ? data.sections.find((section) => section.id === resolvedSectionId)

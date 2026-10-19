@@ -10,6 +10,7 @@ const node_os_1 = __importDefault(require("node:os"));
 const node_path_1 = __importDefault(require("node:path"));
 const node_vm_1 = __importDefault(require("node:vm"));
 const node_module_1 = require("node:module");
+const node_crypto_1 = require("node:crypto");
 const typescript_1 = __importDefault(require("typescript"));
 const sectionMutations_1 = require("./sectionMutations");
 const projectHistory_1 = require("./projectHistory");
@@ -18,10 +19,12 @@ const cardAuthoring_1 = require("./cardAuthoring");
 const presentationSession_1 = require("./presentationSession");
 // Exercise the real IPC handlers, replacing only Electron's window/dialog boundary.
 function mainHarness() {
+    const privateId = (0, node_crypto_1.randomUUID)();
     const handlers = new Map();
     let selection = null;
+    const control = { mainFrame: {} };
     const electron = {
-        app: { requestSingleInstanceLock: () => true, whenReady: () => ({ then() { } }), on() { } },
+        app: { requestSingleInstanceLock: () => true, whenReady: () => ({ then() { } }), on() { }, getPath: () => node_path_1.default.join(node_os_1.default.tmpdir(), `story-persistence-harness-${privateId}`) },
         BrowserWindow: function () { },
         dialog: { showOpenDialog: async () => ({ canceled: !selection, filePaths: selection ? [selection] : [] }) },
         ipcMain: {
@@ -43,18 +46,19 @@ function mainHarness() {
         const nativeRequire = (0, node_module_1.createRequire)(filename);
         let source = (0, node_fs_1.readFileSync)(filename, 'utf8');
         if (filename.endsWith(`${node_path_1.default.sep}main.ts`))
-            source += '\nmainWindow = {} as BrowserWindow;';
+            source += '\nmainWindow = { webContents: __control } as unknown as BrowserWindow;';
         const js = typescript_1.default.transpileModule(source, { compilerOptions: { module: typescript_1.default.ModuleKind.CommonJS, target: typescript_1.default.ScriptTarget.ES2021, esModuleInterop: true } }).outputText;
         node_vm_1.default.runInNewContext(js, {
-            module, exports: module.exports, __dirname: node_path_1.default.dirname(filename), console, process,
+            module, exports: module.exports, __dirname: node_path_1.default.dirname(filename), console, process, __control: control,
             require: (id) => id === 'electron' ? electron : id.startsWith('.') ? load(node_path_1.default.resolve(node_path_1.default.dirname(filename), `${id}.ts`)) : nativeRequire(id),
         }, { filename });
         return module.exports;
     }
     load(node_path_1.default.resolve('src/main/main.ts'));
-    const call = (name, ...args) => handlers.get(name)(null, ...args);
+    const call = (name, ...args) => handlers.get(name)({ sender: control, senderFrame: control.mainFrame }, ...args);
     return {
         call,
+        untrusted: (name, ...args) => handlers.get(name)({ sender: {}, senderFrame: {} }, ...args),
         select: (folder) => { selection = folder; },
         open: async (folder) => {
             const candidate = await call('project:open-path', folder);
@@ -923,3 +927,56 @@ for (const invalid of [{ ...v2PersistenceFixture(), version: 99 }, { ...v2Persis
     await api.call('project:save', active.data, 'save', root);
     strict_1.default.equal('cardsV2' in JSON.parse(await node_fs_1.promises.readFile(node_path_1.default.join(root, 'project.json'), 'utf8')), false);
 });
+(0, node_test_1.default)('media registry and imports reject non-Control senders', async () => {
+    const api = mainHarness();
+    for (const channel of ['media-registry:lease', 'media-registry:register', 'media-registry:resolve'])
+        strict_1.default.throws(() => api.untrusted(channel, {}), /Control window required/);
+    await strict_1.default.rejects(api.untrusted('project:import-dropped-media', []), /Control window required/);
+});
+(0, node_test_1.default)('IPC media lease retires only after successful Save As and indexes unsaved imported assets', async (t) => {
+    const root = await sandbox(t), source = node_path_1.default.join(root, 'source'), target = node_path_1.default.join(root, 'target');
+    await node_fs_1.promises.mkdir(source);
+    await node_fs_1.promises.mkdir(target);
+    await node_fs_1.promises.writeFile(node_path_1.default.join(source, 'project.json'), JSON.stringify(fixture()));
+    const api = mainHarness(), active = await api.open(source);
+    const lease = await api.call('media-registry:lease', source);
+    const input = node_path_1.default.join(root, 'new.png');
+    await node_fs_1.promises.writeFile(input, 'new bytes');
+    const imported = await api.call('project:import-dropped-media', [input]);
+    const asset = imported.importedAssets[0];
+    strict_1.default.equal((await api.call('media-registry:register', { leaseId: lease.id, expectedFolder: source, revision: 0, assets: [asset], legacyPaths: [] })).ok, true);
+    strict_1.default.equal((await api.call('media-registry:resolve', { leaseId: lease.id, revision: 0, assetId: asset.id })).ok, true);
+    api.select(null);
+    strict_1.default.equal(await api.call('project:save', { ...active.data, assets: [asset] }, 'saveAs', source), null);
+    strict_1.default.equal((await api.call('media-registry:lease', source)).id, lease.id);
+    api.select(target);
+    await api.call('project:save', { ...active.data, assets: [asset] }, 'saveAs', source);
+    strict_1.default.equal(await api.call('media-registry:lease', source), null);
+    strict_1.default.notEqual((await api.call('media-registry:lease', target)).id, lease.id);
+    strict_1.default.equal((await api.call('media-registry:resolve', { leaseId: lease.id, revision: 0, assetId: asset.id })).code, 'stale-project');
+});
+(0, node_test_1.default)('additive audio import result preserves copy failure diagnostics', async (t) => {
+    const root = await sandbox(t);
+    await node_fs_1.promises.writeFile(node_path_1.default.join(root, 'project.json'), JSON.stringify(fixture()));
+    const api = mainHarness();
+    await api.open(root);
+    api.select(node_path_1.default.join(root, 'missing.mp3'));
+    const result = await api.call('project:import-audio-result');
+    strict_1.default.equal(result.importedAssets.length, 0);
+    strict_1.default.equal(result.failures.length, 1);
+    strict_1.default.equal(result.failures[0].name, 'missing.mp3');
+});
+for (const version of [2, 3])
+    (0, node_test_1.default)(`legacy v${version} open preserves source JSON bytes and unregistered media`, async (t) => {
+        const root = await sandbox(t);
+        await node_fs_1.promises.mkdir(node_path_1.default.join(root, 'assets'));
+        await node_fs_1.promises.writeFile(node_path_1.default.join(root, 'assets', 'legacy.png'), 'image');
+        const data = { ...fixture(), version, sections: [{ id: 'story', name: 'Story', background: 'media://assets/legacy.png' }], unknownExtension: { keep: 'opaque' } };
+        const original = JSON.stringify(data, null, 2) + '\n';
+        await node_fs_1.promises.writeFile(node_path_1.default.join(root, 'project.json'), original);
+        const api = mainHarness(), opened = await api.open(root);
+        strict_1.default.equal(await node_fs_1.promises.readFile(node_path_1.default.join(root, 'project.json'), 'utf8'), original);
+        strict_1.default.equal(opened.data.assets.length, 0);
+        strict_1.default.equal(opened.data.sections[0].background, 'media://assets/legacy.png');
+        strict_1.default.equal(opened.data.unknownExtension.keep, 'opaque');
+    });

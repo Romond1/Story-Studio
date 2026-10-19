@@ -4,6 +4,8 @@ import type { SceneViewport } from '../teachingScene';
 import { sceneAt, type LessonProject, type LessonSession, type Rect, type SceneText } from './model';
 import { parseRewardPresentation, type RewardPresentation } from '../rewardPresentation';
 import { projectLessonRewards } from './rewards';
+import { createMediaRegistry } from '../content/mediaRegistry';
+import { compatibilityMediaUrl } from '../content/mediaResolution';
 
 interface VisualObject { id: string; box: Rect }
 export type SceneObjectPlan =
@@ -23,11 +25,10 @@ export function projectScene(project: LessonProject, sceneId: string, session?: 
   const scene = project.scenes[sceneId];
   if (!scene) throw new Error('Scene does not exist.');
   const live = session && sceneAt(project, session.cursor)?.id === sceneId ? session : undefined;
-  const source = resolveAsset ?? (id => {
-    const asset = project.assets.find(item => item.id === id);
-    return asset && `media://${asset.relativePath.replace(/\\/g, '/').replace(/^\/+/, '').split('/').map(encodeURIComponent).join('/')}`;
-  });
-  const background = scene.background.assetId && project.assets.find(asset => asset.id === scene.background.assetId);
+  const registry = resolveAsset ? undefined : createMediaRegistry({format:'scene',data:project});
+  const source = resolveAsset ?? (id => { const asset = registry!.get(id); return asset && compatibilityMediaUrl(asset.relativePath); });
+  const backgroundId = scene.background.assetId;
+  const background = backgroundId && (project.assets.find(asset => asset.id === backgroundId) ?? (project.format==='story-studio-episode' && project.derivedImages.some(image=>image.id===backgroundId) ? {id:backgroundId,mediaType:'image' as const} : undefined));
   const backgroundSrc = background && source(background.id);
   const objects: SceneObjectPlan[] = [];
   for (const object of scene.objects) {

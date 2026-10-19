@@ -1,0 +1,81 @@
+{
+  "temp": "D:\\Temp\\boss-usability-0pa8r6",
+  "results": [
+    {
+      "game": "memoryReveal",
+      "before": {
+        "width": 902,
+        "height": 375,
+        "zoom": "Start Game\nZoom 100%\nReset",
+        "transform": "translate(0px, 181px)"
+      },
+      "after": {
+        "width": 1409,
+        "height": 412,
+        "zoom": "Start Game\nZoom 140%\nReset",
+        "transform": "translate(-180.325px, 162.5px)"
+      }
+    },
+    {
+      "game": "matchPairs",
+      "before": {
+        "width": 902,
+        "height": 357,
+        "zoom": "Start Game\nZoom 100%\nReset",
+        "transform": "translate(0px, 189px)"
+      },
+      "after": {
+        "width": 1262,
+        "height": 485,
+        "zoom": "Start Game\nZoom 140%\nReset",
+        "transform": "translate(-180.325px, 126px)"
+      }
+    },
+    {
+      "game": "laneBattle",
+      "before": {
+        "width": 902,
+        "height": 536,
+        "zoom": "Start Game\nZoom 100%\nReset",
+        "transform": "translate(0px, 100.5px)"
+      },
+      "after": {
+        "width": 1262,
+        "height": 729,
+        "zoom": "Start Game\nZoom 140%\nReset",
+        "transform": "translate(-180.325px, 4px)"
+      }
+    },
+    {
+      "game": "openBox",
+      "before": {
+        "width": 613,
+        "height": 737,
+        "zoom": "Start Game\nZoom 93%\nReset",
+        "transform": "translate(144.915px, 0px)"
+      },
+      "after": {
+        "width": 876,
+        "height": 990,
+        "zoom": "Start Game\nZoom 133%\nReset",
+        "transform": "translate(13.1337px, -158.518px)"
+      }
+    },
+    {
+      "game": "boardDash",
+      "before": {
+        "width": 535,
+        "height": 655,
+        "zoom": "Start Game\nZoom 100%\nReset",
+        "transform": "translate(183.5px, 41px)"
+      },
+      "after": {
+        "width": 748,
+        "height": 916,
+        "zoom": "Start Game\nZoom 140%\nReset",
+        "transform": "translate(77.1364px, -89.8472px)"
+      }
+    }
+  ],
+  "errors": []
+}

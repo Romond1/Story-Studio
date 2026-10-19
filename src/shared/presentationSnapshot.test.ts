@@ -171,6 +171,8 @@ test('Present lifecycle stays passive, recovers latest snapshot and rejects fore
     if (name === 'node:path') return path;
     if (name === '../shared/presentationSnapshot') return { PresentSnapshotRelay, parsePresentSnapshot };
     if (name === '../shared/gameHost') return require('./gameHost');
+    if (name === './moduleTransport') return require('../main/moduleTransport');
+    if (name === '../shared/modules/protocol') return require('./modules/protocol');
     if (name === '../shared/presentationMedia') return require('./presentationMedia');
     if (name === '../shared/teachWorkspace') return require('./teachWorkspace');
     if (name === './cameraBroadcast') return { installCameraBroadcast: () => ({ reset() {} }) };
@@ -297,6 +299,19 @@ test('Present lifecycle stays passive, recovers latest snapshot and rejects fore
   await launchGame(controlEvent, game('run-atomic', 3));
   const fifth = windows[5];
   assert.equal(handles.get('present:snapshot')!(event(fifth)).snapshot.target.instanceId, 'run-atomic');
+  const moduleHost = handles.get('present:module-host')!, moduleGet = handles.get('present:module-get')!;
+  assert.throws(() => moduleHost(event(fifth), {}), /Control/);
+  assert.throws(() => moduleGet(controlEvent, 'run-atomic'), /Present/);
+  assert.throws(() => moduleHost({ sender: control.webContents, senderFrame: {} }, {}), /Control/);
+  const moduleContext = { sessionId: 'session', runId: 'module-run', instanceId: 'run-atomic', occurrenceId: 'occ', episodeId: 'episode', adventureId: 'adventure', participantIds: ['p'] };
+  const moduleInit = { channel:'story-studio-module',version:1,moduleType:'language-snake',moduleVersion:1,hostGeneration:handles.get('present:media-runtime')!(controlEvent).generation,requestId:'initialize',context:moduleContext,type:'initialize',configVersion:1,config:require('./modules/templates').createModuleTemplate('language-snake'),configRevision:0,mediaMap:{} };
+  assert.equal(moduleHost(controlEvent,moduleInit),true);
+  assert.ok(moduleGet(event(fifth),'run-atomic'));
+  const moduleReady = {channel:moduleInit.channel,version:1,moduleType:moduleInit.moduleType,moduleVersion:1,hostGeneration:moduleInit.hostGeneration,requestId:'ready',context:moduleContext,type:'ready',sequence:1};
+  const moduleEvents = () => control.webContents.messages.filter(m=>m.channel==='present:module-event');
+  events.get('present:module-event')!(controlEvent,moduleReady); assert.equal(moduleEvents().length,0);
+  events.get('present:module-event')!({sender:fifth.webContents,senderFrame:{}},moduleReady); assert.equal(moduleEvents().length,0);
+  events.get('present:module-event')!(event(fifth),moduleReady); assert.equal(moduleEvents().length,1);
   fifth.close();
   assert.deepEqual(JSON.parse(JSON.stringify(control.webContents.messages.filter(m => m.channel === 'present:game-ended').at(-1)?.data)), { instanceId: 'run-atomic', reason: 'closed' });
   await handles.get('present:open')!(controlEvent);

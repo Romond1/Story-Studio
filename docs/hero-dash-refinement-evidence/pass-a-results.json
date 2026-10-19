@@ -1,0 +1,17 @@
+{
+  "passed": [
+    "Native-file drag/drop creates thumbnails without navigation",
+    "Browse imports directly into review library",
+    "Portrait landscape square centered, contained, no empty caption; webcam and published subtitle remain visible",
+    "Pinned award retains image, normal award dismisses smoothly",
+    "Episode thumbnails and optional prepared private notes",
+    "Review imports leave episode asset pool unchanged",
+    "Narrow Control and Presenter resize",
+    "Application restart and deleted originals retain review images",
+    "Five cinematic camera modes and teacher orbit input",
+    "Manual override and undo preserved",
+    "Thirty-space configuration, ground checkpoint tiles and compact active HUD"
+  ],
+  "errors": [],
+  "temp": "D:\\Temp\\dash-review-9E8pC8"
+}

@@ -1,0 +1,64 @@
+✖ free camera layout stays bounded and legacy settings remain valid (2.1407ms)
+✔ camera protocol rejects malformed values and strips private extras (0.548ms)
+✔ late permission completion releases its stream after off (6.4521ms)
+✔ device replacement never overlaps capture and releases old tracks (0.5309ms)
+✔ permission failure does not prevent a later retry (0.8336ms)
+✔ camera IPC authenticates roles, filters payloads, and cancels pending consent on reset (75.3827ms)
+✖ caption styling accepts safe values and rejects arbitrary CSS (1.4377ms)
+✔ silence and short noise never launch recognition (7.6379ms)
+✔ caption boundary rejects unsupported languages, invalid sizes and oversized content (0.3462ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 7
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 367.5642
+
+✖ failing tests:
+
+test at dist-test\shared\camera.test.js:13:25
+✖ free camera layout stays bounded and legacy settings remain valid (2.1407ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   height: 0.4,
+  -   width: 0.3,
+  -   x: 0.12,
+  -   y: 0.2
+  - }
+  
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\dist-test\shared\camera.test.js:16:22)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { x: 0.12, y: 0.2, width: 0.3, height: 0.4 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test\shared\translation.test.js:9:25
+✖ caption styling accepts safe values and rejects arbitrary CSS (1.4377ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (D:\AI\GitHub\Story-Studio\dist-test\shared\translation.test.js:14:26)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

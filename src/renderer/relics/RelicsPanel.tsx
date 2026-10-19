@@ -307,8 +307,8 @@ export function RelicsPanel({
       </CollapsibleSection>
 
       <CollapsibleSection title="Relic Configuration" defaultOpen={false}>
-        <label>Relic Title <input value={relicSystem.relicTitle} placeholder="Echo Stone" onChange={(event) => onRelicChange({ relicTitle: event.target.value })} /></label>
-        <label>Relic Description <textarea value={relicSystem.relicDescription} placeholder="Restore the Echo Stone by winning stars and completing the boss challenge." onChange={(event) => onRelicChange({ relicDescription: event.target.value })} /></label>
+        <label>Relic Title <input value={relicSystem.relicTitle} placeholder="Adventure relic" onChange={(event) => onRelicChange({ relicTitle: event.target.value })} /></label>
+        <label>Relic Description <textarea value={relicSystem.relicDescription} placeholder="Describe this relic and how students progress." onChange={(event) => onRelicChange({ relicDescription: event.target.value })} /></label>
         <label>Stage 1 Title <input value={relicSystem.stageTitles.stage1} onChange={(event) => onRelicChange({ stageTitles: { ...relicSystem.stageTitles, stage1: event.target.value } })} /></label>
         <label>Stage 2 Title <input value={relicSystem.stageTitles.stage2} onChange={(event) => onRelicChange({ stageTitles: { ...relicSystem.stageTitles, stage2: event.target.value } })} /></label>
         <label>Stage 3 Title <input value={relicSystem.stageTitles.stage3} onChange={(event) => onRelicChange({ stageTitles: { ...relicSystem.stageTitles, stage3: event.target.value } })} /></label>

@@ -1,0 +1,11 @@
+# Final Boss episode editor integration
+
+The existing Core authority is LessonApp's ProjectHistory and latest episode document. useEpisodeModuleHost accepts revision-checked config proposals through PresentGame and ModuleTransport. hostedSession wraps authoring methods, excludes runtime battle state, and disables standalone persistence. hostedConfig resolves stable asset references for runtime and reverses the projection for proposals. The existing dependency visitor covers portraits, videos, backgrounds, cards, cutscenes, rewards and power-ups; episode saving and packaging already flush hosted config.
+
+Disconnected surfaces: EditModeShell blocks hosted uploads, exposes raw media text fields, and has no episode asset catalogue. initialize sends only referenced media. Configuration failures can discard drafts during mode transitions. The ordinary import service copies local files into the episode; mergeLessonMediaImport registers those files in canonical state. The importer has no existing content deduplication support. Reusing a registered asset never imports another copy.
+
+Extend the authenticated module protocol with editor requests (list media, import media through Core's native picker, save episode) and typed responses. Core retains import/save authority. List responses contain stable IDs, names, kinds and temporary resolved previews; previews never become persisted references. Refresh the catalogue when Core media grants change. Preserve authoring drafts on failures and prevent mode transitions while unacknowledged edits remain.
+
+Keep the original editor sections and controls. Add a collapsible left episode-media panel, central workspace and compact right navigation. Each existing upload target gains type-checked selected-asset assignment, drag/drop, import and clear controls. Imported assets join the shared pool before assignment. Existing standalone UI remains available on legacy launches. Advanced standalone import must stage unresolved fields and require explicit recovery before applying any imported configuration.
+
+Validation: protocol rejection, media identity round trips, failed-ack retry and runtime isolation; typechecks and existing shared/game suites; browser and native persistence/portable workflow where available. Preserve all pre-existing uncommitted changes. No commits, merges or pushes.

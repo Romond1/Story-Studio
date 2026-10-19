@@ -1,0 +1,17 @@
+✔ scene audio stop fences late preload completion without starting a playback (2.6203ms)
+✔ duplicate scene references register exactly one preload and playback for each media URL (0.6709ms)
+✔ navigation to the same source retires old load and plays only the new request (0.2283ms)
+✔ failed mixer preload never escapes scene ownership through an internal playClip retry (304.4898ms)
+✔ scene audio pause preserves loaded tracks and resumes without preload or stop (1.2544ms)
+✔ pause before preload completion defers playback until resume (0.569ms)
+✔ stop while paused fences late loads and resume cannot resurrect them (0.3432ms)
+✔ pause does not restart tracks that naturally finished (0.3754ms)
+✔ scene audio resumes the real mixer at its paused offset (96.0555ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 872.0004

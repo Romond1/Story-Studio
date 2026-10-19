@@ -1,0 +1,36 @@
+{
+  "passed": [
+    "Explicit conversion leaves original scene JSON and image bytes unchanged",
+    "Two same-source derived images render distinct crop pixels in Adventure background and Activation card",
+    "Entity metadata, derived references, and episode reopen survive save",
+    "Unsupported required capability rejects before active project changes",
+    "Original scene project remains safely reopenable",
+    "Same entity display name stays independently identified across two adventures"
+  ],
+  "errors": [],
+  "temp": "D:\\Temp\\story-phase6c-INcAFd",
+  "originalHash": "620e90b6a306070c985ecee4f9996501c003f77d55dc3110c6ae77ba171fa4d1",
+  "imageHash": "803af8f0a9437bd19b1a1f7d9d1f9a5f3c1eeedd94510734661248ce085882dd",
+  "redPixels": {
+    "width": 160,
+    "height": 180,
+    "pixel": [
+      253,
+      0,
+      0,
+      255
+    ],
+    "url": "media://scoped-derived/889f9caa-567a-49eb-b232-0d00a992bf57/b60e763c-12a8-4b53-9592-d2594f434bd2"
+  },
+  "bluePixels": {
+    "width": 160,
+    "height": 180,
+    "pixel": [
+      0,
+      0,
+      254,
+      255
+    ],
+    "url": "media://scoped-derived/889f9caa-567a-49eb-b232-0d00a992bf57/a112b872-ba04-4969-aa1d-2b32335b7a1e"
+  }
+}

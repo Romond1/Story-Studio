@@ -1,3 +1,4 @@
+import type {PersonMask} from './removal/PersonRemovalSession';
 import type { CameraSettings } from '../../shared/cameraProtocol';
 
 // Original single-pass shader: key the unadjusted source in chroma space, then
@@ -10,6 +11,9 @@ const fragment = `#version 300 es
 precision mediump float;
 uniform sampler2D source;
 uniform bool keyEnabled;
+uniform bool personEnabled;
+uniform bool maskFresh;
+uniform sampler2D personMask;
 uniform bool mirror;
 uniform float tolerance;
 uniform float softness;
@@ -30,6 +34,7 @@ void main() {
     float spill = max(0., rgb.g - max(rgb.r, rgb.b));
     rgb.g -= spill * (1. - smoothstep(tolerance + softness, tolerance + softness + 0.2, distanceToGreen));
   }
+  if (personEnabled) alpha = maskFresh ? smoothstep(0.35, 0.65, texture(personMask, vec2(mirror ? 1. - uv.x : uv.x, 1. - uv.y)).r) : 0.;
   rgb = clamp((rgb - 0.5) * contrast + 0.5 + brightness, 0., 1.);
   color = vec4(rgb * alpha, alpha);
 }`;
@@ -39,6 +44,8 @@ export class CameraEffects {
   private program: WebGLProgram;
   private texture: WebGLTexture;
   private buffer: WebGLBuffer;
+  private maskTexture:WebGLTexture;
+  private maskTimestamp=-1;
   private locations: Record<string, WebGLUniformLocation | null> = {};
   constructor(private canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, depth: false });
@@ -48,11 +55,12 @@ export class CameraEffects {
     const program = gl.createProgram();
     const texture = gl.createTexture();
     const buffer = gl.createBuffer();
-    if (!program || !texture || !buffer) {
-      gl.deleteProgram(program); gl.deleteTexture(texture); gl.deleteBuffer(buffer);
+    const maskTexture=gl.createTexture();
+    if (!program || !texture || !buffer || !maskTexture) {
+      gl.deleteProgram(program); gl.deleteTexture(texture); gl.deleteBuffer(buffer);gl.deleteTexture(maskTexture);
       throw new Error('Camera graphics resources are unavailable.');
     }
-    this.program = program; this.texture = texture; this.buffer = buffer;
+    this.program = program; this.texture = texture; this.buffer = buffer;this.maskTexture=maskTexture;
     try {
       for (const [type, source] of [[gl.VERTEX_SHADER, vertex], [gl.FRAGMENT_SHADER, fragment]] as const) {
         const shader = gl.createShader(type);
@@ -73,12 +81,15 @@ export class CameraEffects {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      for (const name of ['source', 'keyEnabled', 'mirror', 'tolerance', 'softness', 'brightness', 'contrast']) this.locations[name] = gl.getUniformLocation(program, name);
-      gl.uniform1i(this.locations.source, 0);
+      for (const name of ['source', 'keyEnabled', 'personEnabled', 'maskFresh', 'personMask', 'mirror', 'tolerance', 'softness', 'brightness', 'contrast']) this.locations[name] = gl.getUniformLocation(program, name);
+      gl.uniform1i(this.locations.source, 0);gl.uniform1i(this.locations.personMask,1);
+      gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,this.maskTexture);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,1,1,0,gl.RED,gl.UNSIGNED_BYTE,new Uint8Array([0]));gl.activeTexture(gl.TEXTURE0);
     } catch (error) { this.dispose(); throw error; }
     finally { shaders.forEach(shader => gl.deleteShader(shader)); }
   }
-  draw(video: HTMLVideoElement, settings: CameraSettings): void {
+  draw(video: HTMLVideoElement, settings: CameraSettings, mask:PersonMask|null=null): void {
     const gl = this.gl;
     if (gl.isContextLost()) throw new Error('Camera graphics context was lost. Turn camera off and on to retry.');
     if (video.readyState < 2 || !video.videoWidth) return;
@@ -86,14 +97,16 @@ export class CameraEffects {
       this.canvas.width = video.videoWidth; this.canvas.height = video.videoHeight;
     }
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    gl.useProgram(this.program); gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    gl.useProgram(this.program);gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
-    gl.uniform1i(this.locations.keyEnabled, Number(settings.chromaKey));
+    gl.uniform1i(this.locations.keyEnabled, Number(settings.chromaKey&&!settings.personRemoval));
+    gl.uniform1i(this.locations.personEnabled,Number(!!settings.personRemoval));gl.uniform1i(this.locations.maskFresh,Number(!!mask));
+    if(mask&&mask.timestamp!==this.maskTimestamp){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,this.maskTexture);gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,mask.width,mask.height,0,gl.RED,gl.UNSIGNED_BYTE,mask.bytes);this.maskTimestamp=mask.timestamp;gl.activeTexture(gl.TEXTURE0);}
     gl.uniform1i(this.locations.mirror, Number(settings.mirror));
     for (const key of ['tolerance', 'softness', 'brightness', 'contrast'] as const) gl.uniform1f(this.locations[key], settings[key]);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   dispose(): void {
-    this.gl.deleteTexture(this.texture); this.gl.deleteBuffer(this.buffer); this.gl.deleteProgram(this.program);
+    this.gl.deleteTexture(this.texture);this.gl.deleteTexture(this.maskTexture); this.gl.deleteBuffer(this.buffer); this.gl.deleteProgram(this.program);
   }
 }

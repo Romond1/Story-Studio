@@ -50,3 +50,12 @@ const presentationSnapshot_1 = require("./presentationSnapshot");
     strict_1.default.equal(event.event.gifRelativePath, 'assets/my #1?.gif');
     strict_1.default.equal((0, movementPresentation_1.parseMovementPresentation)({ ...event, event: { ...event.event, gifRelativePath: '../private.gif' } }), null);
 });
+(0, node_test_1.default)('movement render URLs are scoped runtime fields, never authored paths', () => {
+    const event = (0, movementPresentation_1.createMovementPresentation)('render', movement_1.DEFAULT_MOVEMENT_EVENTS[0], 1, { width: 800, height: 600 });
+    const rendered = { ...event, gifSrc: 'media://scoped/lease/grant' };
+    strict_1.default.equal((0, movementPresentation_1.parseMovementPresentation)(rendered)?.gifSrc, rendered.gifSrc);
+    strict_1.default.equal((0, movementPresentation_1.parseMovementPresentation)({ ...event, gifSrc: 'https://tracker.test/a.gif' }), null);
+    strict_1.default.equal((0, movementPresentation_1.parseMovementPresentation)({ ...event, gifSrc: 'media://assets/raw.gif' }), null);
+    strict_1.default.equal((0, movementPresentation_1.parseMovementPresentation)({ ...event, gifSrc: '' })?.gifSrc, '');
+    strict_1.default.equal(event.event.gifRelativePath, movement_1.DEFAULT_MOVEMENT_EVENTS[0].gifRelativePath);
+});

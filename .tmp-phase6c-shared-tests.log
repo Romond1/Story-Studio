@@ -1,0 +1,40 @@
+✔ immutable scene commands and history preserve the episode envelope (16.6862ms)
+✔ catalog membership validates references and requires reassignment before entity deletion (5.4575ms)
+✔ episode discriminator never enters scene reader; strict capabilities and media identities (26.2378ms)
+✔ derived references accept physical images only and unify background/card/image lookup (6.4276ms)
+✔ catalog identity is scoped, duplicate display names are valid and unknown fields refuse (1.423ms)
+✔ episode nested unknown payloads cannot become hidden runtime or unsupported content (0.8572ms)
+✔ pixel transform neutral identity and flip-before-clockwise rotation preserve alpha (2.925ms)
+✔ crop geometry, non-square rotation, cover focal and contain transparent padding (0.7144ms)
+✔ finite normalized transforms reject unsupported values; color math is deterministic (2.0884ms)
+✔ clipboard capacity failure leaves the source and destination unchanged (13.9897ms)
+✔ mixed object clipboard pastes independent Cards atomically and undo removes the whole group (1.0686ms)
+✔ marquee selects intersecting visible objects in scene coordinates (0.9882ms)
+✔ group translation clamps the group as a whole preserving relative offsets (0.4928ms)
+✔ transient ink and erasing project before commit without mutating saved ink (0.2948ms)
+✔ new scene image/video, cards and bubbles project as one ordered frame without teacher content (13.2626ms)
+✔ current authored changes, duplication and deletion immediately feed the student projection (6.2498ms)
+✔ scene IPC rejects remote media and malformed geometry and strips private fields and concealed faces (1.6911ms)
+✔ actual Edit, Teach and Present renderer boundaries produce the exact same authored composition (1810.0674ms)
+✔ actual Present video scene contains one decoder with the same card and bubble composition (1140.3572ms)
+✔ authored frame and object geometry remain invariant across host aspect ratios (1.7209ms)
+✔ logical drawings reach the retained painter at authored coordinates without mutating the saved stroke (649.2875ms)
+✔ all built-in bubble styles render complete vectors on every surface without missing image dependencies (606.1469ms)
+✔ Edit video preview has muted native controls while student and teacher video slots contain no authoring controls (300.5765ms)
+✔ retained spark and celebration visuals project safely and render in the same scene frame (282.1762ms)
+✔ legacy authored media fields use exact typed matching including unused definitions (15.5555ms)
+✔ Card V2 unplaced faces and content links are enumerated once (4.5557ms)
+✔ explicit builtins are complete but path-only files remain unregistered (0.5487ms)
+✔ unknown extensions, missing links and unresolved local/external media are explicit (0.7361ms)
+✔ unknown nested authored extension payloads cannot silently claim complete coverage (0.6149ms)
+✔ registry snapshots records, preserves unplaced cards and counts authored definitions once (11.7896ms)
+✔ duplicates, path aliases and broken bin ancestry never pick an arbitrary record (3.4153ms)
+✔ path resolution is exact and reports type failures without conflating names (1.491ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5667.6452

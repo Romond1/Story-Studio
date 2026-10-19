@@ -1,0 +1,203 @@
+{
+  "date": "2026-10-12T17:11:51.888Z",
+  "scope": "Read-only real loader; six documented JSON hashes and registered-file existence. No activation, save, migration, or source-media content hashing.",
+  "episodes": [
+    {
+      "episode": 1,
+      "status": "opened-read-only",
+      "sourceVersion": 4,
+      "normalizedVersion": 4,
+      "assets": 169,
+      "duplicateAssetIds": 0,
+      "bins": 0,
+      "slides": 112,
+      "sections": 16,
+      "hasLegacyCards": true,
+      "hasCardV2": false,
+      "storedStudentCount": 1,
+      "storedRelicProgressCount": 1,
+      "files": {
+        "available": 169,
+        "missing": 0,
+        "outsideRoot": 0
+      },
+      "registryDiagnostics": [],
+      "dependencySummary": {
+        "uses": 228,
+        "issues": 35,
+        "complete": false,
+        "issueKinds": {
+          "unregistered-local": 28,
+          "unknown-content": 7
+        }
+      },
+      "sha256Before": "3edb23f264a0999f9e06beaf2dbe8c0572f9269b7479e0affcfd6e4212823142",
+      "sha256After": "3edb23f264a0999f9e06beaf2dbe8c0572f9269b7479e0affcfd6e4212823142",
+      "unchanged": true
+    },
+    {
+      "episode": 2,
+      "status": "opened-read-only",
+      "sourceVersion": 4,
+      "normalizedVersion": 4,
+      "assets": 339,
+      "duplicateAssetIds": 0,
+      "bins": 0,
+      "slides": 83,
+      "sections": 14,
+      "hasLegacyCards": true,
+      "hasCardV2": false,
+      "storedStudentCount": 1,
+      "storedRelicProgressCount": 0,
+      "files": {
+        "available": 339,
+        "missing": 0,
+        "outsideRoot": 0
+      },
+      "registryDiagnostics": [],
+      "dependencySummary": {
+        "uses": 155,
+        "issues": 28,
+        "complete": false,
+        "issueKinds": {
+          "unregistered-local": 28
+        }
+      },
+      "sha256Before": "5f5dad6decae528d704bca93cafe83d335a00c32cbc5b94ceefe12aa4aebc43a",
+      "sha256After": "5f5dad6decae528d704bca93cafe83d335a00c32cbc5b94ceefe12aa4aebc43a",
+      "unchanged": true
+    },
+    {
+      "episode": 3,
+      "status": "opened-read-only",
+      "sourceVersion": 4,
+      "normalizedVersion": 4,
+      "assets": 216,
+      "duplicateAssetIds": 0,
+      "bins": 0,
+      "slides": 80,
+      "sections": 14,
+      "hasLegacyCards": true,
+      "hasCardV2": false,
+      "storedStudentCount": 3,
+      "storedRelicProgressCount": 1,
+      "files": {
+        "available": 216,
+        "missing": 0,
+        "outsideRoot": 0
+      },
+      "registryDiagnostics": [],
+      "dependencySummary": {
+        "uses": 166,
+        "issues": 62,
+        "complete": false,
+        "issueKinds": {
+          "unregistered-local": 62
+        }
+      },
+      "sha256Before": "5dcc669a63dbb8ffed248eee1967105101678bcf4c69eb6008f3e57d96a1ed34",
+      "sha256After": "5dcc669a63dbb8ffed248eee1967105101678bcf4c69eb6008f3e57d96a1ed34",
+      "unchanged": true
+    },
+    {
+      "episode": 4,
+      "status": "opened-read-only",
+      "sourceVersion": 4,
+      "normalizedVersion": 4,
+      "assets": 174,
+      "duplicateAssetIds": 0,
+      "bins": 0,
+      "slides": 90,
+      "sections": 10,
+      "hasLegacyCards": true,
+      "hasCardV2": false,
+      "storedStudentCount": 1,
+      "storedRelicProgressCount": 1,
+      "files": {
+        "available": 174,
+        "missing": 0,
+        "outsideRoot": 0
+      },
+      "registryDiagnostics": [],
+      "dependencySummary": {
+        "uses": 111,
+        "issues": 39,
+        "complete": false,
+        "issueKinds": {
+          "unregistered-local": 39
+        }
+      },
+      "sha256Before": "1c23ef0f248e1e346480c745840f18e91e1c83ec7f6319404f15385beb323d81",
+      "sha256After": "1c23ef0f248e1e346480c745840f18e91e1c83ec7f6319404f15385beb323d81",
+      "unchanged": true
+    },
+    {
+      "episode": 5,
+      "status": "opened-read-only",
+      "sourceVersion": 4,
+      "normalizedVersion": 4,
+      "assets": 118,
+      "duplicateAssetIds": 0,
+      "bins": 0,
+      "slides": 74,
+      "sections": 13,
+      "hasLegacyCards": true,
+      "hasCardV2": false,
+      "storedStudentCount": 1,
+      "storedRelicProgressCount": 1,
+      "files": {
+        "available": 118,
+        "missing": 0,
+        "outsideRoot": 0
+      },
+      "registryDiagnostics": [],
+      "dependencySummary": {
+        "uses": 96,
+        "issues": 34,
+        "complete": false,
+        "issueKinds": {
+          "unregistered-local": 34
+        }
+      },
+      "sha256Before": "b79148e524d0edbc73ce50e5a98d268576822b25f6b86af83b82491e3ebe43de",
+      "sha256After": "b79148e524d0edbc73ce50e5a98d268576822b25f6b86af83b82491e3ebe43de",
+      "unchanged": true
+    },
+    {
+      "episode": 6,
+      "status": "opened-read-only",
+      "sourceVersion": 4,
+      "normalizedVersion": 4,
+      "assets": 100,
+      "duplicateAssetIds": 0,
+      "bins": 0,
+      "slides": 75,
+      "sections": 9,
+      "hasLegacyCards": true,
+      "hasCardV2": false,
+      "storedStudentCount": 3,
+      "storedRelicProgressCount": 1,
+      "files": {
+        "available": 100,
+        "missing": 0,
+        "outsideRoot": 0
+      },
+      "registryDiagnostics": [],
+      "dependencySummary": {
+        "uses": 92,
+        "issues": 37,
+        "complete": false,
+        "issueKinds": {
+          "unregistered-local": 36,
+          "unknown-content": 1
+        }
+      },
+      "sha256Before": "27db02139da4068e9812c4d930be103b92ee86461e048db3b41a24321653bdb7",
+      "sha256After": "27db02139da4068e9812c4d930be103b92ee86461e048db3b41a24321653bdb7",
+      "unchanged": true
+    }
+  ],
+  "characterization": {
+    "unplacedLibraryImageIncludedInAuthoredDependencies": true
+  }
+}

@@ -1,0 +1,32 @@
+✔ adventure definitions are authored, strictly versioned, and reject nested private state (3.1066ms)
+✔ definition command preserves immutable episode and validates adventure identity/capability/media (12.1729ms)
+✔ clearing optional definition images removes the authored property (0.5666ms)
+✔ immutable scene commands and history preserve the episode envelope (33.8775ms)
+✔ catalog membership validates references and requires reassignment before entity deletion (3.3381ms)
+✔ episode discriminator never enters scene reader; strict capabilities and media identities (10.4591ms)
+✔ derived references accept physical images only and unify background/card/image lookup (10.0726ms)
+✔ catalog identity is scoped, duplicate display names are valid and unknown fields refuse (2.3607ms)
+✔ episode nested unknown payloads cannot become hidden runtime or unsupported content (1.1729ms)
+✔ legacy authored media fields use exact typed matching including unused definitions (5.7602ms)
+✔ Card V2 unplaced faces and content links are enumerated once (2.0558ms)
+✔ explicit builtins are complete but path-only files remain unregistered (0.6311ms)
+✔ unknown extensions, missing links and unresolved local/external media are explicit (0.4577ms)
+✔ unknown nested authored extension payloads cannot silently claim complete coverage (0.4026ms)
+✔ strict module authored schemas reject runtime and names without falling back (7.2655ms)
+✔ typed media enumeration and remapping preserve nonmedia text and original (0.8876ms)
+✔ episode activities preserve order and require capability and valid references (8.9399ms)
+✔ Final Boss preserves all optional authoring fields and enumerates every media-bearing field (2.2991ms)
+✔ module dependencies cover unplaced activities and flag unknown authored config (4.5009ms)
+✔ portable projection preserves all authored content and rejects private extensions (17.6011ms)
+✔ manifest rejects unsafe/colliding paths, unknown capabilities and malformed hashes (2.6195ms)
+✔ closure requires exact definition identity and files, including unused authored assets (30.4681ms)
+✔ portable closure preserves all modules, derived originals, definitions and unplaced authored media (9.6514ms)
+✔ materialized builtin provenance pins known module version and exact asset file digest (2.0889ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 316.2243

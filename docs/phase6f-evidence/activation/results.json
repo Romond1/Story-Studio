@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "temp": "D:\\Temp\\story-phase6f-activation-50fehI",
+  "firstRun": "8dd3e808-ac4c-4351-9704-3702b35f3efc",
+  "resetRun": "5e208d48-8a92-48f8-a19d-e101202f2196",
+  "completion": {
+    "id": "[\"event\",\"native-progression-adventure\",\"0f806e84-4dce-40db-910d-018c50874cfa\",\"5e208d48-8a92-48f8-a19d-e101202f2196\",\"872049b1-a35a-4af2-884d-e09f735ffd7a\"]",
+    "recordedAt": "2026-10-12T16:36:43.667Z",
+    "adventureId": "native-progression-adventure",
+    "episodeId": "0f806e84-4dce-40db-910d-018c50874cfa",
+    "runId": "5e208d48-8a92-48f8-a19d-e101202f2196",
+    "eventId": "872049b1-a35a-4af2-884d-e09f735ffd7a",
+    "kind": "activity-completed",
+    "studentIds": [
+      "activation-alice",
+      "activation-bob"
+    ]
+  }
+}

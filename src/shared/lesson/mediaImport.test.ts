@@ -27,3 +27,9 @@ test('root and deleted destinations use the general pool', () => {
     assert.equal(next.mediaBins[1].parentId, undefined);
   }
 });
+
+test('an import cannot duplicate an existing asset or create cyclic bins', () => {
+  assert.throws(() => mergeLessonMediaImport(project, result([asset('existing')])), /duplicate|collision/i);
+  assert.throws(() => mergeLessonMediaImport(project, result([asset('new')], [{ id: 'cycle', name: 'Cycle', parentId: 'cycle' }])), /cycle/i);
+  assert.equal(project.assets.length, 1);
+});

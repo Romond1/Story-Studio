@@ -1,0 +1,36 @@
+import { useEffect, useState } from 'react';
+import type { StudentSnapshot } from '../../shared/students/model';
+import type { ProgressionState } from '../../shared/progression/model';
+import type { EpisodeProject } from '../../shared/episode/model';
+import { selectHeroBoard } from '../../shared/students/heroBoard';
+import { ProgressionPanel } from '../episode/ProgressionPanel';
+export interface HeroBoardLesson { project: EpisodeProject; folder: string; participants: string[]; refreshKey: number; onChange: () => void }
+export function HeroBoard({ students, lesson, initialStudentId = '' }: { students: StudentSnapshot; lesson?: HeroBoardLesson; initialStudentId?: string }) {
+  const [state,setState]=useState<ProgressionState|null>(null),[error,setError]=useState('');
+  const [studentId,setStudentId]=useState(initialStudentId),[classId,setClassId]=useState(''),[adventureId,setAdventureId]=useState(''),[episodeId,setEpisodeId]=useState('');
+  const refresh=async()=>{setError('');try{setState(await window.appApi.progression.getSnapshot());}catch(reason){setError(String(reason));}};
+  useEffect(()=>{void refresh();},[lesson?.refreshKey]);
+  const all=state?selectHeroBoard(students,state,{},lesson?.project.adventureDefinition):null;
+  const view=state?selectHeroBoard(students,state,{studentId,classId,adventureId,episodeId},lesson?.project.adventureDefinition):null;
+  const adventures=[...new Set([...(all?.definitions.map(item=>item.id)??[]),...(state?.runs.map(item=>item.context.adventureId)??[]),...(state?.history.map(item=>item.adventureId)??[]),...(state?.students.map(item=>item.adventureId)??[])])];
+  const episodes=[...new Set([...(state?.history.map(item=>item.episodeId).filter((id):id is string=>!!id)??[]),...(state?.students.flatMap(item=>item.completedEpisodes)??[])])];
+  const name=(id:string)=>students.studentRoster.find(student=>student.id===id)?.name??'Historical participant';
+  return <section className="hero-board"><div className="students-actions"><h2>Hero Board</h2><button onClick={()=>void refresh()}>Refresh Hero Board</button></div><p>Recorded activity and permanent progress across adventures. Session scores are shown separately from earned achievements.</p>
+    {error&&<p role="alert" className="lesson-error">{error}</p>}
+    <div className="hero-filters"><label className="students-field">Board student<select value={studentId} onChange={event=>setStudentId(event.target.value)}><option value="">All students</option>{students.studentRoster.map(student=><option key={student.id} value={student.id}>{student.name}{student.archived?' (archived)':''}</option>)}</select></label>
+      <label className="students-field">Board class<select value={classId} onChange={event=>setClassId(event.target.value)}><option value="">All classes</option>{students.classes.map(group=><option key={group.id} value={group.id}>{group.name}{group.archived?' (archived)':''}</option>)}</select></label>
+      <label className="students-field">Board adventure<select value={adventureId} onChange={event=>{setAdventureId(event.target.value);setEpisodeId('');}}><option value="">All adventures</option>{adventures.map(id=><option key={id} value={id}>{all?.definitions.find(item=>item.id===id)?.name??id} · {id}</option>)}</select></label>
+      <label className="students-field">Board episode<select value={episodeId} onChange={event=>setEpisodeId(event.target.value)}><option value="">All episodes</option>{episodes.map(id=><option key={id} value={id}>{id}</option>)}</select></label></div>
+    {!view?<p>Loading recorded progress…</p>:<>
+      <div className="hero-profiles" aria-label="Student overview">{view.profiles.map(student=><article key={student.id}><strong>{student.name}</strong><span>{student.nickname?`Nickname: ${student.nickname}`:'No nickname'}</span><span>{student.archived?'Archived':'Active'}</span><small>Created {new Date(student.createdAt).toLocaleDateString()}</small></article>)}</div>
+      <section aria-label="Adventure participation"><h3>Adventure participation</h3>{view.participation.length?<ul>{view.participation.map(item=><li key={JSON.stringify([item.studentId,item.adventureId])}>{name(item.studentId)} · {all?.definitions.find(definition=>definition.id===item.adventureId)?.name??item.adventureId} · {item.episodeIds.length} recorded episodes</li>)}</ul>:<p>No participation matches these filters.</p>}</section>
+      <section aria-label="Adventure progress"><h3>Adventure progress</h3><p>Inventory, achievements and relic balances are adventure totals. The episode filter narrows participation and recorded activity; it does not assign permanent balances to an episode.</p>
+      {!view.progress.length&&<p>No permanent progress matches these filters.</p>}{view.progress.map(row=><article className="hero-progress" data-board-student={row.studentId} data-board-adventure={row.adventureId} key={JSON.stringify([row.studentId,row.adventureId])}><h3>{name(row.studentId)} · {row.adventureName}</h3><div className="hero-progress-grid">
+        <div><h4>Inventory</h4>{row.inventory.length?<ul>{row.inventory.map(item=><li key={item.rewardId}>{item.name}: {item.quantity}</li>)}</ul>:<p>No rewards recorded.</p>}<h4>Achievements</h4>{row.achievements.length?<ul>{row.achievements.map(item=><li key={item.rewardId}>{item.name}: {item.quantity}</li>)}</ul>:<p>No badge achievements awarded.</p>}</div>
+        <div><h4>Relic collections</h4>{row.relics.length?row.relics.map(relic=><div key={relic.relicId}><strong>{relic.name}</strong><p>Progress: {relic.progress}</p><ul>{relic.stages.map(stage=><li key={stage.id}>{stage.name} · {relic.unlockedStageIds.includes(stage.id)?'Unlocked':`${stage.requiredProgress} required`}</li>)}</ul></div>):<p>No relic progress recorded.</p>}</div>
+        <div><h4>Completed episodes</h4>{row.completedEpisodes.length?<ul>{row.completedEpisodes.map(id=><li key={id}>{id}</li>)}</ul>:<p>No completed episodes.</p>}</div></div></article>)}</section>
+      <section aria-label="Recorded activity history"><h3>Recorded activity history</h3>{!view.history.length?<p>No recorded activity matches these filters.</p>:<ol className="hero-history">{view.history.slice().reverse().map(item=><li data-board-adventure={item.adventureId} data-board-episode={item.episodeId} key={item.id}><strong>{item.kind==='score-reported'?'Temporary session score':item.kind.replaceAll('-',' ')}</strong><span>{item.studentIds.map(name).join(', ')} · {all?.definitions.find(definition=>definition.id===item.adventureId)?.name??item.adventureId}{item.episodeId?` · ${item.episodeId}`:''}</span>{item.scores&&<span>{item.scores.map(score=>`${name(score.studentId)}: ${score.score}`).join(', ')}</span>}{item.reason&&<span>Teacher note: {item.reason}</span>}<small>{new Date(item.recordedAt).toLocaleString()}</small></li>)}</ol>}</section>
+    </>}
+    {lesson?<section className="hero-adjustments"><h3>Adjust the open adventure</h3><p>{lesson.project.adventureDefinition?.name??lesson.project.adventure.id}. Adjustments use Core and are recorded with a teacher reason.</p><ProgressionPanel {...lesson} roster={students.studentRoster} /></section>:<p>Open an episode to make teacher adjustments using its authored reward and relic definitions.</p>}
+  </section>;
+}

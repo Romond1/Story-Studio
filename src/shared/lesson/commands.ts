@@ -1,5 +1,5 @@
 import type { CardDefinition } from '../cardsV2';
-import { clone, makeId, type LessonProject, type LessonScene, type Rect, type SceneObject, type SequenceKind } from './model';
+import { clone, makeId, type LessonProject, type SceneLessonProject, type LessonScene, type Rect, type SceneObject, type SequenceKind } from './model';
 import { LESSON_LIMITS } from './limits';
 
 function assertObjectCapacity(scene: LessonScene, adding: number) {
@@ -9,7 +9,7 @@ function assertCardCapacity(project: LessonProject, adding: number) {
   if (Object.keys(project.cards).length + adding > LESSON_LIMITS.cards) throw new Error(`This lesson can contain at most ${LESSON_LIMITS.cards} Cards. Reuse a linked Card or start another lesson.`);
 }
 
-export function createLesson(title = 'Untitled lesson'): LessonProject {
+export function createLesson(title = 'Untitled lesson'): SceneLessonProject {
   const now = new Date().toISOString();
   return { format: 'story-studio-scene', version: 1, id: makeId(), title, createdAt: now, updatedAt: now,
     assets: [], mediaBins: [], cards: {}, library: [], cardSets: [], scenes: {}, sequences: { story: [], activation: [] } };
@@ -18,11 +18,11 @@ export function createScene(title = 'New scene', assetId?: string): LessonScene 
   return { id: makeId(), title, frame: { width: 1280, height: 720 }, background: { color: '#172332', ...(assetId ? { assetId } : {}) },
     objects: [], drawings: [], audio: [], transition: { kind: 'none', durationMs: 400 }, viewport: { zoom: 1, pan: { x: 0, y: 0 } }, notes: '' };
 }
-export function putScene(project: LessonProject, scene: LessonScene): LessonProject {
+export function putScene<T extends LessonProject>(project: T, scene: LessonScene): T {
   if (!project.scenes[scene.id]) return project;
   return { ...project, scenes: { ...project.scenes, [scene.id]: scene } };
 }
-export function insertScene(project: LessonProject, sequence: SequenceKind, scene = createScene(), beforeEntryId?: string): { project: LessonProject; entryId: string } {
+export function insertScene<T extends LessonProject>(project: T, sequence: SequenceKind, scene = createScene(), beforeEntryId?: string): { project: T; entryId: string } {
   if (project.sequences[sequence].length >= LESSON_LIMITS.entriesPerSequence) throw new Error(`${sequence === 'story' ? 'Adventure' : 'Discovery'} can contain at most ${LESSON_LIMITS.entriesPerSequence} scene entries. Remove an entry before adding another.`);
   if (!project.scenes[scene.id] && Object.keys(project.scenes).length >= LESSON_LIMITS.scenes) throw new Error(`This lesson can contain at most ${LESSON_LIMITS.scenes} scenes. Reuse a linked scene or start another lesson.`);
   assertObjectCapacity(scene, 0);
@@ -33,11 +33,11 @@ export function insertScene(project: LessonProject, sequence: SequenceKind, scen
   entries.splice(index < 0 ? entries.length : index, 0, entry);
   return { project: { ...project, scenes: { ...project.scenes, [scene.id]: scene }, sequences: { ...project.sequences, [sequence]: entries } }, entryId: entry.id };
 }
-export function removeEntry(project: LessonProject, sequence: SequenceKind, entryId: string): LessonProject {
+export function removeEntry<T extends LessonProject>(project: T, sequence: SequenceKind, entryId: string): T {
   const entries = project.sequences[sequence].filter(item => item.id !== entryId);
   return entries.length === project.sequences[sequence].length ? project : { ...project, sequences: { ...project.sequences, [sequence]: entries } };
 }
-export function reorderEntry(project: LessonProject, sequence: SequenceKind, entryId: string, beforeEntryId?: string): LessonProject {
+export function reorderEntry<T extends LessonProject>(project: T, sequence: SequenceKind, entryId: string, beforeEntryId?: string): T {
   if (entryId === beforeEntryId) return project;
   const entry = project.sequences[sequence].find(item => item.id === entryId);
   if (!entry) return project;
@@ -51,23 +51,23 @@ export function fitBox(box: Rect, frame: LessonScene['frame']): Rect {
   const height = Math.max(24, Math.min(frame.height, box.height));
   return { width, height, x: Math.max(0, Math.min(frame.width - width, box.x)), y: Math.max(0, Math.min(frame.height - height, box.y)) };
 }
-export function putObject(project: LessonProject, sceneId: string, object: SceneObject): LessonProject {
+export function putObject<T extends LessonProject>(project: T, sceneId: string, object: SceneObject): T {
   const scene = project.scenes[sceneId];
   if (!scene || !scene.objects.some(item => item.id === object.id)) return project;
   return putScene(project, { ...scene, objects: scene.objects.map(item => item.id === object.id ? { ...object, box: fitBox(object.box, scene.frame) } : item) });
 }
-export function addObject(project: LessonProject, sceneId: string, object: SceneObject): LessonProject {
+export function addObject<T extends LessonProject>(project: T, sceneId: string, object: SceneObject): T {
   const scene = project.scenes[sceneId];
   if (!scene || scene.objects.some(item => item.id === object.id)) return project;
   assertObjectCapacity(scene, 1);
   return putScene(project, { ...scene, objects: [...scene.objects, { ...object, box: fitBox(object.box, scene.frame) }] });
 }
-export function removeObject(project: LessonProject, sceneId: string, objectId: string): LessonProject {
+export function removeObject<T extends LessonProject>(project: T, sceneId: string, objectId: string): T {
   const scene = project.scenes[sceneId];
   if (!scene || !scene.objects.some(item => item.id === objectId)) return project;
   return putScene(project, { ...scene, objects: scene.objects.filter(item => item.id !== objectId) });
 }
-export function layerObject(project: LessonProject, sceneId: string, objectId: string, direction: 'up' | 'down'): LessonProject {
+export function layerObject<T extends LessonProject>(project: T, sceneId: string, objectId: string, direction: 'up' | 'down'): T {
   const scene = project.scenes[sceneId]; if (!scene) return project;
   const objects = [...scene.objects], index = objects.findIndex(item => item.id === objectId);
   const next = index + (direction === 'up' ? 1 : -1);
@@ -84,14 +84,14 @@ export function createCard(): CardDefinition {
 export function independentCard(card: CardDefinition): CardDefinition {
   return { ...clone(card), id: makeId(), faces: card.faces.map(face => ({ ...clone(face), id: makeId() })) };
 }
-export function putCard(project: LessonProject, card: CardDefinition): LessonProject {
+export function putCard<T extends LessonProject>(project: T, card: CardDefinition): T {
   if (!project.cards[card.id] || !card.faces.length) return project;
   const scenes = Object.fromEntries(Object.entries(project.scenes).map(([id, scene]) => [id, { ...scene, objects: scene.objects.map(object =>
     object.kind === 'card' && object.cardId === card.id && !card.faces.some(face => face.id === object.initialFaceId)
       ? { ...object, initialFaceId: card.faces[0].id } : object) }]));
   return { ...project, cards: { ...project.cards, [card.id]: card }, scenes };
 }
-export function addCard(project: LessonProject, sceneId: string, sourceId?: string, linked = false): { project: LessonProject; objectId: string } {
+export function addCard<T extends LessonProject>(project: T, sceneId: string, sourceId?: string, linked = false): { project: T; objectId: string } {
   const scene = project.scenes[sceneId];
   if (!scene) throw new Error('Scene no longer exists.');
   assertObjectCapacity(scene, 1);
@@ -105,7 +105,7 @@ export function addCard(project: LessonProject, sceneId: string, sourceId?: stri
 }
 
 /** An optional Set creates ordinary independent Cards, using the same scene commands. */
-export function insertCardSet(project: LessonProject, sceneId: string, setId: string): { project: LessonProject; objectIds: string[] } {
+export function insertCardSet<T extends LessonProject>(project: T, sceneId: string, setId: string): { project: T; objectIds: string[] } {
   const scene = project.scenes[sceneId], set = project.cardSets.find(item => item.id === setId);
   if (!scene) throw new Error('Scene no longer exists.');
   if (!set) throw new Error('Card Set no longer exists.');
@@ -151,12 +151,12 @@ export function insertCardSet(project: LessonProject, sceneId: string, setId: st
   }
   return { project, objectIds };
 }
-export function addText(project: LessonProject, sceneId: string, kind: 'text' | 'bubble'): { project: LessonProject; objectId: string } {
+export function addText<T extends LessonProject>(project: T, sceneId: string, kind: 'text' | 'bubble'): { project: T; objectId: string } {
   const object: SceneObject = { kind, id: makeId(), visible: true, text: kind === 'bubble' ? 'What happens next?' : 'Type your text',
     fontSize: 32, color: kind === 'bubble' ? '#182331' : '#ffffff', align: 'center', box: { x: 120, y: 350, width: 360, height: 170 } };
   return { project: addObject(project, sceneId, object), objectId: object.id };
 }
-export function duplicateObject(project: LessonProject, sceneId: string, objectId: string): { project: LessonProject; objectId: string } {
+export function duplicateObject<T extends LessonProject>(project: T, sceneId: string, objectId: string): { project: T; objectId: string } {
   const original = project.scenes[sceneId]?.objects.find(item => item.id === objectId);
   if (!original) return { project, objectId };
   assertObjectCapacity(project.scenes[sceneId], 1);
@@ -170,7 +170,7 @@ export function duplicateObject(project: LessonProject, sceneId: string, objectI
   }
   return { project: addObject(project, sceneId, object), objectId: object.id };
 }
-export function copyScene(project: LessonProject, sceneId: string, destination: SequenceKind, linked: boolean): { project: LessonProject; entryId: string } {
+export function copyScene<T extends LessonProject>(project: T, sceneId: string, destination: SequenceKind, linked: boolean): { project: T; entryId: string } {
   const source = project.scenes[sceneId];
   if (!source) throw new Error('Scene no longer exists');
   if (linked) return insertScene(project, destination, source);
@@ -191,7 +191,7 @@ export function copyScene(project: LessonProject, sceneId: string, destination: 
 }
 
 /** Duplicate a timeline occurrence, preserving its Break type and same-sequence group. */
-export function duplicateEntry(project: LessonProject, sourceSequence: SequenceKind, sourceEntryId: string, destination: SequenceKind, linked = false): { project: LessonProject; entryId: string } {
+export function duplicateEntry<T extends LessonProject>(project: T, sourceSequence: SequenceKind, sourceEntryId: string, destination: SequenceKind, linked = false): { project: T; entryId: string } {
   const source = project.sequences[sourceSequence].find(e => e.id === sourceEntryId);
   if (!source) throw new Error('Scene entry no longer exists.');
   const added = copyScene(project, source.sceneId, destination, linked);

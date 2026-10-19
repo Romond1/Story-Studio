@@ -35,6 +35,8 @@ function parseMovementPresentation(value) {
     if (!value || typeof value !== 'object')
         return null;
     const v = value, e = v.event, f = v.frame;
+    if (v.gifSrc !== undefined && (typeof v.gifSrc !== 'string' || (v.gifSrc !== '' && !/^media:\/\/scoped\/[\w-]+\/[\w-]+$/.test(v.gifSrc))))
+        return null;
     if (typeof v.id !== 'string' || !v.id || v.id.length > 1024 || !Number.isFinite(v.startedAt) || v.startedAt < 0 || !Number.isFinite(v.expiresAt) || v.expiresAt <= v.startedAt || v.expiresAt - v.startedAt > 3600000 || !e || !f || !Number.isFinite(f.width) || !Number.isFinite(f.height) || f.width <= 0 || f.height <= 0 || f.width > 32768 || f.height > 32768)
         return null;
     if (typeof e.id !== 'string' || typeof e.name !== 'string' || typeof e.instruction !== 'string' || !animations.includes(e.animation))
@@ -54,7 +56,7 @@ function parseMovementPresentation(value) {
     for (const key of ['primaryColor', 'secondaryColor', 'accentColor'])
         if (typeof e[key] === 'string')
             event[key] = e[key].slice(0, 128);
-    return { id: v.id, startedAt: v.startedAt, expiresAt: v.expiresAt, frame: { width: f.width, height: f.height }, event };
+    return { id: v.id, startedAt: v.startedAt, expiresAt: v.expiresAt, frame: { width: f.width, height: f.height }, event, ...(v.gifSrc !== undefined ? { gifSrc: v.gifSrc } : {}) };
 }
 function expireMovementPresentation(current, id, now) {
     return current?.id === id && movementRemaining(current, now) === 0 ? null : current;

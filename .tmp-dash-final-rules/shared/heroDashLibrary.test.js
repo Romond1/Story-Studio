@@ -1,0 +1,33 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const node_test_1 = __importDefault(require("node:test"));
+const strict_1 = __importDefault(require("node:assert/strict"));
+const node_fs_1 = require("node:fs");
+const node_path_1 = __importDefault(require("node:path"));
+const node_os_1 = __importDefault(require("node:os"));
+const heroDashLibrary_1 = require("../main/heroDashLibrary");
+const heroDash_1 = require("./heroDash");
+(0, node_test_1.default)('review imports persist independently and saved collections capture episode references', async () => {
+    const root = await node_fs_1.promises.mkdtemp(node_path_1.default.join(node_os_1.default.tmpdir(), 'dash-library-'));
+    const store = new heroDashLibrary_1.HeroDashLibrary(node_path_1.default.join(root, 'library'));
+    const picture = node_path_1.default.join(root, 'old-episode.png');
+    await node_fs_1.promises.writeFile(picture, Buffer.from('89504e470d0a1a0a00000000', 'hex'));
+    const unsupported = node_path_1.default.join(root, 'unsupported.exe');
+    await node_fs_1.promises.writeFile(unsupported, 'unsupported');
+    const result = await store.importImages([picture, unsupported]);
+    strict_1.default.equal(result.images.length, 1);
+    strict_1.default.equal(result.failures.length, 1);
+    strict_1.default.match(result.failures[0].reason, /Use PNG/);
+    const config = { ...(0, heroDash_1.defaultDashConfig)(), importedImages: [`dash:${result.images[0].id}`], cards: [{ id: 'q', image: 'asset:episode-image', text: '', note: 'Teacher only', reward: 1 }] };
+    const saved = await store.saveCollection(undefined, config, async () => ({ bytes: await node_fs_1.promises.readFile(picture), name: 'episode.png' }));
+    strict_1.default.ok(saved.config.cards[0].image.startsWith('dash:'));
+    await node_fs_1.promises.unlink(picture);
+    const reopened = new heroDashLibrary_1.HeroDashLibrary(node_path_1.default.join(root, 'library'));
+    strict_1.default.equal((await reopened.list()).collections.length, 1);
+    strict_1.default.equal((await reopened.loadCollection(saved.id)).cards[0].note, 'Teacher only');
+    strict_1.default.ok(await reopened.resolveUrl(result.images[0].url));
+    strict_1.default.equal(await reopened.resolveUrl('media://hero-dash/../secret'), null);
+});

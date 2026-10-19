@@ -1,10 +1,14 @@
 import type { AssetItem, ImportResult, ProjectData, Slide } from './types';
 import { decorateImportedAssetsForContext } from './mediaReferences';
+import { validateMediaImport } from './mediaImportValidation';
+import { createMediaRegistry } from './content/mediaRegistry';
 
 export function createMediaSlide(asset:AssetItem,sectionId:string,id:()=>string):Slide {
   return {id:id(),assetId:asset.id,sectionId,transition:'fade',...(asset.mediaType==='video'?{videoAudio:{enabled:true,volume:1}}:{})};
 }
 export function registerPoolImport(data:ProjectData,result:ImportResult,binId?:string):ProjectData {
+  validateMediaImport(data, result);
+  if (binId && !data.mediaBins?.some(bin => bin.id === binId)) throw new Error('The destination bin no longer exists. Copied files have been preserved.');
   const assets=decorateImportedAssetsForContext(data,result.importedAssets,null).map(a=>({...a,...(!a.binId&&binId?{binId}:{})}));
   const bins=(result.importedBins??[]).map(bin=>({...bin,...(!bin.parentId&&binId?{parentId:binId}:{})}));
   return {...data,assets:[...data.assets,...assets],...(bins.length?{mediaBins:[...(data.mediaBins??[]),...bins]}:{})};
@@ -22,12 +26,5 @@ export function insertPoolAssets(data:ProjectData,assetIds:string[],sectionId:st
 }
 /** Count authored references, including non-slide image/audio usages. */
 export function mediaUsage(data:ProjectData,assetId:string):number {
-  const asset=data.assets.find(a=>a.id===assetId);if(!asset)return 0;
-  let count=0;
-  const visit=(value:unknown)=>{
-    if(typeof value==='string'){if(value===assetId || value===asset.relativePath || value===`media:///${asset.relativePath}` || value.includes(`/${asset.relativePath}`))count++;}
-    else if(Array.isArray(value))value.forEach(visit);
-    else if(value&&typeof value==='object')Object.values(value).forEach(visit);
-  };
-  const {assets,mediaBins,...content}=data;visit(content);return count;
+  return createMediaRegistry({ format: 'legacy', data }).usages(assetId).length;
 }

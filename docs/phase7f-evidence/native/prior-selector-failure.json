@@ -1,0 +1,20 @@
+{
+  "passed": [
+    "01 Create two permanent profiles through Users with nicknames and avatars",
+    "02 Create and enroll two classes without duplicating permanent identities",
+    "03 Select the teaching class before opening any episode",
+    "04 Open the complete authored episode and load class participants",
+    "05 Adventure artwork and safe two-student roster render in Present",
+    "06 The same character derived crop renders on Activation Card V2 in Control and Present and completes for both captured students",
+    "07 Challenge uses authored questions and the same derived character artwork",
+    "08 Actual Challenge completion records two existing roster IDs without automatic inventory grants",
+    "09 Teacher request creates two pending rewards; default policy grants nothing before approval",
+    "10 Teacher approval grants exactly once to captured students despite changing current participant selection",
+    "11 Hero Board displays the two approved permanent student inventories",
+    "12 Teacher relic progress updates through Core before Mastery",
+    "13 Mastery Control and module read-only inventory show approved rewards without exposing private progression APIs"
+  ],
+  "temp": "D:\\Temp\\story-phase7f-vXAPp9",
+  "errors": [],
+  "error": "locator.click: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Mark episode complete for selected participants', exact: true })\u001b[22m\n\n    at D:\\AI\\GitHub\\Story-Studio\\scripts\\phase7f-workflow-smoke.cjs:25:111"
+}

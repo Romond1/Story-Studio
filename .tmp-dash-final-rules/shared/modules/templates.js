@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createModuleTemplate = createModuleTemplate;
+const heroDash_1 = require("../heroDash");
+function createModuleTemplate(type) {
+    const configs = {
+        'hero-dash': (0, heroDash_1.defaultDashConfig)(),
+        'activation-cards': { sceneIds: [] },
+        'language-snake': { questionText: 'What is your favorite color?', setup: { mode: 'versus', lessonType: 'solo', boardWidth: 16, boardHeight: 12, crystalCount: 36, coopTimerSeconds: 90, playerCount: 2 }, playerDirectionLabels: {}, playerKeyBindings: {}, heroCrownSettings: { enabled: true, frequency: 'medium', expiresAfterMoves: 5, cosmeticDurationSeconds: 30, bonusValue: 3 }, heroCrownChallengeText: 'Do a hero pose!', enemySettings: { enabled: false, speed: 'normal', respawnDelayTurns: 5, defeatReward: 3 }, backgroundControls: { blur: 2, brightness: 1, overlay: .18, panelOpacity: .62, boardOpacity: .42 }, backgroundImage: '' },
+        'final-boss-hero': { encounter: { id: 'encounter', name: 'New encounter', hero: { name: 'Hero', portrait: '', health: 100, energy: 10 }, villain: { name: 'Villain', portrait: '', health: 100, energy: 10 }, introSetup: { enabled: false, title: 'Choose your hero', subtitle: '', startButtonLabel: 'Start', heroes: [] }, background: '#172554', selectedCardIds: ['card-1', 'card-2'], enabledMiniGames: ['memoryReveal', 'matchPairs', 'laneBattle', 'openBox', 'boardDash'], gameOrder: ['memoryReveal', 'matchPairs', 'laneBattle', 'openBox', 'boardDash'], roundSettings: { roundCount: 5, difficulty: 'normal' }, rewards: [], powerUps: [], battleSettings: { heroStartHp: 100, heroMaxHp: 100, heroStartEnergy: 10, heroMaxEnergy: 100, villainStartHp: 100, villainMaxHp: 100, villainStartEnergy: 10, villainMaxEnergy: 100, resolution: { baseDamage: 10, bonusDamagePerScore: 2, drawDamage: 0, participationEnergyCost: 0, winnerEnergyGain: 10, loserEnergyLoss: 0, drawEnergyGain: 5 } }, cutscenes: [], actionItems: [], boardDashMedallionCounts: { move: 4, bonus: 2, back3: 1, rollAgain: 1, steal: 1 }, boardDashCardLimit: 2, boardDashCardIds: ['card-1', 'card-2'], pointerHighlight: { enabledByDefault: false, shortcut: 'p', paletteShortcut: 'o', clickOnly: false, defaultPalette: 'kids', kidsColors: ['#ffcc00'], villainColors: ['#ff0000'], ringSize: 40, trailSize: 12, trailLength: 20, fadeMs: 500, spawnMs: 20 } }, cardLibrary: [{ id: 'card-1', title: 'Start', image: 'builtin:final-boss-hero/assets/board-dash/start.png', value: 1, pairId: 'pair-1', tags: [] }, { id: 'card-2', title: 'Finish', image: 'builtin:final-boss-hero/assets/board-dash/finish.png', value: 1, pairId: 'pair-1', tags: [] }] }
+    };
+    return JSON.parse(JSON.stringify(configs[type]));
+}

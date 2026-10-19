@@ -20,7 +20,7 @@ const secondary = [
   { id: 'legacy', label: 'Legacy', detail: 'Earlier projects', icon: legacy },
 ] as const;
 
-export function Beginning({ onChoose }: { onChoose: (destination: 'story' | 'activation' | 'game' | 'mastery' | 'settings' | 'legacy') => void }) {
+export function Beginning({ onChoose, onUsers }: { onChoose: (destination: 'story' | 'activation' | 'game' | 'mastery' | 'settings' | 'legacy') => void; onUsers?: () => void }) {
   const [placeholder, setPlaceholder] = useState<'users' | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const lastChoice = useRef<Destination | null>(null);
@@ -30,7 +30,8 @@ export function Beginning({ onChoose }: { onChoose: (destination: 'story' | 'act
   }, [placeholder]);
   const choose = (destination: Destination) => {
     lastChoice.current = destination;
-    if (destination === 'users') setPlaceholder(destination);
+    if (destination === 'users' && onUsers) onUsers();
+    else if (destination === 'users') setPlaceholder(destination);
     else onChoose(destination);
   };
   const card = (item: typeof primary[number] | typeof secondary[number]) => <button key={item.id} className="beginning-card" data-destination={item.id} aria-label={item.label} onClick={() => choose(item.id)}>

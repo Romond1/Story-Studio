@@ -1,5 +1,9 @@
 
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
+import { getHostedBossSession } from '../hosted/hostedSession';
+import { HostedMediaPanel, HostedMediaTarget, MediaReferenceInput, useHostedMediaDrop } from './HostedMediaPanel';
+import { EditorPanelDivider, useEditorPanelWidths } from './EditorPanelDivider';
+import { HostedProjectImport } from './HostedProjectImport';
 import { miniGamePlugins } from "../miniGames/registry";
 import { BOARD_DASH_ICONS } from "../data/boardDashAssets";
 import { useBattleStore } from "../store/battleStore";
@@ -101,10 +105,11 @@ function readFileAsDataUrl(file: File): Promise<string> {
 interface UploadButtonProps {
   accept: string;
   label?: string;
-  onFileSelected: (file: File) => void | Promise<void>;
+  onFileSelected: (file: File | string) => void | Promise<void>;
 }
 
 function UploadButton({ accept, label = "Upload local file", onFileSelected }: UploadButtonProps) {
+  if(getHostedBossSession())return <HostedMediaTarget accept={accept} onAssign={onFileSelected}/>;
   return (
     <label className="upload-button">
       {label}
@@ -137,7 +142,8 @@ function buildCutsceneDraft(cutscene: CutsceneData): CutsceneData {
   };
 }
 
-function CardPreview({ card, side }: { card: CardData | null; side: "front" | "back" }) {
+function CardPreview({ card, side, onAssign }: { card: CardData | null; side: "front" | "back"; onAssign?:(ref:string)=>void }) {
+  const dropRef=useHostedMediaDrop<HTMLDivElement>('image',onAssign);
   if (!card) {
     return <div className="edit-card-preview">Select a card to edit.</div>;
   }
@@ -150,6 +156,8 @@ function CardPreview({ card, side }: { card: CardData | null; side: "front" | "b
   return (
     <div
       className="edit-card-preview"
+      ref={dropRef}
+      title={onAssign?'Drop an image from the media pool here':undefined}
       style={{
         width: card.cardWidth ? `${card.cardWidth}px` : undefined,
         height: card.cardHeight ? `${card.cardHeight}px` : undefined,
@@ -173,6 +181,9 @@ function CardPreview({ card, side }: { card: CardData | null; side: "front" | "b
 }
 
 export function EditModeShell() {
+  const panels=useEditorPanelWidths();
+  const hosted=getHostedBossSession();
+  const hostedStatus=useSyncExternalStore(hosted?.subscribe??(()=>()=>{}),hosted?.status??(()=>'Standalone project'));
   const encounter = useBattleStore((state) => state.activeEncounter);
   const cardLibrary = useBattleStore((state) => state.cardLibrary);
   const overlayState = useBattleStore((state) => state.overlayState);
@@ -382,9 +393,10 @@ export function EditModeShell() {
   }, [cutsceneDraft, selectedCutscene, updateCutscene]);
 
   const handleDataUrlUpload = async (
-    file: File,
+    file: File | string,
     onDone: (dataUrl: string) => void,
   ) => {
+    if(typeof file==='string'){onDone(file);return;}
     try {
       const dataUrl = await readFileAsDataUrl(file);
       onDone(dataUrl);
@@ -549,14 +561,14 @@ export function EditModeShell() {
   };
 
   return (
-    <div className="edit-shell">
+    <div className={`edit-shell${hosted?' hosted-editor':''}`}>
       <header className="edit-shell-header">
         <div className="edit-header-title">
           <h1>Edit Mode Workspace</h1>
           <p>Build and configure encounters, cards, visuals, and rewards in one place.</p>
         </div>
         <div className="edit-header-actions">
-          <button type="button" onClick={handleSaveProject}>
+          {hosted ? <><button type="button" disabled={hostedStatus==='Saving changes to episode…'} onClick={()=>void hosted.save()}>Apply changes to episode</button><button type="button" onClick={()=>{setProjectStatus('');void hosted.requestEditor('episode-save').catch(error=>setProjectStatus(`Episode save failed: ${String(error)}`));}}>Save episode</button></> : <><button type="button" onClick={handleSaveProject}>
             Save
           </button>
           <button
@@ -570,9 +582,10 @@ export function EditModeShell() {
           </button>
           <button type="button" onClick={() => loadEncounterFromLocalStorage()}>
             Load Last Local
-          </button>
+          </button></>}
           <button
             type="button"
+            disabled={!!hosted && (hostedStatus==='Saving changes to episode…'||hostedStatus.startsWith('Episode save failed:'))}
             onClick={() => setUIMode("play")}
           >
             Switch to Play Mode
@@ -582,12 +595,12 @@ export function EditModeShell() {
 
       <div className="edit-shell-status">
         <span>Encounter: {encounter.name}</span>
-        <span>Project File: {projectFileName}</span>
-        <span>File Access: {isFsApiAvailable ? "Native picker" : "Download/Import fallback"}</span>
+        {!hosted && <><span>Project File: {projectFileName}</span>
+        <span>File Access: {isFsApiAvailable ? "Native picker" : "Download/Import fallback"}</span></>}
         <span>Cards: {cardLibrary.length}</span>
         <span>Selected for encounter: {encounter.selectedCardIds.length}</span>
         <span>
-          Save State: {overlayState === "saveConfirmation" ? "Saved to localStorage" : "Unsaved changes"}
+          {hosted ? hostedStatus : `Save State: ${overlayState === "saveConfirmation" ? "Saved to localStorage" : "Unsaved changes"}`}
         </span>
         {projectStatus ? <span>{projectStatus}</span> : null}
         {uploadMessage ? <span>{uploadMessage}</span> : null}
@@ -606,7 +619,10 @@ export function EditModeShell() {
         }}
       />
 
-      <div className="edit-shell-body">
+      <div className="edit-shell-body" style={hosted?panels.style:undefined}>
+        {hosted&&<HostedMediaPanel session={hosted}/>}
+        {hosted&&<EditorPanelDivider side="pool" width={panels.widths.pool} onResize={panels.resize}/>}
+        {hosted&&<EditorPanelDivider side="navigation" width={panels.widths.navigation} onResize={panels.resize}/>}
         <aside className="edit-shell-sidebar">
           {EDIT_SECTIONS.map((section) => (
             <button
@@ -621,6 +637,7 @@ export function EditModeShell() {
         </aside>
 
         <section className="edit-shell-workspace">
+          {hosted&&activeSection==='settings'&&<HostedProjectImport session={hosted}/>}
           {activeSection === "overview" ? (
             <div className="editor-section">
               <h2>Encounter / Overview</h2>
@@ -756,7 +773,7 @@ export function EditModeShell() {
                       </label>
                       <label>
                         Hero Portrait / Image
-                        <input
+                        <MediaReferenceInput
                           value={selectedIntroHero.portrait}
                           onChange={(event) =>
                             updateIntroHeroOption(selectedIntroHero.id, { portrait: getTextValue(event) })
@@ -773,7 +790,7 @@ export function EditModeShell() {
                       </label>
                       <label>
                         Hero Video (optional)
-                        <input
+                        <MediaReferenceInput
                           value={selectedIntroHero.video ?? ""}
                           onChange={(event) =>
                             updateIntroHeroOption(selectedIntroHero.id, { video: getTextValue(event) })
@@ -826,7 +843,7 @@ export function EditModeShell() {
               <div className="editor-grid two-col">
                 <label>
                   Default Encounter Background
-                  <input
+                  <MediaReferenceInput allowLiteral
                     value={encounter.background}
                     onChange={(event) => setBackground(getTextValue(event))}
                   />
@@ -849,7 +866,7 @@ export function EditModeShell() {
                     <div key={plugin.id} className="editor-row-card">
                       <label>
                         {plugin.title} Background
-                        <input
+                        <MediaReferenceInput allowLiteral
                           value={background}
                           onChange={(event) => setGameBackground(plugin.id, getTextValue(event))}
                         />
@@ -948,8 +965,8 @@ export function EditModeShell() {
                   {activeCardDraft ? (
                     <>
                       <div className="card-preview-grid">
-                        <CardPreview card={activeCardDraft} side="front" />
-                        <CardPreview card={activeCardDraft} side="back" />
+                        <CardPreview card={activeCardDraft} side="front" onAssign={hosted?ref=>setCardDraft({...activeCardDraft,frontImage:ref}):undefined}/>
+                        <CardPreview card={activeCardDraft} side="back" onAssign={hosted?ref=>setCardDraft({...activeCardDraft,backImage:ref}):undefined}/>
                       </div>
 
                       <div className="editor-grid two-col">
@@ -980,7 +997,7 @@ export function EditModeShell() {
                         </label>
                         <label>
                           Image
-                          <input
+                          <MediaReferenceInput
                             value={activeCardDraft.image}
                             onChange={(event) =>
                               setCardDraft({
@@ -1015,7 +1032,7 @@ export function EditModeShell() {
                         </label>
                         <label>
                           Front Image
-                          <input
+                          <MediaReferenceInput
                             value={activeCardDraft.frontImage ?? ""}
                             onChange={(event) =>
                               setCardDraft({
@@ -1038,7 +1055,7 @@ export function EditModeShell() {
                         </label>
                         <label>
                           Back Image
-                          <input
+                          <MediaReferenceInput
                             value={activeCardDraft.backImage ?? ""}
                             onChange={(event) =>
                               setCardDraft({
@@ -1279,7 +1296,7 @@ export function EditModeShell() {
                       </label>
                       <label>
                         Media Source
-                        <input
+                        <MediaReferenceInput
                           value={activeCutsceneDraft.mediaSource}
                           onChange={(event) =>
                             setCutsceneDraft({
@@ -1559,7 +1576,7 @@ export function EditModeShell() {
                 </label>
                 <label>
                   Hero Image URL
-                  <input
+                  <MediaReferenceInput
                     value={encounter.hero.portrait}
                     onChange={(event) => updateHero({ portrait: getTextValue(event) })}
                   />
@@ -1574,7 +1591,7 @@ export function EditModeShell() {
                 </label>
                 <label>
                   Villain Image URL
-                  <input
+                  <MediaReferenceInput
                     value={encounter.villain.portrait}
                     onChange={(event) => updateVillain({ portrait: getTextValue(event) })}
                   />
@@ -1589,7 +1606,7 @@ export function EditModeShell() {
                 </label>
                 <label>
                   Hero Video URL (optional looping source)
-                  <input
+                  <MediaReferenceInput
                     value={encounter.hero.video ?? ""}
                     onChange={(event) => updateHero({ video: getTextValue(event) })}
                   />
@@ -1605,7 +1622,7 @@ export function EditModeShell() {
                 </label>
                 <label>
                   Villain Video URL (optional looping source)
-                  <input
+                  <MediaReferenceInput
                     value={encounter.villain.video ?? ""}
                     onChange={(event) => updateVillain({ video: getTextValue(event) })}
                   />
@@ -1621,14 +1638,14 @@ export function EditModeShell() {
                 </label>
                 <div className="editor-thumb">
                   <span>Hero Preview</span>
-                  <img src={encounter.hero.portrait} alt="Hero preview" />
+                  {encounter.hero.portrait?<img src={encounter.hero.portrait} alt="Hero preview" />:<span>No portrait assigned</span>}
                   {encounter.hero.video ? (
                     <video className="editor-video-preview" src={encounter.hero.video} controls loop muted />
                   ) : null}
                 </div>
                 <div className="editor-thumb">
                   <span>Villain Preview</span>
-                  <img src={encounter.villain.portrait} alt="Villain preview" />
+                  {encounter.villain.portrait?<img src={encounter.villain.portrait} alt="Villain preview" />:<span>No portrait assigned</span>}
                   {encounter.villain.video ? (
                     <video className="editor-video-preview" src={encounter.villain.video} controls loop muted />
                   ) : null}
@@ -1744,7 +1761,7 @@ export function EditModeShell() {
                         </label>
                         <label>
                           Icon / Image
-                          <input
+                          <MediaReferenceInput allowLiteral
                             value={selectedReward.icon ?? ""}
                             onChange={(event) =>
                               updateReward(selectedReward.id, { icon: getTextValue(event) })
@@ -1898,7 +1915,7 @@ export function EditModeShell() {
                         </label>
                         <label>
                           Icon / Image
-                          <input
+                          <MediaReferenceInput allowLiteral
                             value={selectedPowerUp.icon ?? ""}
                             onChange={(event) =>
                               updatePowerUp(selectedPowerUp.id, { icon: getTextValue(event) })

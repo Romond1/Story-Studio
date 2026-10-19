@@ -708,7 +708,7 @@ textarea {
   min-width: 100%;
   min-height: 100%;
   transform-origin: 0 0;
-  will-change: transform;
+  /* Repaint text and images at CSS zoom resolution instead of enlarging a cached layer. */
   --play-area-zoom: 1;
 }
 

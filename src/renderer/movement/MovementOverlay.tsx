@@ -54,7 +54,7 @@ function MovementInstance({ presentation, canonical }: { presentation: MovementP
   }, [presentation.id]);
   if (expired) return null;
   const event = presentation.event;
-  const gifUrl = event.gifRelativePath ? movementMediaUrl(event.gifRelativePath, presentation.id) : null;
+  const gifUrl = presentation.gifSrc !== undefined ? presentation.gifSrc : event.gifRelativePath ? movementMediaUrl(event.gifRelativePath, presentation.id) : null;
   return (
     <div
       data-movement-id={presentation.id}

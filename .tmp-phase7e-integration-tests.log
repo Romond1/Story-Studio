@@ -1,0 +1,11 @@
+✔ profiles and classes span three episodes while identical reward IDs remain adventure-scoped (143.5991ms)
+✔ profile changes and restart preserve stable enrollment and authoritative history (106.3097ms)
+✔ observed module completion and command receipts replay after restart without additional effects (85.5675ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 446.4235

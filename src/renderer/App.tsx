@@ -1,9 +1,14 @@
+import { useMediaRegistry } from './useMediaRegistry';
+import { validateMediaImport } from '../shared/mediaImportValidation';
+import { BUILTIN_MOVEMENT_PATHS } from '../shared/content/mediaDependencies';
+import { canonicalMediaPath } from '../shared/content/mediaResolution';
 import { MediaPool } from './MediaPool';
 import { LessonTimeline, type TimelineSlot } from './LessonTimeline';
 import { TimelineFrame } from './TimelineFrame';
 import { EditVideoTransport } from './EditVideoTransport';
 import { registerPoolImport, insertPoolAssets } from '../shared/mediaPool';
-import { toMediaUrl, resolvePassiveOverlays } from './mediaUrls';
+import { toMediaUrl, resolvePassiveOverlays, MediaPathResolverContext } from './mediaUrls';
+import { resolveAuthoredMediaUrl, resolveAuthoredBackground } from '../shared/content/mediaRenderResolution';
 import { EditorPreviewAudioContext, useEditorPreviewAudio } from './audio/EditorPreviewAudio';
 import { useEditSelection } from './useEditSelection';
 import { showEditInPresent, runNavigationAudio } from '../shared/editSelection';
@@ -200,6 +205,8 @@ function AudioClipPlayer({
   showRemove?: boolean;
   onRemove?: () => void;
 }) {
+  const resolvePath = useContext(MediaPathResolverContext);
+  clip = { ...clip, url: resolveAuthoredMediaUrl(clip.url, resolvePath) };
   const editorPreview = useContext(EditorPreviewAudioContext);
   const preview = useEditorPreviewAudio(clip.url,editorPreview);
   const playback = editorPreview ? preview : audioManager;
@@ -871,6 +878,7 @@ const BadgeStudentSprites = ({
 
 export function App() {
   const [project, renderProject] = useState<ProjectState | null>(null);
+  const mediaRegistry = useMediaRegistry(project ? { format: 'legacy', data: project.data } : null, project?.folderPath ?? null, project?.activationToken);
   const projectRef = useRef<ProjectState | null>(null);
   const historyRef = useRef(new ProjectHistory<ProjectData>());
   const gestureRef = useRef<object>();
@@ -1037,6 +1045,7 @@ export function App() {
   const [savedLiveSession, setSavedLiveSession] = useState<LiveSessionSnapshot | null>(null);
   const [pendingRestoreSession, setPendingRestoreSession] = useState<LiveSessionSnapshot | null>(null);
   const [studentRoster, setStudentRoster] = useState<StudentRosterEntry[]>([]);
+  const rosterPersistenceReady = useRef(false);
   const [isRelicRewardCardVisible, setIsRelicRewardCardVisible] = useState(false);
   const [relicAnimationSignal, setRelicAnimationSignal] = useState<{
     kind: "progress" | "stage" | "complete";
@@ -1183,6 +1192,7 @@ export function App() {
   useEffect(() => {
     let cancelled = false;
     let fallbackRaw: unknown = null;
+    rosterPersistenceReady.current = false;
     try {
       fallbackRaw = JSON.parse(window.localStorage.getItem(STUDENT_ROSTER_FALLBACK_STORAGE_KEY) || "null");
     } catch {
@@ -1205,18 +1215,16 @@ export function App() {
       .then((settings) => {
         if (cancelled) return;
         const normalized = normalizeStudentRosterSettings(settings);
-        if (normalized.studentRoster.length === 0 && fallbackSettings.studentRoster.length > 0) {
-          setStudentRoster(fallbackSettings.studentRoster);
-          void appApi.saveStudentRoster?.(fallbackSettings).catch((error) => console.error(error));
-        } else {
-          setStudentRoster(normalized.studentRoster);
-        }
+        rosterPersistenceReady.current = true;
+        setStudentRoster(normalized.studentRoster);
+        if (normalized.studentRoster.length === 0 && fallbackSettings.studentRoster.length > 0)
+          showToast('A local roster backup exists. Use Students to explicitly import or map its identities.', 'edit', 4000);
       })
       .catch((error) => {
         console.error(error);
         if (!cancelled) {
           setStudentRoster(fallbackSettings.studentRoster);
-          showToast("Using local student roster fallback", "edit", 2000);
+          showToast("Showing a read-only local roster backup. Restore access to Students before editing profiles.", "edit", 4000);
         }
       });
     return () => {
@@ -1232,7 +1240,7 @@ export function App() {
 
   const assetsById = useMemo(() => {
     const map = new Map<string, AssetItem>();
-    project?.data?.assets?.forEach((asset) => map.set(asset.id, asset));
+    mediaRegistry.registry?.list().forEach((asset) => { if (mediaRegistry.registry?.get(asset.id)) map.set(asset.id, asset); });
     return map;
   }, [project]);
 
@@ -1243,18 +1251,21 @@ export function App() {
 
   const [cardRuntimeGeneration, setCardRuntimeGeneration] = useState(0);
   const rewardScope = JSON.stringify([liveSession.sessionId, liveSession.projectId, cardRuntimeGeneration]);
-  const rewards = useRewardPresentation({ scope: rewardScope, project, setProject, roster: studentRoster, setDirty: setIsDirty, setBadgeVisible: setBadgeVisibleState, setScoresRevealed: setFinalScoreRevealedState });
+  const rewards = useRewardPresentation({ resolveAsset: mediaRegistry.resolve, scope: rewardScope, project, setProject, roster: studentRoster, setDirty: setIsDirty, setBadgeVisible: setBadgeVisibleState, setScoresRevealed: setFinalScoreRevealedState });
 
   const visualScope = JSON.stringify([liveSession.sessionId, liveSession.projectId, cardRuntimeGeneration]);
-  const toVisualMediaUrl = (path: string) => visualMediaUrl(toMediaUrl(path), visualScope);
+  const toVisualMediaUrl = (path: string) => visualMediaUrl(mediaRegistry.resolvePath(path) ?? '', visualScope);
   const movementScope = `${liveSession.sessionId}:${cardRuntimeGeneration}`;
   const movementConfig = useMemo(
     () => normalizeMovementConfig(project?.data.movement),
     [project?.data.movement],
   );
+  const movementPath = activeMovementEvent?.event.gifRelativePath;
+  const scopedMovement = activeMovementEvent && movementPath && !BUILTIN_MOVEMENT_PATHS.includes(canonicalMediaPath(movementPath) ?? '')
+    ? { ...activeMovementEvent, gifSrc: mediaRegistry.resolvePath(movementPath) ?? '' } : activeMovementEvent;
   const movementJingleUrl = useMemo(
-    () => movementConfig.jingleRelativePath ? movementMediaUrl(movementConfig.jingleRelativePath, movementScope) : null,
-    [movementConfig.jingleRelativePath, movementScope],
+    () => movementConfig.jingleRelativePath ? movementMediaUrl(movementConfig.jingleRelativePath, movementScope, mediaRegistry.resolvePath) : null,
+    [movementConfig.jingleRelativePath, movementScope, mediaRegistry.resolvePath],
   );
 
   const updateMovementConfig = useCallback((nextMovement: MovementConfig) => {
@@ -1341,7 +1352,7 @@ export function App() {
   }, [movementJingleUrl, movementConfig.jingleEnabled]);
 
   useEffect(() => {
-    if (!project) return;
+    if (!project || !rosterPersistenceReady.current) return;
     const reconciled = ensureRelicProgressForRoster(normalizeRelicSystem(project.data.relicSystem), studentRoster);
     if (JSON.stringify(reconciled.studentProgress) === JSON.stringify(project.data.relicSystem?.studentProgress ?? {})) {
       return;
@@ -1424,81 +1435,60 @@ export function App() {
     return () => window.removeEventListener("keydown", handleMovementHotkey, { capture: true });
   }, [appMode, movementConfig, triggerMovementEvent]);
 
-  const saveRoster = useCallback(async (nextRoster: StudentRosterEntry[]): Promise<StudentRosterEntry[]> => {
-    const settings = normalizeStudentRosterSettings({ version: 1, studentRoster: nextRoster });
-    window.localStorage.setItem(STUDENT_ROSTER_FALLBACK_STORAGE_KEY, JSON.stringify(settings));
-    setStudentRoster(settings.studentRoster);
-
-    const appApi = window.appApi as typeof window.appApi & {
-      saveStudentRoster?: (nextSettings: StudentRosterSettings) => Promise<StudentRosterSettings>;
-    };
-    if (!appApi.saveStudentRoster) {
-      showToast("Student roster saved locally. Restart Story Studio to enable global roster file storage.", "edit", 2600);
-      return settings.studentRoster;
-    }
-
-    try {
-      const saved = await appApi.saveStudentRoster(settings);
-      const normalized = normalizeStudentRosterSettings(saved);
-      window.localStorage.setItem(STUDENT_ROSTER_FALLBACK_STORAGE_KEY, JSON.stringify(normalized));
-      setStudentRoster(normalized.studentRoster);
-      return normalized.studentRoster;
-    } catch (error) {
-      console.error(error);
-      showToast("Student roster saved locally; global settings file was unavailable", "edit", 2600);
-      return settings.studentRoster;
-    }
+  const acceptRosterSnapshot = useCallback((saved: StudentRosterSettings): StudentRosterEntry[] => {
+    setStudentRoster(saved.studentRoster);
+    try { window.localStorage.setItem(STUDENT_ROSTER_FALLBACK_STORAGE_KEY, JSON.stringify(saved)); }
+    catch (error) { console.error('Could not update optional roster cache', error); }
+    return saved.studentRoster;
   }, []);
+  const profileWriteError = useCallback((error: unknown) => {
+    console.error(error);
+    showToast(`Student profile was not saved: ${error instanceof Error ? error.message : String(error)}`, 'edit', 4000);
+  }, [showToast]);
 
   const addRosterStudent = useCallback(async (name: string): Promise<boolean> => {
     if (!name.trim()) return false;
-    const now = new Date().toISOString();
-    const student: StudentRosterEntry = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      archived: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const nextRoster = [...studentRoster, student];
-    const savedRoster = await saveRoster(nextRoster);
-    updateRelicSystem((current) => {
-      const withRoster = ensureRelicProgressForRoster(current, savedRoster);
-      return {
-        ...withRoster,
-        studentProgress: {
-          ...withRoster.studentProgress,
-          [student.id]: {
-            ...(withRoster.studentProgress[student.id] ?? { progress: 0, active: false }),
-            active: true,
+    try {
+      if (!rosterPersistenceReady.current || !window.appApi.students) throw new Error('Open Students after restoring access to profile storage.');
+      const saved = await window.appApi.students.createProfile({ name: name.trim() });
+      const savedRoster = acceptRosterSnapshot(saved);
+      // Creation appends the new main-issued identity to its committed snapshot.
+      const student = savedRoster[savedRoster.length - 1];
+      updateRelicSystem((current) => {
+        const withRoster = ensureRelicProgressForRoster(current, savedRoster);
+        return {
+          ...withRoster,
+          studentProgress: {
+            ...withRoster.studentProgress,
+            [student.id]: {
+              ...(withRoster.studentProgress[student.id] ?? { progress: 0, active: false }),
+              active: true,
+            },
           },
-        },
-      };
-    });
-    showToast(`Added ${student.name}`, "success", 1200);
-    return true;
-  }, [saveRoster, showToast, studentRoster, updateRelicSystem]);
+        };
+      });
+      showToast(`Added ${student.name}`, 'success', 1200);
+      return true;
+    } catch (error) { profileWriteError(error); return false; }
+  }, [acceptRosterSnapshot, profileWriteError, showToast, updateRelicSystem]);
 
   const renameRosterStudent = useCallback(async (studentId: string, name: string): Promise<boolean> => {
-    const student = studentRoster.find((item) => item.id === studentId);
-    if (!student || !name.trim()) return false;
-    const nextRoster = studentRoster.map((item) =>
-      item.id === studentId ? { ...item, name: name.trim(), updatedAt: new Date().toISOString() } : item,
-    );
-    await saveRoster(nextRoster);
-    showToast("Student renamed", "success", 1200);
-    return true;
-  }, [saveRoster, showToast, studentRoster]);
+    if (!name.trim()) return false;
+    try {
+      if (!rosterPersistenceReady.current || !window.appApi.students) throw new Error('Open Students after restoring access to profile storage.');
+      acceptRosterSnapshot(await window.appApi.students.updateProfile({ id: studentId, name: name.trim() }));
+      showToast('Student renamed', 'success', 1200);
+      return true;
+    } catch (error) { profileWriteError(error); return false; }
+  }, [acceptRosterSnapshot, profileWriteError, showToast]);
 
   const archiveRosterStudent = useCallback(async (studentId: string) => {
-    const student = studentRoster.find((item) => item.id === studentId);
-    if (!student) return;
-    const nextRoster = studentRoster.map((item) =>
-      item.id === studentId ? { ...item, archived: true, updatedAt: new Date().toISOString() } : item,
-    );
-    await saveRoster(nextRoster);
-    showToast("Student removed from active roster", "success", 1400);
-  }, [saveRoster, showToast, studentRoster]);
+    try {
+      if (!rosterPersistenceReady.current || !window.appApi.students) throw new Error('Open Students after restoring access to profile storage.');
+      acceptRosterSnapshot(await window.appApi.students.setArchived({ id: studentId, archived: true }));
+      showToast('Student removed from active roster', 'success', 1400);
+    } catch (error) { profileWriteError(error); }
+  }, [acceptRosterSnapshot, profileWriteError, showToast]);
 
   const updateRelicStudentProgress = useCallback((
     studentId: string,
@@ -1842,7 +1832,7 @@ export function App() {
   }, [topMode]);
 
   const resolvedCurrentSrc =
-    project && currentAsset ? toMediaUrl(currentAsset.relativePath) : null;
+    project && currentAsset ? mediaRegistry.resolve(currentAsset.id) ?? null : null;
 
   const [modernEdit, setModernEdit] = useState(() => { try { return localStorage.getItem('story-studio.edit-layout') !== 'legacy'; } catch { return true; } });
   const editWorkspace = appMode === 'edit' && modernEdit;
@@ -1877,6 +1867,16 @@ export function App() {
   const liveBreak = liveTarget.section?.type === 'break' ? liveTarget.section : null;
   const activity = composeActivityScene(project?.data??null,presentationSession,presentationTarget,bindCards,timerState,visualScope,appMode==='teach');
   const liveActivity = composeActivityScene(project?.data??null,liveSession,liveTarget,liveBindCards,timerState,visualScope,true);
+  for (const renderActivity of [activity, liveActivity]) {
+    renderActivity.images = Object.fromEntries(Object.entries(renderActivity.images).flatMap(([id, url]) => { const src = mediaRegistry.resolvePath(url); return src ? [[id, src]] : []; }));
+    if (renderActivity.break) {
+      renderActivity.break.background = resolveAuthoredBackground(renderActivity.break.background ?? '#111', mediaRegistry.resolvePath);
+      renderActivity.break.thumbnails = renderActivity.break.thumbnails.flatMap(item => { const src = mediaRegistry.resolvePath(item.src); return src ? [{ ...item, src }] : []; });
+    }
+  }
+  const renderAudioClip = (clip: AudioClip): AudioClip => ({ ...clip, url: resolveAuthoredMediaUrl(clip.url, mediaRegistry.resolvePath) });
+  const teachAudioSection = presentationTarget.section ? { ...presentationTarget.section, bgm: presentationTarget.section.bgm?.map(renderAudioClip) } : undefined;
+  const teachAudioSlide = presentationTarget.slide ? { ...presentationTarget.slide, dialogue: presentationTarget.slide.dialogue?.map(renderAudioClip), sfx: presentationTarget.slide.sfx?.map(renderAudioClip), bgm: presentationTarget.slide.bgm ? renderAudioClip(presentationTarget.slide.bgm) : undefined } : undefined;
   // Present owns the live decoder in either Control mode. Editor media is local.
   const usesPresentVideo = appMode === 'teach';
   const mediaPlayback = usePresentationMedia(liveAsset?.mediaType === 'video'
@@ -1885,11 +1885,11 @@ export function App() {
   if (mediaPlayback.status) lastMediaTimeRef.current = mediaPlayback.status.positionSec;
   const rewardPresentation = rewards.projectScene(liveBreak ? {width:1920,height:1080} : presentFrame ?? staticFrame,liveTarget.contentId==='badge',finalScoreRevealedState);
   useEffect(()=>{if(liveTarget.contentId==='badge')rewards.reconcileBadge();},[rewardScope,liveTarget.kind,project?.data.sparkStudents,project?.data.badgeConfig?.badgeSprites]);
-  const { openPresent: openProjectedPresent, transition: sceneTransition } = usePresentProjection(liveSession,liveTarget,liveAsset,liveAsset?toMediaUrl(liveAsset.relativePath):null,{
+  const { openPresent: openProjectedPresent, transition: sceneTransition } = usePresentProjection({...liveSession,overlays:{...liveSession.overlays,movement:scopedMovement}},liveTarget,liveAsset,liveAsset?mediaRegistry.resolve(liveAsset.id)??null:null,{
     imageHeightFraction:liveActivity.boards.some(b=>b.card.stageMode==='half')?0.5:undefined,
     frame:liveBreak?{width:1920,height:1080}:presentFrame??{width:1280,height:720},viewport:liveTeachingScene.state.viewport,
     markerStrokes:liveBreak?.markerStrokes??liveTarget.slide?.markerStrokes??[],transient:liveTeachingScene.state.transient,adjustments:liveTarget.slide?.imageAdjustments,
-    overlays:liveBreak?[]:resolvePassiveOverlays(liveTarget.slide?.overlays??[],project?.data.bubbleDefinitions,visualScope),
+    overlays:liveBreak?[]:resolvePassiveOverlays(liveTarget.slide?.overlays??[],project?.data.bubbleDefinitions,visualScope,path => mediaRegistry.resolvePath(path) ?? ''),
   },liveActivity,cardRuntimeGeneration,mediaPlayback.intent,rewardPresentation,liveV2Plan);
 
   movementFrameRef.current = breakSection ? { width: 1920, height: 1080 } : presentFrame ?? staticFrame;
@@ -2583,7 +2583,7 @@ export function App() {
           bgm: bgms.map((b, i) => (i === 0 ? { ...b, volume: next } : b)),
         });
 
-        if (appMode === "teach") audioManager.setVolume(first.url, next);
+        if (appMode === "teach") audioManager.setVolume(resolveAuthoredMediaUrl(first.url, mediaRegistry.resolvePath), next);
         return;
       }
 
@@ -3079,14 +3079,20 @@ export function App() {
 
   const onImportAudio = async (type: "dialogue" | "sfx" | "bgm" | "section-bgm") => {
     if (!ensureEditMode(appMode, "import audio")) return;
-    if (!project) return;
+    if (!project || operationRef.current) return;
+    operationRef.current = true;
+    const expectedFolder = project.folderPath;
     try {
-      const importedAssets = await window.appApi.importAudio();
+      const result = await window.appApi.importAudioResult();
+      if (result?.failures?.length) setError(result.failures.map(item => `${item.name}: ${item.reason}`).join("; "));
+      const importedAssets = result?.importedAssets;
+      const latest = projectRef.current;
+      if (!latest || latest.folderPath !== expectedFolder) throw new Error("Project changed during import. Copied files have been preserved.");
       if (!importedAssets || importedAssets.length === 0) return;
-
-      const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, importedAssets);
-      const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
-      let nextData = { ...project.data, assets: nextAssets };
+      validateMediaImport(latest.data, result!);
+      const normalizedImportedAssets = decorateImportedAssetsForContext(latest.data, importedAssets);
+      const nextAssets = [...latest.data.assets, ...normalizedImportedAssets];
+      let nextData = { ...latest.data, assets: nextAssets };
 
       if (type === "section-bgm" && selectedSectionId) {
         const clips = normalizedImportedAssets.map((a) => ({
@@ -3126,24 +3132,25 @@ export function App() {
         });
       }
 
-      setProject({ ...project, data: nextData });
+      setProject({ ...latest, data: nextData });
       setIsDirty(true);
     } catch (err) {
       console.error(err);
       alert("Failed to import audio (Did you restart the Dev Server?): " + (err as Error).message);
       setError((err as Error).message);
-    }
+    } finally { operationRef.current = false; }
   };
 
   const onImportBubbleTemplate = async () => {
     if (!ensureEditMode(appMode, "import bubble template")) return;
     if (!project || operationRef.current) return;
     operationRef.current = true;
+    const expectedFolder = project.folderPath;
     try {
-      const result = await (window as any).api.importBubbleTemplate() as { success: boolean; relativePath: string };
+      const result = await (window as any).api.importBubbleTemplate() as { success: boolean; relativePath: string; asset?: AssetItem };
       if (!result || !result.success || !result.relativePath) return;
 
-      const filename = result.relativePath.split('/').pop() || '';
+      const filename = result.asset?.originalName ?? result.relativePath.split('/').pop() ?? '';
       const templateName = filename.replace(/\.png$/i, '');
 
       const newTemplate: BubbleTemplate = {
@@ -3152,10 +3159,13 @@ export function App() {
         defaultTextRect: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 },
       };
 
-      const latest = projectRef.current!;
+      const latest = projectRef.current;
+      if (!latest || latest.folderPath !== expectedFolder) throw new Error('Project changed during import. Copied files have been preserved.');
+      if (result.asset) validateMediaImport(latest.data, { importedAssets: [result.asset], createdSlides: [] });
       const nextData = {
         ...latest.data,
         bubbleDefinitions: [...(latest.data.bubbleDefinitions || []), newTemplate],
+        assets: result.asset ? [...latest.data.assets, result.asset] : latest.data.assets,
       };
 
       setProject({ ...latest, data: nextData });
@@ -3961,7 +3971,7 @@ export function App() {
         : (type === "dialogue" ? currentSlide.dialogue : currentSlide.sfx)?.[index ?? -1];
 
     if (clipToRemove && appMode === "teach") {
-      audioManager.stopClip(clipToRemove.url, { fadeEnabled: clipToRemove.fadeEnabled || false });
+      audioManager.stopClip(resolveAuthoredMediaUrl(clipToRemove.url, mediaRegistry.resolvePath), { fadeEnabled: clipToRemove.fadeEnabled || false });
     }
 
     const nextSlide = { ...currentSlide };
@@ -3990,7 +4000,7 @@ export function App() {
     if (!clip) return;
 
     if (appMode === "teach") {
-      audioManager.stopClip(clip.url, { fadeEnabled: clip.fadeEnabled || false });
+      audioManager.stopClip(resolveAuthoredMediaUrl(clip.url, mediaRegistry.resolvePath), { fadeEnabled: clip.fadeEnabled || false });
       audioManager.stopSectionMusic(undefined, clip.fadeEnabled || false);
     }
 
@@ -4139,7 +4149,7 @@ export function App() {
     "No Student";
 
   return (
-    <EditorPreviewAudioContext.Provider value={appMode === "edit"}><SparkProvider
+    <MediaPathResolverContext.Provider value={mediaRegistry.resolvePath}><EditorPreviewAudioContext.Provider value={appMode === "edit"}><SparkProvider
       onTriggerSpark={rewards.triggerSpark}
       onResetSparks={rewards.resetSparks}
       config={project?.data.sparkConfig}
@@ -4239,7 +4249,7 @@ export function App() {
         />
         {cardsV2Open && appMode === 'edit' && project && <div role="dialog" aria-modal="true" aria-label="Cards and Sets library" style={{ position: 'fixed', inset: 12, zIndex: 100000, background: '#161e28', border: '1px solid #62778b', borderRadius: 12, overflow: 'auto', boxShadow: '0 12px 50px #0009' }} onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') setCardsV2Open(false); }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 16px', gap: 12 }}><span>Cards · project library</span><button onClick={onImportMedia}>Import image into project</button></div>
-          <CardV2Editor initialPlacementId={v2PlacementId} module={v2Module} onChange={updateCardsV2} assets={project.data.assets} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : undefined; }} onAddToBooster={addV2ToBooster} onClose={() => setCardsV2Open(false)} />
+          <CardV2Editor initialPlacementId={v2PlacementId} module={v2Module} onChange={updateCardsV2} assets={[...(mediaRegistry.registry?.list() ?? [])]} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : undefined; }} onAddToBooster={addV2ToBooster} onClose={() => setCardsV2Open(false)} />
         </div>}
         <div
           className={isDragImportActive ? "app drag-import-active" : "app"}
@@ -4424,6 +4434,10 @@ export function App() {
               </div>
             </div>
           )}
+          {mediaRegistry.diagnostics.length > 0 && <div role="status" aria-label="Media availability" style={{ padding: '8px 12px', background: '#482d21', color: '#ffe2be', borderBottom: '1px solid #a97143' }}>
+            Media unavailable: {mediaRegistry.diagnostics.slice(0, 8).map(item => `${item.assetId ? mediaRegistry.registry?.get(item.assetId)?.originalName || item.assetId : item.path || 'Project'} (${item.code})`).join('; ')}.
+            {mediaRegistry.diagnostics.length > 8 && ` ${mediaRegistry.diagnostics.length - 8} more issues.`} Check the project files and reopen the project to retry.
+          </div>}
           {toast && (
             <div
               className="toast-msg"
@@ -4814,7 +4828,7 @@ export function App() {
                   onRandomTrigger={triggerRandomMovementEvent}
                   onImportGif={importMovementGif}
                   onImportJingle={importMovementJingle}
-                  getMediaUrl={movementMediaUrl}
+                  getMediaUrl={path => movementMediaUrl(path, movementScope, mediaRegistry.resolvePath)}
                 />
               ) : topMode === 'story' ? (
                 <>
@@ -5263,8 +5277,8 @@ export function App() {
             <TeachPreview enabled={appMode === 'teach' || editWorkspace} viewport={teachLayout.viewport}>
             <main className="stage-wrap" style={{ position: "relative" }} onPointerDown={event=>{if(appMode==='edit'&&selectedV2Card&&!(event.target as Element).closest('.card-v2-interactive'))selectV2Card('');}}>
               {!presentMode && <RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} />}
-              {!presentMode && <MovementOverlay presentation={activeMovementEvent} />}
-              {presentMode && (presentationTarget.contentId === 'badge' || activeItem?.type === 'promptCard' || activeItem?.type === 'miniGame' || (activeItem?.type === 'breakRef' && !selectedSection)) && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
+              {!presentMode && <MovementOverlay presentation={scopedMovement} />}
+              {presentMode && (presentationTarget.contentId === 'badge' || activeItem?.type === 'promptCard' || activeItem?.type === 'miniGame' || (activeItem?.type === 'breakRef' && !selectedSection)) && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={scopedMovement} /></>}
               {v2Plan && activeItem?.type!=='cardActivityRef' && <div className="card-host-layer" style={{position:'absolute',inset:0,zIndex:40,pointerEvents:'none'}}><CardV2Scene plan={v2Plan} className="card-host-overlay" selectedInstanceId={appMode==='edit'?selectedV2Card:Object.values(v2Runtime.state?.instances??{}).find(i=>i.selected)?.instanceId} showWarnings={appMode==='edit'} onSelect={appMode==='edit'?selectV2Card:id=>{if(!v2Runtime.state)v2Runtime.dispatch({type:'StartActivity',placementId:v2PlacementId!});else v2Runtime.dispatch({type:'SelectCard',instanceId:id});}} onGeometryChange={appMode==='edit'?(id,geometry)=>cardAction(()=>{if(project&&v2Host)commitCardData(updateHostGeometry(project.data,v2Host,id,geometry));}):undefined}/></div>}
               {topMode === 'boards' ? (
                 <div style={{ position: 'absolute', inset: 0 }}>
@@ -5296,7 +5310,7 @@ export function App() {
                     appMode === "edit" ? <BoardEmptyState onCreated={setSelectedACardId} /> : <div className="placeholder">Choose a board in the teacher controls.</div>
                   )}
                 </LogicalSceneFrame>
-                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={scopedMovement} /></>}
                 </div>
               ) : topMode === 'boost' && boostTab !== 'language' && activeItem?.type === 'aCardRef' && (activeItem as any).aCardId ? (
                 <div style={{ position: 'absolute', inset: 0 }}>
@@ -5314,7 +5328,7 @@ export function App() {
                   />
                   <BCardInstanceLayer instances={appMode === "teach" ? overlayBinding.state.instances : activeOverlayBCardInstances} mode={appMode} selectedInstanceId={selectedOverlayBCardInstanceId} onSelectInstance={setSelectedPlacedBCardId} onInstanceChange={updatePlacedBCardInstance} teachStates={overlayBCardTeachStates} clickAction={overlayBCardClickAction} onTeachStateChange={setOverlayBCardState} resolveImageUrl={id => { const asset = assetsById.get(id); return asset ? toVisualMediaUrl(asset.relativePath) : null; }} />
                 </LogicalSceneFrame>
-                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={scopedMovement} /></>}
                 </div>
               ) : presentationTarget.contentId === 'badge' ? (
                 <div className="badge-stage" style={appMode === 'teach' ? { visibility: 'hidden' } : undefined}>
@@ -5716,36 +5730,7 @@ export function App() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                           <h4 style={{ margin: 0, color: "#fff" }}>Break Music</h4>
                           <button
-                            onClick={async () => {
-                              if (!project) return;
-                              try {
-                                const importedAssets = await window.appApi.importAudio();
-                                if (!importedAssets || importedAssets.length === 0) return;
-
-                                const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, importedAssets);
-                                const newClips = normalizedImportedAssets.map(a => ({
-                                  url: toMediaUrl(a.relativePath),
-                                  volume: 1,
-                                  name: getAssetDescription(a),
-                                  fadeEnabled: true
-                                }));
-
-                                const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
-                                const nextBgm = [...(selectedSection.bgm || []), ...newClips];
-
-                                setProject({
-                                  ...project,
-                                  data: {
-                                    ...project.data,
-                                    assets: nextAssets,
-                                    sections: project.data.sections.map(s => s.id === selectedSection.id ? { ...s, bgm: nextBgm } : s)
-                                  }
-                                });
-                                setIsDirty(true);
-                              } catch (e) {
-                                console.error(e);
-                              }
-                            }}
+                            onClick={() => void onImportAudio("section-bgm")}
                             style={{ background: "#4a4a5a", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", cursor: "pointer", fontSize: "0.75rem" }}
                           >
                             + Audio (File)
@@ -5815,7 +5800,7 @@ export function App() {
                       onContextMenu={handleStageContextMenu}
                       style={{
                         backgroundColor: selectedSection.background && !selectedSection.background.startsWith("url") ? undefined : "#111",
-                        background: selectedSection.bgTransform && selectedSection.bgTransform.blur ? "transparent" : (visualMediaBackground(selectedSection.background || "#111", visualScope)),
+                        background: selectedSection.bgTransform && selectedSection.bgTransform.blur ? "transparent" : (visualMediaBackground(resolveAuthoredBackground(selectedSection.background || "#111", mediaRegistry.resolvePath), visualScope)),
                         backgroundRepeat: "no-repeat",
                         backgroundSize: selectedSection.bgTransform ? `${(selectedSection.bgTransform.scale ?? 1) * 100}%` : "cover",
                         backgroundPosition: selectedSection.bgTransform ? `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)` : "center",
@@ -5827,7 +5812,7 @@ export function App() {
                       }}
                     >
                       {selectedSection.bgTransform && selectedSection.bgTransform.blur && selectedSection.background?.startsWith("url") ? (
-                        <div style={{ position: "absolute", zIndex: -1, inset: -100, pointerEvents: "none", background: visualMediaBackground(selectedSection.background || "#111", visualScope), backgroundRepeat: "no-repeat", backgroundSize: `${(selectedSection.bgTransform.scale ?? 1) * 100}%`, backgroundPosition: `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)`, filter: `blur(${selectedSection.bgTransform.blur}px)` }} />
+                        <div style={{ position: "absolute", zIndex: -1, inset: -100, pointerEvents: "none", background: visualMediaBackground(resolveAuthoredBackground(selectedSection.background || "#111", mediaRegistry.resolvePath), visualScope), backgroundRepeat: "no-repeat", backgroundSize: `${(selectedSection.bgTransform.scale ?? 1) * 100}%`, backgroundPosition: `calc(50% + ${selectedSection.bgTransform.x ?? 0}px) calc(50% + ${selectedSection.bgTransform.y ?? 0}px)`, filter: `blur(${selectedSection.bgTransform.blur}px)` }} />
                       ) : null}
                       {/* Thumbnails at Top */}
                       <div className="break-thumbnails-grid">
@@ -5837,7 +5822,7 @@ export function App() {
                           );
                           const asset = slide ? assetsById.get(slide.assetId) : null;
                           if (!asset) return null;
-                          const src = visualMediaUrl(toMediaUrl(asset.relativePath), visualScope);
+                          const src = toVisualMediaUrl(asset.relativePath);
                           const baseWidth = selectedSection.thumbnailSize ?? 200;
                           const baseHeight = baseWidth * 0.5625;
                           const scale = m.scale ?? 1;
@@ -6022,7 +6007,7 @@ export function App() {
                     </div>
                   </ZoomPanWrapper>
                   </LogicalSceneFrame>
-                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={scopedMovement} /></>}
                 </>
               ) : activeItem?.type === 'cardActivityRef' ? (
                 <div style={{position: 'absolute', inset: 0}}>{v2Plan ? <CardV2Scene plan={v2Plan} selectedInstanceId={appMode==='edit'?selectedV2Card:Object.values(v2Runtime.state?.instances ?? {}).find(item => item.selected)?.instanceId} showWarnings={appMode === 'edit'} onSelect={appMode==='edit'?selectV2Card: v2Runtime.state ? id => v2Runtime.dispatch({type: 'SelectCard', instanceId: id}) : undefined} onGeometryChange={appMode==='edit'?(id,geometry)=>cardAction(()=>{if(project&&v2Host)commitCardData(updateHostGeometry(project.data,v2Host,id,geometry));}):undefined} /> : <p>Card activity is missing.</p>}</div>
@@ -6397,7 +6382,7 @@ export function App() {
                       />
                     )}
                     </LogicalSceneFrame>
-                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={activeMovementEvent} /></>}
+                  {presentMode && <><RewardSurface presentation={appMode === 'edit' ? { ...rewardPresentation, base: undefined } : rewardPresentation} onFinalBadgeScroll={rewards.scrollFinalBadge} onRelicOffsetChange={rewards.moveRelic} onHideRelicReward={() => rewards.showRelicReward(false)} /><MovementSurface presentation={scopedMovement} /></>}
                   </div>
                 </>
               )}
@@ -6435,7 +6420,7 @@ export function App() {
                 <div ref={teachToolsHostRef} className="teach-board-tools" />
                 {v2Module && v2PlacementId && <CardV2Controls module={v2Module} placementId={v2PlacementId} state={v2Runtime.state} dispatch={v2Runtime.dispatch} onReturn={() => setTopMode('story')} />}
                 {selectedOverlayBCardState && <section className="teach-control-card"><h3>Selected card</h3><div className="teach-actions">{(['isFlipped','isBlurred','isCovered','isZoomed'] as const).map((key,index)=><button key={key} aria-pressed={selectedOverlayBCardState[key]} onClick={()=>toggleSelectedOverlayBCardState(key)}>{['Flip','Blur','Cover','Zoom'][index]}</button>)}<button onClick={resetSelectedOverlayBCardState}>Reset card</button></div></section>}
-                <TeachLiveControls movementControls={<TeachMovementControls config={movementConfig} active={activeMovementEvent} onTrigger={triggerMovementEvent} onRandom={triggerRandomMovementEvent} onStop={() => setActiveMovementEvent(null)} />} section={presentationTarget.section} slide={presentationTarget.slide} onOpenAudio={() => setAudioSettingsOpen(true)} />
+                <TeachLiveControls movementControls={<TeachMovementControls config={movementConfig} active={activeMovementEvent} onTrigger={triggerMovementEvent} onRandom={triggerRandomMovementEvent} onStop={() => setActiveMovementEvent(null)} />} section={teachAudioSection} slide={teachAudioSlide} onOpenAudio={() => setAudioSettingsOpen(true)} />
               </section>
 
               <TeachNavigatorDivider height={teachLayout.navigatorHeight} maximum={teachLayout.navigatorMaximum} onChange={teachLayout.resizeNavigator} />
@@ -7529,7 +7514,7 @@ export function App() {
             )}
         </div>
       </CardSystemProvider>
-    </SparkProvider></EditorPreviewAudioContext.Provider>
+    </SparkProvider></EditorPreviewAudioContext.Provider></MediaPathResolverContext.Provider>
   );
 }
 
@@ -7803,7 +7788,8 @@ function MediaView({
   imageAdjustments?: Slide["imageAdjustments"];
   onImageAdjustmentsChange?: (settings: Slide["imageAdjustments"]) => void;
 }) {
-  const src = visualMediaUrl(toMediaUrl(asset.relativePath), visualScope);
+  const resolvePath = useContext(MediaPathResolverContext);
+  const src = visualMediaUrl(resolveAuthoredMediaUrl(asset.relativePath, resolvePath), visualScope);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   useEffect(()=>{
@@ -8343,14 +8329,14 @@ function MediaView({
           }
         }}
       >
-        {!isEditMode ? <PassiveOverlays overlays={resolvePassiveOverlays(overlays, bubbleDefinitions, visualScope)} /> : overlays.map((overlay) => {
+        {!isEditMode ? <PassiveOverlays overlays={resolvePassiveOverlays(overlays, bubbleDefinitions, visualScope, path => resolveAuthoredMediaUrl(path, resolvePath))} /> : overlays.map((overlay) => {
           if (overlay.visible === false) return null;
           const isActive = overlay.id === activeOverlayId;
           const mappedCustom: BubbleDef[] = (bubbleDefinitions || []).map(bt => ({
             bubbleDefId: `BD_CUSTOM_${bt.templateName}`,
             name: bt.templateName,
             templateName: bt.templateName,
-            src: visualMediaUrl(toMediaUrl(bt.imageSrc), visualScope),
+            src: visualMediaUrl(resolveAuthoredMediaUrl(bt.imageSrc, resolvePath), visualScope),
             type: 'speech',
             textRect: bt.defaultTextRect,
           }));
@@ -8403,7 +8389,7 @@ function MediaView({
                 <div style={{
                   position: 'absolute',
                   inset: 0,
-                  backgroundImage: `url(${overlay.customImageSrc ? visualMediaUrl(toMediaUrl(overlay.customImageSrc), visualScope) : (def.src || "")})`,
+                  backgroundImage: `url(${overlay.customImageSrc ? visualMediaUrl(resolveAuthoredMediaUrl(overlay.customImageSrc, resolvePath), visualScope) : (def.src || "")})`,
                   backgroundSize: '100% 100%',
                   backgroundRepeat: 'no-repeat',
                   transform: `scale(${overlay.flipX ? -1 : 1}, ${overlay.flipY ? -1 : 1})`,

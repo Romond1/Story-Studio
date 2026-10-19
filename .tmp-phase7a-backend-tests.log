@@ -1,0 +1,21 @@
+✔ missing relic system normalizes to safe defaults (2.1748ms)
+✔ partial relic system preserves known values and fills missing fields (0.9845ms)
+✔ progress clamps to integer range zero through thirty (0.2093ms)
+✔ stage calculation matches relic boundaries (0.3451ms)
+✔ roster reconciliation adds non-archived students and preserves old progress (0.4945ms)
+✔ progress updates affect all and only active students (0.5192ms)
+✔ no active student update is safe and unchanged (0.3468ms)
+✔ teacher summary shows precise progress and next stage distance (0.3484ms)
+✔ stage title and image selection use stage fallbacks (0.3182ms)
+✔ profile read is nonmutating; duplicate names remain distinct through edits and archive (90.6853ms)
+✔ malformed and duplicate-ID settings fail closed without rewriting or replacing the source (12.2061ms)
+✔ legacy mapping requires explicit source identity and cannot merge equal names or retarget a saved mapping (44.0405ms)
+✔ serialized audio and profile updates retain both and backup previous valid snapshot (97.5564ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 305.3583

@@ -41,3 +41,12 @@ test('other mini-games retain their original minimum fitting zoom', () => {
   assert.equal(typeof math.computePlayAreaFitZoom, 'function');
   assert.equal(math.computePlayAreaFitZoom({ viewportWidth: 324, viewportHeight: 422, contentWidth: 1700, contentHeight: 1600 }, false), .28);
 });
+
+test('wheel zoom follows delta magnitude and is consistent across wheel units',()=>{
+ assert.equal(typeof math.wheelZoom,'function');
+ assert.ok(math.wheelZoom(1,-1,0,.4,3.5)-1<.005);
+ assert.ok(math.wheelZoom(1,-100,0,.4,3.5)>math.wheelZoom(1,-10,0,.4,3.5));
+ assert.equal(math.wheelZoom(1,-3,1,.4,3.5),math.wheelZoom(1,-48,0,.4,3.5));
+ assert.equal(math.wheelZoom(.4,100,0,.4,3.5),.4);
+ assert.equal(math.wheelZoom(3.5,-100,0,.4,3.5),3.5);
+});

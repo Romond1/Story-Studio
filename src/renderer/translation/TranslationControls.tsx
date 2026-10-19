@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { JapaneseMode, TargetLanguage, TranslationRequest, SpeechExecution, SpeechBackend, TranslationSettings, TranslationEngineState } from '../../shared/translation';
+import { CAPTION_STYLE, type CaptionStyle } from '../../shared/translation';
 import { audioController } from '../audio/AudioController';
 import { captureUtterance } from './capture';
 import './translation.css';
@@ -19,6 +20,7 @@ export function TranslationControls() {
   const [draft, setDraft] = useState('');
   const [readings, setReadings] = useState('');
   const [auto, setAuto] = useState(false);
+  const [style,setStyle] = useState<CaptionStyle>(CAPTION_STYLE);
   const [fontSize, setFontSize] = useState(36);
   const [position, setPosition] = useState<'top' | 'bottom'>('top');
   const [status, setStatus] = useState('Translation off');
@@ -32,6 +34,7 @@ export function TranslationControls() {
   const formatting = useRef(false);
   const processing = useRef(false);
   const api = window.translationControl;
+  useEffect(()=>{void api?.setAppearance?.({fontSize,position,style}).catch(()=>setStatus('Unable to update caption style.'));},[api,fontSize,position,style]);
   const invalidate = (hide = true, unload = false) => {
     epoch.current++;
     recording.current?.cancel(); recording.current = null;
@@ -80,7 +83,7 @@ export function TranslationControls() {
       const tokens = target === 'ja' ? await api.format(text, mode === 'standard' ? 'standard' : 'furigana') : [{ text }];
       if (token !== epoch.current || !active.current) return;
       const corrections = new Map(readings.split('\n').map(line => line.split('=').map(part => part.trim())).filter(parts => parts.length === 2 && parts.every(Boolean)).map(parts => [parts[0], parts[1]]));
-      await api.publish({ language: target, mode, tokens: tokens.map(t => corrections.has(t.text) ? { ...t, reading: corrections.get(t.text) } : t), fontSize, position });
+      await api.publish({ language: target, mode, tokens: tokens.map(t => corrections.has(t.text) ? { ...t, reading: corrections.get(t.text) } : t), fontSize, position, style });
       if (token === epoch.current) setStatus('Translation published');
     } catch (error) { if (token === epoch.current) setStatus(error instanceof Error ? error.message : 'Unable to publish translation.'); }
     finally { if (token === epoch.current) { formatting.current = false; setPublishing(false); } }
@@ -135,13 +138,25 @@ export function TranslationControls() {
       <div className="translation-buttons"><button type="button" disabled={busy || publishing || listening || !draft.trim()} onClick={() => { if (formatting.current) return; const token = ++epoch.current; void publish(draft, token); }}>Publish translation</button><button type="button" onClick={() => { invalidate(); setStatus('Caption hidden'); }}>Clear / hide</button></div>
       <details><summary>Caption and recognition settings</summary>
         <label className="translation-check"><input type="checkbox" checked={auto} onChange={e => { invalidate(); setAuto(e.target.checked); }} />Auto-publish (skip review)</label>
-        <label>Caption font size<input type="number" min="20" max="72" value={fontSize} onChange={e => { invalidate(); setFontSize(Math.max(20, Math.min(72, Number(e.target.value) || 36))); }} /></label>
-        <label>Caption position<select value={position} onChange={e => { invalidate(); setPosition(e.target.value as 'top' | 'bottom'); }}><option value="top">Top (away from lower camera)</option><option value="bottom">Bottom</option></select></label>
         <label>Speech processing<select value={execution} onChange={e => { const execution=e.target.value as SpeechExecution;setExecution(execution);prepareSelection({execution}); }}><option value="auto">Auto (GPU when available)</option><option value="gpu">GPU (NVIDIA CUDA)</option><option value="cpu">CPU</option></select></label>
         <label>Speech model<select value={model} onChange={e => { const model=e.target.value as 'base.en'|'small.en';setModel(model);prepareSelection({model}); }}><option value="base.en">Base English (default)</option><option value="small.en">Small English (higher resource use)</option></select></label>
         {target === 'ja' && <label>Reading corrections (one token=reading per line)<textarea value={readings} maxLength={2000} placeholder={'勇者=ゆうしゃ'} onChange={e => { invalidate(); setReadings(e.target.value); }} /><span>Overrides exact analyzer tokens. Review names and unusual readings.</span></label>}
         {Object.keys(metrics).length > 0 && <p>{Object.entries(metrics).map(([key, value]) => `${key}: ${Math.round(value)}`).join(' · ')}</p>}
       </details>
     </>}
+    <details className="caption-appearance"><summary>Caption appearance</summary>
+        <label>Caption font size<input type="number" min="20" max="72" value={fontSize} onChange={e => { setFontSize(Math.max(20, Math.min(72, Number(e.target.value) || 36))); }} /></label>
+        <label>Caption position<select aria-label="Caption position" value={position} onChange={e => { setPosition(e.target.value as 'top' | 'bottom'); }}><option value="top">Top (away from lower camera)</option><option value="bottom">Bottom</option></select></label>
+        <label>Caption font<select aria-label="Caption font" value={style.font} onChange={e=>setStyle(s=>({...s,font:e.target.value as CaptionStyle['font']}))}><option value="sans">Sans serif · Japanese compatible</option><option value="serif">Serif</option><option value="rounded">Rounded</option><option value="mono">Monospace</option></select></label>
+        <label>Text color<input type="color" value={style.color} onChange={e=>setStyle(s=>({...s,color:e.target.value}))}/></label>
+        <label>Background color<input type="color" value={style.background} onChange={e=>setStyle(s=>({...s,background:e.target.value}))}/></label>
+        <label>Background opacity · {Math.round(style.opacity*100)}%<input aria-label="Caption background opacity" type="range" min="0" max="1" step="0.05" value={style.opacity} onChange={e=>setStyle(s=>({...s,opacity:Number(e.target.value)}))}/></label>
+        <small>Set opacity to 0 for a transparent background.</small>
+        <label>Text alignment<select aria-label="Text alignment" value={style.align} onChange={e=>setStyle(s=>({...s,align:e.target.value as CaptionStyle['align']}))}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
+        <label className="translation-check"><input type="checkbox" checked={style.bold} onChange={e=>setStyle(s=>({...s,bold:e.target.checked}))}/>Bold text</label>
+        <label className="translation-check"><input type="checkbox" checked={style.outline} onChange={e=>setStyle(s=>({...s,outline:e.target.checked}))}/>Dark text outline</label>
+        {([['lineHeight','Line spacing',1,2.5,.1],['width','Caption maximum width (%)',20,100,1],['offset','Distance from edge (%)',0,40,1]] as const).map(([key,label,min,max,step])=><label key={key}>{label}<input type="number" min={min} max={max} step={step} value={style[key]} onChange={e=>setStyle(s=>({...s,[key]:Math.max(min,Math.min(max,Number(e.target.value)||min))}))}/></label>)}
+        <button type="button" onClick={()=>{setStyle(CAPTION_STYLE);setFontSize(36);setPosition('top');}}>Reset caption appearance</button>
+    </details>
   </section>;
 }

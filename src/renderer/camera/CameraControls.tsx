@@ -50,10 +50,15 @@ export function CameraControls() {
         {settings.deviceId && !state.status.devices.some(d => d.deviceId === settings.deviceId) && <option value={settings.deviceId}>Selected camera (unavailable)</option>}
         {state.status.devices.filter(d => d.deviceId).map(d => <option key={d.deviceId} value={d.deviceId}>{d.label}</option>)}
       </select></label>
-      <label>Display preset<select value={settings.preset} onChange={e => void update({ preset: e.target.value as CameraSettings['preset'] })}>
+      <label>Display preset<select value={settings.preset} onChange={e => void update({ preset: e.target.value as CameraSettings['preset'], layout: undefined })}>
         <option value="full">Full Screen</option><option value="lower-left">Lower Left</option><option value="lower-right">Lower Right</option><option value="hidden">Hidden</option>
       </select></label>
-      <label className="camera-toggle"><input type="checkbox" checked={settings.chromaKey} onChange={e => void update({ chromaKey: e.target.checked })} />Green-screen chroma key</label>
+      <label className="camera-toggle"><input type="checkbox" checked={!!settings.editLayout} onChange={e => void update({editLayout:e.target.checked})} />Move / resize in Presenter</label>
+      <small>Enable editing, drag the video to move it, or drag any corner to resize. Move beyond a Presenter edge to crop the video. Turn editing off when teaching.</small>
+      <button type="button" onClick={() => void update({layout:undefined,preset:'lower-right'})}>Reset camera placement</button>
+      <label className="camera-toggle"><input type="checkbox" checked={!!settings.personRemoval} onChange={e => void update({personRemoval:e.target.checked,...(e.target.checked?{chromaKey:false}:{})})} />Remove background · experimental</label>
+      {settings.personRemoval&&<div className="camera-removal-status" role="status"><small>{state.removalStatus?.message||({off:'Person removal off',initializing:'Loading local person model…',running:'Person removal running · CPU worker',slow:'Reduced to 6 mask updates/sec to limit processing',error:'Person removal unavailable · camera output hidden'}[state.removalStatus?.state??'initializing'])}</small>{state.removalStatus?.fps!==undefined&&<small>{state.removalStatus.fps} masks/sec · {state.removalStatus.inferenceMs} ms processing · {state.removalStatus.renderFps} video fps · {state.removalStatus.maskAgeMs} ms mask age</small>}<small>Local processing. No green screen needed. Hair, moving hands and held objects may have rough edges.</small></div>}
+      <label className="camera-toggle"><input type="checkbox" checked={settings.chromaKey} onChange={e => void update({ chromaKey: e.target.checked,...(e.target.checked?{personRemoval:false}:{}) })} />Green-screen chroma key</label>
       {([
         ['tolerance', 'Key tolerance', 0, 1, 0.01], ['softness', 'Edge softness', 0.001, 0.5, 0.001],
         ['brightness', 'Brightness', -1, 1, 0.01], ['contrast', 'Contrast', 0, 2, 0.01],

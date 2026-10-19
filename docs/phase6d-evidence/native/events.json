@@ -1,0 +1,411 @@
+{
+  "snakeEvents": [
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "language-snake",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "db49e4b9-ad43-4072-88e3-2c220bf4dc0b",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "aa443ec8-8ce4-4802-9ff6-58ec5f3900d2",
+        "instanceId": "6d375fb9-de8f-40d0-b6a8-92c5e9675d0f",
+        "occurrenceId": "snake-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 8,
+      "event": {
+        "version": 1,
+        "eventId": "db49e4b9-ad43-4072-88e3-2c220bf4dc0b",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "aa443ec8-8ce4-4802-9ff6-58ec5f3900d2",
+          "instanceId": "6d375fb9-de8f-40d0-b6a8-92c5e9675d0f",
+          "occurrenceId": "snake-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 8,
+        "type": "score-reported",
+        "payload": {
+          "scores": [
+            {
+              "participantId": "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+              "score": 0
+            },
+            {
+              "participantId": "guest:d2baa58e-5a07-4eff-9497-be1a6b807509",
+              "score": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "language-snake",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "8a02880b-5e28-41de-9e69-75c15ef9d7fd",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "aa443ec8-8ce4-4802-9ff6-58ec5f3900d2",
+        "instanceId": "6d375fb9-de8f-40d0-b6a8-92c5e9675d0f",
+        "occurrenceId": "snake-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 9,
+      "event": {
+        "version": 1,
+        "eventId": "8a02880b-5e28-41de-9e69-75c15ef9d7fd",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "aa443ec8-8ce4-4802-9ff6-58ec5f3900d2",
+          "instanceId": "6d375fb9-de8f-40d0-b6a8-92c5e9675d0f",
+          "occurrenceId": "snake-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 9,
+        "type": "activity-completed",
+        "payload": {
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ],
+          "outcome": "lost"
+        }
+      }
+    }
+  ],
+  "bossEvents": [
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "final-boss-hero",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "567f66ef-41e9-48b7-aba2-aadd2c5c36ec",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+        "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+        "occurrenceId": "boss-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 6,
+      "event": {
+        "version": 1,
+        "eventId": "567f66ef-41e9-48b7-aba2-aadd2c5c36ec",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+          "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+          "occurrenceId": "boss-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 6,
+        "type": "score-reported",
+        "payload": {
+          "scores": [
+            {
+              "participantId": "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+              "score": 4
+            },
+            {
+              "participantId": "guest:d2baa58e-5a07-4eff-9497-be1a6b807509",
+              "score": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "final-boss-hero",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "567f66ef-41e9-48b7-aba2-aadd2c5c36ec",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+        "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+        "occurrenceId": "boss-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 6,
+      "event": {
+        "version": 1,
+        "eventId": "567f66ef-41e9-48b7-aba2-aadd2c5c36ec",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+          "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+          "occurrenceId": "boss-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 6,
+        "type": "score-reported",
+        "payload": {
+          "scores": [
+            {
+              "participantId": "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+              "score": 4
+            },
+            {
+              "participantId": "guest:d2baa58e-5a07-4eff-9497-be1a6b807509",
+              "score": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "final-boss-hero",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "04423ee4-97a5-4552-97a6-b0f53fc1e0b0",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+        "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+        "occurrenceId": "boss-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 7,
+      "event": {
+        "version": 1,
+        "eventId": "04423ee4-97a5-4552-97a6-b0f53fc1e0b0",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+          "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+          "occurrenceId": "boss-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 7,
+        "type": "activity-completed",
+        "payload": {
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ],
+          "outcome": "won"
+        }
+      }
+    },
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "final-boss-hero",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "04423ee4-97a5-4552-97a6-b0f53fc1e0b0",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+        "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+        "occurrenceId": "boss-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 7,
+      "event": {
+        "version": 1,
+        "eventId": "04423ee4-97a5-4552-97a6-b0f53fc1e0b0",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+          "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+          "occurrenceId": "boss-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 7,
+        "type": "activity-completed",
+        "payload": {
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ],
+          "outcome": "won"
+        }
+      }
+    },
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "final-boss-hero",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "40292271-230d-409f-b602-2da68a439c86",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+        "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+        "occurrenceId": "boss-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 8,
+      "event": {
+        "version": 1,
+        "eventId": "40292271-230d-409f-b602-2da68a439c86",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+          "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+          "occurrenceId": "boss-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 8,
+        "type": "reward-requested",
+        "payload": {
+          "requests": [
+            {
+              "participantId": "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+              "rewardId": "native-reward",
+              "quantity": 1
+            },
+            {
+              "participantId": "guest:d2baa58e-5a07-4eff-9497-be1a6b807509",
+              "rewardId": "native-reward",
+              "quantity": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "story-studio-module",
+      "version": 1,
+      "moduleType": "final-boss-hero",
+      "moduleVersion": 1,
+      "hostGeneration": 3,
+      "requestId": "40292271-230d-409f-b602-2da68a439c86",
+      "context": {
+        "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+        "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+        "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+        "occurrenceId": "boss-occurrence",
+        "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+        "adventureId": "native-module-adventure",
+        "participantIds": [
+          "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+          "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+        ]
+      },
+      "type": "event",
+      "sequence": 8,
+      "event": {
+        "version": 1,
+        "eventId": "40292271-230d-409f-b602-2da68a439c86",
+        "context": {
+          "sessionId": "68fe436a-a653-403d-9cf8-13a5a351c419",
+          "runId": "6e3b3c57-65c7-4faf-be25-4c43d0f1b6e4",
+          "instanceId": "e80e8d02-eeb0-4b45-bf93-4b49700adeb9",
+          "occurrenceId": "boss-occurrence",
+          "episodeId": "2fd2fa4a-9cd9-4d00-bffc-995a5ef94023",
+          "adventureId": "native-module-adventure",
+          "participantIds": [
+            "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+            "guest:d2baa58e-5a07-4eff-9497-be1a6b807509"
+          ]
+        },
+        "sequence": 8,
+        "type": "reward-requested",
+        "payload": {
+          "requests": [
+            {
+              "participantId": "guest:8211f720-e1bc-4de0-ae95-340b1ba5c1fc",
+              "rewardId": "native-reward",
+              "quantity": 1
+            },
+            {
+              "participantId": "guest:d2baa58e-5a07-4eff-9497-be1a6b807509",
+              "rewardId": "native-reward",
+              "quantity": 1
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

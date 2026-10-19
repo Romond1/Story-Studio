@@ -1,0 +1,8 @@
+MediaPipe Selfie Segmentation landscape, float16 version 1. Copyright Google.
+Unmodified model and official model card; source and SHA-256 in manifest.json.
+The model card lists Apache License 2.0. License text in LICENSE.txt.
+
+Uses the existing pinned @mediapipe/tasks-vision 0.10.32 runtime, Apache-2.0.
+Runtime notices are also retained in ../face-tracking/NOTICE.txt and LICENSE.txt.
+Runtime WASM is shared from ../face-tracking/wasm; it is not downloaded at runtime.
+All inference runs locally. Camera frames are not sent to a server.

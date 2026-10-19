@@ -1,15 +1,39 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMERA_DEFAULTS, parseCameraSettings } from './cameraProtocol';
+import { CAMERA_DEFAULTS, parseCameraSettings, transformCameraLayout } from './cameraProtocol';
 import { CameraSession } from './cameraSession';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 
+test('free camera layout stays bounded and legacy settings remain valid', () => {
+  assert.ok(parseCameraSettings(CAMERA_DEFAULTS));
+  const layout = { x: .12, y: .2, width: .3, height: .4 };
+  assert.deepEqual((parseCameraSettings({ ...CAMERA_DEFAULTS, layout }) as any)?.layout, layout);
+  assert.ok(parseCameraSettings({...CAMERA_DEFAULTS,layout:{x:-.5,y:-.3,width:1.5,height:1.4}}));
+  for (const patch of [{ x: -4 }, { width: 0 }, { x: 1.1 }, { height: NaN }, {width:5}])
+    assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, layout: { ...layout, ...patch } }), null);
+});
+
+test('all four resize corners preserve the opposite anchor and permit offscreen crop',()=>{
+ const rect={x:.1,y:.2,width:.4,height:.3};
+ for(const corner of ['nw','ne','sw','se'] as const){
+  const next=transformCameraLayout(rect,corner,corner.includes('w')?-.3:.3,corner.includes('n')?-.3:.3);
+  assert.ok(next.width>.4&&next.height>.3);
+  if(corner.includes('w'))assert.ok(Math.abs(next.x+next.width-(rect.x+rect.width))<.00001);else assert.equal(next.x,rect.x);
+  if(corner.includes('n'))assert.ok(Math.abs(next.y+next.height-(rect.y+rect.height))<.00001);else assert.equal(next.y,rect.y);
+ }
+ assert.ok(transformCameraLayout(rect,'move',-.3,-.3).x<0);
+ const tiny=transformCameraLayout(rect,'se',-10,-10);assert.equal(tiny.width,.03);assert.equal(tiny.height,.03);
+ const huge=transformCameraLayout(rect,'se',10,10);assert.equal(huge.width,4);assert.equal(huge.height,4);
+ assert.ok(transformCameraLayout(rect,'move',-10,-10).x+rect.width>0);
+});
+
 test('camera protocol rejects malformed values and strips private extras', () => {
   assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, tolerance: NaN }), null);
   assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, preset: 'teacher-notes' }), null);
   assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, enabled: 'yes' }), null);
+  assert.equal(parseCameraSettings({...CAMERA_DEFAULTS,personRemoval:'yes'}),null);
   assert.equal(parseCameraSettings({ ...CAMERA_DEFAULTS, tracking: { enabled: 'yes', markers: true, hat: true } }), null);
   assert.deepEqual(parseCameraSettings({ ...CAMERA_DEFAULTS, notes: 'private' }), CAMERA_DEFAULTS);
 });
@@ -62,6 +86,7 @@ test('camera IPC authenticates roles, filters payloads, and cancels pending cons
   vm.runInNewContext(source, { exports, require: (name: string) => {
     if (name === 'electron') return { ipcMain: { handle: (key: string, fn: any) => handles.set(key, fn), on: (key: string, fn: any) => events.set(key, fn) }, dialog: { showMessageBox: () => new Promise(resolve => { consent = resolve; }) } };
     if (name === '../shared/cameraProtocol') return require('./cameraProtocol');
+    if (name === '../shared/personRemoval') return require('./personRemoval');
     if (name === '../shared/faceTrackingProtocol') return require('./faceTrackingProtocol');
     throw new Error(name);
   } });
@@ -79,10 +104,27 @@ test('camera IPC authenticates roles, filters payloads, and cancels pending cons
   consent({ response: 0 }); await retry;
   assert.equal(get().settings.enabled, true);
   assert.equal(get().settings.notes, undefined);
+  const layout={x:.1,y:.2,width:.3,height:.4};
+  events.get('camera:layout')!(event(present),layout);
+  assert.equal(get().settings.layout,undefined,'editing is opt-in');
+  await handles.get('camera:set')!(event(control),{...get().settings,editLayout:true});
+  events.get('camera:layout')!(event(control),layout);
+  assert.equal(get().settings.layout,undefined,'only Presenter can request free placement');
+  events.get('camera:layout')!(event(present),{...layout,x:2});
+  assert.equal(get().settings.layout,undefined,'out of bounds layout rejected');
+  events.get('camera:layout')!(event(present),{...layout,enabled:false,private:'secret'});
+  assert.equal(get().settings.layout.x,.1);
+  assert.equal(get().settings.layout.private,undefined);
+  assert.equal(get().settings.enabled,true,'layout request cannot change capture');
+  await handles.get('camera:set')!(event(control),{...get().settings,personRemoval:true});
+  events.get('camera:removal-status')!(event(control),{state:'running',fps:12});
+  assert.notEqual(get().removalStatus?.state,'running');
   events.get('camera:status')!(event(control), { state: 'error', devices: [] });
   assert.equal(get().status.state, 'starting');
   events.get('camera:status')!(event(present), { state: 'live', devices: [], teacherNotes: 'private' });
   assert.equal(get().status.state, 'live');
+  events.get('camera:removal-status')!(event(present),{state:'running',fps:12,private:'secret'});
+  assert.equal(get().removalStatus.state,'running');assert.equal(get().removalStatus.private,undefined);
   assert.equal(get().status.teacherNotes, undefined);
   events.get('camera:tracking-status')!(event(present), { state: 'tracking' });
   assert.notEqual(get().trackingStatus?.state, 'tracking', 'disabled tracking cannot publish live state');

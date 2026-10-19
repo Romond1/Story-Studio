@@ -1,0 +1,12 @@
+{
+  "passed": [
+    "Media pool assignment and persistence",
+    "Mastery launch using pool media",
+    "Live setup guard and flush",
+    "Challenge pool background and launch",
+    "Discovery navigation from running game",
+    "Camera and translation controls mounted",
+    "Narrow page without overflow"
+  ],
+  "errors": []
+}

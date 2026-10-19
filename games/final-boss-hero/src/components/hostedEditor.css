@@ -1,0 +1,76 @@
+.hosted-editor { --pool-surface:#101e31; --pool-border:#344b65; --pool-muted:#b4c6da; }
+.hosted-editor .edit-shell-body { grid-template-columns:minmax(210px,260px) minmax(0,1fr) 174px; gap:12px; }
+.hosted-editor .edit-shell-sidebar { grid-column:3; grid-row:1; padding:8px; gap:5px; }
+.hosted-editor .edit-shell-sidebar button { padding:9px 8px; font-size:13px; text-align:left; }
+.hosted-editor .edit-shell-workspace { grid-column:2; grid-row:1; min-width:0; }
+.hosted-media-panel { grid-column:1; grid-row:1; background:var(--pool-surface); border:1px solid var(--pool-border); border-radius:12px; min-width:0; overflow:auto; }
+.hosted-panel-toggle { width:100%; text-align:left; padding:13px!important; }
+.hosted-panel-toggle small { float:right; }
+.hosted-pool-content { padding:10px; display:flex; flex-direction:column; gap:10px; }
+.hosted-pool-content input,.hosted-pool-content select { width:100%; min-width:0; }
+.hosted-pool-help,.hosted-pool-content p { font-size:13px; color:var(--pool-muted); margin:0; line-height:1.5; overflow-wrap:anywhere; }
+.hosted-pool-actions,.hosted-target-actions { display:flex; flex-wrap:wrap; gap:6px; }
+.hosted-pool-actions button,.hosted-media-target button { font-size:12px; padding:7px 9px; }
+.hosted-asset-list { display:flex; flex-direction:column; gap:6px; }
+.hosted-asset-list button { display:flex; align-items:center; gap:9px; text-align:left; padding:7px; border:1px solid var(--pool-border); width:100%; }
+.hosted-asset-list button[aria-selected="true"] { border-color:#76caff; background:#244862; outline:1px solid #76caff; }
+.hosted-asset-list button>span:last-child { min-width:0; overflow-wrap:anywhere; font-size:13px; }
+.hosted-asset-list small { display:block; color:var(--pool-muted); font-size:12px; }
+.hosted-asset-thumb { width:60px; height:48px; flex-shrink:0; display:grid; place-items:center; background:#071323; border-radius:6px; font-size:12px; }
+.hosted-asset-thumb img,.hosted-asset-thumb video { width:100%; height:100%; object-fit:contain; }
+.hosted-asset-preview img,.hosted-asset-preview video,.hosted-asset-preview audio { max-width:100%; max-height:220px; }
+.hosted-media-target { display:flex; flex-direction:column; gap:6px; border:1px dashed #66829f; border-radius:8px; padding:8px; margin-top:5px; }
+.hosted-media-target small { color:#c5e3f7; overflow-wrap:anywhere; }
+.hosted-editor .editor-grid input { min-width:0; }
+.hosted-editor .edit-shell-status { overflow-wrap:anywhere; }
+.hosted-project-import { margin-bottom:14px; border:1px solid #66829f; padding:12px; border-radius:8px; }
+.hosted-project-import p,.hosted-import-missing { overflow-wrap:anywhere; }
+.hosted-import-missing { padding:10px; border-bottom:1px solid #344b65; }
+@media(max-width:1200px){
+ .hosted-editor .edit-shell-body { grid-template-columns:220px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); }
+ .hosted-editor .edit-shell-sidebar { grid-column:1/-1; grid-row:1; display:flex; flex-wrap:wrap; }
+ .hosted-editor .edit-shell-workspace { grid-column:2; grid-row:2; }
+ .hosted-media-panel { grid-row:2; }
+ .hosted-editor .editor-grid.two-col { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:760px){
+ .hosted-editor .edit-shell-body { display:flex; flex-direction:column; overflow:auto; }
+ .hosted-editor .edit-shell-sidebar { order:0; overflow:visible; flex-shrink:0; }
+ .hosted-media-panel { order:1; flex-shrink:0; max-height:320px; }
+ .hosted-editor .edit-shell-workspace { order:2; overflow:visible; flex-shrink:0; }
+ .hosted-editor .cards-editor-layout { grid-template-columns:minmax(0,1fr); }
+ .hosted-editor .edit-header-actions { flex-wrap:wrap; }
+}
+/* Adjustable columns retain a usable center at smaller window sizes. */
+.hosted-editor .edit-shell-body { grid-template-columns:minmax(220px,min(var(--editor-pool-width,330px),32%)) 10px minmax(0,1fr) 10px minmax(150px,min(var(--editor-navigation-width,190px),22%)); gap:0; }
+.hosted-editor .edit-shell-workspace { grid-column:3; }
+.hosted-editor .edit-shell-sidebar { grid-column:5; }
+.editor-panel-divider { grid-row:1; cursor:col-resize; touch-action:none; position:relative; outline:none; }
+.editor-panel-divider--pool { grid-column:2; }
+.editor-panel-divider--navigation { grid-column:4; }
+.editor-panel-divider::after { content:''; position:absolute; top:18%; bottom:18%; left:4px; width:2px; background:#45617e; border-radius:3px; }
+.editor-panel-divider:hover::after,.editor-panel-divider:focus-visible::after { background:#76caff; width:4px; left:3px; }
+.hosted-thumbnail-size { display:flex; flex-direction:column; gap:4px; color:var(--pool-muted); font-size:12px; }
+.hosted-asset-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(var(--thumbnail-size,150px),100%),1fr)); gap:8px; }
+.hosted-asset-list button { display:block; padding:4px; position:relative; overflow:hidden; cursor:grab; min-width:0; }
+.hosted-asset-list button:active { cursor:grabbing; }
+.hosted-asset-thumb { width:100%; height:auto; aspect-ratio:4/3; overflow:hidden; pointer-events:none; }
+.hosted-asset-list .hosted-asset-kind { position:absolute; right:8px; bottom:8px; color:#fff; background:#0b172cdd; padding:2px 5px; border-radius:4px; font-size:10px; pointer-events:none; }
+.hosted-drop-surface { border-radius:8px; }
+.hosted-drop-surface.is-drag-over { outline:3px solid #76caff; outline-offset:2px; background:#183f5c!important; }
+.hosted-media-target { min-height:82px; justify-content:center; }
+.hosted-drop-hint { opacity:.8; }
+@media(max-width:1200px) and (min-width:761px){
+ .hosted-editor .edit-shell-body { grid-template-columns:minmax(220px,min(var(--editor-pool-width,330px),42%)) 10px minmax(0,1fr); }
+ .hosted-editor .edit-shell-sidebar { grid-column:1/-1; grid-row:1; }
+ .hosted-editor .edit-shell-workspace { grid-column:3; grid-row:2; }
+ .editor-panel-divider--pool { grid-row:2; }
+ .editor-panel-divider--navigation { display:none; }
+}
+@media(max-width:760px){ .editor-panel-divider { display:none; } }
+/* Card and cutscene lists give the detail editor room when the pool is wide. */
+.hosted-editor .edit-shell-workspace { container-type:inline-size; }
+.hosted-editor .cards-editor-layout { grid-template-columns:minmax(150px,.65fr) minmax(0,1.5fr); }
+@container(max-width:680px){ .hosted-editor .editor-grid.two-col { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:760px){ .hosted-editor .cards-editor-layout { grid-template-columns:minmax(0,1fr); } }
+

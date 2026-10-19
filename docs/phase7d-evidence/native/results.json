@@ -1,0 +1,145 @@
+{
+  "passed": [
+    "Teach details open the selected Hero Board in place; collapsible roster state survives navigation",
+    "Real Snake receives Control keyboard movement while the roster occupies a separate band",
+    "Lost acknowledgement after actual Core commit survives branch remount; retry retains captured identity and command with no duplicate grant",
+    "Group reward controls grant exactly to selected permanent students and exclude the temporary guest",
+    "Passive snapshot carries only safe nicknames/avatars/optional current indicators, excluding IDs, private names, reasons and APIs",
+    "Top/bottom placement reserves a separate responsive story band; projection caps eight entries and anonymizes missing nicknames",
+    "Teacher scene navigation and actual video playback remain usable; hiding roster restores full scene space",
+    "Finish lesson clears passive media and roster, returns to Beginning, and preserves authored content"
+  ],
+  "temp": "D:\\Temp\\story-phase7d-PITKJN",
+  "errors": [],
+  "layouts": [
+    {
+      "position": "top",
+      "width": 944,
+      "height": 560,
+      "roster": {
+        "top": 0,
+        "bottom": 80,
+        "left": 0,
+        "right": 944
+      },
+      "story": {
+        "top": 80,
+        "bottom": 560,
+        "left": 0,
+        "right": 944
+      }
+    },
+    {
+      "position": "top",
+      "width": 620,
+      "height": 360,
+      "roster": {
+        "top": 0,
+        "bottom": 80,
+        "left": 0,
+        "right": 620
+      },
+      "story": {
+        "top": 80,
+        "bottom": 360,
+        "left": 0,
+        "right": 620
+      }
+    },
+    {
+      "position": "bottom",
+      "width": 944,
+      "height": 560,
+      "roster": {
+        "top": 480,
+        "bottom": 560,
+        "left": 0,
+        "right": 944
+      },
+      "story": {
+        "top": 0,
+        "bottom": 480,
+        "left": 0,
+        "right": 944
+      }
+    },
+    {
+      "position": "bottom",
+      "width": 620,
+      "height": 360,
+      "roster": {
+        "top": 280,
+        "bottom": 360,
+        "left": 0,
+        "right": 620
+      },
+      "story": {
+        "top": 0,
+        "bottom": 280,
+        "left": 0,
+        "right": 620
+      }
+    }
+  ],
+  "safeRoster": {
+    "position": "bottom",
+    "entries": [
+      {
+        "nickname": "Comet",
+        "avatar": "rocket",
+        "score": 0,
+        "rewards": 2,
+        "relicProgress": 3
+      },
+      {
+        "nickname": "Sprout",
+        "avatar": "leaf",
+        "score": 0,
+        "rewards": 2,
+        "relicProgress": 1
+      },
+      {
+        "nickname": "Guest 1"
+      }
+    ],
+    "remaining": 0
+  },
+  "cappedRoster": {
+    "position": "bottom",
+    "entries": [
+      {
+        "nickname": "Comet",
+        "avatar": "rocket",
+        "score": 0,
+        "rewards": 2,
+        "relicProgress": 3
+      },
+      {
+        "nickname": "Sprout",
+        "avatar": "leaf",
+        "score": 0,
+        "rewards": 2,
+        "relicProgress": 1
+      },
+      {
+        "nickname": "Guest 1"
+      },
+      {
+        "nickname": "Student 1"
+      },
+      {
+        "nickname": "Guest 2"
+      },
+      {
+        "nickname": "Guest 3"
+      },
+      {
+        "nickname": "Guest 4"
+      },
+      {
+        "nickname": "Guest 5"
+      }
+    ],
+    "remaining": 1
+  }
+}

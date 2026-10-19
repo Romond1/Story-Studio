@@ -419,6 +419,8 @@ export interface ProjectState {
 }
 
 export interface StudentRosterEntry {
+  nickname?: string;
+  avatar?: string;
   id: string;
   name: string;
   archived: boolean;

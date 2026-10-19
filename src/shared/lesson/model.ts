@@ -25,13 +25,16 @@ export interface LessonScene {
   audio: SceneAudio[]; transition: { kind: 'none' | 'fade'; durationMs: number };
   viewport: SceneViewport; notes: string;
 }
-export interface LessonProject {
-  format: 'story-studio-scene'; version: 1; id: string; title: string;
+export interface SceneDocumentFields {
+  id: string; title: string;
   createdAt: string; updatedAt: string; assets: AssetItem[]; mediaBins: MediaBin[];
   scenes: Record<string, LessonScene>; sequences: Record<SequenceKind, SceneEntry[]>;
   sections?: LessonSection[];
   cards: Record<string, CardDefinition>; library: string[]; cardSets: CardSet[];
 }
+export interface SceneLessonProject extends SceneDocumentFields { format: 'story-studio-scene'; version: 1 }
+export type LessonProject = SceneLessonProject | import('../episode/model').EpisodeProject;
+export type SceneDocument = LessonProject;
 export interface LessonProjectState { data: LessonProject; folderPath: string; lastSavedAt: string; activationToken: string; isDraft?: boolean }
 export interface LessonLocation { sequence: SequenceKind; entryId: string }
 export interface EditorSelection { sequence: SequenceKind; entryId: string | null; objectId: string | null }

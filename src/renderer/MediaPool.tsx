@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type DragEvent } from 'react';
 import type { MediaBin, ProjectData } from '../shared/types';
 import { getAssetDisplayLabel } from '../shared/mediaReferences';
-import { mediaUsage } from '../shared/mediaPool';
+import { createMediaRegistry } from '../shared/content/mediaRegistry';
 export const POOL_DRAG='application/x-story-studio-assets';
 export const SLIDE_DRAG='application/x-story-studio-slide';
 export function droppedPaths(event:DragEvent):string[]{
@@ -13,11 +13,12 @@ export function MediaPool({data,onChange,onImport,onAttachAudio,resolveUrl,busy,
   const [open,setOpen]=useState(true),[bin,setBin]=useState(''),[query,setQuery]=useState(''),[type,setType]=useState('all'),[usage,setUsage]=useState('all');
   useEffect(()=>{if(focusContentKey)setOpen(false);},[focusContentKey]);
   const [selected,setSelected]=useState<Set<string>>(new Set());
-  const counts=useMemo(()=>new Map(data.assets.map(a=>[a.id,mediaUsage(data,a.id)])),[data]);
-  const bins=data.mediaBins??[];
+  const registry=useMemo(()=>createMediaRegistry({format:'legacy',data}),[data]);
+  const counts=useMemo(()=>new Map(registry.list().map(a=>[a.id,registry.usages(a.id).length])),[registry]);
+  const bins=registry.bins();
   const selectedAudio=selected.size===1?data.assets.find(a=>selected.has(a.id)&&a.mediaType==='audio'):undefined;
   const inBin=(id:string|undefined):boolean=>{const visited=new Set<string>();while(id&&!visited.has(id)){if(id===bin)return true;visited.add(id);id=bins.find(b=>b.id===id)?.parentId;}return !bin;};
-  const assets=data.assets.filter(a=>inBin(a.binId)&&(type==='all'||a.mediaType===type)&&(usage==='all'||(usage==='used')===!!counts.get(a.id))&&`${getAssetDisplayLabel(a,'edit')} ${a.originalName}`.toLowerCase().includes(query.toLowerCase()));
+  const assets=registry.list().filter(a=>inBin(a.binId)&&(type==='all'||a.mediaType===type)&&(usage==='all'||(usage==='used')===!!counts.get(a.id))&&`${getAssetDisplayLabel(a,'edit')} ${a.originalName}`.toLowerCase().includes(query.toLowerCase()));
   const binLabel=(b:MediaBin):string=>{const parent=bins.find(p=>p.id===b.parentId);return parent&&parent.id!==b.id?`${parent.name} / ${b.name}`:b.name;};
   const tree=(parent?:string,depth=0):React.ReactNode=>depth>20?null:bins.filter(b=>b.parentId===parent).map(b=><details key={b.id} open={undefined}><summary><button aria-pressed={bin===b.id} onClick={()=>setBin(b.id)}>{b.name}</button></summary>{tree(b.id,depth+1)}</details>);
   return <section className="media-pool" aria-label="Media Pool" onDragEnter={e=>e.stopPropagation()} onDragOver={e=>{e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='copy';}}
@@ -26,6 +27,7 @@ export function MediaPool({data,onChange,onImport,onAttachAudio,resolveUrl,busy,
     {open&&<><div className="pool-toolbar"><button disabled={busy} onClick={()=>void onImport('files',undefined,bin||undefined)}>Import Files</button><button disabled={busy} onClick={()=>void onImport('folder',undefined,bin||undefined)}>Import Folder</button>
       <button onClick={()=>{const name=prompt('Bin name');if(name?.trim())onChange({...data,mediaBins:[...bins,{id:crypto.randomUUID(),name:name.trim(),...(bin?{parentId:bin}:{})}]});}}>New bin</button></div>
       <input aria-label="Search media" placeholder="Search media…" value={query} onChange={e=>setQuery(e.target.value)} />
+      {(!registry.dependencies().complete || registry.diagnostics().length > 0) && <p role="status">Some media references are missing, ambiguous, or unsupported. Usage is incomplete; all imported media is retained.</p>}
       <div className="pool-filters"><select aria-label="Media type" value={type} onChange={e=>setType(e.target.value)}>{['all','image','video','audio'].map(t=><option key={t} value={t}>{t==='all'?'All types':t}</option>)}</select>
       <select aria-label="Media usage" value={usage} onChange={e=>setUsage(e.target.value)}><option value="all">All usage</option><option value="used">Used</option><option value="unused">Unused</option></select>
       <select aria-label="Move selected media to bin" value="" disabled={!selected.size} onChange={e=>{const id=e.target.value;onChange({...data,assets:data.assets.map(a=>selected.has(a.id)?{...a,binId:id==='root'?undefined:id}:a)});}}><option value="" disabled>Move selected…</option><option value="root">Pool root</option>{bins.map(b=><option value={b.id} key={b.id}>{binLabel(b)}</option>)}</select></div>

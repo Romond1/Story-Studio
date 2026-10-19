@@ -2,7 +2,8 @@ export interface Landmark { x: number; y: number; z: number }
 export interface FaceObservation { timestamp: number; landmarks: Landmark[]; matrix: number[] }
 export interface FacePose {
   timestamp: number; nose: Landmark; forehead: Landmark; chin: Landmark;
-  left: Landmark; right: Landmark; matrix: number[];
+  left: Landmark; right: Landmark; upperLip?: Landmark; lowerLip?: Landmark;
+  leftTemple?: Landmark; rightTemple?: Landmark; matrix: number[];
 }
 export const MAX_POSE_AGE = 350;
 /** No queue: cadence admission happens before bitmap creation, not after inference. */
@@ -20,6 +21,7 @@ export class FrameGate {
   }
 }
 const anchors = { nose: 1, forehead: 10, chin: 152, left: 234, right: 454 } as const;
+const extraAnchors = { upperLip: 13, lowerLip: 14, leftTemple: 127, rightTemple: 356 } as const;
 export class FacePoseFilter {
   private pose: FacePose | null = null;
   current(now: number): FacePose | null {
@@ -36,10 +38,20 @@ export class FacePoseFilter {
     const previous = this.current(now);
     if (previous && observation.timestamp <= previous.timestamp) return previous;
     const alpha = previous ? 1 - Math.exp(-(observation.timestamp - previous.timestamp) / 45) : 1;
-    const result = { timestamp: observation.timestamp, matrix: observation.matrix } as FacePose;
+    const smoothedMatrix = previous && previous.matrix.length === 16
+      ? observation.matrix.map((v, i) => previous.matrix[i] + (v - previous.matrix[i]) * alpha)
+      : observation.matrix;
+    const result = { timestamp: observation.timestamp, matrix: smoothedMatrix } as FacePose;
     for (const name of Object.keys(anchors) as (keyof typeof anchors)[]) {
       const p = observation.landmarks[anchors[name]], old = previous?.[name] ?? p;
       result[name] = { x: old.x + (p.x - old.x) * alpha, y: old.y + (p.y - old.y) * alpha, z: old.z + (p.z - old.z) * alpha };
+    }
+    for (const name of Object.keys(extraAnchors) as (keyof typeof extraAnchors)[]) {
+      const p = observation.landmarks[extraAnchors[name]];
+      if (p && [p.x, p.y, p.z].every(Number.isFinite) && Math.abs(p.x) < 3 && Math.abs(p.y) < 3 && Math.abs(p.z) < 3) {
+        const old = previous?.[name] ?? p;
+        result[name] = { x: old.x + (p.x - old.x) * alpha, y: old.y + (p.y - old.y) * alpha, z: old.z + (p.z - old.z) * alpha };
+      }
     }
     this.pose = result; return result;
   }

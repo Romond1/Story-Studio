@@ -5,7 +5,7 @@
 .translation-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
 .translation-controls details > label { margin-top: 8px; }
 .translation-controls p { margin: 0; font-size: 12px; }
-.translation-caption-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: flex; justify-content: center; padding: 3vh 4vw; box-sizing: border-box; overflow: hidden; }
+.translation-caption-layer { position: absolute; inset: 0; z-index: 30; isolation: isolate; pointer-events: none; display: flex; justify-content: center; padding: 3vh 4vw; box-sizing: border-box; overflow: hidden; }
 .translation-caption-top { align-items: flex-start; }
 .translation-caption-bottom { align-items: flex-end; }
 .translation-caption { max-width: 90%; max-height: 45%; overflow: hidden; padding: .45em .7em; border-radius: 10px; background: rgba(0,0,0,.86); color: white; text-align: center; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; font-family: 'Yu Gothic', 'Noto Sans JP', 'Meiryo', sans-serif; }

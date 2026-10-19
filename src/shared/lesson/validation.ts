@@ -1,7 +1,8 @@
 import { assertCardsV2 } from '../cardsV2';
-import { clone, type LessonProject } from './model';
+import { clone, type LessonProject, type SceneLessonProject } from './model';
 import { LESSON_LIMITS } from './limits';
 import { migrateSections } from './sections';
+import { parseEpisodeProject } from '../episode/validation';
 
 const record = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
 const text = (value: unknown, max = 65536): value is string => typeof value === 'string' && value.length <= max;
@@ -19,15 +20,15 @@ function validateBox(box: any, frame: any) {
     && number(box.width, 1, frame.width) && number(box.height, 1, frame.height)
     && box.x + box.width <= frame.width + .01 && box.y + box.height <= frame.height + .01, 'object geometry');
 }
-export function parseLessonProject(value: unknown): LessonProject {
-  check(record(value) && value.format === 'story-studio-scene' && value.version === 1, 'unsupported format. Open older lessons in Legacy mode.');
+export function validateSceneDocumentBody(value: unknown, hasAsset?: (assetId: unknown, kind?: string) => boolean): void {
+  check(record(value), 'document body');
   const p = value as Record<string, any>;
   check(id(p.id) && text(p.title, 500) && text(p.createdAt, 100) && text(p.updatedAt, 100), 'project identity');
   check(list(p.assets) && unique(p.assets) && list(p.mediaBins) && unique(p.mediaBins), 'media pool');
   for (const asset of p.assets) check(safePath(asset.relativePath) && ['image','video','audio'].includes(asset.mediaType)
     && text(asset.filename, 500) && text(asset.originalName, 500) && number(asset.sizeBytes, 0, Number.MAX_SAFE_INTEGER) && text(asset.importedAt, 100)
     && (asset.binId === undefined || id(asset.binId) && p.mediaBins.some((bin: any) => bin.id === asset.binId)), 'asset/bin reference');
-  const asset = (assetId: unknown, kind?: string) => p.assets.some((a: any) => a.id === assetId && (!kind || a.mediaType === kind));
+  const asset = hasAsset ?? ((assetId: unknown, kind?: string) => p.assets.some((a: any) => a.id === assetId && (!kind || a.mediaType === kind)));
   for (const bin of p.mediaBins) {
     check(text(bin.name, 500) && (!bin.parentId || p.mediaBins.some((b: any) => b.id === bin.parentId)), 'media bin');
     const seen = new Set<string>(); let current = bin;
@@ -76,5 +77,12 @@ export function parseLessonProject(value: unknown): LessonProject {
       for (const point of stroke.points) check(record(point) && number(point.x, -40000, 40000) && number(point.y, -40000, 40000) && number(point.t, 0, Number.MAX_SAFE_INTEGER), 'drawing point');
     }
   }
-  return migrateSections(clone(value as LessonProject));
+}
+export function parseLessonProject(value: unknown): SceneLessonProject {
+  check(record(value) && value.format === 'story-studio-scene' && value.version === 1, 'unsupported format. Open older lessons in Legacy mode.');
+  validateSceneDocumentBody(value);
+  return migrateSections(clone(value as SceneLessonProject));
+}
+export function parseSceneDocument(value: unknown): LessonProject {
+  return record(value) && value.format === 'story-studio-episode' ? parseEpisodeProject(value) : parseLessonProject(value);
 }

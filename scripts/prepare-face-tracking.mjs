@@ -26,3 +26,14 @@ const chunk = output.find(file => file.type === 'chunk');
 if (!chunk) throw new Error('Face worker bundle was not produced.');
 await writeFile(new URL('face.worker.js', directory), chunk.code);
 console.log(`Prepared offline face tracking: tasks-vision ${packageJson.version}, pinned model and classic worker.`);
+
+const removalDirectory = new URL('../public/person-removal/', import.meta.url);
+const removalManifest = JSON.parse(await readFile(new URL('manifest.json', removalDirectory), 'utf8'));
+const removalModel = await readFile(new URL('selfie_segmenter_landscape.tflite', removalDirectory));
+if (createHash('sha256').update(removalModel).digest('hex') !== removalManifest.model.sha256 || packageJson.version !== removalManifest.runtimeVersion) throw new Error('Person removal model/runtime mismatch.');
+const removalResult = await build({configFile:false,logLevel:'error',build:{write:false,minify:true,target:'es2021',lib:{entry:fileURLToPath(new URL('../src/renderer/camera/removal/person.worker.ts',import.meta.url)),name:'StoryPersonWorker',formats:['iife']},rollupOptions:{output:{inlineDynamicImports:true}}}});
+const removalOutput = Array.isArray(removalResult) ? removalResult[0].output : removalResult.output;
+const removalChunk = removalOutput.find(file => file.type === 'chunk');
+if (!removalChunk) throw new Error('Person removal worker bundle was not produced.');
+await writeFile(new URL('person.worker.js', removalDirectory), removalChunk.code);
+console.log('Prepared offline experimental landscape person removal.');

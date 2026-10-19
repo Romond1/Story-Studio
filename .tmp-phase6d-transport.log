@@ -1,0 +1,44 @@
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+Warning: React.createElement: type is invalid -- expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+[Present] Card content failed
+✔ game presentation accepts only a registered game identity without source or runtime state (4.6169ms)
+✔ card overlays whitelist active student faces on ordinary presentation targets (6.1322ms)
+✔ invalid card overlays are rejected without replacing the relay safe snapshot (0.3649ms)
+✔ Control namespaces card image URLs in standalone and overlay snapshots without mutating the plan (127.1141ms)
+✔ Present waits for both the base scene and card overlay images before reporting readiness (167.1221ms)
+✔ snapshot projection strips teacher data and rejects invalid revisions or media (0.6923ms)
+✔ relay rejects duplicate/stale revisions and retired sessions while preserving full latest state (0.4246ms)
+✔ Control reset clears stale image and permits fresh renderer state; Present recovery uses latest full snapshot (0.3926ms)
+✔ Present lifecycle stays passive, recovers latest snapshot and rejects foreign IPC senders (67.102ms)
+✔ renderer revocation is applied even when snapshot sequence is unchanged (0.3286ms)
+✔ video projection accepts only whitelisted executable intent with local media (0.2986ms)
+✔ static scene whitelist preserves logical geometry, adjustments and visible student text only (0.3856ms)
+✔ logical frame preserves coordinates under resize and aspect changes (0.2454ms)
+✔ asset readiness cannot survive scene unmount or accept removed graphics (2.1451ms)
+✔ remounted scene requires fresh image and graphic events; removed assets cannot make it ready (0.2334ms)
+✔ drawing snapshots recover committed and transient strokes with logical viewport and no private fields (0.3936ms)
+✔ prompt projects only student text with canonical frame and passive activity (0.1536ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 823.9644

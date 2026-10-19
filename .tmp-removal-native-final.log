@@ -1,0 +1,6 @@
+Presenter: INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Presenter: INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Presenter: INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Presenter: INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+Presenter: INFO: Created TensorFlow Lite XNNPACK delegate for CPU.
+PASS ["Real landscape model removes room background offline while sharing one live camera with tracking","Single acquisition, single segmentation worker and one frame in flight; video remains responsive","Segmentation failure hides output without exposing room or stopping capture","Toggle off restores original only by teacher choice; key mode releases segmentation worker","Hidden releases person inference; camera off releases all workers and capture"]

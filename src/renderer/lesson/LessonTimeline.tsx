@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react';
 import type { LessonLocation, LessonProject, SequenceKind } from '../../shared/lesson/model';
 import { timelineDensity, timelineZoom } from '../../shared/lessonTimeline';
-import { LESSON_ASSET_DRAG, LESSON_ENTRY_DRAG, lessonMediaUrl } from './LessonMediaPool';
+import { LESSON_ASSET_DRAG, LESSON_ENTRY_DRAG } from './LessonMediaPool';
 import { projectScene } from '../../shared/lesson/projection';
 import { SceneSurface } from './SceneSurface';
 import { addSection, renameSection, moveEntryToSection, insertBreak, insertSectionMedia, moveSection, timelineGroups, timelineGroupBoundary, moveTimelineEntries } from '../../shared/lesson/sections';
@@ -10,6 +10,7 @@ import './timelineContainers.css';
 
 export interface LessonTimelineProps {
   project: LessonProject; sequence: SequenceKind; selectedEntryId: string | null; live: LessonLocation | null;
+  resolveAsset: (id: string) => string | undefined;
   readOnly?: boolean;
   onProjectChange?: (project: LessonProject) => void;
   onCardDrop?: (objectId: string, entryId: string) => void;
@@ -137,7 +138,7 @@ export function LessonTimeline(p: LessonTimelineProps) {
             const before = (event: DragEvent) => event.clientX < event.currentTarget.getBoundingClientRect().left + event.currentTarget.getBoundingClientRect().width / 2 ? entry.id : group.entries[localIndex + 1]?.id ?? timelineGroupBoundary(p.project, p.sequence, group);
             return <button key={entry.id} className={`lesson-timeline-item${entry.kind === 'break' ? ' is-break' : ''}${isEdit ? ' is-edit' : ''}${isLive ? ' is-live' : ''}${selectedIds.includes(entry.id) ? ' is-selected' : ''}${dropKey === entry.id ? ' drop-before' : ''}`} data-entry-id={entry.id} data-selected={selectedIds.includes(entry.id)} aria-label={`${index + 1}. ${scene?.title || 'Missing scene'}${linked ? ', shared scene' : ''}`} aria-current={isEdit ? 'step' : undefined} draggable={!p.readOnly} onClick={event => select(entry.id, event)} onContextMenu={event => openMenu(event, entry.id, group.sectionId)} onDragStart={event => { if (!selectedIds.includes(entry.id)) select(entry.id); event.dataTransfer.setData(LESSON_ENTRY_DRAG, entry.id); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={event => accept(event, group.sectionId, before(event))} onDrop={event => drop(event, group.sectionId, before(event))}>
               <span className="lesson-timeline-markers">{isEdit && !p.readOnly && <b className="lesson-edit-marker">EDIT</b>}{isLive && <b className="lesson-live-marker">LIVE</b>}</span>
-              {density !== 'overview' && <span className="lesson-timeline-thumb" style={{ background: scene?.background.color ?? '#0a0a0a' }}>{scene ? <SceneSurface plan={projectScene(p.project, scene.id, undefined, id => { const item = p.project.assets.find(a => a.id === id); return item && lessonMediaUrl(item.relativePath, p.project.id); })!} surface="present" video={asset?.mediaType === 'video' ? <video src={lessonMediaUrl(asset.relativePath, p.project.id)} muted preload="metadata" /> : undefined} /> : asset?.mediaType === 'image' ? <img src={lessonMediaUrl(asset.relativePath, p.project.id)} alt="" draggable={false} /> : asset?.mediaType === 'video' ? <video src={lessonMediaUrl(asset.relativePath, p.project.id)} muted preload="metadata" /> : <span>Missing scene</span>}</span>}
+              {density !== 'overview' && <span className="lesson-timeline-thumb" style={{ background: scene?.background.color ?? '#0a0a0a' }}>{scene ? <SceneSurface plan={projectScene(p.project, scene.id, undefined, p.resolveAsset)!} surface="present" video={asset?.mediaType === 'video' ? <video src={p.resolveAsset(asset.id)} muted preload="metadata" /> : undefined} /> : asset?.mediaType === 'image' ? <img src={p.resolveAsset(asset.id)} alt="" draggable={false} /> : asset?.mediaType === 'video' ? <video src={p.resolveAsset(asset.id)} muted preload="metadata" /> : <span>Missing scene</span>}</span>}
               <strong>{index + 1}. {entry.kind === 'break' ? 'Break · ' : ''}{scene?.title || 'Missing scene'}</strong><small>{linked ? 'Shared · ' : ''}{asset?.mediaType ?? `${scene?.objects.length ?? 0} objects`}</small>
             </button>;
           })}

@@ -5,15 +5,17 @@ import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
-import { webcrypto } from 'node:crypto';
+import { webcrypto, randomUUID } from 'node:crypto';
 import ts from 'typescript';
 
 /** Real main-process IPC and files; only Electron's UI boundary is substituted. */
 function mainHarness() {
+  const privateId = randomUUID();
   const handlers = new Map<string, (...args: any[]) => any>();
   let selection: string | null = null;
+  const control = { mainFrame: {} };
   const electron = {
-    app: { requestSingleInstanceLock: () => true, whenReady: () => ({ then() {} }), on() {} },
+    app: { requestSingleInstanceLock: () => true, whenReady: () => ({ then() {} }), on() {}, getPath: () => path.join(os.tmpdir(), `story-lesson-harness-${privateId}`) },
     BrowserWindow: function () {},
     dialog: { showOpenDialog: async () => ({ canceled: !selection, filePaths: selection ? [selection] : [] }) },
     ipcMain: {
@@ -31,10 +33,10 @@ function mainHarness() {
     cache.set(filename, module.exports);
     const nativeRequire = createRequire(filename);
     let source = readFileSync(filename, 'utf8');
-    if (filename.endsWith(`${path.sep}main.ts`)) source += '\nmainWindow = {} as BrowserWindow;';
+    if (filename.endsWith(`${path.sep}main.ts`)) source += '\nmainWindow = { webContents: __control } as unknown as BrowserWindow;';
     const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021, esModuleInterop: true } }).outputText;
     vm.runInNewContext(js, {
-      module, exports: module.exports, __dirname: path.dirname(filename), console, process, crypto: webcrypto,
+      module, exports: module.exports, __dirname: path.dirname(filename), console, process, crypto: webcrypto, __control: control,
       require: (id: string) => id === 'electron' ? electron : id.startsWith('.') ? load(path.resolve(path.dirname(filename), `${id}.ts`)) : nativeRequire(id),
     }, { filename });
     return module.exports;
@@ -42,7 +44,7 @@ function mainHarness() {
   load(path.resolve('src/main/main.ts'));
   const call = async (name: string, ...args: any[]) => {
     assert.ok(handlers.has(name), `The ${name} IPC handler must be installed`);
-    return handlers.get(name)!(null, ...args);
+    return handlers.get(name)!({ sender: control, senderFrame: control.mainFrame }, ...args);
   };
   return {
     call,
