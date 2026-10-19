@@ -188,3 +188,13 @@ test('diagnostic settings survive IPC parsing and reject malformed toggles', () 
   }
   assert.equal(parseTrackingSettings({ ...base, merlinDiagnostics: null }), null);
 });
+
+test('standalone wardrobe flags round-trip without changing legacy defaults', () => {
+  const base = { enabled: true, markers: false, hat: true };
+  assert.deepEqual(parseTrackingSettings({ ...base, merlinHat: true, merlinRobe: false }),
+    { ...base, merlinHat: true, merlinRobe: false });
+  for (const flag of ['merlinHat', 'merlinRobe']) {
+    assert.equal(parseTrackingSettings({ ...base, [flag]: 'yes' }), null);
+  }
+  assert.deepEqual(parseTrackingSettings(base), base);
+});

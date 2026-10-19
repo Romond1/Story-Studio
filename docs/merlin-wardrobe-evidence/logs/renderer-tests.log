@@ -1,0 +1,16 @@
+✔ rigid diagnostic mode preserves the supplied head pose and all rest bones across yaw/pitch/distance (264.4339ms)
+✔ diagnostics can isolate costume, depth occlusion, and guides independently (100.7306ms)
+✔ mirror reflects in camera space without reversing the projection winding (90.5474ms)
+✔ comparison changes and loss reset dynamic state; compensation code remains available (117.1544ms)
+✔ lower-face depth proxy hides rear beard at the mouth while preserving front mustache and beard (84.3082ms)
+✔ hat and robe work without identity and preserve opaque wardrobe materials (92.0604ms)
+✔ robe has exactly one neck offset and attenuates head yaw independently of hat (123.8141ms)
+✔ optional wardrobe errors are isolated and late loads stay hidden after loss/disposal (346.2825ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1570.0313

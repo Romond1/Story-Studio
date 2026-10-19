@@ -56,12 +56,12 @@ export class MerlinTrackingDiagnostics {
     }
   }
 
-  update(options: MerlinDiagnostics, costume: T.Object3D) {
+  update(options: MerlinDiagnostics, costume: T.Object3D | null) {
     this.headGuides.visible = this.modelGuides.visible = options.enabled && options.axes;
     this.references.visible = options.enabled && options.referencePoints;
     this.wireframes.visible = options.enabled && options.occluderWireframe;
     this.origins.visible = options.enabled && options.attachmentOrigins;
-    if (this.origins.visible) {
+    if (this.origins.visible && costume) {
       costume.updateWorldMatrix(true, true);
       costume.traverse(obj => {
         if (!['Head_Root', 'Jaw', 'Hair_L_1', 'Hair_R_1', 'Beard_C_1', 'Beard_L_1', 'Beard_R_1', 'Mustache_L', 'Mustache_R'].includes(obj.name)) return;

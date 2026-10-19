@@ -23,7 +23,8 @@ function fixture() {
   root.add(new T.Mesh(new T.BoxGeometry(.1, .2, .1), new T.MeshStandardMaterial()));
   return root;
 }
-function overlay() {
+function overlay({ failAsset, deferAssets = false } = {}) {
+  const pending = [];
   class Renderer {
     constructor({ canvas }) { this.canvas = canvas; }
     setClearColor() {} clear() {} dispose() {}
@@ -34,12 +35,18 @@ function overlay() {
   const module = new Module(filename); module.filename = filename; module.paths = Module._nodeModulePaths(path.dirname(filename));
   const original = module.require.bind(module);
   module.require = name => name === 'three' ? { ...T, WebGLRenderer: Renderer }
-    : name.includes('GLTFLoader') ? { GLTFLoader: class { load(_url, done) { done({ scene: fixture() }); } } } : original(name);
+    : name.includes('GLTFLoader') ? { GLTFLoader: class { load(url, done, _progress, failed) {
+      const finish = () => url.includes(failAsset || '__none__') ? failed(new Error('Synthetic asset failure'))
+        : done({ scene: fixture() });
+      if (deferAssets && !url.includes('merlin_identity')) pending.push(finish); else finish();
+    } } } : original(name);
   module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021 },
   }).outputText, filename);
   global.document = { baseURI: 'http://localhost/' };
-  return new module.exports.MerlinCostumeOverlay({ width: 1, height: 1, dataset: {} });
+  const view = new module.exports.MerlinCostumeOverlay({ width: 1, height: 1, dataset: {} });
+  view.finishWardrobeLoads = () => pending.splice(0).forEach(finish => finish());
+  return view;
 }
 const rigid = {
   enabled: true, hairRoots: false, pitchCompensation: false, residualRegistration: false,
@@ -127,4 +134,70 @@ test('lower-face depth proxy hides rear beard at the mouth while preserving fron
     }
   }
   view.dispose();
+});
+
+test('hat and robe work without identity and preserve opaque wardrobe materials', () => {
+  const view = overlay();
+  const selected = { ...settings(rigid), merlin: false, merlinHat: true, merlinRobe: true };
+  view.updateAndRender(pose(), selected, false, 1280, 720, 100);
+  assert.equal(view.canvas.dataset.merlinHat, 'ready');
+  assert.equal(view.canvas.dataset.merlinRobe, 'ready');
+  assert.equal(view.costumeRoot, null, 'identity need not load for standalone wardrobe');
+  for (const slot of [view.wardrobe.hat, view.wardrobe.robe]) {
+    assert.equal(slot.root.visible, true);
+    slot.root.traverse(obj => { if (obj.isMesh) assert.equal(obj.material.transparent, false); });
+  }
+  view.updateAndRender(pose(), { ...selected, merlinHat: false }, false, 1280, 720, 180);
+  assert.equal(view.wardrobe.hat.root.visible, false);
+  assert.equal(view.wardrobe.robe.root.visible, true);
+  view.dispose();
+});
+test('robe has exactly one neck offset and attenuates head yaw independently of hat', () => {
+  const view = overlay();
+  const selected = { ...settings(rigid), merlinHat: true, merlinRobe: true };
+  const input = pose(0, 0); // fixture includes .1 roll; test a neutral matrix explicitly
+  input.matrix = new T.Matrix4().makeTranslation(2, 3, -60).toArray();
+  view.updateAndRender(input, selected, false, 1280, 720, 100);
+  const localNeck = new T.Vector3(0, -.135, -.008);
+  const hatNeck = localNeck.clone().applyMatrix4(view.modelOffsetGroup.matrixWorld);
+  view.wardrobe.robe.root.updateWorldMatrix(true, true);
+  const robeNeck = localNeck.clone().applyMatrix4(view.wardrobe.robe.root.matrixWorld);
+  assert.ok(hatNeck.distanceTo(robeNeck) < 1e-8, 'zero-pose wardrobe must share the authored frame without double neck translation');
+  const compensated = { ...selected, merlinDiagnostics: { ...rigid, residualRegistration: true } };
+  view.updateAndRender(input, compensated, false, 1280, 720, 140);
+  const sharedNeck = localNeck.clone().applyMatrix4(view.modelOffsetGroup.matrixWorld);
+  const registeredRobeNeck = localNeck.clone().applyMatrix4(view.wardrobe.robe.root.matrixWorld);
+  assert.ok(sharedNeck.distanceTo(registeredRobeNeck) < 1e-8, 'torso translation must follow the displayed head registration');
+  for (let i = 1; i <= 30; i++) view.updateAndRender(pose(0, 1), selected, false, 1280, 720, 100 + i * 33);
+  const body = new T.Euler().setFromQuaternion(view.wardrobe.robeAnchor.quaternion, 'YXZ');
+  assert.ok(Math.abs(body.y - .25) < .02);
+  assert.ok(Math.abs(new T.Euler().setFromQuaternion(view.headAnchor.quaternion, 'YXZ').y - 1) < 1e-8);
+  view.dispose();
+});
+test('optional wardrobe errors are isolated and late loads stay hidden after loss/disposal', () => {
+  const view = overlay({ failAsset: 'merlin_hat' });
+  const selected = { ...settings(rigid), merlinHat: true, merlinRobe: true };
+  view.updateAndRender(pose(), selected, false, 1280, 720, 100);
+  assert.equal(view.canvas.dataset.merlinHat, 'error');
+  assert.equal(view.canvas.dataset.merlinRobe, 'ready');
+  assert.equal(view.canvas.dataset.merlinPose, 'tracking');
+  assert.equal(view.costumeRoot.visible, true);
+  view.dispose();
+  const failedIdentity = overlay({ failAsset: 'merlin_identity' });
+  failedIdentity.updateAndRender(pose(), selected, false, 1280, 720, 100);
+  assert.equal(failedIdentity.canvas.dataset.merlinAsset, 'error');
+  assert.equal(failedIdentity.canvas.dataset.merlinHat, 'ready');
+  assert.equal(failedIdentity.canvas.dataset.merlinRobe, 'ready');
+  assert.equal(failedIdentity.canvas.dataset.merlinPose, 'tracking');
+  failedIdentity.dispose();
+  const late = overlay({ deferAssets: true });
+  late.updateAndRender(pose(), selected, false, 1280, 720, 100);
+  late.updateAndRender(null, selected, false, 1280, 720, 150);
+  late.finishWardrobeLoads();
+  assert.equal(late.wardrobe.hat.root.visible, false);
+  late.dispose();
+  const disposed = overlay({ deferAssets: true });
+  disposed.updateAndRender(pose(), selected, false, 1280, 720, 100);
+  disposed.dispose(); disposed.finishWardrobeLoads();
+  assert.equal(disposed.wardrobe.hat.root, null);
 });

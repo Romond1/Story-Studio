@@ -9,7 +9,7 @@ const commands = require('../dist-test/shared/lesson/commands');
 
 (async () => {
   const root = path.resolve(__dirname, '..'), temp = await fs.mkdtemp(path.join(os.tmpdir(), 'story-merlin-workflow-'));
-  const folder = path.join(temp, 'lesson'), evidence = path.join(root, 'docs/merlin-phase1-evidence/core-workflows');
+  const folder = path.join(temp, 'lesson'), evidence = process.env.STORY_STUDIO_MERLIN_WORKFLOW_EVIDENCE || path.join(root, 'docs/merlin-phase1-evidence/core-workflows');
   await fs.mkdir(folder); await fs.mkdir(evidence, { recursive: true });
   let project = commands.createLesson('Merlin phase 1 workflow check');
   for (const [title, color] of [['First scene', '#123456'], ['Second scene', '#abcdef']]) {

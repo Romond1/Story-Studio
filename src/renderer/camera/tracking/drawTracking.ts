@@ -6,7 +6,8 @@ import { FACE_GEOMETRY_VFOV } from '../../../shared/facePoseMath';
 /** Separate post-key overlay: costume pixels never pass through the chroma matte. */
 export function drawTracking(canvas: HTMLCanvasElement, pose: FacePose | null, settings: TrackingSettings, mirror: boolean, width: number, height: number) {
   const diagnostics = merlinOptions(settings);
-  if (!pose || !settings.enabled || (!settings.hat && !settings.markers && !diagnostics.enabled)) {
+  const temporaryHat = settings.hat && !settings.merlinHat;
+  if (!pose || !settings.enabled || (!temporaryHat && !settings.markers && !diagnostics.enabled)) {
     releaseTrackingCanvas(canvas);
     return;
   }
@@ -16,7 +17,7 @@ export function drawTracking(canvas: HTMLCanvasElement, pose: FacePose | null, s
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   if (mirror) { ctx.translate(width, 0); ctx.scale(-1, 1); }
-  if (settings.hat && !diagnostics.enabled) {
+  if (temporaryHat && !diagnostics.enabled) {
     const hat = buildHatGeometry(pose, width, height);
     ctx.lineWidth = Math.max(1, hat.span * .008); ctx.strokeStyle = '#f6d977';
     ctx.beginPath(); hat.brim.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));

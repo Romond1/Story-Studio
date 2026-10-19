@@ -1,0 +1,26 @@
+[
+  {
+    "file": "merlin_hat.glb",
+    "bytes": 4855352,
+    "sha256": "ed6f28ee01c0e6b909e30fe6069e37b223da6f04ca8d0aa2d4f4f3c6b0fcba1d",
+    "matchesArgonSource": true
+  },
+  {
+    "file": "merlin_robe.glb",
+    "bytes": 6083248,
+    "sha256": "606e4f8a140854cb7eb6a8b0712dd3160b2af71750a9de5b9c7581e1a306fa80",
+    "matchesArgonSource": true
+  },
+  {
+    "file": "merlin_identity.glb",
+    "bytes": 10596664,
+    "sha256": "c9ee92482e40d2bbfa1e67e2df1ffc7dab22c49cddb519b23d433cec55443495",
+    "matchesArgonSource": true
+  },
+  {
+    "file": "merlin_identity_checkpoint_c1_rollback.glb",
+    "bytes": 7860972,
+    "sha256": "66b12f27599756fd4a41fcdb92c8f5b822f3fa09a03793bbb1d80e034154d36e",
+    "matchesArgonSource": true
+  }
+]

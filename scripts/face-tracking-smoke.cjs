@@ -179,6 +179,37 @@ const commands = require('../dist-test/shared/lesson/commands');
     await present.waitForFunction(() => document.querySelector('.merlin-costume-overlay').width === 1);
     assert.equal(await control.evaluate(async () => (await window.cameraControl.get()).settings.tracking.merlinDiagnostics), undefined);
     pass('Real Merlin GLB emits pixels; depth-only proxy stays invisible; hidden developer UI, rigid/compensated presets, toggles and diagnostic teardown work');
+    // Exercise independently loaded wardrobe with the real assets and renderer.
+    await set({ tracking: { merlin: false, markers: false, hat: true } });
+    await control.getByLabel('Show Merlin 3D hat', { exact: true }).check();
+    await present.waitForFunction(() => document.querySelector('.merlin-costume-overlay').dataset.merlinHat === 'ready'
+      && document.querySelector('.face-landmark-overlay').width === 1);
+    await present.waitForTimeout(200);
+    await present.evaluate(() => { window.merlinPixelProbe = { samples: 0, maximumAlphaPixels: 0 }; });
+    await present.waitForFunction(() => window.merlinPixelProbe.maximumAlphaPixels > 100);
+    await present.evaluate(() => { window.merlinPixelProbe = null; });
+    await present.screenshot({ path: path.join(evidence, 'wardrobe-hat-only.png') });
+    await set({ tracking: { merlinHat: false, hat: false, merlinRobe: true } });
+    await present.waitForFunction(() => document.querySelector('.merlin-costume-overlay').dataset.merlinRobe === 'ready');
+    await present.waitForTimeout(200);
+    await present.evaluate(() => { window.merlinPixelProbe = { samples: 0, maximumAlphaPixels: 0 }; });
+    await present.waitForFunction(() => window.merlinPixelProbe.maximumAlphaPixels > 100);
+    await present.evaluate(() => { window.merlinPixelProbe = null; });
+    await present.screenshot({ path: path.join(evidence, 'wardrobe-robe-only.png') });
+    await set({ tracking: { merlin: true, merlinHat: true, merlinRobe: true } });
+    await present.waitForFunction(() => document.querySelector('.merlin-costume-overlay').dataset.merlinPose === 'tracking');
+    await present.screenshot({ path: path.join(evidence, 'wardrobe-ensemble.png') });
+    const beforeMirror = await present.evaluate(() => window.faceMetrics.results);
+    await set({ mirror: true });
+    await present.waitForFunction(before => window.faceMetrics.results >= before + 3 && window.latestFace
+      && document.querySelector('.merlin-costume-overlay').dataset.merlinPose === 'tracking', beforeMirror);
+    await present.screenshot({ path: path.join(evidence, 'wardrobe-ensemble-mirrored.png') });
+    await control.getByLabel('Show Merlin 3D robe · experimental', { exact: true }).scrollIntoViewIfNeeded();
+    await control.screenshot({ path: path.join(evidence, 'wardrobe-controls-narrow.png') });
+    await set({ mirror: false, tracking: { merlin: false, merlinHat: false, merlinRobe: false, markers: true, hat: true } });
+    await present.waitForFunction(() => document.querySelector('.merlin-costume-overlay').width === 1
+      && document.querySelector('.face-landmark-overlay').width > 1);
+    pass('Real standalone hat/robe emit pixels independently; temporary hat handoff, ensemble, mirror and teardown work');
     const inspect = async mirror => {
       await set({ mirror });
       await present.waitForTimeout(200);

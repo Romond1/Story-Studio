@@ -4,6 +4,7 @@ import type { FacePose } from '../../../shared/faceTracking';
 import { merlinOptions, type TrackingSettings } from '../../../shared/faceTrackingProtocol';
 import { configureFaceCamera, FACE_GEOMETRY_VFOV, readRigidFaceTransform } from '../../../shared/facePoseMath';
 import { MerlinTrackingDiagnostics } from './MerlinTrackingDiagnostics';
+import { MerlinWardrobe } from './MerlinWardrobe';
 
 interface ChainBoneState {
   bone: T.Bone;
@@ -78,6 +79,8 @@ export class MerlinCostumeOverlay {
   private loaded = false;
   private failed = false;
   private disposed = false;
+  private modelFailed = false;
+  private wardrobe: MerlinWardrobe;
 
   // Motion, smoothing & confidence-hold state
   private lastTime = 0;
@@ -94,6 +97,8 @@ export class MerlinCostumeOverlay {
 
   constructor(private canvas: HTMLCanvasElement) {
     this.setupScene();
+    this.wardrobe = new MerlinWardrobe(this.modelOffsetGroup, this.mirrorRoot, MODEL_SCALE_CM, MODEL_OFFSET_CM,
+      new GLTFLoader(), root => this.disposeObjects(root), canvas);
   }
 
   private setupScene() {
@@ -193,7 +198,7 @@ export class MerlinCostumeOverlay {
   }
 
   private ensureModelLoaded() {
-    if (this.loaded || this.loading || this.failed || this.disposed) return;
+    if (this.loaded || this.loading || this.modelFailed || this.disposed) return;
     this.loading = true;
     this.canvas.dataset.merlinAsset = 'loading';
     const loader = new GLTFLoader();
@@ -281,7 +286,7 @@ export class MerlinCostumeOverlay {
       undefined,
       () => {
         this.loading = false;
-        this.failed = true;
+        this.modelFailed = true;
         this.canvas.dataset.merlinAsset = 'error';
       }
     );
@@ -419,6 +424,7 @@ export class MerlinCostumeOverlay {
     this.lastTime = 0;
     this.prevVelCm.set(0, 0, 0);
     this.smoothedJawOpen = 0;
+    this.wardrobe?.reset();
     for (const c of this.chains) {
       c.angleRoll = c.velRoll = c.anglePitch = c.velPitch = c.angleYaw = c.velYaw = 0;
       c.bone.position.copy(c.restPos); c.bone.quaternion.copy(c.restQuat);
@@ -437,21 +443,21 @@ export class MerlinCostumeOverlay {
     now: number
   ) {
     const options = merlinOptions(settings);
-    if (!pose || !settings.enabled || (!settings.merlin && !options.enabled)) {
+    if (!pose || !settings.enabled || (!settings.merlin && !settings.merlinHat && !settings.merlinRobe && !options.enabled)) {
       this.clear();
       return;
     }
 
-    this.ensureModelLoaded();
+    if (settings.merlin) this.ensureModelLoaded();
     const renderer = this.ensureRenderer(width, height);
-    if (!renderer || !this.loaded || !this.costumeRoot) {
+    if (!renderer) {
       return;
     }
 
     const motionMode = [options.hairRoots, options.pitchCompensation, options.residualRegistration,
       options.springMotion, options.jawMotion].join(':');
     if (motionMode !== this.motionMode) { this.resetMotion(); this.motionMode = motionMode; }
-    this.costumeRoot.visible = !!settings.merlin && options.costume;
+    if (this.costumeRoot) this.costumeRoot.visible = !!settings.merlin && options.costume;
     this.occlusionGroup.visible = options.occlusion;
     this.canvas.dataset.merlinMode = options.enabled ? 'diagnostic' : 'normal';
 
@@ -539,6 +545,7 @@ export class MerlinCostumeOverlay {
     this.headAnchor.position.copy(posCm);
     this.headAnchor.quaternion.copy(rotQuat);
     this.headAnchor.scale.set(1, 1, 1);
+    this.wardrobe.update(settings, options.costume, posCm, rotQuat, dt);
 
     // Compute head linear and angular velocities (in cm/s and rad/s) for secondary motion
     const velCm = this.hasPrevPose
@@ -590,7 +597,7 @@ export class MerlinCostumeOverlay {
       c.bone.position.copy(c.restPos);
       if (!options.springMotion) c.bone.quaternion.copy(c.restQuat);
     }
-    this.costumeRoot.updateWorldMatrix(true, true);
+    this.modelOffsetGroup.updateWorldMatrix(true, true);
     const modelGroupWorldInv = this.modelOffsetGroup.matrixWorld.clone().invert();
 
     // Retained empirical root retraction in model space. Not an anatomical fit.
@@ -622,7 +629,7 @@ export class MerlinCostumeOverlay {
       }
     }
 
-    this.costumeRoot.updateMatrixWorld(true);
+    this.costumeRoot?.updateMatrixWorld(true);
 
     for (const c of this.chains) {
       if (!options.springMotion || (c.gravityWeight === 0 && c.inertiaWeight === 0)) {
@@ -734,6 +741,7 @@ export class MerlinCostumeOverlay {
     this.disposed = true;
     this.clear();
     this.trackingDiagnostics?.dispose(); this.trackingDiagnostics = null;
+    this.wardrobe.dispose();
     this.disposeObjects(this.scene);
     if (this.renderer) {
       this.renderer.dispose();
