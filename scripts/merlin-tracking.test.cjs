@@ -109,3 +109,22 @@ test('comparison changes and loss reset dynamic state; compensation code remains
   assert.equal(view.canvas.width, 1);
   view.dispose();
 });
+
+test('lower-face depth proxy hides rear beard at the mouth while preserving front mustache and beard', () => {
+  const view = overlay();
+  const hiddenByHead = point => {
+    const world = point.clone().applyMatrix4(view.modelOffsetGroup.matrixWorld);
+    const ray = new T.Raycaster(new T.Vector3(), world.clone().normalize(), 0, world.length() - 1e-4);
+    return ray.intersectObject(view.occlusionGroup, true).length > 0;
+  };
+  for (const mirror of [false, true]) {
+    for (const degrees of [0, -30, 30, -60, 60]) {
+      view.updateAndRender(pose(0, degrees * Math.PI / 180), settings(rigid), mirror, 1280, 720, 100);
+      const farSide = Math.sign(degrees);
+      assert.ok(hiddenByHead(new T.Vector3(farSide * .025, -.060, .045)), `mouth coverage at ${degrees}°, mirror=${mirror}`);
+      assert.equal(hiddenByHead(new T.Vector3(0, -.030, .105)), false, `front mustache at ${degrees}°, mirror=${mirror}`);
+      assert.equal(hiddenByHead(new T.Vector3(0, -.120, .110)), false, `front beard below chin at ${degrees}°, mirror=${mirror}`);
+    }
+  }
+  view.dispose();
+});

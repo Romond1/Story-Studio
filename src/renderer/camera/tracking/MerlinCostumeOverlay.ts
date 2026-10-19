@@ -149,6 +149,18 @@ export class MerlinCostumeOverlay {
     noseBridgeOccluder.renderOrder = -10;
     this.occlusionGroup.add(noseBridgeOccluder);
 
+    // 4. Extend central coverage through the mouth/lower cheeks to the chin.
+    // Keep the front shallower (+Z <= .074m) than the mustache rather than
+    // enlarging the nose/mid-face shield forward and swallowing lip hair.
+    // This remains a fixed approximation; its fit needs physical-camera review.
+    const lowerFaceGeo = new T.SphereGeometry(1, 28, 22);
+    lowerFaceGeo.scale(0.064, 0.043, 0.064);
+    const lowerFaceOccluder = new T.Mesh(lowerFaceGeo, occluderMat);
+    lowerFaceOccluder.name = 'Merlin_LowerFaceOccluder';
+    lowerFaceOccluder.position.set(0, -0.036, 0.010);
+    lowerFaceOccluder.renderOrder = -10;
+    this.occlusionGroup.add(lowerFaceOccluder);
+
     this.modelOffsetGroup.add(this.occlusionGroup);
     this.mirrorRoot.add(this.headAnchor);
     this.scene.add(this.mirrorRoot);
