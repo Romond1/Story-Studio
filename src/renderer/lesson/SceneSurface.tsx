@@ -6,6 +6,8 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import type { ScenePlan, SceneObjectPlan } from '../../shared/lesson/projection';
 import type { Rect } from '../../shared/lesson/model';
 import type { MarkerStroke } from '../../shared/types';
+import type { VideoTrimSettings } from '../../shared/types';
+import { bindEditVideoTrim } from './editVideoPlayback';
 import { CardV2Scene } from '../cardsV2/CardV2Scene';
 import { LogicalFrameScaleContext, LogicalSceneFrame, PassiveDrawings } from '../StaticScene';
 import { RewardScene } from '../RewardScene';
@@ -31,13 +33,15 @@ export function normalizedSceneDrawings(strokes: MarkerStroke[], frame: ScenePla
   return strokes.map(stroke => ({ ...stroke, points: stroke.points.map(point => ({ ...point, x: point.x / frame.width, y: point.y / frame.height })) }));
 }
 
-export function EditSceneVideo({ src, interactive = true }: { src: string; interactive?: boolean }) {
+export function EditSceneVideo({ src, interactive = true, trim, onElement }: { src: string; interactive?: boolean; trim?: VideoTrimSettings; onElement?: (video: HTMLVideoElement | null) => void }) {
   const element = useRef<HTMLVideoElement>(null);
-  useEffect(() => { const video = element.current; if (!video) return; video.muted = true; return () => { video.pause(); }; }, [src]);
-  return <video ref={element} src={src} controls={interactive} muted playsInline preload="metadata" disablePictureInPicture controlsList="nodownload noremoteplayback"
+  // Edit owns local playback; native sound controls must remain under the user's control.
+  useEffect(() => { const video = element.current; if (!video) return; return () => { video.pause(); }; }, [src]);
+  useEffect(() => { onElement?.(element.current); return () => onElement?.(null); }, [src, onElement]);
+  useEffect(() => { if (trim && element.current) return bindEditVideoTrim(element.current, trim); }, [src, trim]);
+  return <video ref={element} src={src} controls={interactive} playsInline preload="metadata" disablePictureInPicture controlsList="nodownload noremoteplayback"
     aria-label="Edit video preview" data-edit-video-preview="true" style={{ pointerEvents: interactive ? 'auto' : 'none' }}
-    onPointerDown={event => { if (interactive) event.stopPropagation(); }} onPointerUp={event => { if (interactive) event.stopPropagation(); }}
-    onVolumeChange={event => { if (!event.currentTarget.muted) event.currentTarget.muted = true; }} />;
+    onPointerDown={event => { if (interactive) event.stopPropagation(); }} onPointerUp={event => { if (interactive) event.stopPropagation(); }} />;
 }
 
 /** Built-in bubbles are vectors, so the same complete shape renders without placeholder image files. */
@@ -201,7 +205,7 @@ export function SceneSurface({ plan, surface, selectedObjectId, selectedObjectId
         }}>
         <div className="lesson-scene-background" data-scene-background={plan.background.mediaType ?? 'color'}>
           {plan.background.mediaType === 'image' && plan.background.src && <img src={plan.background.src} alt="" draggable={false} />}
-          {plan.background.mediaType === 'video' && (video ?? (surface === 'edit' && plan.background.src ? <EditSceneVideo key={plan.background.src} src={plan.background.src} interactive={!drawing} /> : null))}
+          {plan.background.mediaType === 'video' && (video ?? (surface === 'edit' && plan.background.src ? <EditSceneVideo key={plan.background.src} src={plan.background.src} interactive={!drawing} trim={plan.background.videoTrim} /> : null))}
         </div>
         {plan.objects.map((object, index) => {
           const box = groupDraft.find(o => o.id === object.id)?.box ?? (draft?.id === object.id ? draft.box : object.box);

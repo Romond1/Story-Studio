@@ -36,7 +36,9 @@ import { cardAction, createSession, exitActivation, navigate, reconcileSession, 
 import { parseSceneDocument } from '../../shared/lesson/validation';
 import { ProjectHistory } from '../../shared/projectHistory';
 import { projectScene } from '../../shared/lesson/projection';
-import { SceneSurface } from './SceneSurface';
+import { SceneSurface, EditSceneVideo } from './SceneSurface';
+import { SceneVideoTrimControls } from './SceneVideoTrimControls';
+import { updateSceneVideoTrim } from '../../shared/lessonVideoTrim';
 import { SceneInspector } from './SceneInspector';
 import { LessonTimeline } from './LessonTimeline';
 import { LessonMediaPool, LESSON_ASSET_DRAG } from './LessonMediaPool';
@@ -78,6 +80,7 @@ export function LessonApp() {
   const [activeBinId, setActiveBinId] = useState('');
   const [file, setFile] = useState<LessonProjectState | null>(null);
   const [project, setProject] = useState<LessonProject | null>(null);
+  const [editVideo, setEditVideo] = useState<HTMLVideoElement | null>(null);
   useLessonMouseSafety(!!project);
   const layout = useWorkspaceLayout();
   const latest = useRef(project); latest.current = project;
@@ -181,7 +184,7 @@ export function LessonApp() {
   const videoAsset = liveScene && project?.assets.find(asset => asset.id === liveScene.background.assetId && asset.mediaType === 'video');
   const mediaIdentity = videoAsset ? `${project!.id}:${session.cursor!.entryId}:${session.visit}:${videoAsset.id}` : null;
   const restoreGameMedia = !activeGame && !!gameMediaReturn.current && gameMediaReturn.current.identity === mediaIdentity && (gameMediaSuspended.current || !gameSection);
-  const media = usePresentationMedia(!activeGame ? mediaIdentity : null, { enabled: true, volume: 1 }, undefined, mode === 'teach' && !!videoAsset && !gameSection,
+  const media = usePresentationMedia(!activeGame ? mediaIdentity : null, { enabled: true, volume: 1 }, liveScene?.background.videoTrim, mode === 'teach' && !!videoAsset && !gameSection,
     gameMediaReturn.current?.identity === mediaIdentity ? gameMediaReturn.current.position : 0, restoreGameMedia);
   useEffect(() => {
     if (restoreGameMedia && media.intent) {
@@ -216,7 +219,7 @@ export function LessonApp() {
 
   const editCommand = (work: () => void) => { try { work(); } catch (reason) { setError(String(reason)); } };
 
-  const apply = (value: LessonProject) => { if (operation.current || value === latest.current) return; history.current.record(value); latest.current = value; setProject(value); setSession(old => reconcileSession(value, old)); };
+  const apply = (value: LessonProject, group?: object) => { if (operation.current || value === latest.current) return; history.current.record(value, group); latest.current = value; setProject(value); setSession(old => reconcileSession(value, old)); };
   const changeScene = (scene: LessonScene) => {
     if (!project) return;
     apply(putScene(project, { ...scene, objects: scene.objects.map(item => ({ ...item, box: fitBox(item.box, scene.frame) })) }));
@@ -249,7 +252,7 @@ export function LessonApp() {
     const snapshot = { sessionId: session.id, revision: ++revision.current, ...(rosterProjection?{roster:rosterProjection}:{}), target: activeGame
       ? { kind: 'game' as const, occurrenceId: activeGame.instanceId, ...activeGame, ...(activeGame.gameId==='hero-dash'?{dash:dashProjection(dash,resolve)}:{}) }
       : presentationPlan
-      ? { kind: 'scene' as const, occurrenceId: `${session.cursor!.entryId}:${session.visit}`, plan: presentationPlan, ...(media.intent && videoAsset ? { media: media.intent } : {}) }
+      ? { kind: 'scene' as const, occurrenceId: `${session.cursor!.entryId}:${session.visit}`, plan: presentationPlan, ...(media.intent && presentationPlan.background.mediaType === 'video' ? { media: media.intent } : {}) }
       : { kind: 'empty' as const, occurrenceId: 'empty' } };
     void window.appApi.publishPresentSnapshot(snapshot).then(ok => { if (!ok) setError('The presentation rejected this scene. Your authored changes are still available.'); }).catch(reason => setError(String(reason)));
   }, [presentationPlan, session.id, JSON.stringify(media.intent), activeGame, rosterProjection, dash, resolve]);
@@ -584,13 +587,16 @@ export function LessonApp() {
               erasableStrokeIds={mode === 'teach' ? session.drawings.map(stroke => stroke.id) : undefined} drawingTool={drawTool} drawColor={drawColor} drawSize={drawSize}
               onErase={ids => mode === 'edit' && editScene ? changeScene({ ...editScene, drawings: editScene.drawings.filter(stroke => !ids.includes(stroke.id)) }) : setSession(old => setLiveDrawings(old, old.drawings.filter(stroke => !ids.includes(stroke.id))))}
               onInteract={id => { setLiveObject(id); setSession(old => cardAction(project, old, id, 'interact')); }}
-              video={mode === 'teach' && videoAsset ? <LiveVideo stream={media.previewStream} /> : undefined}
+              video={mode === 'teach' && videoAsset ? <LiveVideo stream={media.previewStream} /> : mode === 'edit' && plan.background.mediaType === 'video' && plan.background.src
+                ? <EditSceneVideo key={`${selection.entryId}:${plan.background.src}`} src={plan.background.src} interactive={!drawing} trim={editScene?.background.videoTrim} onElement={setEditVideo} /> : undefined}
               drawing={drawing} onDraw={stroke => mode === 'edit' && editScene ? changeScene({ ...editScene, drawings: [...editScene.drawings, stroke] }) : setSession(old => setLiveDrawings(old, [...old.drawings, stroke]))} />
               : <div className="lesson-empty"><h2>{mode === 'edit' ? 'Build your sequence' : 'Choose a scene to teach'}</h2><p>{mode === 'edit' ? 'Import media and drag it into the timeline, or add a blank scene.' : 'Select a scene in the timeline below.'}</p></div>}
           </div>
           {mode === 'teach' && videoAsset && <div className="lesson-toolbar"><button onClick={() => void media.command('play')}>Play video</button><button onClick={() => void media.command('pause')}>Pause video</button><button onClick={() => void media.command('replay')}>Replay video</button><label>Video position<input aria-label="Video position" type="range" min="0" max={media.status?.durationSec || 1} step=".1" value={media.status?.positionSec ?? 0} onChange={e => void media.command('seek', Number(e.target.value))} /></label><span>{media.error ?? (media.available ? media.status?.state ?? 'Ready' : 'Open Present to play video')}</span></div>}
           {layout.splitter('timeline')}
           <LessonTimeline resolveAsset={resolve} onHistory={historyStep} onProjectChange={apply} project={project} sequence={currentSequence} selectedEntryId={mode === 'edit' ? selection.entryId : session.cursor?.entryId ?? null} live={session.cursor} readOnly={mode === 'teach'}
+            videoControls={mode === 'edit' && editScene && editPlan?.background.mediaType === 'video' ? <SceneVideoTrimControls key={selection.entryId} video={editVideo} trim={editScene.background.videoTrim}
+              onChange={(trim, duration, group) => { if (!busy) apply(updateSceneVideoTrim(project, editScene.id, trim, duration), group); }} /> : undefined}
             onSelect={entryId => { if (mode === 'edit') setSelection(old => ({ ...old, entryId, objectId: null })); else setSession(old => navigate(project, old, { sequence: currentSequence, entryId })); }} onAdd={addScenes}
             onReorder={(id, before) => apply(reorderEntry(project, selection.sequence, id, before))}
             onDelete={id => { const next = removeEntry(project, selection.sequence, id); apply(next); setSelection(old => ({ ...old, entryId: next.sequences[old.sequence][0]?.id ?? null, objectId: null })); }}

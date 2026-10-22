@@ -10,6 +10,14 @@ function isFiniteTime(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+export function isVideoTrimSettings(value: unknown): value is VideoTrimSettings {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const trim = value as Record<string, unknown>;
+  return Object.keys(trim).every(key => key === 'inSec' || key === 'outSec')
+    && isFiniteTime(trim.inSec) && trim.inSec >= 0
+    && (trim.outSec === undefined || isFiniteTime(trim.outSec) && trim.outSec > trim.inSec);
+}
+
 function clampTime(value: number, durationSec: number): number {
   return Math.max(0, Math.min(durationSec, value));
 }

@@ -65,7 +65,7 @@
 .lesson-app .studio-primary, .lesson-canvas-tools > .studio-creative, .lesson-app .lesson-pool-import { border-color: var(--studio-primary-border); background: var(--studio-action-fill); }
 .lesson-canvas-tools > .studio-creative { min-height: 35px; }
 .lesson-panel-heading { background: var(--studio-panel-fill); }
-.lesson-app .lesson-pool .lesson-panel-heading { padding: 6px 8px; min-height: 38px; }
+.lesson-app .lesson-pool .lesson-panel-heading { padding: 2px 7px; min-height: 30px; }
 .lesson-app .lesson-pool .lesson-panel-content { gap: 6px; padding: 7px; }
 .lesson-app .lesson-pool-search input { width: 0; padding: 5px 7px; font-size: 12px; }
 .lesson-app .lesson-pool-search button { padding: 4px 6px; min-height: 28px; }

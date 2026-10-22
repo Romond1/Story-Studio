@@ -17,6 +17,9 @@
     ]
   },
   "include": [
+    "src/shared/lessonVideoTrim.test.ts",
+    "src/shared/mediaPoolActions.test.ts",
+    "src/shared/mediaDisplayName.test.ts",
     "src/shared/studentAdventureIntegration.test.ts",
     "src/shared/heroBoard.test.ts",
     "src/shared/rosterPresentation.test.ts",

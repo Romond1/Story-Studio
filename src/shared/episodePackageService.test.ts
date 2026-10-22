@@ -3,10 +3,35 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createLesson } from './lesson/commands';
+import { createLesson, createScene } from './lesson/commands';
 import { createModuleTemplate } from './modules/templates';
 import { exportEpisodePackage, importEpisodePackage, rejectPackageFolder } from '../main/episodePackageService';
 const fixture=()=>({...createLesson('Portable'),format:'story-studio-episode',version:1,adventure:{id:'adventure',version:'1'},requiredCapabilities:['derived-images-v1','manual-catalog-v1','adventure-definitions-v1'],derivedImages:[],catalog:{entities:[]},adventureDefinition:{id:'adventure',version:'1',name:'Adventure',description:'',rewards:[],relics:[]}});
+
+test('portable export/import preserves custom display titles, original filenames, IDs and exact media bytes', async t => {
+ const root = await fs.mkdtemp(path.join(os.tmpdir(), 'package-titles-'));
+ t.after(() => fs.rm(root, { recursive: true, force: true }));
+ const source = path.join(root, 'source'), target = path.join(root, 'package'), destination = path.join(root, 'editable');
+ for (const folder of [source, target, destination]) await fs.mkdir(folder);
+ await fs.mkdir(path.join(source, 'assets'));
+ const bytes = await fs.readFile(path.resolve('assets/Splash Screen/Story.png'));
+ const asset = { id: 'stable-picture', relativePath: 'assets/stable.png', filename: 'stable.png', originalName: 'FOREST_1920x1080_export.png', displayTitle: 'Forest at Dawn', hiddenFromMediaPool: true, mediaType: 'image', sizeBytes: bytes.length, importedAt: '' };
+ const videoBytes = await fs.readFile(path.resolve('docs/timeline-ux-demo/assets/video.webm'));
+ const video = { id: 'stable-video', relativePath: 'assets/stable.webm', filename: 'stable.webm', originalName: 'FOREST_WALK_1080p_30fps.webm', displayTitle: 'Walking Through the Forest', mediaType: 'video', sizeBytes: videoBytes.length, importedAt: '' };
+ const data = { ...fixture(), assets: [asset, video] };
+ const scene = createScene('Trimmed video', video.id); scene.background.videoTrim = { inSec: .5, outSec: 1.5 };
+ data.scenes[scene.id] = scene; data.sequences.story.push({ id: 'trimmed-entry', sceneId: scene.id, section: '' });
+ const before = JSON.stringify(data);
+ await fs.writeFile(path.join(source, asset.relativePath), bytes);
+ await fs.writeFile(path.join(source, video.relativePath), videoBytes);
+ await exportEpisodePackage({ source, target, data, builtinRoot: root, assertCurrent: () => {} });
+ const imported = await importEpisodePackage({ source: target, target: destination, assertCurrent: () => {} });
+ assert.deepEqual(imported.data.assets, [asset, video]);
+ assert.deepEqual(imported.data.scenes[scene.id].background.videoTrim, { inSec: .5, outSec: 1.5 });
+ assert.equal(JSON.stringify(data), before);
+ assert.deepEqual(await fs.readFile(path.join(destination, asset.relativePath)), bytes);
+ assert.deepEqual(await fs.readFile(path.join(destination, video.relativePath)), videoBytes);
+});
 test('package export excludes private files and import creates an editable verified copy',async()=>{
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'package-roundtrip-'));
  try{const source=path.join(root,'source'),target=path.join(root,'package'),destination=path.join(root,'editable');for(const p of [source,target,destination])await fs.mkdir(p);

@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type DragEvent, type MouseEvent, type ReactNode } from 'react';
 import type { LessonLocation, LessonProject, SequenceKind } from '../../shared/lesson/model';
-import { timelineDensity, timelineZoom } from '../../shared/lessonTimeline';
+import { timelineDensity, timelineZoom, timelineSceneTitle } from '../../shared/lessonTimeline';
 import { LESSON_ASSET_DRAG, LESSON_ENTRY_DRAG } from './LessonMediaPool';
 import { projectScene } from '../../shared/lesson/projection';
 import { SceneSurface } from './SceneSurface';
@@ -12,6 +12,7 @@ export interface LessonTimelineProps {
   project: LessonProject; sequence: SequenceKind; selectedEntryId: string | null; live: LessonLocation | null;
   resolveAsset: (id: string) => string | undefined;
   readOnly?: boolean;
+  videoControls?: ReactNode;
   onProjectChange?: (project: LessonProject) => void;
   onCardDrop?: (objectId: string, entryId: string) => void;
   onSelect: (entryId: string) => void;
@@ -40,6 +41,8 @@ export function LessonTimeline(p: LessonTimelineProps) {
   const box = useRef<{ x: number; y: number; base: string[] } | null>(null);
   const anchor = useRef<{ id: string; fraction: number; pointer: number } | null>(null);
   const entries = p.project.sequences[p.sequence];
+  const selectedScene = p.project.scenes[entries.find(entry => entry.id === p.selectedEntryId)?.sceneId ?? ""];
+  const selectedTitle = selectedScene ? timelineSceneTitle(selectedScene, p.project.assets.find(asset => asset.id === selectedScene.background.assetId)) : "";
   const sections = p.project.sections?.filter(s => s.sequence === p.sequence) ?? [];
   const groups = timelineGroups(p.project, p.sequence);
   const sectionOrder = [...new Set(groups.map(g => g.sectionId).filter((id): id is string => !!id))];
@@ -120,7 +123,7 @@ export function LessonTimeline(p: LessonTimelineProps) {
       else if (event.key === 'Escape') { setSelectedIds([]); setMenu(null); event.stopPropagation(); }
       else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); event.stopPropagation(); const index = entries.findIndex(e => e.id === p.selectedEntryId), next = entries[index + (event.key === 'ArrowLeft' ? -1 : 1)]; if (next) select(next.id, event); }
     }}>
-    <header className="lesson-timeline-toolbar"><strong>{p.sequence === 'story' ? 'Adventure' : 'Discovery'} <span>· {entries.length} scenes</span></strong>{!p.readOnly && <><button onClick={() => add(entries.find(e => e.id === p.selectedEntryId)?.sectionId)}>+ Scene</button><button onClick={() => setDraft({ name: '' })}>+ Section</button><button aria-label="Timeline actions" onClick={event => openMenu(event, p.selectedEntryId ?? undefined)}>•••</button></>}<span className="lesson-timeline-selection-count">{selectedIds.length > 1 ? `${selectedIds.length} selected` : ''}</span><label className="lesson-timeline-zoom"><span>Zoom</span><input aria-label="Timeline zoom" type="range" min=".45" max="2.6" step=".05" value={zoom} onChange={event => changeZoom(Number(event.target.value))} /><output>{Math.round(zoom * 100)}%</output></label></header>
+    <header className="lesson-timeline-toolbar"><strong>{p.sequence === 'story' ? 'Adventure' : 'Discovery'} <span>· {entries.length} scenes</span></strong>{!p.readOnly && <><button onClick={() => add(entries.find(e => e.id === p.selectedEntryId)?.sectionId)}>+ Scene</button><button onClick={() => setDraft({ name: '' })}>+ Section</button><button aria-label="Timeline actions" onClick={event => openMenu(event, p.selectedEntryId ?? undefined)}>•••</button>{p.videoControls}</>}<span className="lesson-timeline-selection-count">{selectedIds.length > 1 ? `${selectedIds.length} selected` : ''}</span><label className="lesson-timeline-zoom"><span>Zoom</span><input aria-label="Timeline zoom" type="range" min=".45" max="2.6" step=".05" value={zoom} onChange={event => changeZoom(Number(event.target.value))} /><output>{Math.round(zoom * 100)}%</output></label></header>
     {draft && <form className="lesson-section-form" onSubmit={event => { event.preventDefault(); run(() => { if (!draft.name.trim()) throw new Error('Enter a section name.'); p.onProjectChange?.(draft.id ? renameSection(p.project, draft.id, draft.name) : addSection(p.project, p.sequence, draft.name).project); setDraft(null); }); }}><label>Section name <input autoFocus value={draft.name} maxLength={500} onChange={event => setDraft({ ...draft, name: event.target.value })} /></label><button>Save section</button><button type="button" onClick={() => setDraft(null)}>Cancel</button></form>}
     {error && <p role="alert" className="lesson-error">{error}</p>}
     <div className="lesson-timeline-strip" ref={strip} tabIndex={0} aria-label="Timeline scenes" onDragEnd={() => setDropKey(null)} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDropKey(null); }}
@@ -136,10 +139,10 @@ export function LessonTimeline(p: LessonTimelineProps) {
         <div className="lesson-section-dropzone" data-section-id={group.sectionId ?? 'ungrouped'} onDragOver={event => accept(event, group.sectionId)} onDrop={event => drop(event, group.sectionId, timelineGroupBoundary(p.project, p.sequence, group), group.entries[0]?.id)}>
           {!hidden && group.entries.map((entry, localIndex) => { const scene = p.project.scenes[entry.sceneId], asset = p.project.assets.find(a => a.id === scene?.background.assetId), index = entries.findIndex(e => e.id === entry.id), isEdit = entry.id === p.selectedEntryId, isLive = p.live?.sequence === p.sequence && p.live.entryId === entry.id, linked = Object.values(p.project.sequences).flat().filter(e => e.sceneId === entry.sceneId).length > 1;
             const before = (event: DragEvent) => event.clientX < event.currentTarget.getBoundingClientRect().left + event.currentTarget.getBoundingClientRect().width / 2 ? entry.id : group.entries[localIndex + 1]?.id ?? timelineGroupBoundary(p.project, p.sequence, group);
-            return <button key={entry.id} className={`lesson-timeline-item${entry.kind === 'break' ? ' is-break' : ''}${isEdit ? ' is-edit' : ''}${isLive ? ' is-live' : ''}${selectedIds.includes(entry.id) ? ' is-selected' : ''}${dropKey === entry.id ? ' drop-before' : ''}`} data-entry-id={entry.id} data-selected={selectedIds.includes(entry.id)} aria-label={`${index + 1}. ${scene?.title || 'Missing scene'}${linked ? ', shared scene' : ''}`} aria-current={isEdit ? 'step' : undefined} draggable={!p.readOnly} onClick={event => select(entry.id, event)} onContextMenu={event => openMenu(event, entry.id, group.sectionId)} onDragStart={event => { if (!selectedIds.includes(entry.id)) select(entry.id); event.dataTransfer.setData(LESSON_ENTRY_DRAG, entry.id); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={event => accept(event, group.sectionId, before(event))} onDrop={event => drop(event, group.sectionId, before(event))}>
+            return <button key={entry.id} className={`lesson-timeline-item${entry.kind === 'break' ? ' is-break' : ''}${isEdit ? ' is-edit' : ''}${isLive ? ' is-live' : ''}${selectedIds.includes(entry.id) ? ' is-selected' : ''}${dropKey === entry.id ? ' drop-before' : ''}`} title={timelineSceneTitle(scene, asset)} data-entry-id={entry.id} data-selected={selectedIds.includes(entry.id)} aria-label={`${index + 1}. ${timelineSceneTitle(scene, asset)}${linked ? ', shared scene' : ''}`} aria-current={isEdit ? 'step' : undefined} draggable={!p.readOnly} onClick={event => select(entry.id, event)} onContextMenu={event => openMenu(event, entry.id, group.sectionId)} onDragStart={event => { if (!selectedIds.includes(entry.id)) select(entry.id); event.dataTransfer.setData(LESSON_ENTRY_DRAG, entry.id); event.dataTransfer.effectAllowed = 'move'; }} onDragOver={event => accept(event, group.sectionId, before(event))} onDrop={event => drop(event, group.sectionId, before(event))}>
               <span className="lesson-timeline-markers">{isEdit && !p.readOnly && <b className="lesson-edit-marker">EDIT</b>}{isLive && <b className="lesson-live-marker">LIVE</b>}</span>
               {density !== 'overview' && <span className="lesson-timeline-thumb" style={{ background: scene?.background.color ?? '#0a0a0a' }}>{scene ? <SceneSurface plan={projectScene(p.project, scene.id, undefined, p.resolveAsset)!} surface="present" video={asset?.mediaType === 'video' ? <video src={p.resolveAsset(asset.id)} muted preload="metadata" /> : undefined} /> : asset?.mediaType === 'image' ? <img src={p.resolveAsset(asset.id)} alt="" draggable={false} /> : asset?.mediaType === 'video' ? <video src={p.resolveAsset(asset.id)} muted preload="metadata" /> : <span>Missing scene</span>}</span>}
-              <strong>{index + 1}. {entry.kind === 'break' ? 'Break · ' : ''}{scene?.title || 'Missing scene'}</strong><small>{linked ? 'Shared · ' : ''}{asset?.mediaType ?? `${scene?.objects.length ?? 0} objects`}</small>
+              <strong>{index + 1}. {entry.kind === 'break' ? 'Break · ' : ''}{timelineSceneTitle(scene, asset)}</strong><small>{linked ? 'Shared · ' : ''}{asset?.mediaType ?? `${scene?.objects.length ?? 0} objects`}</small>
             </button>;
           })}
           {!p.readOnly && <button className="lesson-section-add" aria-label={`Add scene to ${section?.name ?? 'Ungrouped'}`} onClick={() => add(group.sectionId, timelineGroupBoundary(p.project, p.sequence, group))}>{hidden ? 'Drop media here' : group.entries.length ? '+' : 'Drop image or video here'}<small>{!group.entries.length && !hidden ? 'or click to add a scene' : ''}</small></button>}
@@ -147,7 +150,7 @@ export function LessonTimeline(p: LessonTimelineProps) {
       </section>; })}
       {!p.readOnly && <div className="lesson-section-end" aria-label="Move section to end" onDragOver={event => accept(event)} onDrop={event => drop(event)}>Drop section<br />at end</div>}
     </div>
-    <footer className="lesson-hint">Wheel scrolls · Alt + wheel zooms · Middle-drag pans · Shift/Ctrl selects</footer>
+    <footer className="lesson-hint" title="Wheel scrolls · Alt + wheel zooms · Middle-drag pans · Shift/Ctrl selects">{selectedTitle ? <span aria-label="Selected scene name">{selectedTitle}</span> : "Wheel scrolls · Alt + wheel zooms · Middle-drag pans · Shift/Ctrl selects"}</footer>
     {marquee && <div className="lesson-timeline-marquee" style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height }} />}
     {menu && <><div className="lesson-timeline-menu-dismiss" onPointerDown={() => setMenu(null)} /><div className="lesson-timeline-context" role="menu" style={{ left: menu.x, top: menu.y }}>
       {!p.readOnly && <><button role="menuitem" onClick={() => { add(menu.sectionId); setMenu(null); }}>Add scene</button><button role="menuitem" onClick={() => run(() => { const result = insertBreak(p.project, p.sequence, menu.entryId, menu.sectionId); p.onProjectChange?.(result.project); select(result.entryId); setMenu(null); })}>Add Break</button>

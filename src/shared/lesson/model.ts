@@ -1,4 +1,4 @@
-import type { AssetItem, MediaBin, MarkerStroke } from '../types';
+import type { AssetItem, MediaBin, MarkerStroke, VideoTrimSettings } from '../types';
 import type { CardDefinition, CardGeometry, CardSet } from '../cardsV2';
 import type { SceneViewport } from '../teachingScene';
 
@@ -6,7 +6,7 @@ export type SequenceKind = 'story' | 'activation';
 export type Rect = CardGeometry;
 export interface SceneEntry { id: string; sceneId: string; section: string; sectionId?: string; kind?: 'scene' | 'break' }
 export interface LessonSection { id: string; name: string; sequence: SequenceKind }
-export interface SceneBackground { color: string; assetId?: string }
+export interface SceneBackground { color: string; assetId?: string; videoTrim?: VideoTrimSettings }
 interface ObjectBase { id: string; box: Rect; visible: boolean }
 export interface SceneCard extends ObjectBase {
   kind: 'card'; cardId: string; initialFaceId: string; initiallyConcealed: boolean;

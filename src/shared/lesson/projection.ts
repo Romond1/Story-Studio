@@ -1,5 +1,6 @@
 import { buildCardV2FacePlan, parseCardV2RenderPlan, type CardV2CardPlan } from '../cardV2Render';
-import type { MarkerStroke } from '../types';
+import type { MarkerStroke, VideoTrimSettings } from '../types';
+import { isVideoTrimSettings } from '../videoTrim';
 import type { SceneViewport } from '../teachingScene';
 import { sceneAt, type LessonProject, type LessonSession, type Rect, type SceneText } from './model';
 import { parseRewardPresentation, type RewardPresentation } from '../rewardPresentation';
@@ -15,7 +16,7 @@ export type SceneObjectPlan =
 /** The only visual contract used by the new editor, teacher preview and Present. */
 export interface ScenePlan {
   version: 1; sceneId: string; frame: { width: number; height: number };
-  background: { color: string; src?: string; mediaType?: 'image' | 'video' };
+  background: { color: string; src?: string; mediaType?: 'image' | 'video'; videoTrim?: VideoTrimSettings };
   viewport: SceneViewport; objects: SceneObjectPlan[]; drawings: MarkerStroke[];
   transition: { kind: 'none' | 'fade'; durationMs: number };
   rewards?: RewardPresentation;
@@ -51,7 +52,8 @@ export function projectScene(project: LessonProject, sceneId: string, session?: 
       fontSize: object.fontSize, color: object.color, align: object.align, ...(object.bubbleDefId ? { bubbleDefId: object.bubbleDefId } : {}) });
   }
   return { version: 1, sceneId, frame: { ...scene.frame }, background: { color: scene.background.color,
-    ...(backgroundSrc && background && (background.mediaType === 'image' || background.mediaType === 'video') ? { src: backgroundSrc, mediaType: background.mediaType } : {}) },
+    ...(backgroundSrc && background && (background.mediaType === 'image' || background.mediaType === 'video') ? { src: backgroundSrc, mediaType: background.mediaType,
+      ...(background.mediaType === 'video' && scene.background.videoTrim ? { videoTrim: { ...scene.background.videoTrim } } : {}) } : {}) },
     viewport: JSON.parse(JSON.stringify(live?.viewport ?? scene.viewport)), objects,
     drawings: JSON.parse(JSON.stringify([...scene.drawings, ...(live?.drawings ?? [])])),
     ...(live?.rewards ? { rewards: projectLessonRewards(live.rewards, scene.frame) } : {}),
@@ -82,6 +84,10 @@ export function parseScenePlan(value: unknown): ScenePlan | null {
   if (value.background.src !== undefined) {
     if (!local(value.background.src) || !['image', 'video'].includes(value.background.mediaType)) return null;
     background.src = value.background.src; background.mediaType = value.background.mediaType;
+  }
+  if (value.background.videoTrim !== undefined) {
+    if (background.mediaType !== 'video' || !isVideoTrimSettings(value.background.videoTrim)) return null;
+    background.videoTrim = { ...value.background.videoTrim };
   }
   const objects: SceneObjectPlan[] = [];
   const ids = new Set<string>();

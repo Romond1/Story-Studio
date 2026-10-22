@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { removeFromMediaPool } from './mediaPool';
+import { createLesson, createScene, insertScene } from './lesson/commands';
+import { createMediaRegistry } from './content/mediaRegistry';
+import { parseSceneDocument } from './lesson/validation';
+import { ProjectHistory } from './projectHistory';
+
+test('remove targets one pool item while preserving registrations and existing scene references', () => {
+  let project = createLesson('Pool actions');
+  project.assets = ['one', 'two'].map(id => ({ id, filename: `${id}.png`, originalName: 'same.png', relativePath: `assets/${id}.png`, mediaType: 'image' as const, sizeBytes: 1, importedAt: '' }));
+  project = insertScene(project, 'story', createScene('Used media', 'one')).project;
+  const before = JSON.stringify(project);
+  const removed = removeFromMediaPool(project, 'one');
+  assert.equal(removed.assets[0].hiddenFromMediaPool, true);
+  assert.equal(removed.assets[1].hiddenFromMediaPool, undefined);
+  assert.equal(removed.assets[1], project.assets[1]);
+  assert.equal(removed.scenes, project.scenes);
+  assert.equal(JSON.stringify(project), before);
+  const registry = createMediaRegistry({ format: 'scene', data: removed });
+  assert.equal(registry.get('one')?.relativePath, 'assets/one.png');
+  assert.equal(registry.usages('one').length, 1);
+  assert.equal(registry.dependencies().complete, true);
+  const history = new ProjectHistory<typeof project>(); history.reset(project); history.record(removed);
+  assert.equal(history.undo()?.assets[0].hiddenFromMediaPool, undefined);
+  assert.equal(history.redo()?.assets[0].hiddenFromMediaPool, true);
+  assert.equal(parseSceneDocument(JSON.parse(JSON.stringify(removed))).assets[0].hiddenFromMediaPool, true);
+  assert.throws(() => parseSceneDocument({ ...removed, assets: [{ ...removed.assets[0], hiddenFromMediaPool: 'true' }] }), /asset/i);
+  assert.equal(removeFromMediaPool(removed, 'one'), removed);
+  assert.equal(removeFromMediaPool(project, 'absent'), project);
+});

@@ -89,6 +89,26 @@ test('new lesson handlers save/reopen the authored scene format without legacy n
   assert.equal('boostPack' in reopened.data, false);
 });
 
+test('custom media display titles survive actual save/reopen without renaming media or scene references', async t => {
+  const folder = await sandbox(t);
+  await fs.mkdir(path.join(folder, 'assets'));
+  const bytes = Buffer.from('retained source bytes');
+  await fs.writeFile(path.join(folder, 'assets', 'uuid.png'), bytes);
+  const asset = { id: 'picture', relativePath: 'assets/uuid.png', filename: 'uuid.png', originalName: 'long_source_export.png', mediaType: 'image', sizeBytes: bytes.length, importedAt: '' };
+  const project = { ...fixture(), assets: [asset] };
+  project.scenes.scene.background = { ...project.scenes.scene.background, ...{ assetId: asset.id } };
+  await write(folder, project);
+  const api = mainHarness(), active = await api.open(folder);
+  const edited = { ...active.data, assets: [{ ...active.data.assets[0], displayTitle: 'A Quiet Forest' }] };
+  await api.call('lesson:save', edited, 'save', folder);
+  const reopened = await api.open(folder);
+  assert.equal(reopened.data.assets[0].displayTitle, 'A Quiet Forest');
+  assert.equal(reopened.data.assets[0].originalName, asset.originalName);
+  assert.equal(reopened.data.assets[0].relativePath, asset.relativePath);
+  assert.equal(reopened.data.scenes.scene.background.assetId, asset.id);
+  assert.deepEqual(await fs.readFile(path.join(folder, asset.relativePath)), bytes);
+});
+
 test('create uses the new format only in an empty folder and cancelled creation preserves active folder', async t => {
   const folder = await sandbox(t), occupied = await sandbox(t); const api = mainHarness();
   await fs.writeFile(path.join(occupied, 'keep.txt'), 'original');

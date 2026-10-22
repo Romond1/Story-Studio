@@ -26,3 +26,8 @@
 .lesson-container-timeline .lesson-timeline-thumb { min-height: 55px; flex: 1 1 80px; height: auto; }
 .lesson-container-timeline .lesson-timeline-item { gap: 3px; }
 .lesson-container-timeline .lesson-section-container { min-height: 130px; }
+
+/* Keep thumbnail geometry independent of the selected media type and title length. */
+.lesson-container-timeline .lesson-timeline-toolbar { min-height: 48px; box-sizing: border-box; }
+.lesson-container-timeline .lesson-timeline-item > strong { height: 32px; min-height: 32px; line-height: 16px; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }
+.lesson-container-timeline > footer { flex: 0 0 34px; height: 34px; box-sizing: border-box; font-size: 12px; line-height: 16px; overflow: auto; overflow-wrap: anywhere; }

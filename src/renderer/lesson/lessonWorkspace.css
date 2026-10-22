@@ -214,7 +214,7 @@
 }
 
 /* Local workspace dimensions never alter the authored logical scene. */
-.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 30vw) 6px minmax(0, 1fr); grid-template-rows: auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
+.lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), max(160px, calc(100% - 246px))) 6px minmax(0, 1fr); grid-template-rows: auto minmax(100px, 1fr) 6px minmax(0, min(var(--workspace-timeline, 220px), 36vh)) auto; }
 .lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-canvas-tools { grid-column: 3; }
 .lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-canvas { grid-column: 3; min-height: 100px; }
 .lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) > .lesson-timeline { grid-row: 4; }
@@ -291,7 +291,7 @@
 .lesson-section-form label { display: flex; gap: 6px; align-items: center; }
 .lesson-timeline[data-density="overview"] .lesson-timeline-item { padding-top: 22px !important; }
 @media (min-width: 701px) and (max-width: 1100px) {
-  .lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), 23vw) 6px minmax(0, 1fr); }
+  .lesson-main:has(> :is(.lesson-pool, .lesson-content-rail)) { grid-template-columns: clamp(160px, var(--workspace-pool, 225px), max(160px, calc(100% - 246px))) 6px minmax(0, 1fr); }
   .lesson-canvas-tools { flex-wrap: nowrap; overflow-x: auto; }
   .lesson-canvas-tools button { flex-shrink: 0; }
 }

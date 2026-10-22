@@ -57,7 +57,8 @@ export function collectMediaDependencies(document:ProjectDocument, lookup:Lookup
       const p = `/scenes/${pointer(key)}`;
       unknown(scene,['id','title','frame','background','objects','drawings','audio','transition','viewport','notes'],scene.id,p);
       id('scene',scene.id,`${p}/background/assetId`,scene.background.assetId);
-      unknown(scene.background,['color','assetId'],scene.id,`${p}/background`);
+      unknown(scene.background,['color','assetId','videoTrim'],scene.id,`${p}/background`);
+      if (scene.background.videoTrim) unknown(scene.background.videoTrim,['inSec','outSec'],scene.id,`${p}/background/videoTrim`);
       scene.audio.forEach((audio,i)=>{id('scene',scene.id,`${p}/audio/${i}/assetId`,audio.assetId);unknown(audio,['id','assetId','volume','loop','autoplay'],scene.id,`${p}/audio/${i}`);});
       scene.objects.forEach((object,i)=>{
         const op = `${p}/objects/${i}`;

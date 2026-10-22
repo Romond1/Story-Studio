@@ -1,0 +1,48 @@
+/* Shared, deliberately scoped to the two existing Media Pools and their dialog. */
+.lesson-app .lesson-pool-asset, .media-pool .pool-asset { min-width: 0; height: 138px; min-height: 138px; overflow: hidden; justify-content: flex-start; }
+.lesson-app .lesson-pool-assets { grid-template-columns: repeat(auto-fill, minmax(min(108px, 100%), 1fr)); }
+.media-pool .pool-assets { grid-template-columns: repeat(auto-fill, minmax(min(108px, 100%), 1fr)); }
+.media-pool-thumbnail { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: calc(88px * var(--pool-zoom, 1)); min-height: calc(88px * var(--pool-zoom, 1)); overflow: hidden; border-radius: 5px; background: var(--studio-thumbnail-bg, #10151e); }
+.media-pool-thumbnail img, .media-pool-thumbnail video { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.media-pool-badge { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; padding: 3px 5px; border-radius: 4px; background: #152536; color: #eef6ff; font: 700 11px/1.2 system-ui, sans-serif; letter-spacing: .05em; }
+.media-pool-thumbnail .media-pool-badge { position: absolute; top: 4px; left: 4px; box-shadow: 0 1px 4px #0008; }
+.media-pool-play { position: absolute; bottom: 5px; right: 5px; padding: 3px 5px; color: #fff; background: #102030b8; border-radius: 50%; font-size: 12px; line-height: 1; }
+.lesson-app .lesson-pool-asset .media-pool-title, .media-pool .pool-asset .media-pool-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; width: 100%; min-width: 0; max-width: 100%; height: 32px; white-space: normal; overflow: hidden; overflow-wrap: anywhere; font-size: 12px; line-height: 16px; flex-shrink: 0; }
+.lesson-app .lesson-pool-asset:focus-visible, .media-pool .pool-asset:focus-visible { outline: 2px solid var(--studio-cyan, #8abfff); outline-offset: -2px; }
+.media-asset-preview { position: fixed; inset: 12px auto auto var(--media-preview-left, 12px); margin: 0; box-sizing: border-box; width: min(var(--media-preview-width, 640px), calc(100vw - 24px)); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 0; background: var(--studio-panel-fill, #172231); color: var(--studio-text, #eef3fa); box-shadow: 0 12px 40px #0008; overflow: auto; }
+.media-asset-preview[open] { display: flex; flex-direction: column; gap: 8px; }
+.media-asset-preview::backdrop { background: #02081299; }
+.media-preview-heading { display: flex; align-items: flex-start; gap: 8px; padding: 0 8px; }
+.media-preview-heading h2 { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; font-size: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.media-asset-preview button { border: 1px solid var(--studio-border, #52667d); border-radius: 6px; background: var(--studio-input, #202e3f); color: inherit; padding: 7px 10px; min-height: 34px; font: inherit; cursor: pointer; }
+.media-asset-preview button:disabled { opacity: .5; cursor: default; }
+.media-asset-preview button:focus-visible, .media-asset-preview input:focus-visible { outline: 2px solid var(--studio-cyan, #8abfff); outline-offset: 2px; }
+.media-asset-preview .media-preview-close { position: absolute; top: 8px; right: 8px; z-index: 1; font-size: 22px; line-height: 1; min-width: 34px; padding: 4px; background: #101925dc; border: 0; color: #fff; }
+.media-preview-stage { position: relative; display: grid; place-items: center; min-height: 80px; flex: 0 0 auto; overflow: hidden; background: transparent; border-radius: 0; }
+.media-preview-stage img, .media-preview-stage video { display: block; width: 100%; height: auto; max-height: calc(100dvh - 180px); object-fit: contain; }
+.media-preview-stage p { padding: 12px; margin: 0; font-size: 13px; }
+.media-preview-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 8px 8px; }
+.media-preview-rename { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0 8px; }
+.media-preview-rename label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
+.media-preview-rename input { box-sizing: border-box; width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--studio-border, #52667d); border-radius: 5px; background: var(--studio-input, #202e3f); color: inherit; font: inherit; }
+.media-preview-rename p { margin: 0; color: #ffb3b3; font-size: 13px; }
+@media (max-width: 480px) { .media-preview-heading { gap: 6px; } }
+.media-pool-context-menu { position: fixed; inset: auto; margin: 0; box-sizing: border-box; width: 240px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); padding: 4px; overflow: auto; border: 1px solid var(--studio-border, #52667d); border-radius: 7px; background: var(--studio-panel-fill, #172231); color: var(--studio-text, #eef3fa); box-shadow: 0 8px 24px #0008; }
+.media-pool-context-menu::backdrop { background: transparent; }
+.media-pool-context-menu button { display: block; width: 100%; border: 0; border-radius: 4px; padding: 9px 10px; background: transparent; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.media-pool-context-menu button:focus-visible, .media-pool-context-menu button:hover:not(:disabled) { outline: 2px solid var(--studio-cyan, #8abfff); outline-offset: -2px; background: var(--studio-selected, #243b55); }
+.media-pool-context-menu button:disabled { opacity: .5; cursor: default; }
+
+.lesson-app .lesson-pool .lesson-pool-assets, .media-pool .pool-assets { grid-template-columns: repeat(auto-fill, min(100%, calc(96px * var(--pool-zoom, 1)))); }
+.lesson-app .lesson-pool .lesson-pool-asset, .media-pool .pool-asset { height: calc(138px * var(--pool-zoom, 1)); min-height: calc(138px * var(--pool-zoom, 1)); }
+.lesson-app .lesson-pool-asset .media-pool-title, .media-pool .pool-asset .media-pool-title { font-size: calc(12px * var(--pool-zoom, 1)); line-height: calc(16px * var(--pool-zoom, 1)); height: calc(32px * var(--pool-zoom, 1)); }
+.media-pool-zoom { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; flex: 0 0 auto; font-size: 10px; white-space: nowrap; }
+.lesson-app .lesson-pool .media-pool-zoom input, .media-pool .media-pool-zoom input { width: 54px; min-width: 0; padding: 0; margin: 0; height: 18px; accent-color: var(--lesson-accent, #80d8ef); }
+.media-pool-zoom output { width: 30px; text-align: right; font-variant-numeric: tabular-nums; }
+.lesson-app .lesson-pool .lesson-panel-heading { min-height: 30px; padding: 2px 7px; }
+.lesson-app .lesson-pool .lesson-panel-heading button { min-height: 26px; padding: 3px 6px; }
+.lesson-app .lesson-pool .lesson-panel-content { padding: 5px 7px; gap: 5px; }
+.lesson-app .lesson-pool-destination { padding: 2px 4px; gap: 4px; align-items: center; }
+.lesson-app .lesson-pool-destination > span { display: none; }
+.lesson-content-rail > .episode-content { padding: 3px 8px; }
+.lesson-content-rail > .episode-content > summary { padding: 3px 0; min-height: 24px; box-sizing: border-box; }

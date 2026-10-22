@@ -1,0 +1,18 @@
+.scene-video-trim-controls { display: flex; align-items: center; justify-content: center; flex: 0 1 750px; gap: 10px; min-width: 0; max-width: 840px; margin-left: auto; padding: 4px 10px; border: 1px solid #315a79; border-radius: 7px; background: #15344b; }
+.lesson-container-timeline .lesson-timeline-toolbar > .scene-video-trim-controls { flex-shrink: 1; }
+.lesson-timeline-toolbar:has(.scene-video-trim-controls) .lesson-timeline-zoom { margin-left: 0; }
+.scene-video-playback { display: flex; gap: 3px; flex-shrink: 0; }
+.lesson-app .scene-video-playback button { font-size: 11px; padding: 3px 6px; min-height: 27px; white-space: nowrap; }
+.scene-video-trim-range { position: relative; flex: 1 1 240px; min-width: 100px; height: 28px; }
+.scene-video-trim-track { position: absolute; inset: 11px 0 auto; height: 6px; border-radius: 3px; background: linear-gradient(to right, #34445b 0 var(--trim-start), var(--studio-cyan, #69dcf5) var(--trim-start) var(--trim-end), #34445b var(--trim-end) 100%); pointer-events: none; }
+.scene-video-trim-playhead { position: absolute; top: 7px; height: 14px; width: 2px; background: #fff; pointer-events: none; }
+.lesson-app .scene-video-trim-range input { position: absolute; inset: 0; width: 100%; height: 28px; padding: 0; margin: 0; border: 0; background: transparent; appearance: none; pointer-events: none; }
+.scene-video-trim-range input::-webkit-slider-runnable-track { height: 6px; background: transparent; }
+.scene-video-trim-range input::-webkit-slider-thumb { appearance: none; width: 12px; height: 22px; margin-top: -8px; background: #152b40; border: 2px solid var(--studio-cyan, #69dcf5); border-radius: 3px; pointer-events: auto; cursor: ew-resize; }
+.scene-video-trim-range input:focus-visible { outline: none; z-index: 2; }
+.scene-video-trim-range input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px #fff; }
+.scene-video-trim-range input:disabled::-webkit-slider-thumb { opacity: .4; cursor: default; }
+.scene-video-trim-controls output { flex-shrink: 0; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scene-video-trim-controls output span { color: var(--studio-muted, #acbbcd); }
+@media (max-width: 900px) { .lesson-container-timeline .lesson-timeline-toolbar:has(.scene-video-trim-controls) { flex-wrap: wrap; overflow-x: visible; } .scene-video-trim-controls { order: 2; flex-basis: 100%; max-width: none; margin-left: 0; padding: 4px 8px; } .lesson-timeline-toolbar:has(.scene-video-trim-controls) .lesson-timeline-zoom { margin-left: auto; } }
+@media (max-width: 480px) { .scene-video-trim-controls { flex-wrap: wrap; gap: 4px 8px; } .scene-video-trim-controls output { width: 100%; text-align: right; } }

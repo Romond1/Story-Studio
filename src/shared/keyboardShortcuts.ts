@@ -14,8 +14,9 @@ export interface TeacherKeyEvent {
 /** Teacher command handlers share one ownership guard; Present installs none. */
 export function shouldIgnoreTeacherKey(event: TeacherKeyEvent): boolean {
   const target = event.target && typeof event.target === 'object'
-    ? event.target as { tagName?: string; isContentEditable?: boolean } : null;
-  return !!(event.defaultPrevented || event.isComposing || event.repeat || isEditableKeyTarget(target));
+    ? event.target as { tagName?: string; isContentEditable?: boolean; closest?: (selector: string) => unknown } : null;
+  return !!(event.defaultPrevented || event.isComposing || event.repeat || isEditableKeyTarget(target)
+    || (typeof target?.closest === 'function' && target.closest('dialog[open]')));
 }
 
 export function isPlainTeacherKey(event: TeacherKeyEvent): boolean {

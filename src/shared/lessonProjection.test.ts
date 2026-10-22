@@ -167,12 +167,12 @@ test('all built-in bubble styles render complete vectors on every surface withou
   }
 });
 
-test('Edit video preview has muted native controls while student and teacher video slots contain no authoring controls', () => {
+test('Edit video preview has audible native controls while student and teacher video slots contain no authoring controls', () => {
   const React = require('react'), { renderToStaticMarkup } = require('react-dom/server');
   const { SceneSurface } = rendererModule('src/renderer/lesson/SceneSurface.tsx');
   const f = fixture('video'), plan = projectScene(f.project, f.sceneId);
   const edit = renderToStaticMarkup(React.createElement(SceneSurface, { plan, surface: 'edit' }));
-  assert.ok(edit.includes('aria-label="Edit video preview"')); assert.ok(edit.includes('controls=""')); assert.ok(edit.includes('muted=""'));
+  assert.ok(edit.includes('aria-label="Edit video preview"')); assert.ok(edit.includes('controls=""')); assert.equal(edit.includes('muted=""'), false);
   assert.equal((edit.match(/<video/g) ?? []).length, 1);
   const drawing = renderToStaticMarkup(React.createElement(SceneSurface, { plan, surface: 'edit', drawing: true }));
   assert.equal(drawing.includes('controls=""'), false);
@@ -181,6 +181,31 @@ test('Edit video preview has muted native controls while student and teacher vid
     assert.equal(html.includes('Edit video preview'), false); assert.equal(html.includes('controls=""'), false);
     assert.equal((html.match(/<video/g) ?? []).length, 1);
   }
+});
+
+test('Edit video allows local volume changes and pauses on cleanup', () => {
+  const source = ts.createSourceFile('SceneSurface.tsx', readFileSync('src/renderer/lesson/SceneSurface.tsx', 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const declaration = source.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'EditSceneVideo')!;
+  const effects: (() => void | (() => void))[] = [];
+  const video = { muted: false, volume: 1, pauses: 0, pause() { this.pauses++; } };
+  const context: any = { exports: {}, useRef: () => ({ current: video }), useEffect: (effect: () => void) => effects.push(effect),
+    React: { createElement: (_tag: string, props: any) => props } };
+  const js = ts.transpileModule(declaration.getText(source), { compilerOptions: { jsx: ts.JsxEmit.React, module: ts.ModuleKind.CommonJS } }).outputText;
+  vm.runInNewContext(js, context);
+  const props = context.exports.EditSceneVideo({ src: 'media://assets/proof.mp4' });
+  const cleanup = effects.map(effect => effect());
+  assert.equal(video.muted, false, 'mount must allow audible playback');
+  video.volume = .4;
+  props.onVolumeChange?.({ currentTarget: video });
+  assert.equal(video.muted, false, 'changing volume must not force mute');
+  video.muted = true;
+  props.onVolumeChange?.({ currentTarget: video });
+  video.muted = false;
+  props.onVolumeChange?.({ currentTarget: video });
+  assert.equal(video.muted, false, 'native unmute must remain effective');
+  assert.equal(video.volume, .4);
+  cleanup.forEach(dispose => dispose?.());
+  assert.equal(video.pauses, 1, 'leaving the preview must stop its playback');
 });
 
 test('retained spark and celebration visuals project safely and render in the same scene frame', () => {

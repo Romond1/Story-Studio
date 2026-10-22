@@ -3,6 +3,8 @@ import { clone, type LessonProject, type SceneLessonProject } from './model';
 import { LESSON_LIMITS } from './limits';
 import { migrateSections } from './sections';
 import { parseEpisodeProject } from '../episode/validation';
+import { isMediaDisplayTitle } from '../mediaDisplayName';
+import { isVideoTrimSettings } from '../videoTrim';
 
 const record = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
 const text = (value: unknown, max = 65536): value is string => typeof value === 'string' && value.length <= max;
@@ -26,7 +28,9 @@ export function validateSceneDocumentBody(value: unknown, hasAsset?: (assetId: u
   check(id(p.id) && text(p.title, 500) && text(p.createdAt, 100) && text(p.updatedAt, 100), 'project identity');
   check(list(p.assets) && unique(p.assets) && list(p.mediaBins) && unique(p.mediaBins), 'media pool');
   for (const asset of p.assets) check(safePath(asset.relativePath) && ['image','video','audio'].includes(asset.mediaType)
-    && text(asset.filename, 500) && text(asset.originalName, 500) && number(asset.sizeBytes, 0, Number.MAX_SAFE_INTEGER) && text(asset.importedAt, 100)
+    && text(asset.filename, 500) && text(asset.originalName, 500) && (asset.displayTitle === undefined || isMediaDisplayTitle(asset.displayTitle))
+    && (asset.hiddenFromMediaPool === undefined || typeof asset.hiddenFromMediaPool === 'boolean')
+    && number(asset.sizeBytes, 0, Number.MAX_SAFE_INTEGER) && text(asset.importedAt, 100)
     && (asset.binId === undefined || id(asset.binId) && p.mediaBins.some((bin: any) => bin.id === asset.binId)), 'asset/bin reference');
   const asset = hasAsset ?? ((assetId: unknown, kind?: string) => p.assets.some((a: any) => a.id === assetId && (!kind || a.mediaType === kind)));
   for (const bin of p.mediaBins) {
@@ -57,6 +61,7 @@ export function validateSceneDocumentBody(value: unknown, hasAsset?: (assetId: u
     check(record(scene) && id(key) && scene.id === key && text(scene.title, 500) && text(scene.notes), 'scene identity');
     check(record(scene.frame) && number(scene.frame.width, 240, 10000) && number(scene.frame.height, 240, 10000), 'logical frame');
     check(record(scene.background) && color(scene.background.color) && (!scene.background.assetId || asset(scene.background.assetId) && !asset(scene.background.assetId, 'audio')), 'background');
+    check(scene.background.videoTrim === undefined || asset(scene.background.assetId, 'video') && isVideoTrimSettings(scene.background.videoTrim), 'video trim');
     check(record(scene.viewport) && number(scene.viewport.zoom, 1, 4) && record(scene.viewport.pan) && number(scene.viewport.pan.x, -40000, 40000) && number(scene.viewport.pan.y, -40000, 40000), 'viewport');
     check(record(scene.transition) && ['none','fade'].includes(scene.transition.kind) && number(scene.transition.durationMs, 0, 10000), 'transition');
     check(list(scene.objects, LESSON_LIMITS.objectsPerScene) && unique(scene.objects), 'scene objects');

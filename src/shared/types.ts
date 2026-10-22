@@ -53,6 +53,10 @@ export interface AssetItem {
   relativePath: string;
   filename: string;
   originalName: string;
+  /** User-facing title only; never used to resolve or rename the source file. */
+  displayTitle?: string;
+  /** Hide from the pool without invalidating authored references or deleting bytes. */
+  hiddenFromMediaPool?: boolean;
   referenceCode?: string;
   referenceDescription?: string;
   canonicalLabel?: string;

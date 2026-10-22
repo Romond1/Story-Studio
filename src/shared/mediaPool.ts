@@ -3,6 +3,13 @@ import { decorateImportedAssetsForContext } from './mediaReferences';
 import { validateMediaImport } from './mediaImportValidation';
 import { createMediaRegistry } from './content/mediaRegistry';
 
+/** Pool membership is independent of registered media used by authored content. */
+export function removeFromMediaPool<T extends { assets: AssetItem[] }>(project: T, assetId: string): T {
+  const asset = project.assets.find(item => item.id === assetId);
+  if (!asset || asset.hiddenFromMediaPool) return project;
+  return { ...project, assets: project.assets.map(item => item.id === assetId ? { ...item, hiddenFromMediaPool: true } : item) };
+}
+
 export function createMediaSlide(asset:AssetItem,sectionId:string,id:()=>string):Slide {
   return {id:id(),assetId:asset.id,sectionId,transition:'fade',...(asset.mediaType==='video'?{videoAudio:{enabled:true,volume:1}}:{})};
 }

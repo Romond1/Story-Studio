@@ -10,6 +10,15 @@ test('teacher shortcuts ignore consumed, composing, repeated and editable input'
   assert.equal(shouldIgnoreTeacherKey({ target: null }), false);
 });
 
+test('capture-phase shortcuts leave native preview dialog keys to the dialog', () => {
+  for (const tagName of ['BUTTON', 'VIDEO', 'DIALOG']) {
+    const target = { tagName, closest: (selector: string) => selector === 'dialog[open]' ? {} : null };
+    assert.equal(shouldIgnoreTeacherKey({ target }), true);
+    assert.equal(isPlainTeacherKey({ target }), false);
+  }
+  assert.equal(shouldIgnoreTeacherKey({ target: { tagName: 'BUTTON', closest: () => null } }), false);
+});
+
 test('plain teaching keys cannot also execute modified drawing or relic commands', () => {
   for (const modifier of ['ctrlKey', 'metaKey', 'altKey', 'shiftKey']) {
     assert.equal(isPlainTeacherKey({ [modifier]: true }), false);

@@ -2,7 +2,7 @@ import { useState, type CSSProperties, type PointerEvent } from 'react';
 
 type Dimensions = { pool: number; inspector: number; timeline: number };
 const defaults: Dimensions = { pool: 225, inspector: 330, timeline: 280 };
-const bounds = { pool: [160, 420], inspector: [250, 520], timeline: [200, 520] } as const;
+const bounds = { pool: [160, 800], inspector: [250, 520], timeline: [200, 520] } as const;
 const key = 'story-studio.workspace.v1';
 const clamp = (name: keyof Dimensions, value: number) => Math.max(bounds[name][0], Math.min(bounds[name][1], value));
 export function useWorkspaceLayout() {

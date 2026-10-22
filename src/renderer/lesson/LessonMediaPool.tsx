@@ -1,9 +1,15 @@
-import { useMemo, useState, type DragEvent } from 'react';
+import { useMediaPoolZoom, MediaPoolZoom } from '../MediaPoolZoom';
+import { useEffect, useMemo, useState, type DragEvent } from 'react';
 import type { LessonProject } from '../../shared/lesson/model';
 import { toMediaUrl } from '../mediaUrls';
 import { visualMediaUrl } from '../../shared/visualMedia';
 import './compactMediaPool.css';
 import { createMediaRegistry, type MediaRegistryView } from '../../shared/content/mediaRegistry';
+import { mediaDisplayName, renameMediaAsset } from '../../shared/mediaDisplayName';
+import { MediaPoolThumbnail } from '../MediaPoolThumbnail';
+import { MediaAssetPreview } from '../MediaAssetPreview';
+import { MediaPoolContextMenu, type MediaPoolMenuTarget } from '../MediaPoolContextMenu';
+import { removeFromMediaPool } from '../../shared/mediaPool';
 
 export const LESSON_ASSET_DRAG = 'application/x-story-studio-assets';
 export const LESSON_ENTRY_DRAG = 'application/x-story-studio-entry';
@@ -28,6 +34,7 @@ export interface LessonMediaPoolProps {
 }
 
 export function LessonMediaPool({ project, registry, resolveAsset, onImport, onInsert, onChange, binId, onBinChange: setBinId, insertLabel, insertDisabled }: LessonMediaPoolProps) {
+  const poolZoom = useMediaPoolZoom();
   const [open, setOpen] = useState(true);
   const [query, setQuery] = useState('');
   const [type, setType] = useState('all');
@@ -40,10 +47,15 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
   const [binsOpen, setBinsOpen] = useState(false);
   const [binName, setBinName] = useState<string | null>(null);
   const [anchorId, setAnchorId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [context, setContext] = useState<MediaPoolMenuTarget | null>(null);
+  const previewAsset = previewId ? registry.get(previewId) : undefined;
+  useEffect(() => { if (previewId && !previewAsset) setPreviewId(null); }, [previewId, previewAsset]);
   const bins = registry.bins();
   const activeBin = bins.some(bin => bin.id === binId) ? binId : '';
   const counts = useMemo(() => new Map(registry.list().map(asset => [asset.id, registry.usages(asset.id).length])), [registry]);
-  const selectedAssets = project.assets.filter(asset => selected.has(asset.id));
+  const selectedAssets = project.assets.filter(asset => !asset.hiddenFromMediaPool && selected.has(asset.id));
+  const poolAssets = registry.list().filter(asset => !asset.hiddenFromMediaPool);
   const visualIds = selectedAssets.filter(asset => asset.mediaType !== 'audio').map(asset => asset.id);
   const inBin = (id?: string) => {
     if (!activeBin) return true;
@@ -55,10 +67,10 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
     }
     return false;
   };
-  const assets = registry.list().filter(asset => inBin(asset.binId)
+  const assets = poolAssets.filter(asset => inBin(asset.binId)
     && (type === 'all' || type === asset.mediaType)
     && (usage === 'all' || (usage === 'used') === !!counts.get(asset.id))
-    && `${asset.originalName} ${asset.filename} ${asset.canonicalLabel ?? ''}`.toLowerCase().includes(query.toLowerCase()));
+    && `${mediaDisplayName(asset)} ${asset.originalName} ${asset.filename} ${asset.canonicalLabel ?? ''}`.toLowerCase().includes(query.toLowerCase()));
   const importMedia = async (kind: 'files' | 'folder' | 'drop', paths?: string[]) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -80,15 +92,15 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
     }
     return parts.join(' / ');
   };
-  return <section className={`lesson-pool${dragOver ? ' is-drop' : ''}`} aria-label="Media Pool"
+  return <section ref={poolZoom.ref} style={poolZoom.style} className={`lesson-pool${dragOver ? ' is-drop' : ''}`} aria-label="Media Pool"
     onDragOver={event => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.stopPropagation(); setDragOver(true); } }}
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOver(false); }} onDrop={dropFiles}>
-    <header className="lesson-panel-heading"><button className="lesson-disclosure" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? '▾' : '▸'} Media Pool</button><button className="lesson-pool-import" disabled={busy} onClick={() => void importMedia('files')} title="Import images, videos or audio">{busy ? 'Importing…' : 'Import files'}</button></header>
+    <header className="lesson-panel-heading"><button className="lesson-disclosure" onClick={() => { setOpen(!open); setPreviewId(null); }} aria-expanded={open}>{open ? '▾' : '▸'} Media Pool</button><button className="lesson-pool-import" disabled={busy} onClick={() => void importMedia('files')} title="Import images, videos or audio">{busy ? 'Importing…' : 'Import files'}</button></header>
     {open && <div className="lesson-panel-content">
       {error && <p className="lesson-error" role="alert">{error}</p>}
       {(!registry.dependencies().complete || registry.diagnostics().length > 0) && <p className="lesson-error" role="status">Some media references are missing, ambiguous, or unsupported. Usage is incomplete; all imported media is retained.</p>}
       <div className="lesson-pool-search"><input aria-label="Search media" type="search" placeholder="Search media…" value={query} onChange={event => setQuery(event.target.value)} /><button aria-label="Media filters" aria-expanded={filtersOpen} title="Filter media by type or usage" onClick={() => setFiltersOpen(!filtersOpen)}>Filters{type !== 'all' || usage !== 'all' ? ' •' : ''}</button><button aria-label="Media bins" aria-expanded={binsOpen} onClick={() => setBinsOpen(!binsOpen)}>Bin</button></div>
-      <div className="lesson-pool-destination" title={activeBin ? binPath(activeBin) : 'General media'}><span>Import to</span><strong>{activeBin ? binPath(activeBin) : 'General media'}</strong></div>
+      <div className="lesson-pool-destination" title={activeBin ? binPath(activeBin) : 'General media'}><span>Import to</span><strong>{activeBin ? binPath(activeBin) : 'General media'}</strong><MediaPoolZoom zoom={poolZoom.zoom} onChange={poolZoom.setZoom} /></div>
       {filtersOpen && <div className="lesson-pool-filters">
       <div className="lesson-actions"><button disabled={busy} onClick={() => void importMedia('folder')}>Import folder</button><button onClick={() => { setType('all'); setUsage('all'); setQuery(''); }}>Reset filters</button></div>
       <div className="lesson-field-grid"><label className="lesson-field"><span>Type</span><select aria-label="Type" value={type} onChange={event => setType(event.target.value)}><option value="all">All types</option><option value="image">Images</option><option value="video">Videos</option><option value="audio">Audio</option></select></label><label className="lesson-field"><span>Usage</span><select aria-label="Usage" value={usage} onChange={event => setUsage(event.target.value)}><option value="all">All assets</option><option value="used">Referenced in content</option><option value="unused">No known references</option></select></label></div>
@@ -104,16 +116,20 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
         if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setSelected(new Set()); }
       }}>
         {assets.map(asset => <button key={asset.id} type="button" role="option" aria-selected={selected.has(asset.id)} className={`lesson-pool-asset${selected.has(asset.id) ? ' is-selected' : ''}`}
-          data-asset-id={asset.id} draggable={asset.mediaType !== 'audio'} title={`${asset.originalName || asset.filename} · ${counts.get(asset.id)} authored references`}
-          onClick={event => { setSelected(previous => { if (event.shiftKey && anchorId) { const a = assets.findIndex(item => item.id === anchorId), b = assets.indexOf(asset); if (a >= 0) return new Set([...(event.ctrlKey || event.metaKey ? previous : []), ...assets.slice(Math.min(a, b), Math.max(a, b) + 1).map(item => item.id)]); } if (!event.ctrlKey && !event.metaKey && !event.shiftKey) return new Set([asset.id]); const next = new Set(previous); next.has(asset.id) ? next.delete(asset.id) : next.add(asset.id); return next; }); if (!event.shiftKey) setAnchorId(asset.id); }}
-          onDoubleClick={() => { if (!insertDisabled && asset.mediaType !== 'audio') onInsert([asset.id]); }}
+          data-asset-id={asset.id} draggable={asset.mediaType !== 'audio'} title={mediaDisplayName(asset)} aria-label={mediaDisplayName(asset)}
+          onContextMenu={event => { if (asset.mediaType === 'audio') return; event.preventDefault(); event.stopPropagation(); event.currentTarget.focus(); const r = event.currentTarget.getBoundingClientRect(); setSelected(new Set([asset.id])); setAnchorId(asset.id); setContext({ assetId: asset.id, x: event.clientX || r.left, y: event.clientY || r.bottom }); }}
+          onClick={event => { setSelected(previous => { if (event.shiftKey && anchorId) { const a = assets.findIndex(item => item.id === anchorId), b = assets.indexOf(asset); if (a >= 0) return new Set([...(event.ctrlKey || event.metaKey ? previous : []), ...assets.slice(Math.min(a, b), Math.max(a, b) + 1).map(item => item.id)]); } if (!event.ctrlKey && !event.metaKey && !event.shiftKey) return new Set([asset.id]); const next = new Set(previous); next.has(asset.id) ? next.delete(asset.id) : next.add(asset.id); return next; }); if (!event.shiftKey) setAnchorId(asset.id); if (!event.ctrlKey && !event.metaKey && !event.shiftKey && asset.mediaType !== 'audio') setPreviewId(asset.id); }}
           onDragStart={event => { const ids = selected.has(asset.id) ? visualIds : [asset.id]; event.dataTransfer.setData(LESSON_ASSET_DRAG, JSON.stringify(ids)); event.dataTransfer.effectAllowed = 'copy'; }}>
-          <span className="lesson-pool-thumb">{asset.mediaType === 'image' ? <img src={resolveAsset(asset.id)} alt="" loading="lazy" draggable={false} /> : asset.mediaType === 'video' ? <video src={resolveAsset(asset.id)} muted preload="metadata" /> : <span aria-hidden="true">♫</span>}</span>
-          <span className="lesson-asset-name">{asset.originalName || asset.filename}</span><small>{asset.mediaType} · {counts.get(asset.id) ? `${counts.get(asset.id)} uses` : 'No known references'}</small>
+          <MediaPoolThumbnail asset={asset} src={resolveAsset(asset.id)} />
         </button>)}
       </div>
-      {!assets.length && <p className="lesson-empty">{project.assets.length ? 'No media matches these filters.' : 'Import images and videos, or drop files here to start your lesson.'}</p>}
-      <footer className="lesson-pool-footer">{selectedAssets.length > 0 ? <><span>{selectedAssets.length} selected</span><button disabled={insertDisabled || !visualIds.length} onClick={() => onInsert(visualIds)}>{insertLabel ?? `Add ${visualIds.length > 1 ? `${visualIds.length} scenes` : 'to sequence'}`}</button><button aria-label="Clear media selection" onClick={() => setSelected(new Set())}>×</button></> : <span>{assets.length} media · {insertLabel ? 'Select media to use in game' : 'Drag into a Section'}</span>}</footer>
+      {!assets.length && <p className="lesson-empty">{poolAssets.length ? 'No media matches these filters.' : 'Import images and videos, or drop files here to start your lesson.'}</p>}
+      <footer className="lesson-pool-footer">{selectedAssets.length > 0 ? <><span>{selectedAssets.length} selected</span><button aria-label="Clear media selection" onClick={() => setSelected(new Set())}>×</button></> : <span>{assets.length} media · {insertLabel ? 'Select media to use in game' : 'Drag into a Section'}</span>}</footer>
     </div>}
+    {open && previewAsset && <MediaAssetPreview key={previewAsset.id} asset={previewAsset} src={resolveAsset(previewAsset.id)} onClose={() => setPreviewId(null)}
+      onRename={title => onChange(renameMediaAsset(project, previewAsset.id, title))} />}
+    {open && context && poolAssets.some(asset => asset.id === context.assetId) && <MediaPoolContextMenu key={context.assetId} target={context} onClose={() => setContext(null)}
+      onAdd={insertDisabled ? undefined : () => onInsert([context.assetId])}
+      onRemove={() => { onChange(removeFromMediaPool(project, context.assetId)); setSelected(previous => { const next = new Set(previous); next.delete(context.assetId); return next; }); setAnchorId(null); }} />}
   </section>;
 }
