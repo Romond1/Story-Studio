@@ -1,8 +1,11 @@
+import { restoreEditorSelection } from './editorSelection';
+import { isImageAppearance } from './imageAppearance';
+import { projectScene, parseScenePlan } from './projection';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createLesson, insertScene, addText, addCard, reorderEntry, duplicateEntry } from './commands';
 import { LESSON_LIMITS } from './limits';
-import { addSection, moveEntryToSection, insertBreak, renameSection } from './sections';
+import { addSection, moveEntryToSection, insertBreak, renameSection, timelineGroups, removeTimelineGroup, addReviewMedia, insertSectionMedia, moveSection } from './sections';
 import { copyCardSnapshot, pasteCard, moveCardToScene } from './cardClipboard';
 import { parseLessonProject } from './validation';
 
@@ -77,7 +80,7 @@ test('Break template has editable content and duplication preserves entry metada
   const copied = duplicateEntry(pause.project, 'story', pause.entryId, 'story', false);
   const copy = copied.project.sequences.story.find(e => e.id === copied.entryId)!;
   assert.equal(copy.kind, 'break');
-  assert.equal(copy.sectionId, group.sectionId);
+  assert.equal(copy.sectionId, undefined);
   assert.notEqual(copy.sceneId, original.sceneId);
   const linked = duplicateEntry(copied.project, 'story', pause.entryId, 'activation', true);
   assert.equal(linked.project.sequences.activation[0].kind, 'break');
@@ -98,3 +101,129 @@ test('maximum legacy labels roundtrip, section creation and validation share the
   assert.throws(() => parseLessonProject({ ...migrated, sections: [...migrated.sections!, { id: 'extra', name: 'Extra', sequence: 'story' }] }), /sections/i);
 });
 
+
+
+test('breaks are standalone top-level groups, including legacy nested entries', () => {
+  const group = addSection(createLesson(), 'story', 'A');
+  const media = insertScene(group.project, 'story');
+  const p = moveEntryToSection(media.project, 'story', media.entryId, group.sectionId);
+  const pause = insertBreak(p, 'story', undefined, group.sectionId);
+  const entry = pause.project.sequences.story.find(e => e.id === pause.entryId)!;
+  assert.equal(entry.sectionId, undefined);
+  assert.equal(entry.section, '');
+  const legacy = { ...pause.project, sequences: { ...pause.project.sequences, story: pause.project.sequences.story.map(e => e.id === entry.id ? {...e,sectionId:group.sectionId,section:'A'} : e) } };
+  const loaded = parseLessonProject(legacy);
+  assert.equal(loaded.sequences.story.find(e=>e.id===entry.id)!.sectionId, undefined);
+  assert.deepEqual(loaded.sequences.story.map(e=>e.id),legacy.sequences.story.map(e=>e.id));
+  assert.deepEqual(loaded.scenes, legacy.scenes);
+});
+
+
+test('breaks separate sections, cannot join a section on move, and survive empty section placement', () => {
+  const a = addSection(createLesson(), 'story', 'A'), b = addSection(a.project, 'story', 'B');
+  const scene = insertSectionMedia(b.project, 'story', [], b.sectionId);
+  const pause = insertBreak(scene.project, 'story', undefined, a.sectionId);
+  const groups = timelineGroups(pause.project, 'story');
+  assert.deepEqual(groups.map(g=>g.kind), ['section','break','section','ungrouped']);
+  assert.equal(groups[0].sectionId,a.sectionId);
+  const loaded = parseLessonProject(pause.project);
+  assert.deepEqual(timelineGroups(loaded,'story').map(g=>g.key),groups.map(g=>g.key));
+  const moved = moveEntryToSection(loaded,'story',pause.entryId,b.sectionId,scene.entryIds[0]);
+  assert.equal(moved.sequences.story.find(e=>e.id===pause.entryId)!.sectionId,undefined);
+  assert.equal(moved.sequences.story[0].id,pause.entryId);
+});
+
+test('section removal can keep scenes or remove occurrences, without deleting breaks or linked content', () => {
+  const group = addSection(createLesson(),'story','A');
+  const scene = insertSectionMedia(group.project,'story',[],group.sectionId);
+  const pause = insertBreak(scene.project,'story',undefined,group.sectionId);
+  const kept = removeTimelineGroup(pause.project,'story',group.sectionId,true);
+  assert.equal(kept.sections?.length,0);
+  assert.equal(kept.sequences.story.length,2);
+  assert.ok(kept.sequences.story.every(e=>!e.sectionId));
+  const removed = removeTimelineGroup(pause.project,'story',group.sectionId);
+  assert.deepEqual(removed.sequences.story.map(e=>e.id),[pause.entryId]);
+  assert.equal(removed.scenes,pause.project.scenes);
+  assert.equal(removed.assets,pause.project.assets);
+  assert.deepEqual(removeTimelineGroup(kept,'story').sequences.story.map(e=>e.id),[pause.entryId]);
+});
+
+test('review board media, captions and video plans validate and preserve stable references', () => {
+  const pause = insertBreak(createLesson(),'story'), sceneId = pause.project.sequences.story[0].sceneId;
+  const image = {id:'image',mediaType:'image' as const,filename:'image.png',originalName:'Image',relativePath:'assets/image.png',sizeBytes:1,importedAt:''};
+  const video = {...image,id:'video',mediaType:'video' as const,filename:'video.webm',relativePath:'assets/video.webm'};
+  let scene = addReviewMedia(pause.project.scenes[sceneId],image,'Remember this door');
+  scene = addReviewMedia(scene,video,'What happened next?');
+  const project = {...pause.project,assets:[image,video],scenes:{...pause.project.scenes,[sceneId]:scene}};
+  const loaded = parseLessonProject(project);
+  assert.deepEqual(loaded.scenes[sceneId],scene);
+  assert.equal(scene.objects.filter(o=>o.kind==='video').length,1);
+  const plan = projectScene(loaded,sceneId,undefined,id=>'media://assets/'+id);
+  assert.deepEqual(parseScenePlan(plan),plan);
+  assert.equal(plan.objects.filter(o=>o.kind==='video').length,1);
+  const media = scene.objects.find(o=>o.kind==='image')!, caption = scene.objects.find(o=>o.kind==='text'&&o.text==='Remember this door')!;
+  assert.ok(caption.box.y >= media.box.y+media.box.height);
+  assert.throws(()=>addReviewMedia(scene,{...image,mediaType:'audio'},''));
+  assert.equal(parseScenePlan({...plan,objects:[{id:'bad',kind:'video',box:media.box,src:'https://example.invalid/video'}]}),null);
+});
+
+
+test('moving empty sections recomputes break anchors in both directions', () => {
+  const a = addSection(createLesson(),'story','A');
+  const pause = insertBreak(a.project,'story',undefined,a.sectionId);
+  const z = addSection(pause.project,'story','Z');
+  const moved = moveSection(z.project,'story',a.sectionId);
+  assert.deepEqual(timelineGroups(moved,'story').filter(g=>g.kind!=='ungrouped').map(g=>g.sectionId??'break'), ['break',z.sectionId,a.sectionId]);
+  const earlier = moveSection(z.project,'story',z.sectionId,a.sectionId);
+  assert.deepEqual(timelineGroups(earlier,'story').filter(g=>g.kind!=='ungrouped').map(g=>g.sectionId??'break'), [z.sectionId,a.sectionId,'break']);
+});
+
+
+test('dragging a break past the final section respects its trailing boundary', () => {
+  const a = addSection(createLesson(),'story','A'), z = addSection(a.project,'story','Z');
+  const first = insertSectionMedia(z.project,'story',[],a.sectionId);
+  const last = insertSectionMedia(first.project,'story',[],z.sectionId);
+  const b1 = insertBreak(last.project,'story',undefined,a.sectionId);
+  const b2 = insertBreak(b1.project,'story',undefined,a.sectionId);
+  const moved = moveEntryToSection(b2.project,'story',b1.entryId,z.sectionId);
+  assert.equal(moved.sequences.story[moved.sequences.story.length-1]!.id,b1.entryId);
+  assert.equal(moved.sequences.story[moved.sequences.story.length-1]!.sectionId,undefined);
+});
+
+
+test('break image effects and audio shortcuts validate, project and duplicate independently', () => {
+  const pause = insertBreak(createLesson(),'story'), sceneId = pause.project.sequences.story[0].sceneId;
+  const image = {id:'image',mediaType:'image' as const,filename:'image.png',originalName:'Image',relativePath:'assets/image.png',sizeBytes:1,importedAt:''};
+  const sound = {...image,id:'audio',mediaType:'audio' as const,filename:'audio.wav',relativePath:'assets/audio.wav'};
+  const appearance = {scale:1.2,blur:8,feather:25,opacity:.6,background:'#112233',border:1};
+  const scene = addReviewMedia(pause.project.scenes[sceneId],image,'Review');
+  scene.background = {color:'#182331',assetId:'image',imageAppearance:appearance};
+  const picture = scene.objects.find(o=>o.kind==='image')!;
+  assert.ok(picture.kind==='image' && picture.appearance?.border===1);
+  if(picture.kind==='image') picture.appearance={...appearance};
+  scene.audio=[{id:'track',assetId:'audio',volume:.8,loop:false,autoplay:false,shortcut:'2'}];
+  const p={...pause.project,assets:[image,sound],scenes:{...pause.project.scenes,[sceneId]:scene}};
+  assert.deepEqual(parseLessonProject(p),JSON.parse(JSON.stringify(p)));
+  const plan=projectScene(p,sceneId,undefined,id=>'media://assets/'+id);
+  assert.deepEqual(parseScenePlan(plan),plan);
+  assert.deepEqual(plan.background.imageAppearance,appearance);
+  const copy=duplicateEntry(p,'story',pause.entryId,'story');
+  assert.equal(copy.project.sequences.story[1].id,copy.entryId);
+  const cloned=copy.project.scenes[copy.project.sequences.story.find(e=>e.id===copy.entryId)!.sceneId];
+  cloned.audio[0].volume=.2;
+  const copiedImage=cloned.objects.find(o=>o.kind==='image')!;if(copiedImage.kind==='image')copiedImage.appearance!.blur=20;
+  assert.equal(scene.audio[0].volume,.8);assert.ok(picture.kind==='image'&&picture.appearance!.blur===8);
+  assert.equal(isImageAppearance({blur:NaN}),false);assert.equal(isImageAppearance({scale:30}),false);assert.equal(isImageAppearance({background:'url(https://example.invalid)'}),false);
+  assert.throws(()=>parseLessonProject({...p,scenes:{[sceneId]:{...scene,background:{...scene.background,imageAppearance:{blur:-1}}}}}));
+  assert.equal(parseScenePlan({...plan,background:{...plan.background,imageAppearance:{opacity:5}}}),null);
+});
+
+
+test('undoing a Discovery link restores a visible editor location without losing Adventure', () => {
+  const original=insertScene(createLesson(),'story');
+  const linked=duplicateEntry(original.project,'story',original.entryId,'activation',true);
+  assert.equal(original.project.sequences.story.length,1);
+  assert.deepEqual(linked.project.sequences.story,original.project.sequences.story);
+  const restored=restoreEditorSelection(original.project,{sequence:'activation',entryId:linked.entryId,objectId:null});
+  assert.deepEqual(restored,{sequence:'story',entryId:original.entryId,objectId:null});
+});

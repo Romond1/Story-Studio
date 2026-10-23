@@ -4,6 +4,8 @@ import { createSession, navigate } from './lesson/session';
 import { createLesson, insertScene } from './lesson/commands';
 import { parseRewardPresentation } from './rewardPresentation';
 import * as rewardCommands from './lesson/rewards';
+import { DEFAULT_REWARD_APPEARANCE, parseRewardAppearance, rewardAnchorStyle, REWARD_POSITIONS } from './rewardAppearance';
+import { DEFAULT_SPARK_CONFIG } from './rewardDefaults';
 
 function api(): any {
   return rewardCommands;
@@ -13,6 +15,51 @@ const roster = [
   { id: 'grace', name: 'Grace', archived: false, createdAt: '2026-10-08', updatedAt: '2026-10-08' },
   { id: 'archived', name: 'Earlier student', archived: true, createdAt: '2026-10-08', updatedAt: '2026-10-08' },
 ];
+
+test('lesson reward appearance survives navigation and projects identical configurable visuals to Present', () => {
+  const r = api();
+  let session = r.initializeLessonRewards(createSession(), []);
+  const appearance = { position: 'bottomLeft', size: 1.5, intensity: .5 };
+  session = r.setLessonRewardAppearance(session, appearance);
+  session = r.awardLessonReward(session, 'gold', 'styled', 1000);
+  const visual = r.projectLessonRewards(session.rewards, { width: 1280, height: 720 });
+  assert.deepEqual(visual.sparks[0].appearance, appearance);
+  assert.equal(visual.sparks[0].config.particleCount, 5);
+  assert.equal(visual.sparks[0].config.glowIntensity, 30);
+  assert.deepEqual(parseRewardPresentation(JSON.parse(JSON.stringify(visual))), visual);
+  assert.equal(r.setLessonRewardAppearance(session, { ...appearance, size: 100 }), session);
+  assert.equal(parseRewardPresentation({ ...visual, sparks: [{ ...visual.sparks[0], appearance: { ...appearance, intensity: -1 } }] }), null);
+  const moved = navigate(createLesson('Appearance'), session, null);
+  assert.deepEqual(moved.rewards!.appearance, appearance);
+});
+
+test('reward defaults retain legacy placement, and each position shares bounded logical-scene geometry', () => {
+  assert.deepEqual(rewardAnchorStyle(undefined, DEFAULT_SPARK_CONFIG), { top: 120, right: 40 });
+  for (const position of REWARD_POSITIONS) {
+    const appearance = { ...DEFAULT_REWARD_APPEARANCE, position, size: 1.5 };
+    assert.deepEqual(parseRewardAppearance(JSON.parse(JSON.stringify(appearance))), appearance);
+    const style = rewardAnchorStyle(appearance, DEFAULT_SPARK_CONFIG);
+    assert.ok(style.transform?.includes('scale(1.5)'));
+    if (position === 'center') assert.equal(style.left, '50%');
+    else if (position.endsWith('Left')) assert.equal(style.left, 40);
+    else assert.equal(style.right, 40);
+  }
+  for (const value of [null, {}, { ...DEFAULT_REWARD_APPEARANCE, position: 'elsewhere' }, { ...DEFAULT_REWARD_APPEARANCE, size: NaN }, { ...DEFAULT_REWARD_APPEARANCE, intensity: 3 }]) assert.equal(parseRewardAppearance(value), null);
+});
+
+test('reward appearance changes do not rescore events and intensity adjusts celebration effects', () => {
+  const r = api();
+  let session = r.initializeLessonRewards(createSession(), []);
+  session = r.awardLessonReward(session, 'gold', 'original', 1000);
+  const original = session.rewards.sparks[0];
+  session = r.setLessonRewardAppearance(session, { ...DEFAULT_REWARD_APPEARANCE, intensity: 0 });
+  assert.equal(session.rewards.sparks[0], original);
+  assert.equal(session.rewards.students[0].stars, 1);
+  session = r.showLessonCelebration(session, 'celebration', 1001);
+  assert.equal(session.rewards.final.config.confettiCount, 0);
+  assert.equal(session.rewards.final.config.animation.motionIntensity, 0);
+  assert.ok(r.projectLessonRewards(session.rewards, { width: 1280, height: 720 }));
+});
 
 test('lesson rewards use active global roster students and default to Class without replacing existing runtime', () => {
   const r = api(), start = createSession();

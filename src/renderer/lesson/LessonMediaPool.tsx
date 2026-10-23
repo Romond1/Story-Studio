@@ -9,7 +9,7 @@ import { mediaDisplayName, renameMediaAsset } from '../../shared/mediaDisplayNam
 import { MediaPoolThumbnail } from '../MediaPoolThumbnail';
 import { MediaAssetPreview } from '../MediaAssetPreview';
 import { MediaPoolContextMenu, type MediaPoolMenuTarget } from '../MediaPoolContextMenu';
-import { removeFromMediaPool } from '../../shared/mediaPool';
+import { groupMediaByType, removeFromMediaPool, renameMediaBin, removeMediaBin } from '../../shared/mediaPool';
 
 export const LESSON_ASSET_DRAG = 'application/x-story-studio-assets';
 export const LESSON_ENTRY_DRAG = 'application/x-story-studio-entry';
@@ -46,6 +46,7 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [binsOpen, setBinsOpen] = useState(false);
   const [binName, setBinName] = useState<string | null>(null);
+  const [renamingBin, setRenamingBin] = useState<string | null>(null);
   const [anchorId, setAnchorId] = useState<string | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [context, setContext] = useState<MediaPoolMenuTarget | null>(null);
@@ -53,6 +54,9 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
   useEffect(() => { if (previewId && !previewAsset) setPreviewId(null); }, [previewId, previewAsset]);
   const bins = registry.bins();
   const activeBin = bins.some(bin => bin.id === binId) ? binId : '';
+  const [groupedBins, setGroupedBins] = useState<Set<string>>(new Set());
+  const groupingKey = `${project.id}:${activeBin}`;
+  const grouped = groupedBins.has(groupingKey);
   const counts = useMemo(() => new Map(registry.list().map(asset => [asset.id, registry.usages(asset.id).length])), [registry]);
   const selectedAssets = project.assets.filter(asset => !asset.hiddenFromMediaPool && selected.has(asset.id));
   const poolAssets = registry.list().filter(asset => !asset.hiddenFromMediaPool);
@@ -67,10 +71,11 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
     }
     return false;
   };
-  const assets = poolAssets.filter(asset => inBin(asset.binId)
+  const filteredAssets = poolAssets.filter(asset => inBin(asset.binId)
     && (type === 'all' || type === asset.mediaType)
     && (usage === 'all' || (usage === 'used') === !!counts.get(asset.id))
     && `${mediaDisplayName(asset)} ${asset.originalName} ${asset.filename} ${asset.canonicalLabel ?? ''}`.toLowerCase().includes(query.toLowerCase()));
+  const assets = grouped ? groupMediaByType(filteredAssets) : filteredAssets;
   const importMedia = async (kind: 'files' | 'folder' | 'drop', paths?: string[]) => {
     if (busy) return;
     setBusy(true); setError('');
@@ -99,15 +104,16 @@ export function LessonMediaPool({ project, registry, resolveAsset, onImport, onI
     {open && <div className="lesson-panel-content">
       {error && <p className="lesson-error" role="alert">{error}</p>}
       {(!registry.dependencies().complete || registry.diagnostics().length > 0) && <p className="lesson-error" role="status">Some media references are missing, ambiguous, or unsupported. Usage is incomplete; all imported media is retained.</p>}
-      <div className="lesson-pool-search"><input aria-label="Search media" type="search" placeholder="Search media…" value={query} onChange={event => setQuery(event.target.value)} /><button aria-label="Media filters" aria-expanded={filtersOpen} title="Filter media by type or usage" onClick={() => setFiltersOpen(!filtersOpen)}>Filters{type !== 'all' || usage !== 'all' ? ' •' : ''}</button><button aria-label="Media bins" aria-expanded={binsOpen} onClick={() => setBinsOpen(!binsOpen)}>Bin</button></div>
+      <div className="lesson-pool-search"><input aria-label="Search media" type="search" placeholder="Search media…" value={query} onChange={event => setQuery(event.target.value)} /><button aria-label="Group by file type" aria-pressed={grouped} title="Pictures first, then videos; toggle off to restore bin order" onClick={() => setGroupedBins(previous => { const next = new Set(previous); next.has(groupingKey) ? next.delete(groupingKey) : next.add(groupingKey); return next; })}>Type ↕</button><button aria-label="Media filters" aria-expanded={filtersOpen} title="Filter media by type or usage" onClick={() => setFiltersOpen(!filtersOpen)}>Filters{type !== 'all' || usage !== 'all' ? ' •' : ''}</button><button aria-label="Media bins" aria-expanded={binsOpen} onClick={() => setBinsOpen(!binsOpen)}>Bin</button></div>
       <div className="lesson-pool-destination" title={activeBin ? binPath(activeBin) : 'General media'}><span>Import to</span><strong>{activeBin ? binPath(activeBin) : 'General media'}</strong><MediaPoolZoom zoom={poolZoom.zoom} onChange={poolZoom.setZoom} /></div>
       {filtersOpen && <div className="lesson-pool-filters">
       <div className="lesson-actions"><button disabled={busy} onClick={() => void importMedia('folder')}>Import folder</button><button onClick={() => { setType('all'); setUsage('all'); setQuery(''); }}>Reset filters</button></div>
       <div className="lesson-field-grid"><label className="lesson-field"><span>Type</span><select aria-label="Type" value={type} onChange={event => setType(event.target.value)}><option value="all">All types</option><option value="image">Images</option><option value="video">Videos</option><option value="audio">Audio</option></select></label><label className="lesson-field"><span>Usage</span><select aria-label="Usage" value={usage} onChange={event => setUsage(event.target.value)}><option value="all">All assets</option><option value="used">Referenced in content</option><option value="unused">No known references</option></select></label></div>
       </div>}
       {binsOpen && <div className="lesson-pool-filters">
-      <div className="lesson-bin-row"><label className="lesson-field"><span>Bin</span><select aria-label="Bin" value={activeBin} onChange={event => setBinId(event.target.value)}><option value="">General / all media</option>{bins.map(bin => <option key={bin.id} value={bin.id}>{binPath(bin.id)}</option>)}</select></label><button onClick={() => setBinName('')}>New bin</button></div>
-      {binName !== null && <form className="lesson-pool-bin-form" onSubmit={event => { event.preventDefault(); if (!binName.trim()) return; const bin = { id: crypto.randomUUID(), name: binName.trim().slice(0, 200), ...(activeBin ? { parentId: activeBin } : {}) }; onChange({ ...project, mediaBins: [...bins, bin] }); setBinId(bin.id); setBinName(null); }}><input autoFocus aria-label="New bin name" value={binName} maxLength={200} onChange={event => setBinName(event.target.value)} /><button disabled={!binName.trim()}>Create bin</button><button type="button" onClick={() => setBinName(null)}>Cancel</button></form>}
+      <div className="lesson-bin-row"><label className="lesson-field"><span>Bin</span><select aria-label="Bin" value={activeBin} onChange={event => { setBinId(event.target.value); setBinName(null); }}><option value="">General / all media</option>{bins.map(bin => <option key={bin.id} value={bin.id}>{binPath(bin.id)}</option>)}</select></label><button onClick={() => { setRenamingBin(null); setBinName(''); }}>New bin</button></div>
+      <div className="lesson-actions"><button disabled={!activeBin || busy} onClick={() => { setRenamingBin(activeBin); setBinName(bins.find(bin => bin.id === activeBin)!.name); }}>Rename bin</button><button disabled={!activeBin || busy} title="Remove this bin; keep its media and nested bins in the parent bin" onClick={() => { const parent = bins.find(bin => bin.id === activeBin)?.parentId; onChange(removeMediaBin(project, activeBin)); setBinId(parent ?? ''); setBinName(null); }}>Remove bin</button></div>
+      {binName !== null && <form className="lesson-pool-bin-form" onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setBinName(null); } }} onSubmit={event => { event.preventDefault(); if (!binName.trim()) return; if (renamingBin) { onChange(renameMediaBin(project, renamingBin, binName)); } else { const bin = { id: crypto.randomUUID(), name: binName.trim().slice(0, 200), ...(activeBin ? { parentId: activeBin } : {}) }; onChange({ ...project, mediaBins: [...bins, bin] }); setBinId(bin.id); } setBinName(null); }}><input key={renamingBin ?? 'new'} autoFocus aria-label={renamingBin ? 'Rename bin name' : 'New bin name'} value={binName} maxLength={200} onChange={event => setBinName(event.target.value)} /><button disabled={!binName.trim()}>{renamingBin ? 'Save bin name' : 'Create bin'}</button><button type="button" onClick={() => setBinName(null)}>Cancel</button></form>}
       {selectedAssets.length > 0 && <label className="lesson-field"><span>Move selected media to bin</span><select value="" onChange={event => { const destination = event.target.value; onChange({ ...project, assets: project.assets.map(asset => selected.has(asset.id) ? { ...asset, binId: destination === 'root' ? undefined : destination } : asset) }); }}><option value="" disabled>Choose bin…</option><option value="root">Pool root</option>{bins.map(bin => <option key={bin.id} value={bin.id}>{binPath(bin.id)}</option>)}</select></label>}
       </div>}
       <div className="lesson-pool-assets" role="listbox" aria-label="Project media" aria-multiselectable="true" tabIndex={0} onKeyDown={event => {

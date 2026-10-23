@@ -4,7 +4,7 @@ import type { VideoTrimSettings } from '../shared/types';
 import { audioManager } from './audio/AudioManager';
 import { ControlMediaReceiver } from './presentationMediaBridge';
 
-export function usePresentationMedia(identity: string | null, audio: { enabled: boolean; volume: number }, trim: VideoTrimSettings | undefined, active: boolean, handoffPosition = 0, restoreHandoff = false) {
+export function usePresentationMedia(identity: string | null, audio: { enabled: boolean; volume: number }, trim: VideoTrimSettings | undefined, active: boolean, handoffPosition = 0, restoreHandoff = false, autoplayOnNavigation = true) {
   const core = useRef(new PresentationMediaCore());
   const receiver = useRef<ControlMediaReceiver | null>(null);
   const runtime = useRef<MediaRuntime>({ generation: 0, available: false });
@@ -19,7 +19,7 @@ export function usePresentationMedia(identity: string | null, audio: { enabled: 
   previous.current = { identity, active };
   core.current.configure(identity, runtime.current, audio, trim);
   if ((entering || restoreHandoff) && core.current.intent) core.current.command('seek', handoffPosition);
-  if (healthyNavigation && core.current.intent) core.current.command('play');
+  if (healthyNavigation && autoplayOnNavigation && core.current.intent) core.current.command('play');
   const intent = core.current.intent;
   const syncReceiver = (next: MediaIntent | null) => {
     const existing = receiver.current;
@@ -59,11 +59,9 @@ export function usePresentationMedia(identity: string | null, audio: { enabled: 
     return () => { disposed = true; unsubscribeRuntime(); unsubscribePacket(); receiver.current?.dispose(); receiver.current = null; };
   }, []);
   const capturedIdentity = intent?.identity;
-  const capturedBridge = intent?.bridgeEpoch;
-  const capturedEpoch = intent?.epoch;
+  const capturedGeneration = intent?.rendererGeneration;
   const command = async (action: 'play' | 'pause' | 'seek' | 'replay', position?: number) => {
-    if (!capturedIdentity || core.current.intent?.identity !== capturedIdentity || core.current.intent?.bridgeEpoch !== capturedBridge || !runtime.current.available) return;
-    if (core.current.intent.epoch !== capturedEpoch) return;
+    if (!capturedIdentity || core.current.intent?.identity !== capturedIdentity || core.current.intent?.rendererGeneration !== capturedGeneration || !runtime.current.available) return;
     if (action === 'play' || action === 'replay') {
       const owner = core.current.intent;
       try { await audioManager.getContext().resume(); }

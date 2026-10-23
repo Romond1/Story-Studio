@@ -107,7 +107,7 @@ export function PresentLessonScene({ target, envelope, report }: { target: Extra
   useEffect(() => {
     if (status === 'error' || (!target.media && status === 'ready')) report(envelope.generation, envelope.sequence, status === 'error', status === 'error' ? 'Scene image could not be displayed.' : undefined);
   }, [envelope.generation, envelope.sequence, target.media, status]);
-  return <SceneSurface plan={target.plan} surface="present" video={target.media && target.plan.background.src
+  return <SceneSurface plan={target.plan} surface="present" occurrenceKey={`${envelope.snapshot?.sessionId ?? ''}:${target.occurrenceId}`} video={target.media && target.plan.background.src
     ? <PresentVideoSource key={JSON.stringify([target.media.identity, target.plan.background.src])} envelope={envelope} target={{ src: target.plan.background.src, media: target.media }} api={{ ...api, reportApplied: report }} readiness={status} /> : undefined} />;
 }
 function PresentCardV2Scene({ plan, envelope, report }: { plan: CardV2RenderPlan; envelope: PresentEnvelope; report: PresentApi['reportApplied'] }) {

@@ -1,3 +1,5 @@
+import { isImageAppearance, type ImageAppearance } from './imageAppearance';
+import { validBubbleOptions } from './bubbleAppearance';
 import { buildCardV2FacePlan, parseCardV2RenderPlan, type CardV2CardPlan } from '../cardV2Render';
 import type { MarkerStroke, VideoTrimSettings } from '../types';
 import { isVideoTrimSettings } from '../videoTrim';
@@ -11,12 +13,13 @@ import { compatibilityMediaUrl } from '../content/mediaResolution';
 interface VisualObject { id: string; box: Rect }
 export type SceneObjectPlan =
   | (VisualObject & { kind: 'card'; card: CardV2CardPlan })
-  | (VisualObject & { kind: 'image'; src: string })
-  | (VisualObject & Pick<SceneText, 'kind' | 'text' | 'fontSize' | 'color' | 'align' | 'bubbleDefId'>);
+  | (VisualObject & { kind: 'image'; src: string; appearance?: ImageAppearance })
+  | (VisualObject & { kind: 'video'; src: string })
+  | (VisualObject & Pick<SceneText, 'kind' | 'text' | 'fontSize' | 'color' | 'align' | 'bubbleDefId' | 'bubbleTail' | 'appearDelayMs' | 'disappearAtMs'>);
 /** The only visual contract used by the new editor, teacher preview and Present. */
 export interface ScenePlan {
   version: 1; sceneId: string; frame: { width: number; height: number };
-  background: { color: string; src?: string; mediaType?: 'image' | 'video'; videoTrim?: VideoTrimSettings };
+  background: { color: string; src?: string; mediaType?: 'image' | 'video'; videoTrim?: VideoTrimSettings; imageAppearance?: ImageAppearance };
   viewport: SceneViewport; objects: SceneObjectPlan[]; drawings: MarkerStroke[];
   transition: { kind: 'none' | 'fade'; durationMs: number };
   rewards?: RewardPresentation;
@@ -45,15 +48,15 @@ export function projectScene(project: LessonProject, sceneId: string, session?: 
       card.concealed = state?.concealed ?? object.initiallyConcealed;
       if (card.concealed) { card.texts = []; delete card.image; card.overflow = false; }
       objects.push({ id: object.id, kind: 'card', box, card });
-    } else if (object.kind === 'image') {
+    } else if (object.kind === 'image' || object.kind === 'video') {
       const src = source(object.assetId);
-      if (src) objects.push({ id: object.id, kind: 'image', box: { ...object.box }, src });
+      if (src) objects.push({ id: object.id, kind: object.kind, box: { ...object.box }, src, ...(object.kind === 'image' && object.appearance ? { appearance: { ...object.appearance } } : {}) });
     } else objects.push({ id: object.id, kind: object.kind, box: { ...object.box }, text: object.text,
-      fontSize: object.fontSize, color: object.color, align: object.align, ...(object.bubbleDefId ? { bubbleDefId: object.bubbleDefId } : {}) });
+      fontSize: object.fontSize, color: object.color, align: object.align, ...(object.bubbleDefId ? { bubbleDefId: object.bubbleDefId } : {}), ...(object.bubbleTail!==undefined?{bubbleTail:object.bubbleTail}:{}), ...(object.appearDelayMs!==undefined?{appearDelayMs:object.appearDelayMs}:{}), ...(object.disappearAtMs!==undefined?{disappearAtMs:object.disappearAtMs}:{}) });
   }
   return { version: 1, sceneId, frame: { ...scene.frame }, background: { color: scene.background.color,
     ...(backgroundSrc && background && (background.mediaType === 'image' || background.mediaType === 'video') ? { src: backgroundSrc, mediaType: background.mediaType,
-      ...(background.mediaType === 'video' && scene.background.videoTrim ? { videoTrim: { ...scene.background.videoTrim } } : {}) } : {}) },
+      ...(background.mediaType === 'video' && scene.background.videoTrim ? { videoTrim: { ...scene.background.videoTrim } } : {}), ...(background.mediaType === 'image' && scene.background.imageAppearance ? { imageAppearance: { ...scene.background.imageAppearance } } : {}) } : {}) },
     viewport: JSON.parse(JSON.stringify(live?.viewport ?? scene.viewport)), objects,
     drawings: JSON.parse(JSON.stringify([...scene.drawings, ...(live?.drawings ?? [])])),
     ...(live?.rewards ? { rewards: projectLessonRewards(live.rewards, scene.frame) } : {}),
@@ -85,6 +88,7 @@ export function parseScenePlan(value: unknown): ScenePlan | null {
     if (!local(value.background.src) || !['image', 'video'].includes(value.background.mediaType)) return null;
     background.src = value.background.src; background.mediaType = value.background.mediaType;
   }
+  if (value.background.imageAppearance !== undefined) { if (background.mediaType !== 'image' || !isImageAppearance(value.background.imageAppearance)) return null; background.imageAppearance = { ...value.background.imageAppearance }; }
   if (value.background.videoTrim !== undefined) {
     if (background.mediaType !== 'video' || !isVideoTrimSettings(value.background.videoTrim)) return null;
     background.videoTrim = { ...value.background.videoTrim };
@@ -100,26 +104,28 @@ export function parseScenePlan(value: unknown): ScenePlan | null {
       if (!parsed || parsed.cards[0].instanceId !== object.id) return null;
       const card = parsed.cards[0]; card.box = { ...box };
       objects.push({ id: object.id, kind: 'card', box, card });
-    } else if (object.kind === 'image') {
+    } else if (object.kind === 'image' || object.kind === 'video') {
       if (!local(object.src)) return null;
-      objects.push({ id: object.id, kind: 'image', box, src: object.src });
+      if (object.appearance !== undefined && (object.kind !== 'image' || !isImageAppearance(object.appearance))) return null;
+      objects.push({ id: object.id, kind: object.kind, box, src: object.src, ...(object.appearance ? { appearance: { ...object.appearance } } : {}) });
     } else if (object.kind === 'text' || object.kind === 'bubble') {
+      if(!validBubbleOptions(object))return null;
       if (typeof object.text !== 'string' || object.text.length > 65536 || !finite(object.fontSize) || object.fontSize < 8 || object.fontSize > 500
         || !color(object.color) || !['left', 'center', 'right'].includes(object.align)) return null;
       objects.push({ id: object.id, kind: object.kind, box, text: object.text, fontSize: object.fontSize,
-        color: object.color, align: object.align, ...(identifier(object.bubbleDefId) ? { bubbleDefId: object.bubbleDefId } : {}) });
+        color: object.color, align: object.align, ...(identifier(object.bubbleDefId) ? { bubbleDefId: object.bubbleDefId } : {}), ...(object.bubbleTail!==undefined?{bubbleTail:object.bubbleTail}:{}), ...(object.appearDelayMs!==undefined?{appearDelayMs:object.appearDelayMs}:{}), ...(object.disappearAtMs!==undefined?{disappearAtMs:object.disappearAtMs}:{}) });
     } else return null;
   }
   const drawings: MarkerStroke[] = [];
   for (const stroke of value.drawings) {
     if (!record(stroke) || !identifier(stroke.id) || !color(stroke.color) || !finite(stroke.size) || stroke.size <= 0 || stroke.size > 500
-      || !finite(stroke.opacity) || stroke.opacity < 0 || stroke.opacity > 1 || !Array.isArray(stroke.points) || stroke.points.length > 100000) return null;
+      || !finite(stroke.opacity) || stroke.opacity < 0 || stroke.opacity > 1 || (stroke.fadeMs !== undefined && (!finite(stroke.fadeMs) || stroke.fadeMs < 0 || stroke.fadeMs > 60000)) || !Array.isArray(stroke.points) || stroke.points.length > 100000) return null;
     const points = [];
     for (const point of stroke.points) {
       if (!record(point) || ![point.x, point.y, point.t].every(finite)) return null;
       points.push({ x: point.x, y: point.y, t: point.t, ...(finite(point.h) ? { h: point.h } : {}) });
     }
-    drawings.push({ id: stroke.id, color: stroke.color, size: stroke.size, opacity: stroke.opacity, rainbow: stroke.rainbow === true, points });
+    drawings.push({ id: stroke.id, color: stroke.color, size: stroke.size, opacity: stroke.opacity, rainbow: stroke.rainbow === true, ...(stroke.fadeMs !== undefined ? { fadeMs: stroke.fadeMs } : {}), points });
   }
   return { version: 1, sceneId: value.sceneId, frame: { width: value.frame.width, height: value.frame.height }, background,
     viewport: { zoom: value.viewport.zoom, pan: { x: value.viewport.pan.x, y: value.viewport.pan.y } }, objects, drawings,

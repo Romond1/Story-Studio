@@ -198,7 +198,8 @@ export function duplicateEntry<T extends LessonProject>(project: T, sourceSequen
   const entries = added.project.sequences[destination].filter(e => e.id !== added.entryId);
   const newEntry = added.project.sequences[destination].find(e => e.id === added.entryId)!;
   const sameSequence = sourceSequence === destination;
+  const inheritSection = sameSequence && source.kind !== 'break';
   const index = sameSequence ? entries.findIndex(e => e.id === sourceEntryId) + 1 : entries.length;
-  entries.splice(index, 0, { ...newEntry, kind: source.kind, section: sameSequence ? source.section : '', ...(sameSequence && source.sectionId ? { sectionId: source.sectionId } : {}) });
+  entries.splice(index, 0, { ...newEntry, kind: source.kind, section: inheritSection ? source.section : '', ...(inheritSection && source.sectionId ? { sectionId: source.sectionId } : {}) });
   return { ...added, project: { ...added.project, sequences: { ...added.project.sequences, [destination]: entries } } };
 }

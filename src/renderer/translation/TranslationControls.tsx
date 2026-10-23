@@ -1,28 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import type { JapaneseMode, TargetLanguage, TranslationRequest, SpeechExecution, SpeechBackend, TranslationSettings, TranslationEngineState } from '../../shared/translation';
 import { CAPTION_STYLE, type CaptionStyle } from '../../shared/translation';
+import { loadTranslationPreferences, parseTranslationPreferences, saveTranslationPreferences } from '../../shared/translationPreferences';
 import { audioController } from '../audio/AudioController';
 import { captureUtterance } from './capture';
+import { bindTranslationHoldKey } from './holdToTalk';
 import './translation.css';
 
-export function TranslationControls() {
+export function TranslationControls({ activeView = true }: { activeView?: boolean }) {
+  const [preferences] = useState(() => {
+    try { return loadTranslationPreferences(window.localStorage); }
+    catch { return parseTranslationPreferences(null); }
+  });
+  const [preferencesStatus, setPreferencesStatus] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [stopping, setStopping] = useState(false);
-  const [target, setTarget] = useState<TargetLanguage>('ja');
-  const [mode, setMode] = useState<JapaneseMode>('standard');
-  const [model, setModel] = useState<'base.en' | 'small.en'>('base.en');
-  const [execution, setExecution] = useState<SpeechExecution>('auto');
+  const [target, setTarget] = useState<TargetLanguage>(preferences.target);
+  const [mode, setMode] = useState<JapaneseMode>(preferences.mode);
+  const [model, setModel] = useState<'base.en' | 'small.en'>(preferences.model);
+  const [execution, setExecution] = useState<SpeechExecution>(preferences.execution);
   const [speechBackend, setSpeechBackend] = useState<SpeechBackend>();
   const [engine, setEngine] = useState<TranslationEngineState>({phase:'off'});
   const enginePhase = useRef<TranslationEngineState['phase']>('off');
   const preparation = useRef(Promise.resolve());
   const [english, setEnglish] = useState('');
   const [draft, setDraft] = useState('');
-  const [readings, setReadings] = useState('');
-  const [auto, setAuto] = useState(false);
-  const [style,setStyle] = useState<CaptionStyle>(CAPTION_STYLE);
-  const [fontSize, setFontSize] = useState(36);
-  const [position, setPosition] = useState<'top' | 'bottom'>('top');
+  const [readings, setReadings] = useState(preferences.readings);
+  const [auto, setAuto] = useState(preferences.auto);
+  const [style,setStyle] = useState<CaptionStyle>(preferences.style);
+  const [fontSize, setFontSize] = useState(preferences.fontSize);
+  const [position, setPosition] = useState<'top' | 'bottom'>(preferences.position);
   const [status, setStatus] = useState('Translation off');
   const [busy, setBusy] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -34,6 +41,11 @@ export function TranslationControls() {
   const formatting = useRef(false);
   const processing = useRef(false);
   const api = window.translationControl;
+  useEffect(() => {
+    let saved = false;
+    try { saved = saveTranslationPreferences(window.localStorage, { target, mode, model, execution, readings, auto, style, fontSize, position }); } catch { /* Storage may be unavailable. */ }
+    setPreferencesStatus(saved ? 'Translation preferences saved automatically.' : 'Unable to save translation preferences on this device.');
+  }, [target, mode, model, execution, readings, auto, style, fontSize, position]);
   useEffect(()=>{void api?.setAppearance?.({fontSize,position,style}).catch(()=>setStatus('Unable to update caption style.'));},[api,fontSize,position,style]);
   const invalidate = (hide = true, unload = false) => {
     epoch.current++;
@@ -101,25 +113,61 @@ export function TranslationControls() {
     finally { if (token === epoch.current) { setBusy(false); processing.current = false; } }
   };
   const start = () => {
-    if (recording.current || !active.current || enginePhase.current!=='ready') return;
+    if (recording.current || processing.current || formatting.current || !active.current || enginePhase.current!=='ready') return false;
     const token = invalidate(); setDraft(''); setEnglish('');
     const stream = audioController.getRecognitionStream();
-    if (!stream) { setStatus('Enable a microphone in Audio settings first.'); return; }
+    if (!stream) { setStatus('Enable a microphone in Audio settings first.'); return false; }
     try {
       recording.current = captureUtterance(stream, () => audioController.getRecognitionStream(), audio => {
         if (token !== epoch.current) return;
         recording.current = null; void run({ audio }, token);
       }, error => { if (token === epoch.current) { recording.current = null; setListening(false); setBusy(false); setStatus(error); } });
       setListening(true); setStatus('Listening · maximum 20 seconds');
-    } catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to record.'); }
+      return true;
+    } catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to record.'); return false; }
   };
   const stop = () => { if (recording.current) { recording.current.stop(); setListening(false); setBusy(true); setStatus('Preparing microphone audio…'); } };
+  const holdActions = useRef({ start, stop, cancel: () => { invalidate(); setStatus('Recording cancelled'); } });
+  holdActions.current = {
+    start: () => {
+      if (!active.current) { setStatus('Turn translation on before holding W to talk.'); return false; }
+      if (enginePhase.current !== 'ready') { setStatus('Wait for translation models to be ready, then hold W again.'); return false; }
+      return start();
+    },
+    stop,
+    cancel: () => { invalidate(); setStatus('Recording cancelled'); },
+  };
+  useEffect(() => {
+    if (!activeView) return;
+    let heldCapture: ReturnType<typeof captureUtterance> | null = null;
+    return bindTranslationHoldKey(window, document, {
+      start: () => {
+        const started = holdActions.current.start();
+        heldCapture = started ? recording.current : null;
+        return started;
+      },
+      stop: () => {
+        if (heldCapture && heldCapture === recording.current) holdActions.current.stop();
+        heldCapture = null;
+      },
+      cancel: () => {
+        if (heldCapture && heldCapture === recording.current && active.current) holdActions.current.cancel();
+        heldCapture = null;
+      },
+    });
+  }, [activeView]);
+  useEffect(() => {
+    if (!activeView && recording.current) { invalidate(false); setStatus('Recording cancelled when leaving Teach.'); }
+  }, [activeView]);
   return <section className="translation-controls teach-live-card" aria-label="Translation">
     <h3>Translation</h3>
+    <small role="status">{preferencesStatus}</small>
     <button type="button" disabled={!api||stopping} aria-pressed={enabled} onClick={async() => {
       if(enabled){setStopping(true);invalidate(true,true);active.current=false;setEnabled(false);setStatus('Releasing local models…');try{await api.cancel(true);}finally{setStopping(false);}}
       else{active.current=true;setEnabled(true);prepareSelection();}
     }}>{enabled ? 'Turn translation off' : 'Turn translation on'}</button>
+    <p>Hold W to talk · release to translate (translation and microphone must be enabled).</p>
+    <p role="status">{status}</p>
     {enabled && <>
       <label>Target language<select value={target} onChange={e => { const target=e.target.value as TargetLanguage;setTarget(target);prepareSelection({target}); }}><option value="ja">Japanese</option><option value="it">Italian</option><option value="ro">Romanian</option></select></label>
       {target === 'ja' && <label>Japanese display<select value={mode} onChange={e => { invalidate(); setMode(e.target.value as JapaneseMode); setStatus('Ready to review'); }}><option value="standard">Standard Japanese</option><option value="kana">Kana-only</option><option value="furigana">Furigana</option></select></label>}
@@ -128,7 +176,6 @@ export function TranslationControls() {
         <button type="button" disabled={busy||engine.phase!=='ready'} aria-pressed={listening} onClick={() => listening ? stop() : start()}>{listening ? 'Stop listening' : 'Start listening'}</button>
         {(busy || listening) && <button type="button" onClick={() => { invalidate(); setStatus('Cancelled'); }}>Cancel</button>}
       </div>
-      <p role="status">{status}</p>
       <p>Engine: {engine.phase==='ready'?'READY':engine.phase==='preparing'?'PREPARING':engine.phase==='error'?'Needs preparation':'OFF'}</p>
       {engine.phase==='error'&&<button type="button" onClick={()=>prepareSelection()}>Prepare translation again</button>}
       {speechBackend && <p>Last speech backend: {speechBackend.backend === 'cuda' ? `NVIDIA CUDA${speechBackend.device ? ` · ${speechBackend.device}` : ''}` : 'CPU'}{speechBackend.reason ? ` · ${speechBackend.reason}` : ''}</p>}

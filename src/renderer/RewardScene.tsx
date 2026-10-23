@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, type CSSProperties } from "react";
 import { LogicalSceneFrame } from "./StaticScene";
+import { rewardAnchorStyle } from '../shared/rewardAppearance';
 import { SparkBurst } from "./sparks/SparkBurst";
 import { FinalBadgeVisual } from "./sparks/FinalBadgeOverlay";
 import { getRewardShapePath, REWARD_DEFINITIONS } from "../shared/sparkRewards";
@@ -117,10 +118,7 @@ export function RewardScene({
             <div
               className="spark-anchor"
               key={s.id}
-              style={{
-                top: s.config.positionTop,
-                right: s.config.positionRight,
-              }}
+              style={rewardAnchorStyle(s.appearance, s.config)}
             >
               <AnchoredBurst visual={s} />
             </div>
@@ -128,10 +126,7 @@ export function RewardScene({
         {latest && time < latest.startedAt + latest.config.counterVisibleMs && (
           <div
             className="spark-anchor"
-            style={{
-              top: latest.config.positionTop,
-              right: latest.config.positionRight,
-            }}
+            style={rewardAnchorStyle(latest.appearance, latest.config)}
           >
             <AnchoredCounter key={latest.id} visual={latest} />
           </div>

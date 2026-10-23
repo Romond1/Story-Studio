@@ -33,3 +33,11 @@ test('an import cannot duplicate an existing asset or create cyclic bins', () =>
   assert.throws(() => mergeLessonMediaImport(project, result([asset('new')], [{ id: 'cycle', name: 'Cycle', parentId: 'cycle' }])), /cycle/i);
   assert.equal(project.assets.length, 1);
 });
+
+test('replacement keeps one asset, its bin and display title without mutating the undo snapshot',()=>{
+  const original:AssetItem={id:'image',filename:'old.png',relativePath:'assets/old.png',originalName:'picture.png',mediaType:'image',sizeBytes:1,importedAt:'',displayTitle:'My title',binId:'active'};
+  const before={...project,assets:[original]},replacement={...original,filename:'new.png',relativePath:'assets/new.png'};
+  const next=mergeLessonMediaImport(before,{importedAssets:[],createdSlides:[],replacedAssets:[replacement]});
+  assert.equal(next.assets.length,1);assert.equal(next.assets[0].displayTitle,'My title');assert.equal(next.assets[0].binId,'active');assert.equal(before.assets[0].relativePath,'assets/old.png');
+  assert.throws(()=>mergeLessonMediaImport(before,{importedAssets:[],createdSlides:[],replacedAssets:[{...replacement,id:'unknown'}]}),/replacement/i);
+});

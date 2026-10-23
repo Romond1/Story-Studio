@@ -44,6 +44,7 @@ export interface MarkerStroke {
   size: number;
   opacity: number;
   rainbow: boolean;
+  fadeMs?: number;
   points: DrawPoint[];
 }
 
@@ -503,7 +504,9 @@ export interface RelicSystem {
   animateOnComplete: boolean;
 }
 
+export interface MediaImportContext { folderPath: string; assets: AssetItem[]; }
 export interface ImportResult {
+  replacedAssets?: AssetItem[];
   importedBins?: MediaBin[];
   failures?: { name: string; reason: string }[];
   importedAssets: AssetItem[];

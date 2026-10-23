@@ -81,10 +81,13 @@ test('camera IPC authenticates roles, filters payloads, and cancels pending cons
   const control = makeWindow(), present = makeWindow();
   const event = (window: ReturnType<typeof makeWindow>) => ({ sender: window.webContents, senderFrame: window.webContents.mainFrame });
   let consent!: (value: { response: number }) => void;
+  const savedPreferences: any[] = [];
   const exports: any = {};
   const source = ts.transpileModule(readFileSync('src/main/cameraBroadcast.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2021 } }).outputText;
   vm.runInNewContext(source, { exports, require: (name: string) => {
-    if (name === 'electron') return { ipcMain: { handle: (key: string, fn: any) => handles.set(key, fn), on: (key: string, fn: any) => events.set(key, fn) }, dialog: { showMessageBox: () => new Promise(resolve => { consent = resolve; }) } };
+    if (name === 'electron') return { app: { getPath: () => 'test-profile' }, ipcMain: { handle: (key: string, fn: any) => handles.set(key, fn), on: (key: string, fn: any) => events.set(key, fn) }, dialog: { showMessageBox: () => new Promise(resolve => { consent = resolve; }) } };
+    if (name === 'node:path') return { default: require('node:path') };
+    if (name === './cameraPreferences') return { createCameraPreferencesStore: () => ({ load: () => ({ ...CAMERA_DEFAULTS }), save: (settings: any) => savedPreferences.push(settings) }) };
     if (name === '../shared/cameraProtocol') return require('./cameraProtocol');
     if (name === '../shared/personRemoval') return require('./personRemoval');
     if (name === '../shared/faceTrackingProtocol') return require('./faceTrackingProtocol');
@@ -116,6 +119,8 @@ test('camera IPC authenticates roles, filters payloads, and cancels pending cons
   assert.equal(get().settings.layout.x,.1);
   assert.equal(get().settings.layout.private,undefined);
   assert.equal(get().settings.enabled,true,'layout request cannot change capture');
+  assert.equal(savedPreferences[savedPreferences.length - 1].layout.x, .1, 'Presenter placement is saved');
+  assert.equal(get().preferencesSaved, true);
   await handles.get('camera:set')!(event(control),{...get().settings,personRemoval:true});
   events.get('camera:removal-status')!(event(control),{state:'running',fps:12});
   assert.notEqual(get().removalStatus?.state,'running');
@@ -129,6 +134,7 @@ test('camera IPC authenticates roles, filters payloads, and cancels pending cons
   events.get('camera:tracking-status')!(event(present), { state: 'tracking' });
   assert.notEqual(get().trackingStatus?.state, 'tracking', 'disabled tracking cannot publish live state');
   await handles.get('camera:set')!(event(control), { ...CAMERA_DEFAULTS, enabled: true, tracking: { enabled: true, markers: true, hat: true } });
+  assert.equal(savedPreferences[savedPreferences.length - 1].tracking.enabled, true, 'tracking preferences are saved');
   events.get('camera:tracking-status')!(event(control), { state: 'tracking' });
   assert.notEqual(get().trackingStatus?.state, 'tracking', 'Control cannot impersonate tracker');
   events.get('camera:tracking-status')!(event(present), { state: 'tracking', landmarks: ['private'] });

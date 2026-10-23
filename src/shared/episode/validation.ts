@@ -16,15 +16,15 @@ const fields=(v:Record<string,any>,keys:string[],name:string)=>check(Object.keys
 function validateAuthoredFields(p:Record<string,any>) {
  for(const asset of p.assets)fields(asset,['id','binId','relativePath','filename','originalName','displayTitle','hiddenFromMediaPool','referenceCode','referenceDescription','canonicalLabel','referenceContext','referenceContextId','referenceOrdinal','mediaType','sizeBytes','importedAt'],'asset');
  for(const bin of p.mediaBins)fields(bin,['id','name','parentId'],'bin');
- for(const section of p.sections??[])fields(section,['id','name','sequence'],'section');
+ for(const section of p.sections??[]){fields(section,['id','name','sequence','beforeEntryId','audio'],'section');for(const audio of section.audio??[])fields(audio,['id','assetId','volume','loop','autoplay','shortcut'],'audio');}
  fields(p.sequences,['story','activation'],'sequences');
  for(const sequence of ['story','activation'])for(const entry of p.sequences[sequence])fields(entry,['id','sceneId','section','sectionId','kind'],'entry');
  for(const scene of Object.values(p.scenes) as any[]){
   fields(scene,['id','title','frame','background','objects','drawings','audio','transition','viewport','notes'],'scene');
-  fields(scene.frame,['width','height'],'frame');fields(scene.background,['color','assetId','videoTrim'],'background');fields(scene.transition,['kind','durationMs'],'transition');fields(scene.viewport,['zoom','pan'],'viewport');fields(scene.viewport.pan,['x','y'],'pan');
-  for(const object of scene.objects){fields(object,['id','box','visible','kind',...(object.kind==='card'?['cardId','initialFaceId','initiallyConcealed','interaction']:object.kind==='image'?['assetId']:['text','fontSize','color','bubbleDefId','align'])],'scene object');fields(object.box,['x','y','width','height'],'geometry');}
-  for(const audio of scene.audio)fields(audio,['id','assetId','volume','loop','autoplay'],'audio');
-  for(const stroke of scene.drawings){fields(stroke,['id','color','size','opacity','rainbow','points'],'drawing');for(const point of stroke.points)fields(point,['x','y','t','h'],'point');}
+  fields(scene.frame,['width','height'],'frame');fields(scene.background,['color','assetId','videoTrim','imageAppearance'],'background');fields(scene.transition,['kind','durationMs'],'transition');fields(scene.viewport,['zoom','pan'],'viewport');fields(scene.viewport.pan,['x','y'],'pan');
+  for(const object of scene.objects){fields(object,['id','box','visible','kind',...(object.kind==='card'?['cardId','initialFaceId','initiallyConcealed','interaction']:(object.kind==='image'||object.kind==='video')?['assetId',...(object.kind==='image'?['appearance']:[])]:['text','fontSize','color','bubbleDefId','align','bubbleTail','appearDelayMs','disappearAtMs'])],'scene object');fields(object.box,['x','y','width','height'],'geometry');}
+  for(const audio of scene.audio)fields(audio,['id','assetId','volume','loop','autoplay','shortcut'],'audio');
+  for(const stroke of scene.drawings){fields(stroke,['id','color','size','opacity','rainbow','fadeMs','points'],'drawing');for(const point of stroke.points)fields(point,['x','y','t','h'],'point');}
  }
  // Card and Set nested fields are already allowlisted by assertCardsV2 in body validation.
 }

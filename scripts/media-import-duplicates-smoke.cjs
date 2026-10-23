@@ -1,0 +1,31 @@
+const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {_electron}=require(path.join(os.homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+(async()=>{
+ const root=path.resolve(__dirname,'..'),temp=await fs.mkdtemp(path.join(os.tmpdir(),'studio-import-duplicates-')),folder=path.join(temp,'Lesson'),sources=path.join(temp,'Sources');
+ await fs.mkdir(path.join(folder,'assets'),{recursive:true});await fs.mkdir(sources);
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aK1sAAAAASUVORK5CYII=','base64');
+ const c=require('../dist/main/shared/lesson/commands');let project=c.createLesson('Duplicate imports');project.mediaBins=[{id:'bin',name:'Test bin'}];
+ project.assets=[];for(const [id,type,name] of [['v1','video','One.mp4'],['p1','image','One.png'],['v2','video','Two.mp4'],['p2','image','Two.png']]){await fs.writeFile(path.join(folder,'assets',name),type==='image'?png:'video fixture');project.assets.push({id,filename:name,relativePath:`assets/${name}`,originalName:name,mediaType:type,sizeBytes:1,importedAt:'',binId:'bin'});}
+ project=c.insertScene(project,'story',c.createScene('Existing scene')).project;project.scenes[project.sequences.story[0].sceneId].background.assetId='p1';await fs.writeFile(path.join(folder,'project.json'),JSON.stringify(project));
+ const app=await _electron.launch({executablePath:require('electron'),cwd:root,args:[root,`--user-data-dir=${path.join(temp,'profile')}`]});
+ try{
+  const page=await app.firstWindow();page.setDefaultTimeout(15000);page.on('dialog',d=>d.accept());const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+  const win=await app.browserWindow(page);await win.evaluate(w=>w.setSize(1440,1000));const button=name=>page.getByRole('button',{name,exact:true});
+  await button('Adventure').click();await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]})},folder);await button('Open project').click();await page.getByText('Lesson opened.',{exact:true}).waitFor();await button('Edit').click();
+  const ids=()=>page.locator('.lesson-pool-asset').evaluateAll(nodes=>nodes.map(n=>n.dataset.assetId));
+  assert.deepEqual(await ids(),['v1','p1','v2','p2']);await button('Group by file type').click();assert.deepEqual(await ids(),['p1','p2','v1','v2']);await button('Group by file type').click();assert.deepEqual(await ids(),['v1','p1','v2','p2']);
+  await button('Media bins').click();await page.getByLabel('Bin',{exact:true}).selectOption('bin');assert.equal(await button('Group by file type').getAttribute('aria-pressed'),'false');await button('Group by file type').click();await page.getByLabel('Bin',{exact:true}).selectOption('');assert.equal(await button('Group by file type').getAttribute('aria-pressed'),'false');await page.getByLabel('Bin',{exact:true}).selectOption('bin');assert.equal(await button('Group by file type').getAttribute('aria-pressed'),'true');
+  const source=path.join(sources,'One.png');await fs.writeFile(source,Buffer.concat([png,Buffer.from('new copy')]));
+  const choose=async(files,response,all=false)=>app.evaluate(({dialog},{files,response,all})=>{globalThis.__duplicatePrompts=[];dialog.showOpenDialog=async()=>({canceled:false,filePaths:files});dialog.showMessageBox=async(_win,options)=>{globalThis.__duplicatePrompts.push(options);return {response,checkboxChecked:all};};},{files,response,all});
+  const save=async()=>{await button('Save').click();await page.waitForFunction(()=>!document.querySelector('.lesson-project-title')?.textContent.includes('Unsaved')&&!document.querySelector('.lesson-status')?.textContent.includes('Working'));};
+  await choose([source],0);await button('Import files').click();await page.waitForFunction(()=>document.querySelector('.lesson-status')?.textContent.includes('0 media files imported'));assert.equal((await app.evaluate(()=>globalThis.__duplicatePrompts)).length,1);assert.equal((await ids()).length,4);
+  await choose([source],1);await button('Import files').click();await page.waitForFunction(()=>document.querySelector('.lesson-project-title')?.textContent.includes('Unsaved'));await save();const replaced=JSON.parse(await fs.readFile(path.join(folder,'project.json'),'utf8'));assert.equal(replaced.assets.length,4);assert.notEqual(replaced.assets.find(a=>a.id==='p1').filename,'One.png');assert.equal(replaced.scenes[project.sequences.story[0].sceneId].background.assetId,'p1');assert.deepEqual(await fs.readFile(path.join(folder,'assets','One.png')),png);
+  await button('Undo').click();await save();assert.equal(JSON.parse(await fs.readFile(path.join(folder,'project.json'),'utf8')).assets.find(a=>a.id==='p1').filename,'One.png');await button('Redo').click();await save();
+  // Real dropped-file IPC includes unsaved catalogue; a repeated name in the same batch uses one decision.
+  const fresh=path.join(sources,'Fresh.png');await fs.writeFile(fresh,png);await choose([],0,true);
+  const first=await page.evaluate(async({folder,fresh})=>{const state=await window.lessonApi.openProjectByPath(folder);return window.appApi.importDroppedMedia([fresh,fresh],{folderPath:folder,assets:state.data.assets});},{folder,fresh});assert.equal(first.importedAssets.length,1);assert.equal((await app.evaluate(()=>globalThis.__duplicatePrompts)).length,1);
+  const second=await page.evaluate(async({folder,assets,fresh})=>window.appApi.importDroppedMedia([fresh,fresh],{folderPath:folder,assets}),{folder,assets:[...replaced.assets,...first.importedAssets],fresh});assert.equal(second.importedAssets.length,0);assert.equal((await app.evaluate(()=>globalThis.__duplicatePrompts)).length,2);
+  const evidence=path.join(root,'output/playwright/import-duplicates');await fs.mkdir(evidence,{recursive:true});await page.screenshot({path:path.join(evidence,'type-grouping.png')});assert.deepEqual(errors,[]);
+  console.log('PASS optional stable grouping, per-bin settings, same-name choices, replacement undo/redo and reference preservation, drop/bulk and unsaved duplicate detection');
+ }finally{await app.evaluate(({app})=>app.exit(0)).catch(()=>{});await app.close().catch(()=>{});}
+})().catch(e=>{console.error(e);process.exitCode=1;});

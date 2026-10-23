@@ -3,8 +3,10 @@ import { awardRewardToStudent, normalizeSparkStudent, resetStudentRewards, REWAR
 import { DEFAULT_BADGE_CONFIG, DEFAULT_SPARK_CONFIG } from '../rewardDefaults';
 import { cleanBadgeConfig, cleanSparkConfig, parseRewardPresentation, sparkLifetime, type FinalBadgeVisual, type RewardPresentation, type SparkVisual } from '../rewardPresentation';
 import type { LessonSession } from './model';
+import { parseRewardAppearance, type RewardAppearance } from '../rewardAppearance';
 
 export interface LessonRewardState {
+  appearance?: RewardAppearance;
   students: SparkStudent[];
   activeStudentId: string;
   sparks: SparkVisual[];
@@ -33,6 +35,12 @@ export function selectLessonRewardStudent(session: LessonSession, id: string): L
   return !state || state.activeStudentId === id || !state.students.some(value => value.id === id) ? session : update(session, { ...state, activeStudentId: id });
 }
 
+export function setLessonRewardAppearance(session: LessonSession, value: unknown): LessonSession {
+  const appearance = parseRewardAppearance(value), state = session.rewards;
+  if (!state || !appearance || JSON.stringify(state.appearance) === JSON.stringify(appearance)) return session;
+  return update(session, { ...state, appearance });
+}
+
 export function addLessonRewardStudent(session: LessonSession, name: string, id: string): LessonSession {
   if (!validId(id) || typeof name !== 'string' || !name.trim()) return session;
   const initialized = initializeLessonRewards(session, []), state = initialized.rewards!;
@@ -47,7 +55,13 @@ export function awardLessonReward(session: LessonSession, variant: SparkAwardVar
   const active = state.students.find(value => value.id === state.activeStudentId); if (!active) return session;
   const students = awardRewardToStudent(state.students, state.activeStudentId, variant);
   const config = cleanSparkConfig(DEFAULT_SPARK_CONFIG);
-  const visual: SparkVisual = { id: eventId, startedAt: now, expiresAt: sparkLifetime(now, config.burstDurationMs, config.counterVisibleMs, variant), variant, studentName: active.name, delta: 1, config };
+  const appearance = state.appearance;
+  if (appearance) {
+    config.particleCount = Math.round(config.particleCount * appearance.intensity);
+    config.glowIntensity *= appearance.intensity;
+    config.scalePopIntensity = 1 + (config.scalePopIntensity - 1) * appearance.intensity;
+  }
+  const visual: SparkVisual = { id: eventId, startedAt: now, expiresAt: sparkLifetime(now, config.burstDurationMs, config.counterVisibleMs, variant), variant, studentName: active.name, delta: 1, config, ...(appearance ? { appearance: { ...appearance } } : {}) };
   return update(session, { ...state, students, sparks: [...state.sparks.filter(value => value.expiresAt > now).slice(-999), visual], final: refreshFinal(state, students), appliedEventIds: [...state.appliedEventIds, eventId] });
 }
 
@@ -62,6 +76,10 @@ export function showLessonCelebration(session: LessonSession, eventId: string, n
   const state = session.rewards;
   if (!accepts(state, eventId) || !Number.isFinite(now) || now < 0) return session;
   const config = cleanBadgeConfig(DEFAULT_BADGE_CONFIG);
+  if (state.appearance) {
+    config.confettiCount = Math.round((config.confettiCount ?? 30) * state.appearance.intensity);
+    config.animation = { ...config.animation, glowIntensity: (config.animation?.glowIntensity ?? 100) * state.appearance.intensity, motionIntensity: (config.animation?.motionIntensity ?? 100) * state.appearance.intensity };
+  }
   const final: FinalBadgeVisual = { id: eventId, startedAt: now, expiresAt: now + (config.celebrationDurationMs ?? 5000), config, students: totals(state.students) };
   return update(session, { ...state, final, appliedEventIds: [...state.appliedEventIds, eventId] });
 }

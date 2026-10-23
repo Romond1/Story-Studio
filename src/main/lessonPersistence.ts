@@ -1,3 +1,4 @@
+import { checkpoint, recoveryList, readRecovery } from './lessonRecovery';
 import { dialog, ipcMain, type BrowserWindow } from 'electron';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -142,6 +143,21 @@ export function installLessonPersistence(host: LessonPersistenceHost): void {
     }
   }));
 
+  const recoveryActive = (expectedFolder: unknown) => {
+    const active = host.getActive();
+    if (!active.folderPath || !active.id || active.format !== 'lesson' || active.folderPath !== expectedFolder) throw new Error('Active project changed.');
+    return active as typeof active & { folderPath: string; id: string };
+  };
+  ipcMain.handle('lesson:recovery-list', (event, expectedFolder: unknown) => { host.authorize(event); return host.withWrite(async () => { const a = recoveryActive(expectedFolder); return recoveryList(host.getBackupRoot(), a.folderPath, a.id); }); });
+  ipcMain.handle('lesson:recovery-read', (event, expectedFolder: unknown, name: unknown, current: unknown) => { host.authorize(event); return host.withWrite(async () => { const a = recoveryActive(expectedFolder); const data = await readRecovery(host.getBackupRoot(), a.folderPath, a.id, name); if (data.format !== a.documentFormat) throw new Error('Recovery format changed.'); if (current !== undefined) { const previous = parseSceneDocument(current); if (previous.id !== a.id || previous.format !== a.documentFormat) throw new Error('Current project changed.'); await checkpoint(host.getBackupRoot(), a.folderPath, previous, 'Before recovery restore'); } return data; }); });
+  ipcMain.handle('lesson:autosave', (event, value: unknown, expectedFolder: unknown) => { host.authorize(event); return host.withWrite(async () => {
+    const a = recoveryActive(expectedFolder), data = parseSceneDocument(value), disk = await readLesson(a.folderPath);
+    if (data.id !== a.id || disk.id !== a.id || data.format !== a.documentFormat || disk.format !== data.format) throw new Error('Project identity or format changed. Autosave cancelled.');
+    await checkpoint(host.getBackupRoot(), a.folderPath, disk, 'Before autosave');
+    await checkpoint(host.getBackupRoot(), a.folderPath, data, 'Autosave');
+    const lastSavedAt = await host.writeAtomic(a.folderPath, data);
+    return { lastSavedAt, folderPath: a.folderPath, isDraft: drafts.has(a.folderPath) };
+  }); });
   ipcMain.handle('lesson:save', (_, value: unknown, mode: SaveMode = 'save', expectedFolder: unknown) => host.withWrite(async () => {
     const active = host.getActive();
     if (!active.folderPath || expectedFolder !== active.folderPath) throw new Error('Active project folder changed. Save cancelled.');
@@ -170,6 +186,8 @@ export function installLessonPersistence(host: LessonPersistenceHost): void {
       return { lastSavedAt, folderPath: target };
     }
 
+    await checkpoint(host.getBackupRoot(), active.folderPath, onDisk, 'Before manual save');
+    await checkpoint(host.getBackupRoot(), active.folderPath, data, 'Manual save');
     const lastSavedAt = await host.writeAtomic(active.folderPath, data);
     return { lastSavedAt, folderPath: active.folderPath };
   }));

@@ -1,11 +1,18 @@
-import { BrowserWindow, dialog, ipcMain } from 'electron';
-import { CAMERA_DEFAULTS, parseCameraSettings, parseCameraStatus, validCameraLayout, type CameraState } from '../shared/cameraProtocol';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import path from 'node:path';
+import { createCameraPreferencesStore } from './cameraPreferences';
+import { parseCameraSettings, parseCameraStatus, validCameraLayout, type CameraState } from '../shared/cameraProtocol';
 import { parseTrackingStatus } from '../shared/faceTrackingProtocol';
 import {parseRemovalStatus} from '../shared/personRemoval';
 
 /** A sibling of the lesson relay. Device metadata/status travel only back to Control. */
 export function installCameraBroadcast(getControl: () => BrowserWindow | null, getPresent: () => BrowserWindow | null) {
-  let state: CameraState = { settings: { ...CAMERA_DEFAULTS }, status: { state: 'off', devices: [] } };
+  const preferences = createCameraPreferencesStore(path.join(app.getPath('userData'), 'camera-preferences.json'));
+  let state: CameraState = { settings: preferences.load(), status: { state: 'off', devices: [] } };
+  const savePreferences = () => {
+    try { preferences.save(state.settings); state = { ...state, preferencesSaved: true }; }
+    catch { state = { ...state, preferencesSaved: false }; }
+  };
   let permissionGranted = false;
   let revision = 0;
   const authorized = (event: Electron.IpcMainEvent | Electron.IpcMainInvokeEvent, window: BrowserWindow | null) =>
@@ -53,13 +60,13 @@ export function installCameraBroadcast(getControl: () => BrowserWindow | null, g
     const acquisitionChanged = settings.enabled !== state.settings.enabled || settings.deviceId !== state.settings.deviceId;
     state = { ...state, settings, removalStatus:!settings.enabled||!settings.personRemoval?{state:'off'}:acquisitionChanged||!state.settings.personRemoval?{state:'initializing'}:state.removalStatus, status: acquisitionChanged ? { state: settings.enabled ? 'starting' : 'off', devices: state.status.devices } : state.status,
       trackingStatus: !settings.enabled || !settings.tracking.enabled || acquisitionChanged ? { state: 'off' } : state.trackingStatus };
-    publish();
+    savePreferences(); publish();
     return state;
   });
   ipcMain.on('camera:layout', (event, value: unknown) => {
     if (!authorized(event, getPresent()) || !state.settings.enabled || !state.settings.editLayout || !validCameraLayout(value)) return;
     state = { ...state, settings: { ...state.settings, layout: { x:value.x,y:value.y,width:value.width,height:value.height } } };
-    publish();
+    savePreferences(); publish();
   });
   ipcMain.on('camera:status', (event, value: unknown) => {
     if (!authorized(event, getPresent())) return;

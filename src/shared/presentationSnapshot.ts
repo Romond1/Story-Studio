@@ -130,7 +130,7 @@ function parsePresentSnapshotBody(value: unknown): PresentSnapshot | null {
           points.push({ x: point.x, y: point.y, t: point.t, ...(finite(point.h) ? { h: point.h } : {}) });
         }
         strokes.push({ id: stroke.id, size: stroke.size, opacity: stroke.opacity, color: stroke.color, rainbow: stroke.rainbow === true, points,
-          ...(key === 'transient' && finite(stroke.fadeMs) ? { fadeMs: stroke.fadeMs } : {}),
+          ...(finite(stroke.fadeMs) ? { fadeMs: stroke.fadeMs } : {}),
           ...(key === 'transient' && stroke.sparkle === true ? { sparkle: true } : {}),
         });
       }

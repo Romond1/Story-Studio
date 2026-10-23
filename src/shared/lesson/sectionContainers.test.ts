@@ -76,7 +76,7 @@ test('cut across sequences retains occurrence, Break metadata, scene links and c
   assert.equal(moved.sequences.activation[0].id, source.entryId);
   assert.equal(moved.sequences.activation[0].sceneId, moved.sequences.story[0].sceneId);
   assert.equal(moved.sequences.activation[0].kind, 'break');
-  assert.equal(moved.sequences.activation[0].sectionId, section.sectionId);
+  assert.equal(moved.sequences.activation[0].sectionId, undefined);
   assert.equal(moved.scenes, section.project.scenes);
   assert.equal(moved.cards, section.project.cards);
   assert.equal(moveTimelineEntries(moved, 'story', 'activation', [source.entryId]), moved);

@@ -24,7 +24,7 @@ function harness() {
   const state = { project, file: { folderPath: 'source', data: project }, error: '', notice: '', busy: false };
   const latest = { current: project }, operationRef = { current: false };
   const context: any = {
-    project, file: state.file, latest, history: { current: history }, busy: false, operationRef, operation: operationRef, activeBinId: '',
+    autosave: { pending: { current: null } }, project, file: state.file, latest, history: { current: history }, busy: false, operationRef, operation: operationRef, activeBinId: '',
     parseLessonProject, parseSceneDocument, mergeLessonMediaImport, hosted: { isActive: false }, window: { lessonApi: {}, appApi: {} },
     setBusy: (value: boolean) => { state.busy = value; },
     setError: (value: string) => { state.error = value; },
@@ -38,6 +38,29 @@ function harness() {
   return { context, state, latest, history, callbacks: context.callbacks, operationRef };
 }
 const deferred = <T>() => { let resolve!: (value: T) => void; const promise = new Promise<T>(yes => { resolve = yes; }); return { promise, resolve }; };
+test('autosave flushes unpublished activity edits before dirty check and snapshot; failed flush never writes', async () => {
+  const initial = createLesson(), history = new ProjectHistory<typeof initial>(); history.reset(initial);
+  const latest = { current: initial }, gate = deferred<void>();
+  let timer!: () => void, written: unknown, error = '';
+  const options: any = { file: { activationToken: 'active', folderPath: 'lesson' }, latest, history: { current: history }, operation: { current: false },
+    flushEditor: async () => { await gate.promise; const next = { ...initial, title: 'Activity edits' }; history.record(next); latest.current = next; },
+    setFile: () => {}, setError: (message: string) => { error = message; } };
+  const source = ts.createSourceFile('useLessonAutosave.ts', readFileSync('src/renderer/lesson/useLessonAutosave.ts', 'utf8'), ts.ScriptTarget.Latest, true);
+  const declaration = source.statements.find(ts.isFunctionDeclaration)!;
+  const context: any = { options, useRef: (current: unknown) => ({ current }), useState: () => ['', () => {}], useEffect: (effect: () => void) => effect(),
+    window: { setInterval: (callback: () => void, delay: number) => { assert.equal(delay, 120000); timer = callback; }, clearInterval: () => {}, lessonApi: { autosave: async (value: unknown) => { written = value; return { lastSavedAt: new Date().toISOString() }; } } } };
+  vm.createContext(context);
+  vm.runInContext(ts.transpileModule(declaration.getText(source).replace('export ', '') + '\nglobalThis.result=useLessonAutosave(options);', { compilerOptions: { target: ts.ScriptTarget.ES2021 } }).outputText, context);
+  timer(); assert.equal(written, undefined); assert.ok(context.result.pending.current);
+  gate.resolve(); await context.result.pending.current;
+  assert.equal(written, latest.current); assert.equal(history.isDirty, false);
+  written = undefined; options.flushEditor = async () => {};
+  for (let n = 0; n < 3; n++) { timer(); await context.result.pending.current; }
+  assert.equal(written, undefined, 'An idle open project must not generate autosaves');
+  written = undefined; options.flushEditor = async () => { throw Error('Activity unavailable'); };
+  timer(); await context.result.pending.current;
+  assert.equal(written, undefined); assert.match(error, /Activity unavailable/);
+});
 test('missing media remains listed in an editor response accepted by the strict protocol',async()=>{
  const h=harness();h.context.editorMedia={current:{project:h.latest.current,pending:false,resolve:()=>undefined,registry:{list:()=>[{id:'missing',originalName:'Missing picture',mediaType:'image'}],images:()=>[]}}};
  const result=await h.callbacks.handleHostedEditor('media-list',()=>true);

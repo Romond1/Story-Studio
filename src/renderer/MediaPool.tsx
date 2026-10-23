@@ -7,7 +7,7 @@ import { mediaDisplayName, renameMediaAsset } from '../shared/mediaDisplayName';
 import { MediaPoolThumbnail } from './MediaPoolThumbnail';
 import { MediaAssetPreview } from './MediaAssetPreview';
 import { MediaPoolContextMenu, type MediaPoolMenuTarget } from './MediaPoolContextMenu';
-import { removeFromMediaPool } from '../shared/mediaPool';
+import { groupMediaByType, removeFromMediaPool, renameMediaBin, removeMediaBin } from '../shared/mediaPool';
 export const POOL_DRAG='application/x-story-studio-assets';
 export const SLIDE_DRAG='application/x-story-studio-slide';
 export function droppedPaths(event:DragEvent):string[]{
@@ -28,18 +28,22 @@ export function MediaPool({data,onChange,onImport,onAttachAudio,onInsert,resolve
   useEffect(()=>{if(previewId&&!previewAsset)setPreviewId(null);},[previewId,previewAsset]);
   const counts=useMemo(()=>new Map(registry.list().map(a=>[a.id,registry.usages(a.id).length])),[registry]);
   const bins=registry.bins();
+  useEffect(()=>{if(bin&&!bins.some(item=>item.id===bin))setBin('');},[bin,bins]);
   const selectedAudio=selected.size===1?data.assets.find(a=>selected.has(a.id)&&a.mediaType==='audio'):undefined;
   const inBin=(id:string|undefined):boolean=>{const visited=new Set<string>();while(id&&!visited.has(id)){if(id===bin)return true;visited.add(id);id=bins.find(b=>b.id===id)?.parentId;}return !bin;};
   const poolAssets=registry.list().filter(a=>!a.hiddenFromMediaPool);
-  const assets=poolAssets.filter(a=>inBin(a.binId)&&(type==='all'||a.mediaType===type)&&(usage==='all'||(usage==='used')===!!counts.get(a.id))&&`${mediaDisplayName(a)} ${getAssetDisplayLabel(a,'edit')} ${a.originalName} ${a.filename}`.toLowerCase().includes(query.toLowerCase()));
+  const [groupedBins,setGroupedBins]=useState<Set<string>>(new Set());
+  const groupingKey=`${data.createdAt}:${bin}`,grouped=groupedBins.has(groupingKey);
+  const filteredAssets=poolAssets.filter(a=>inBin(a.binId)&&(type==='all'||a.mediaType===type)&&(usage==='all'||(usage==='used')===!!counts.get(a.id))&&`${mediaDisplayName(a)} ${getAssetDisplayLabel(a,'edit')} ${a.originalName} ${a.filename}`.toLowerCase().includes(query.toLowerCase()));
+  const assets=grouped?groupMediaByType(filteredAssets):filteredAssets;
   const binLabel=(b:MediaBin):string=>{const parent=bins.find(p=>p.id===b.parentId);return parent&&parent.id!==b.id?`${parent.name} / ${b.name}`:b.name;};
   const tree=(parent?:string,depth=0):React.ReactNode=>depth>20?null:bins.filter(b=>b.parentId===parent).map(b=><details key={b.id} open={undefined}><summary><button aria-pressed={bin===b.id} onClick={()=>setBin(b.id)}>{b.name}</button></summary>{tree(b.id,depth+1)}</details>);
   return <section ref={poolZoom.ref} style={poolZoom.style} className="media-pool" aria-label="Media Pool" onDragEnter={e=>e.stopPropagation()} onDragOver={e=>{e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='copy';}}
     onDrop={e=>{e.preventDefault();e.stopPropagation();if(e.dataTransfer.types.includes('Files'))void onImport('drop',droppedPaths(e),bin||undefined);}}>
     <header><button onClick={()=>{setOpen(!open);setPreviewId(null);setContext(null);}} aria-expanded={open}>{open?'▾':'▸'} Media Pool</button><MediaPoolZoom zoom={poolZoom.zoom} onChange={poolZoom.setZoom} /></header>
     {open&&<><div className="pool-toolbar"><button disabled={busy} onClick={()=>void onImport('files',undefined,bin||undefined)}>Import Files</button><button disabled={busy} onClick={()=>void onImport('folder',undefined,bin||undefined)}>Import Folder</button>
-      <button onClick={()=>{const name=prompt('Bin name');if(name?.trim())onChange({...data,mediaBins:[...bins,{id:crypto.randomUUID(),name:name.trim(),...(bin?{parentId:bin}:{})}]});}}>New bin</button></div>
-      <input aria-label="Search media" placeholder="Search media…" value={query} onChange={e=>setQuery(e.target.value)} />
+      <button onClick={()=>{const name=prompt('Bin name');if(name?.trim())onChange({...data,mediaBins:[...bins,{id:crypto.randomUUID(),name:name.trim(),...(bin?{parentId:bin}:{})}]});}}>New bin</button><button disabled={!bin||busy} onClick={()=>{const name=prompt('Rename bin',bins.find(item=>item.id===bin)?.name);if(name!==null)onChange(renameMediaBin(data,bin,name));}}>Rename bin</button><button disabled={!bin||busy} title="Remove this bin; keep its media and nested bins in the parent bin" onClick={()=>{const parent=bins.find(item=>item.id===bin)?.parentId;onChange(removeMediaBin(data,bin));setBin(parent??'');}}>Remove bin</button></div>
+      <div style={{display:'flex',gap:5}}><input style={{minWidth:0,flex:1}} aria-label="Search media" placeholder="Search media…" value={query} onChange={e=>setQuery(e.target.value)} /><button aria-label="Group by file type" aria-pressed={grouped} title="Pictures first, then videos; toggle off to restore bin order" onClick={()=>setGroupedBins(previous=>{const next=new Set(previous);next.has(groupingKey)?next.delete(groupingKey):next.add(groupingKey);return next;})}>Type ↕</button></div>
       {(!registry.dependencies().complete || registry.diagnostics().length > 0) && <p role="status">Some media references are missing, ambiguous, or unsupported. Usage is incomplete; all imported media is retained.</p>}
       <div className="pool-filters"><select aria-label="Media type" value={type} onChange={e=>setType(e.target.value)}>{['all','image','video','audio'].map(t=><option key={t} value={t}>{t==='all'?'All types':t}</option>)}</select>
       <select aria-label="Media usage" value={usage} onChange={e=>setUsage(e.target.value)}><option value="all">All usage</option><option value="used">Used</option><option value="unused">Unused</option></select>

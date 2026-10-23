@@ -10,6 +10,8 @@ export class ProjectHistory<T extends object> {
 
   constructor(private readonly limit = 100) {}
 
+  get undoCount() { return this.past.length; }
+  get redoCount() { return this.future.length; }
   get canUndo() { return this.past.length > 0; }
   get canRedo() { return this.future.length > 0; }
   get isDirty() { return this.current !== this.saved; }

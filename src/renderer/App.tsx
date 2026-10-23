@@ -1284,10 +1284,10 @@ export function App() {
 
   const importMovementGif = useCallback(async (eventId: string) => {
     if (!project) return;
-    const result = await window.appApi.importMedia();
-    if (!result || result.importedAssets.length === 0) return;
+    const result = await window.appApi.importMedia(projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
+    if (!result || (!result.importedAssets.length && !result.replacedAssets?.length)) return;
 
-    const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, result.importedAssets);
+    const normalizedImportedAssets = [...decorateImportedAssetsForContext(project.data, result.importedAssets), ...(result.replacedAssets ?? [])];
     const gifAsset = normalizedImportedAssets.find((asset) => /\.gif$/i.test(asset.originalName || asset.relativePath));
     if (!gifAsset) {
       showToast("Choose an animated GIF for Movement", "edit", 1600);
@@ -1296,12 +1296,12 @@ export function App() {
 
     setProject((prev) => {
       if (!prev) return prev;
-      const currentMovement = normalizeMovementConfig(prev.data.movement);
+      const currentMovement = normalizeMovementConfig(registerPoolImport(prev.data, result).movement);
       return {
         ...prev,
         data: {
           ...prev.data,
-          assets: [...prev.data.assets, ...normalizedImportedAssets],
+          ...registerPoolImport(prev.data, result),
           movement: {
             ...currentMovement,
             events: currentMovement.events.map((event) =>
@@ -1316,10 +1316,10 @@ export function App() {
 
   const importMovementJingle = useCallback(async () => {
     if (!project) return;
-    const result = await window.appApi.importMedia();
-    if (!result || result.importedAssets.length === 0) return;
+    const result = await window.appApi.importMedia(projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
+    if (!result || (!result.importedAssets.length && !result.replacedAssets?.length)) return;
 
-    const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, result.importedAssets);
+    const normalizedImportedAssets = [...decorateImportedAssetsForContext(project.data, result.importedAssets), ...(result.replacedAssets ?? [])];
     const audioAsset = normalizedImportedAssets.find((asset) =>
       asset.mediaType === "audio" || /\.(avi|mp4|mov|webm|mkv)$/i.test(asset.originalName || asset.relativePath),
     );
@@ -1330,12 +1330,12 @@ export function App() {
 
     setProject((prev) => {
       if (!prev) return prev;
-      const currentMovement = normalizeMovementConfig(prev.data.movement);
+      const currentMovement = normalizeMovementConfig(registerPoolImport(prev.data, result).movement);
       return {
         ...prev,
         data: {
           ...prev.data,
-          assets: [...prev.data.assets, ...normalizedImportedAssets],
+          ...registerPoolImport(prev.data, result),
           movement: {
             ...currentMovement,
             jingleRelativePath: audioAsset.relativePath,
@@ -1539,9 +1539,9 @@ export function App() {
 
   const importRelicImage = useCallback(async (slot: "main" | "stage1" | "stage2" | "stage3") => {
     if (!project) return;
-    const result = await window.appApi.importMedia();
-    if (!result || result.importedAssets.length === 0) return;
-    const normalizedImportedAssets = decorateImportedAssetsForContext(project.data, result.importedAssets);
+    const result = await window.appApi.importMedia(projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
+    if (!result || (!result.importedAssets.length && !result.replacedAssets?.length)) return;
+    const normalizedImportedAssets = [...decorateImportedAssetsForContext(project.data, result.importedAssets), ...(result.replacedAssets ?? [])];
     const imageAsset = normalizedImportedAssets.find((asset) => asset.mediaType === "image");
     if (!imageAsset) {
       showToast("Choose an image file for relic art", "edit", 1600);
@@ -1549,7 +1549,7 @@ export function App() {
     }
     setProject((prev) => {
       if (!prev) return prev;
-      const current = normalizeRelicSystem(prev.data.relicSystem);
+      const current = normalizeRelicSystem(registerPoolImport(prev.data, result).relicSystem);
       const nextRelicSystem: RelicSystem = slot === "main"
         ? { ...current, mainImageAssetId: imageAsset.id }
         : {
@@ -1563,7 +1563,7 @@ export function App() {
         ...prev,
         data: {
           ...prev.data,
-          assets: [...prev.data.assets, ...normalizedImportedAssets],
+          ...registerPoolImport(prev.data, result),
           relicSystem: nextRelicSystem,
         },
       };
@@ -2952,7 +2952,7 @@ export function App() {
   const applyImportedMedia = (result: ImportResult, targetSectionId: string | null | undefined) => {
     const current = projectRef.current;
     if (result.failures?.length) alert(result.failures.map(f => `${f.name}: ${f.reason}`).join("\n"));
-    if (!current || result.importedAssets.length === 0) return;
+    if (!current || (!result.importedAssets.length && !result.replacedAssets?.length && !result.importedBins?.length)) return;
 
     const nextData = applyMediaImportToProjectData(current.data, result, targetSectionId);
     setProject({
@@ -2975,7 +2975,7 @@ export function App() {
     const current=projectRef.current;if(!current||appMode!=='edit'||operationRef.current)return;
     operationRef.current=true;setPoolBusy(true);dragImportDepthRef.current=0;setIsDragImportActive(false);
     try {
-      const result=kind==='folder'?await window.appApi.importMediaFolder():kind==='drop'?await window.appApi.importDroppedMedia(paths??[]):await window.appApi.importMedia();
+      const result=kind==='folder'?await window.appApi.importMediaFolder(current ? { folderPath: current.folderPath, assets: current.data.assets } : undefined):kind==='drop'?await window.appApi.importDroppedMedia(paths??[], {folderPath:current.folderPath,assets:current.data.assets}):await window.appApi.importMedia(projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
       if(!result)return;
       const latest=projectRef.current;if(!latest||latest.folderPath!==current.folderPath)throw Error('Project changed during import.');
       let data=registerPoolImport(latest.data,result,binId);
@@ -2985,7 +2985,7 @@ export function App() {
         catch(error){messages.push(`Assets kept in Media Pool; placement failed: ${(error as Error).message}`);}
         if(result.importedAssets.some(a=>a.mediaType==='audio'))messages.push('Audio was added to Media Pool. Select it there to attach it to a lesson object.');
       }
-      if(result.importedAssets.length||result.importedBins?.length)setProject({...latest,data});
+      if(result.importedAssets.length||result.replacedAssets?.length||result.importedBins?.length)setProject({...latest,data});
       showToast(`Imported ${result.importedAssets.length} assets`,'success',2200);
       if(messages.length)alert(messages.join('\n'));
     }catch(error){alert(`Import failed: ${(error as Error).message}`);}
@@ -2997,7 +2997,7 @@ export function App() {
     if (!project || operationRef.current) return;
     operationRef.current = true;
     try {
-      const result = await window.appApi.importMedia();
+      const result = await window.appApi.importMedia(projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
       if (!result) return;
       applyImportedMedia(result, selectedSectionId ?? project.data.sections[0]?.id);
     } catch (err) {
@@ -3061,7 +3061,7 @@ export function App() {
 
     operationRef.current = true;
     try {
-      const result = await window.appApi.importDroppedMedia(filePaths);
+      const result = await window.appApi.importDroppedMedia(filePaths, projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
       if (!result) {
         showToast("No supported image or video files found in that drop", "edit", 2200);
         return;
@@ -5514,8 +5514,8 @@ export function App() {
                                       <button
                                         onClick={async () => {
                                           if (!project) return;
-                                          const result = await window.appApi.importMedia();
-                                          if (result && result.importedAssets.length > 0) {
+                                          const result = await window.appApi.importMedia(projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
+                                          if (result && (result.importedAssets.length > 0 || result.replacedAssets?.length)) {
                                             const normalizedImportedAssets = decorateImportedAssetsForContext(
                                               project.data,
                                               result.importedAssets,
@@ -5526,10 +5526,10 @@ export function App() {
                                               return {
                                                 ...prev,
                                                 data: appendAssetsAndUpdateSection(
-                                                  prev.data,
+                                                  registerPoolImport(prev.data, { ...result, importedAssets: [], createdSlides: [], importedBins: [] }),
                                                   selectedSection.id,
                                                   normalizedImportedAssets,
-                                                  { background: `url('${toMediaUrl(normalizedImportedAssets[0].relativePath)}')` },
+                                                  { background: `url('${toMediaUrl((normalizedImportedAssets[0] ?? result.replacedAssets![0]).relativePath)}')` },
                                                 ),
                                               };
                                             });
@@ -5574,24 +5574,25 @@ export function App() {
                             <button
                               onClick={async () => {
                                 if (!project) return;
-                                const result = await window.appApi.importMedia();
-                                if (result && result.createdSlides && result.createdSlides.length > 0) {
+                                const result = await window.appApi.importMedia(projectRef.current ? { folderPath: projectRef.current.folderPath, assets: projectRef.current.data.assets } : undefined);
+                                if (result && (result.createdSlides.length > 0 || result.replacedAssets?.length)) {
                                   const newMedia = result.createdSlides.map((s, i) => ({ id: `img-${Date.now()}-${i}`, slideId: s.id, fit: "contain" as const }));
                                   const normalizedImportedAssets = decorateImportedAssetsForContext(
                                     project.data,
                                     result.importedAssets,
                                     selectedSection.id,
                                   );
-                                  const nextAssets = [...project.data.assets, ...normalizedImportedAssets];
-                                  const nextSlides = [...project.data.slides, ...result.createdSlides.map(s => ({ ...s, sectionId: selectedSection.id }))];
+                                  const importedData = registerPoolImport(project.data, result);
+                                  const nextAssets = importedData.assets;
+                                  const nextSlides = [...importedData.slides, ...result.createdSlides.map(s => ({ ...s, sectionId: selectedSection.id }))];
                                   const nextBreakMedia = [...(selectedSection.breakMedia || []), ...newMedia];
                                   setProject({
                                     ...project,
                                     data: {
-                                      ...project.data,
+                                      ...importedData,
                                       assets: nextAssets,
                                       slides: nextSlides,
-                                      sections: project.data.sections.map(s => s.id === selectedSection.id ? { ...s, breakMedia: nextBreakMedia } : s)
+                                      sections: importedData.sections.map(s => s.id === selectedSection.id ? { ...s, breakMedia: nextBreakMedia } : s)
                                     }
                                   });
                                   setIsDirty(true);

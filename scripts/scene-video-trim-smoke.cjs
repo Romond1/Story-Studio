@@ -50,7 +50,8 @@ function playwright() {
     const drag = async (input, value) => {
       const r = await input.boundingBox(), current = Number(await input.inputValue()), max = Number(await input.getAttribute('max'));
       const x = val => r.x + 6 + (r.width - 12) * val / max;
-      await page.mouse.move(x(current), r.y + r.height / 2); await page.mouse.down(); await page.mouse.move(x(value), r.y + r.height / 2, { steps: 10 }); await page.mouse.up();
+      const y = r.y + ((await input.getAttribute('aria-label')).startsWith('Video trim') ? 21 : r.height / 2);
+      await page.mouse.move(x(current), y); await page.mouse.down(); await page.mouse.move(x(value), y, { steps: 10 }); await page.mouse.up();
     };
     await resize(1440, 1000); await button('Adventure').click(); await choose(); await button('Open project').click(); await page.getByText('Lesson opened.', { exact: true }).waitFor(); await button('Edit').click(); await select('First video'); await ready();
     assert.equal(await page.getByText('The presentation rejected this scene. Your authored changes are still available.', { exact: true }).count(), 0);
@@ -65,6 +66,14 @@ function playwright() {
     await button('Undo').click(); near((await values()).inSec, 0); await button('Redo').click(); near((await values()).inSec, 1.5);
     await drag(end(), 5.5); near((await values()).outSec, 5.5);
     await button('Undo').click(); near((await values()).outSec, 8, .1); await button('Redo').click(); near((await values()).outSec, 5.5);
+    const editSeek = control().getByRole('slider', { name: 'Edit video position', exact: true });
+    await drag(editSeek, 4.2); near(await decoder().evaluate(v => v.currentTime), 4.2, .15);
+    const unchanged = await values(); near(unchanged.inSec, 1.5); near(unchanged.outSec, 5.5);
+    await page.locator('body').click({position:{x:4,y:4}}); await page.keyboard.press('Space'); await page.waitForFunction(() => !document.querySelector('.lesson-canvas video').paused);
+    await page.keyboard.press('Space'); await page.waitForFunction(() => document.querySelector('.lesson-canvas video').paused);
+    await page.keyboard.press('e'); await page.getByRole('checkbox', {name:'Rainbow drawing'}).waitFor();
+    await page.keyboard.press('e');
+    pass('Mouse seeking changes the Edit playhead without changing trim; Space toggles video and E toggles drawing');
     const trimmed = await values(); await page.screenshot({ path: path.join(evidence, 'desktop.png') });
     pass('Toolbar is between timeline actions and zoom; both handles drag and each gesture is one undo step');
     await button('Play edit video').click(); await page.waitForFunction(inSec => { const v = document.querySelector('.lesson-canvas video'); return v && !v.paused && v.currentTime > inSec + .15; }, trimmed.inSec);
@@ -113,6 +122,17 @@ function playwright() {
     await present.waitForFunction(async () => !!(await window.presentApi.requestSnapshot())?.snapshot?.target?.media);
     const snapshot = await present.evaluate(() => window.presentApi.requestSnapshot()); assert.deepEqual(snapshot.snapshot.target.media.trim, trimmed);
     await present.waitForFunction(() => [...document.querySelectorAll('video')].some(video => video.readyState >= 2));
+    await button('Play video').click(); await button('Pause video').click();
+    const teachSeek = page.getByRole('slider', { name: 'Video position', exact: true });
+    await page.waitForFunction(() => Number(document.querySelector('[aria-label="Video position"]').max) > 7);
+    await drag(teachSeek, 4.3);
+    await present.waitForFunction(() => [...document.querySelectorAll('video')].some(v => v.paused && Math.abs(v.currentTime - 4.3) < .2));
+    await page.locator('body').click({position:{x:4,y:4}}); await page.keyboard.press('d');
+    await page.waitForFunction(() => document.querySelector('.lesson-phase-tabs').textContent.includes('Second video'));
+    await page.keyboard.press('a');
+    await page.waitForFunction(() => document.querySelector('.lesson-phase-tabs').textContent.includes('First video'));
+    assert.equal(await button('Play video').count(), 1);
+    pass('Teach mouse seeking reaches the actual Present decoder; A/D navigate scenes');
     await button('Play video').click();
     await present.waitForFunction(inSec => [...document.querySelectorAll('video')].some(video => !video.paused && video.currentTime > inSec + .1), trimmed.inSec);
     await present.waitForFunction(outSec => [...document.querySelectorAll('video')].some(video => video.paused && Math.abs(video.currentTime - outSec) < .05), trimmed.outSec);

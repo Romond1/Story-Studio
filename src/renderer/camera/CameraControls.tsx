@@ -40,6 +40,7 @@ export function CameraControls() {
   const settings = state.settings;
   return <><section className="camera-controls teach-live-card" aria-label="Camera">
     <h3>Camera</h3>
+    <small role="status">{state.preferencesSaved === false ? 'Unable to save camera preferences on this device.' : state.preferencesSaved ? 'Camera preferences saved automatically.' : 'Camera preferences save automatically.'} Camera starts off after restarting the app.</small>
     <button type="button" disabled={busy || !window.cameraControl} aria-pressed={settings.enabled} onClick={() => void update({ enabled: !settings.enabled })}>
       {settings.enabled ? 'Turn camera off' : 'Turn camera on'}
     </button>

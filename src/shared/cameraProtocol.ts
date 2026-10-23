@@ -41,7 +41,7 @@ export interface CameraStatus {
   message?: string;
   devices: { deviceId: string; label: string }[];
 }
-export interface CameraState { settings: CameraSettings; status: CameraStatus; trackingStatus?: TrackingStatus; removalStatus?:RemovalStatus }
+export interface CameraState { settings: CameraSettings; status: CameraStatus; trackingStatus?: TrackingStatus; removalStatus?:RemovalStatus; preferencesSaved?: boolean }
 export interface CameraControlApi {
   get(): Promise<CameraState>;
   set(settings: CameraSettings): Promise<CameraState>;

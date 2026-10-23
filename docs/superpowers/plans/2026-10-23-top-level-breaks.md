@@ -1,0 +1,5 @@
+# Top-level breaks and review boards
+
+Keep flattened playback sequences and stable entry/scene IDs for compatibility. Derive separate timeline groups for breaks; normalize legacy break membership on load without reordering entries. New breaks insert after the selected section, and moves/copies cannot attach breaks to a section. Section deletion offers keeping scenes or removing occurrences, retaining source scene/assets and undo. Ungrouped supports collapse and hiding with a restore command.
+
+Add a Break review inspector with imported image/video selection and captions. Media objects and captions reuse scene geometry/editing. Extend video object validation, projection whitelist, dependency enumeration and renderer consistently; videos are manually played via native controls and do not autoplay. Test hierarchy, moves, deletion, migration, media/caption data and roundtrips, then native timeline/editor flows and existing tests. Preserve current uncommitted preview improvements. Do not commit/push unless requested again.

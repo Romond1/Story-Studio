@@ -1,7 +1,7 @@
 import type {StudentsApi} from '../shared/students/protocol';
 /// <reference types="vite/client" />
 
-import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
+import type { AssetItem, MediaImportContext, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
 import type { AudioSettingsV1 } from '../shared/audioSettings';
 import type { PresentSnapshot } from '../shared/presentationSnapshot';
 import type { PresentStatus } from '../shared/presentStatus';
@@ -12,6 +12,9 @@ declare global {
     cameraControl?: import('../shared/cameraProtocol').CameraControlApi;
     cameraPresenter?: import('../shared/cameraProtocol').CameraPresenterApi;
     lessonApi: {
+      autosave: (data: LessonProject, folder: string) => Promise<{ lastSavedAt: string; folderPath: string; isDraft: boolean }>;
+      recoveryList: (folder: string) => Promise<{ name: string; createdAt: string; reason: string; title: string }[]>;
+      recoveryRead: (folder: string, name: string, current?: LessonProject) => Promise<LessonProject>;
       exportPackage: (data: LessonProject, expectedFolder: string) => Promise<{folderPath:string}|null>;
       importPackage: () => Promise<LessonProjectState|null>;
       convertProject: import('../shared/episodeProtocol').ConvertEpisode;
@@ -47,9 +50,9 @@ declare global {
       openProject: () => Promise<ProjectState | null>;
       openProjectByPath: (folderPath: string) => Promise<ProjectState | null>;
       activateProject: (token: string) => void;
-      importMediaFolder: () => Promise<ImportResult | null>;
-      importMedia: () => Promise<ImportResult | null>;
-      importDroppedMedia: (filePaths: string[]) => Promise<ImportResult | null>;
+      importMediaFolder: (context?: MediaImportContext) => Promise<ImportResult | null>;
+      importMedia: (context?: MediaImportContext) => Promise<ImportResult | null>;
+      importDroppedMedia: (filePaths: string[], context?: MediaImportContext) => Promise<ImportResult | null>;
       getPendingDroppedFilePaths: () => string[];
       getPathForFile: (file: File) => string;
       importAudio: () => Promise<AssetItem[] | null>;

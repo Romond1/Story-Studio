@@ -1,0 +1,15 @@
+# Editing safety and recovery
+
+Lesson and episode editing retains 100 undo revisions. Undo/redo restores a valid scene selection when an occurrence disappears, without switching an Adventure copy operation into Discovery. Holding Ctrl+Z/Ctrl+Y does not repeatedly traverse history. Text edits are grouped into input gestures; save and autosave retain history. Undo intentionally reverses additions and deletions, and Redo restores them. Opening another project starts that project's history.
+
+Break headers have a Move break handle. Drag it to the insertion markers between sections or to the end. Move earlier/later menu actions offer keyboard alternatives. Duplicates are independent scenes and can be moved separately.
+
+Every two minutes, autosave flushes any active hosted activity configuration and atomically saves dirty lesson/episode data to the active project folder. It supports draft folders without opening Save As. Edits can continue during the write; only the written revision becomes the savepoint. Project lifecycle operations wait for pending autosaves. Failures appear in the status/error area and leave edits dirty.
+
+Recovery checkpoints preserve both the previous disk data and the new data before manual saves and autosaves. They live under the app user-data directory's `migration-backups/lesson-recovery/`, keyed by folder and project ID. Only the newest 30 checkpoints per project/folder are retained; consecutive identical data is skipped. Older checkpoints are pruned after a new checkpoint is safely written (or an identical checkpoint is verified). Autosave remains enabled in Edit and Teach, but idle unchanged projects cause no writes. Select Recovery beside Save as, inspect a checkpoint's title/item counts, then restore. Restore backs up current in-memory work first, creates an ordinary undoable revision, and only reaches the project file on Save or autosave.
+
+Checkpoints contain project metadata, not duplicate media files. They do not restore missing physical assets. They cannot reconstruct work discarded before this feature existed. Undo is editing history, not reversal of external actions such as exporting a file or recording teaching results. Autosave is interval based, so changes since the last completed save can still be lost on a crash.
+
+Validation: 640 unit/persistence/lifecycle tests; renderer type check and renderer/main builds; native Electron regression for break pointer dragging, Discovery linking, 35 undo/redo steps across savepoints, repeated-key protection, the actual 120000 ms timer callback, concurrent edits during an autosave, checkpoint preview/restore and undo/redo. Focused hook regression checks unpublished activity edits and failed flushes. Additional native break-editor and video-trim regressions cover existing editing workflows.
+
+Key implementation files: `LessonApp.tsx`, `LessonTimeline.tsx`, `useLessonAutosave.ts`, `LessonRecoveryDialog.tsx`, `shared/lesson/editorSelection.ts`, `shared/projectHistory.ts`, `main/lessonPersistence.ts`, and `main/lessonRecovery.ts`. IPC declarations and preload expose the validated autosave/recovery operations.

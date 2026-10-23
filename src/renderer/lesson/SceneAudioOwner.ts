@@ -5,6 +5,7 @@ export interface LessonAudioEngine {
   getDuration(url: string): number;
   playClip(url: string, volume: number, loop: boolean): void;
   pauseClip(url: string): void;
+  setClipVolume?(url: string, volume: number): void;
   isPlaying?(url: string): boolean;
   stopClip(url: string): void;
 }
@@ -19,6 +20,11 @@ export class SceneAudioOwner {
     this.epoch++;
     for (const url of this.tracks.keys()) this.engine.stopClip(url);
     this.tracks.clear(); this.paused = false;
+  }
+  setVolume(url: string, volume: number) {
+    const track = this.tracks.get(url); if (!track || !Number.isFinite(volume)) return;
+    track.volume = Math.max(0, Math.min(1, volume));
+    if (track.ready && !this.paused && this.engine.isPlaying?.(url)) this.engine.setClipVolume?.(url, track.volume);
   }
   pause() {
     if (this.paused) return;

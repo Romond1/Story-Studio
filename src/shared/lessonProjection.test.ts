@@ -11,6 +11,8 @@ import { parsePresentSnapshot } from './presentationSnapshot';
 import { fitLogicalFrame } from './staticScene';
 import { awardLessonReward, initializeLessonRewards, showLessonCelebration } from './lesson/rewards';
 import { sceneImageSources } from './lesson/projection';
+import { parseSceneDocument } from './lesson/validation';
+import { bubbleLayout, bubbleVisibleAt } from './lesson/bubbleAppearance';
 
 function fixture(mediaType: 'image' | 'video' = 'image') {
   const scene = createScene('Proof scene', 'asset'); scene.frame = { width: 960, height: 720 }; scene.notes = 'Teacher-only notes';
@@ -21,6 +23,40 @@ function fixture(mediaType: 'image' | 'video' = 'image') {
   const bubble = addText(card.project, scene.id, 'bubble');
   return { project: bubble.project, sceneId: scene.id, entryId: added.entryId, cardId: card.objectId, bubbleId: bubble.objectId };
 }
+
+test('bubble tail and delay survive projection, validation and scene-plan IPC; invalid values are rejected',()=>{
+  const f=fixture(),object=f.project.scenes[f.sceneId].objects.find(item=>item.id===f.bubbleId)!;
+  const project=putObject(f.project,f.sceneId,{...object,bubbleDefId:'BD_RECTANGLE',bubbleTail:'top-right',appearDelayMs:1500,disappearAtMs:3500} as any);
+  const plan=projectScene(project,f.sceneId),bubble=plan.objects.find(item=>item.id===f.bubbleId) as any;
+  assert.equal(bubble.bubbleTail,'top-right');assert.equal(bubble.appearDelayMs,1500);assert.deepEqual(parseScenePlan(plan),plan);
+  assert.equal(bubble.disappearAtMs,3500);
+  assert.equal((parseSceneDocument(project).scenes[f.sceneId].objects.find(item=>item.id===f.bubbleId) as any).appearDelayMs,1500);
+  for(const appearDelayMs of [-1,3600001,NaN])assert.throws(()=>parseSceneDocument({...project,scenes:{...project.scenes,[f.sceneId]:{...project.scenes[f.sceneId],objects:[{...object,appearDelayMs}]}}}),/bubble/i);
+  assert.equal(parseScenePlan({...plan,objects:plan.objects.map(item=>item.id===f.bubbleId?{...item,bubbleTail:'sideways'}:item)}),null);
+  assert.equal(parseScenePlan({...plan,objects:plan.objects.map(item=>item.id===f.bubbleId?{...item,appearDelayMs:-1}:item)}),null);
+});
+test('bubble range shows only between start and end; start-only projects remain visible afterwards',()=>{
+  const window={appearDelayMs:2000,disappearAtMs:4000};
+  assert.equal(bubbleVisibleAt(window,1999),false);assert.equal(bubbleVisibleAt(window,2000),true);assert.equal(bubbleVisibleAt(window,3999),true);assert.equal(bubbleVisibleAt(window,4000),false);
+  assert.equal(bubbleVisibleAt({appearDelayMs:2000},999999),true);assert.equal(bubbleVisibleAt({},0),true);
+  const f=fixture(),plan=projectScene(f.project,f.sceneId);
+  for(const end of [0,-1,NaN,3600001])assert.equal(parseScenePlan({...plan,objects:plan.objects.map(object=>object.kind==='bubble'?{...object,appearDelayMs:1000,disappearAtMs:end}:object)}),null);
+});
+test('a bubble boundary crossed before passive effects still schedules a visibility refresh',()=>{
+  const source=ts.createSourceFile('useBubbleTiming.ts',readFileSync('src/renderer/lesson/useBubbleTiming.ts','utf8'),ts.ScriptTarget.Latest,true);
+  const declaration=source.statements.find(ts.isFunctionDeclaration)!;
+  for(const [start,end,after] of [[100,500,250],[0,100,250]]){
+    let now=0,refreshes=0;const effects:(()=>void)[]=[];
+    const context:any={Date:{now:()=>now},bubbleVisibleAt,useRef:(current:unknown)=>({current}),useState:()=>[0,()=>{refreshes++;}],useEffect:(effect:()=>void)=>effects.push(effect),window:{setTimeout:()=>1,clearTimeout:()=>{}}};
+    vm.createContext(context);vm.runInContext(ts.transpileModule(declaration.getText(source).replace('export ',''),{compilerOptions:{target:ts.ScriptTarget.ES2021}}).outputText,context);
+    context.useBubbleTiming({current:null},[{kind:'bubble',appearDelayMs:start,disappearAtMs:end}],'visit',true,false);now=after;effects[0]();assert.equal(refreshes,1);
+  }
+});
+test('tail mirroring moves the vector and text area while box/shout have no tail',()=>{
+  const bottom=bubbleLayout('BD_CLASSIC','bottom-left'),top=bubbleLayout('BD_CLASSIC','top-right');
+  assert.equal(bottom.transform,'translate(0 0) scale(1 1)');assert.equal(top.transform,'translate(100 100) scale(-1 -1)');assert.ok(Math.abs(top.rect.y-(1-bottom.rect.y-bottom.rect.height))<.001);
+  for(const id of ['BD_RECTANGLE','BD_SHOUT'])assert.equal(bubbleLayout(id,'top-right').transform,'translate(0 0) scale(1 1)');
+});
 
 test('new scene image/video, cards and bubbles project as one ordered frame without teacher content', () => {
   for (const mediaType of ['image', 'video'] as const) {
@@ -153,7 +189,7 @@ test('all built-in bubble styles render complete vectors on every surface withou
   const React = require('react'), { renderToStaticMarkup } = require('react-dom/server');
   const { SceneSurface } = rendererModule('src/renderer/lesson/SceneSurface.tsx');
   const f = fixture();
-  for (const [bubbleDefId, shape] of [['BD_CLASSIC', 'speech'], ['BD_THOUGHT', 'thought'], ['BD_SHOUT', 'shout']]) {
+  for (const [bubbleDefId, shape] of [['BD_CLASSIC', 'speech'], ['BD_THOUGHT', 'thought'], ['BD_SHOUT', 'shout'], ['BD_OVAL','oval'], ['BD_RECTANGLE','box']]) {
     const bubble = f.project.scenes[f.sceneId].objects.find(object => object.id === f.bubbleId)!;
     assert.ok(bubble.kind === 'bubble'); if (bubble.kind !== 'bubble') continue;
     const project = putObject(f.project, f.sceneId, { ...bubble, bubbleDefId });
@@ -162,7 +198,7 @@ test('all built-in bubble styles render complete vectors on every surface withou
     for (const surface of ['edit', 'teach', 'present']) {
       const html = renderToStaticMarkup(React.createElement(SceneSurface, { plan, surface }));
       assert.ok(html.includes(`data-bubble-shape="${shape}"`)); assert.ok(html.includes('What happens next?'));
-      assert.ok(html.includes('<path')); assert.equal(html.includes('assets/bubbles/'), false);
+      assert.ok(html.includes(shape==='box'?'<rect':'<path')); assert.equal(html.includes('assets/bubbles/'), false);
     }
   }
 });
@@ -175,7 +211,7 @@ test('Edit video preview has audible native controls while student and teacher v
   assert.ok(edit.includes('aria-label="Edit video preview"')); assert.ok(edit.includes('controls=""')); assert.equal(edit.includes('muted=""'), false);
   assert.equal((edit.match(/<video/g) ?? []).length, 1);
   const drawing = renderToStaticMarkup(React.createElement(SceneSurface, { plan, surface: 'edit', drawing: true }));
-  assert.equal(drawing.includes('controls=""'), false);
+  assert.equal(drawing.includes('controls=""'), true);
   for (const surface of ['teach', 'present']) {
     const html = renderToStaticMarkup(React.createElement(SceneSurface, { plan, surface, video: React.createElement('video', { 'data-live-slot': true }) }));
     assert.equal(html.includes('Edit video preview'), false); assert.equal(html.includes('controls=""'), false);

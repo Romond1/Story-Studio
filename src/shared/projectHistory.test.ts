@@ -67,3 +67,16 @@ test('history shortcuts leave native text undo and Ctrl+X alone', () => {
     assert.equal(getHistoryShortcut({ ...event, target }), null);
   }
 });
+
+
+test('100 authoring steps retain content and redo through repeated autosave savepoints', () => {
+  const history = new ProjectHistory<{step:number;content:string[]}>();
+  const original={step:0,content:['original']};history.reset(original);
+  const revisions=[original];
+  for(let step=1;step<=40;step++) { const next={step,content:[...revisions[step-1].content,`item-${step}`]};history.record(next);revisions.push(next);if(step%4===0)history.markSaved(next); }
+  assert.equal(history.undoCount,40);
+  for(let step=39;step>=0;step--)assert.equal(history.undo(),revisions[step]);
+  assert.equal(history.undo(),null);assert.equal(history.redoCount,40);
+  for(let step=1;step<=40;step++)assert.equal(history.redo(),revisions[step]);
+  assert.equal(history.isDirty,false);
+});

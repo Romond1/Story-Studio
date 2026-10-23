@@ -53,17 +53,22 @@ export function collectMediaDependencies(document:ProjectDocument, lookup:Lookup
     }
     cards(data.cards,'/cards'); sets(data.cardSets,i=>`/cardSets/${i}`,data.cards);
     data.library.forEach((cardId,i)=>link(data.id,`/library/${i}`,cardId,!!data.cards[cardId]));
+    data.sections?.forEach((section,i)=>{
+      const p=`/sections/${i}`;
+      unknown(section,['id','name','sequence','beforeEntryId','audio'],section.id,p);
+      section.audio?.forEach((audio,j)=>{id('section',section.id,`${p}/audio/${j}/assetId`,audio.assetId);unknown(audio,['id','assetId','volume','loop','autoplay','shortcut'],section.id,`${p}/audio/${j}`);});
+    });
     Object.entries(data.scenes).forEach(([key,scene])=>{
       const p = `/scenes/${pointer(key)}`;
       unknown(scene,['id','title','frame','background','objects','drawings','audio','transition','viewport','notes'],scene.id,p);
       id('scene',scene.id,`${p}/background/assetId`,scene.background.assetId);
-      unknown(scene.background,['color','assetId','videoTrim'],scene.id,`${p}/background`);
+      unknown(scene.background,['color','assetId','videoTrim','imageAppearance'],scene.id,`${p}/background`);
       if (scene.background.videoTrim) unknown(scene.background.videoTrim,['inSec','outSec'],scene.id,`${p}/background/videoTrim`);
-      scene.audio.forEach((audio,i)=>{id('scene',scene.id,`${p}/audio/${i}/assetId`,audio.assetId);unknown(audio,['id','assetId','volume','loop','autoplay'],scene.id,`${p}/audio/${i}`);});
+      scene.audio.forEach((audio,i)=>{id('scene',scene.id,`${p}/audio/${i}/assetId`,audio.assetId);unknown(audio,['id','assetId','volume','loop','autoplay','shortcut'],scene.id,`${p}/audio/${i}`);});
       scene.objects.forEach((object,i)=>{
         const op = `${p}/objects/${i}`;
-        unknown(object,['id','box','visible','kind',...(object.kind==='card'?['cardId','initialFaceId','initiallyConcealed','interaction']:object.kind==='image'?['assetId']:['text','fontSize','color','bubbleDefId','align'])],scene.id,op);
-        if(object.kind==='image') id('scene',scene.id,`${op}/assetId`,object.assetId);
+        unknown(object,['id','box','visible','kind',...(object.kind==='card'?['cardId','initialFaceId','initiallyConcealed','interaction']:(object.kind==='image'||object.kind==='video')?['assetId',...(object.kind==='image'?['appearance']:[])]:['text','fontSize','color','bubbleDefId','align','bubbleTail','appearDelayMs','disappearAtMs'])],scene.id,op);
+        if(object.kind==='image'||object.kind==='video') id('scene',scene.id,`${op}/assetId`,object.assetId);
         else if(object.kind==='card') {link(scene.id,`${op}/cardId`,object.cardId,!!data.cards[object.cardId]); link(scene.id,`${op}/initialFaceId`,object.initialFaceId,!!data.cards[object.cardId]?.faces.some(face=>face.id===object.initialFaceId));}
         else if(object.kind!=='text' && object.kind!=='bubble') issue(scene.id,op,'unknown-content',String((object as {kind:string}).kind));
       });

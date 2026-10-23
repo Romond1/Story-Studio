@@ -22,7 +22,9 @@
     "test:hero-dash": "node scripts/hero-dash-refinement-smoke.cjs",
     "test:hero-dash:visual": "node scripts/hero-dash-refinement-smoke.cjs --visual-phase",
     "test:counter": "npx tsc -p tsconfig.test.json && node --test dist-test/shared/counterGame.test.js",
-    "test:translation": "node --test scripts/translation-cache.test.cjs scripts/translation-capture.test.cjs scripts/translation-service.test.cjs scripts/whisper-backend.test.cjs scripts/whisper-runtime.test.cjs scripts/whisper-host.test.cjs scripts/whisper-session.test.cjs"
+    "test:translation": "node --test scripts/translation-cache.test.cjs scripts/translation-capture.test.cjs scripts/translation-service.test.cjs scripts/whisper-backend.test.cjs scripts/whisper-runtime.test.cjs scripts/whisper-host.test.cjs scripts/whisper-session.test.cjs scripts/translation-hold-key.test.cjs",
+    "test:controls": "node --test scripts/video-seeking.test.cjs scripts/section-music.test.cjs scripts/drawing-effects.test.cjs scripts/translation-hold-key.test.cjs scripts/translation-capture.test.cjs scripts/live-control-preferences.test.cjs",
+    "test:live-lesson": "node scripts/live-lesson-reliability-smoke.cjs"
   },
   "build": {
     "appId": "com.example.storystudio",

@@ -10,6 +10,17 @@ import type { SceneAudio } from './lesson/model';
 const track = (id: string, assetId = id): SceneAudio => ({ id, assetId, volume: .65, loop: true, autoplay: true });
 const deferred = () => { let resolve!: () => void; const promise = new Promise<void>(yes => { resolve = yes; }); return { promise, resolve }; };
 const flush = () => new Promise<void>(resolve => setImmediate(resolve));
+test('progressive media batches do not restart autoplay when its resolved audio URL is unchanged',async()=>{
+ const source=ts.createSourceFile('LessonApp.tsx',readFileSync('src/renderer/lesson/LessonApp.tsx','utf8'),ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+ let effect='';const declarations:string[]=[];
+ const visit=(node:ts.Node)=>{if(ts.isCallExpression(node)&&node.expression.getText(source)==='useEffect'&&node.getText(source).includes('const owner = audio.current'))effect=node.getText(source);if(ts.isVariableDeclaration(node)&&ts.isIdentifier(node.name)&&['autoplayTracks','autoplayAudioKey'].includes(node.name.text))declarations.push(`const ${node.getText(source)};`);ts.forEachChild(node,visit);};visit(source);
+ let previous:unknown[]|undefined,cleanup:(()=>void)|undefined,plays=0;
+ const context:any={beginning:false,gameSection:null,mode:'teach',session:{id:'session',visit:1},project:{id:'project'},liveKey:'session:entry:1',liveScene:{audio:[track('voice')]},audio:{current:{play:async()=>{plays++;},stop:()=>{}}},resolve:()=> 'media://scoped/lease/voice',setError:()=>{},useEffect:(callback:()=>()=>void,deps:unknown[])=>{if(!previous||deps.some((value,i)=>value!==previous![i])){cleanup?.();cleanup=callback();previous=deps;}}};
+ vm.createContext(context);const code=ts.transpileModule(`(()=>{${declarations.join('\n')}${effect};})()`,{compilerOptions:{target:ts.ScriptTarget.ES2021}}).outputText;
+ vm.runInContext(code,context);await flush();assert.equal(plays,1);
+ context.resolve=()=> 'media://scoped/lease/voice';vm.runInContext(code,context);await flush();assert.equal(plays,1);
+ context.resolve=()=> 'media://scoped/lease/new-voice';vm.runInContext(code,context);await flush();assert.equal(plays,2);
+});
 function engine() {
   const loads: { url: string; done: ReturnType<typeof deferred> }[] = [];
   const plays: { url: string; volume: number; loop: boolean }[] = [], stops: string[] = [], pauses: string[] = [];

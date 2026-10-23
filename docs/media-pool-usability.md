@@ -3,7 +3,7 @@
 ## Behavior
 
 - Visual media uses `VID - Title` and `PIC - Title` in accessible labels, and an uppercase badge plus a two-line title on the card. Both scene and legacy Media Pools share this presentation.
-- Existing imports get a derived filename title without a migration write. Recognizable resolution, codec, frame-rate and export metadata is removed; date/time suffixes are removed; meaningful words and chapter/year numbers remain. Duplicates retain identical display titles and distinct asset IDs.
+- Existing imports get a derived filename title without a migration write. Recognizable resolution, codec, frame-rate and export metadata is removed; date/time suffixes are removed; meaningful words and chapter/year numbers remain. Previously imported duplicates are retained for compatibility. New imports compare original filenames (case-insensitive, including extension) and offer Keep existing / Use incoming, with an apply-to-all checkbox for each bulk import. Differently named files remain separate. Incoming replacements preserve IDs, display titles, bins and authored references; previous bytes remain for Undo.
 - Rename stores only the optional `AssetItem.displayTitle`. Original filenames, UUID storage names, paths, reference metadata and scene references stay intact. Rename uses each editor's existing project history.
 - A normal click or keyboard activation selects and previews visual media. Modifier clicks retain selection behavior; dragging retains the existing ID payload. Double-click never inserts. Add to Sequence is explicit and uses the existing insertion command.
 - Right-click an image or video for exactly two actions: Remove from Media Pool and Add to Sequence. Both target that individual asset. Removal stores optional pool-membership metadata, so existing scenes, registry entries, source bytes and portable packages remain valid. It supports undo/redo and save/reload. The menu supports arrow keys, Enter, Escape, outside click and focus return; it stays within narrow window bounds.
@@ -60,3 +60,14 @@ Evidence is generated under `output/playwright/media-pool/` and `output/playwrig
 Validation: 628 unit tests passed; renderer/main builds and renderer TypeScript checks passed. `scripts/timeline-pool-density-smoke.cjs` verifies desktop selection geometry at 80/100/125%, readable titles, proportional width/height/text zoom, Alt-wheel versus ordinary scrolling, removed buttons, context insertion, actual drag/drop and narrow maximum zoom. The existing `scripts/media-pool-usability-smoke.cjs` passes all 11 workflow groups after updating insertion to the context menu. Screenshots: `output/playwright/timeline-pool-density/`.
 
 Very long names remain limited to two lines on cards; the full selected name is available in the timeline footer and tooltip. The smallest panels cap thumbnail width to available space.
+
+
+## Hover previews
+
+Video thumbnails scrub horizontally with mouse movement, using their existing paused, muted decoder. Moving left/right selects a frame; a stationary pointer does not play the clip. Seek requests coalesce while the decoder is busy. Images enlarge to about 250% of the thumbnail size after a short hover delay, preserve their aspect ratio and stay within the viewport. Card titles use a smaller 10px base font and continue to scale with pool zoom. The enlargement cannot intercept clicks or dragging and disappears on leaving, pressing a key, clicking, scrolling or resizing. Touch users retain the click preview. Click previews retain keyboard/focus handling with a transparent backdrop.
+
+The density smoke test also checks image enlargement and dismissal, forward video scrubbing, stationary paused frames, and transparent click-preview backdrop.
+
+Click-open video previews start unmuted at full player volume for checking dialogue; native volume/mute controls remain available. Hover scrubbing remains paused and silent. Closing the click preview pauses and releases its source.
+
+Timeline video thumbnails now support the same silent positional mouse scrubbing as the pool. Timeline scrubbing reuses the existing thumbnail decoder, respects saved trim bounds, and leaves selection/main playback unchanged. Image and video cards show PIC/VID badges, including derived image backgrounds and compact zoom. Density smoke tests cover badges, forward/backward seeks and stationary paused frames within trim bounds.

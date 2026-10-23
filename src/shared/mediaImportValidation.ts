@@ -11,9 +11,15 @@ export function validateMediaImport(project: { assets: AssetItem[]; mediaBins?: 
     }
   };
   unique(project.assets, imported.importedAssets, 'asset');
+  const replacements = imported.replacedAssets ?? [];
+  unique([], replacements, 'replacement');
+  for (const asset of replacements) {
+    const existing = project.assets.find(item => item.id === asset.id);
+    if (!existing || existing.mediaType !== asset.mediaType || (existing.originalName || existing.filename).toLowerCase() !== (asset.originalName || asset.filename).toLowerCase()) throw new Error('Invalid media replacement. Copied files have been preserved.');
+  }
   unique(project.mediaBins ?? [], imported.importedBins ?? [], 'bin');
   const paths = new Set(project.assets.map(asset => asset.relativePath && canonicalMediaPath(asset.relativePath)).filter(Boolean));
-  for (const asset of imported.importedAssets) {
+  for (const asset of [...imported.importedAssets, ...replacements]) {
     if (asset.relativePath === undefined) continue; // Older in-memory callers may register metadata incrementally.
     const path = canonicalMediaPath(asset.relativePath);
     if (!path) throw new Error('Unsafe media import path. Copied files have been preserved.');

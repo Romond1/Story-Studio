@@ -141,7 +141,7 @@ function playwright() {
 
     await card('video').click(); const video = dialog().locator('video');
     await page.waitForFunction(() => { const v = document.querySelector('.media-asset-preview video'); return v && !v.paused && v.currentTime > 0 && v.readyState >= 2; });
-    assert.deepEqual(await video.evaluate(v => [v.muted, v.loop, v.controls]), [true, true, true]);
+    assert.deepEqual(await video.evaluate(v => [v.muted, v.volume, v.loop, v.controls]), [false, 1, true, true]);
     assert.equal(await dialog().locator('video').count(), 1);
     await video.evaluate(v => { v.pause(); v.currentTime = 2; }); await page.waitForFunction(() => document.querySelector('.media-asset-preview video')?.currentTime >= 1.9);
     await video.evaluate(v => v.play());
@@ -149,7 +149,7 @@ function playwright() {
     await shot('video-desktop'); await close();
     assert.deepEqual(await handle.evaluate(v => ({ paused: v.paused, src: v.getAttribute('src'), connected: v.isConnected })), { paused: true, src: null, connected: false }); await handle.dispose();
     await card('video').click(); assert.equal(await dialog().locator('video').count(), 1); await page.keyboard.press('Escape');
-    pass('One muted looping preview, playback/seek and source cleanup on close/reopen');
+    pass('One audible looping preview, playback/seek and source cleanup on close/reopen');
 
     await page.getByRole('button', { name: 'Clear media selection', exact: true }).click();
     await card('picture').click({ modifiers: ['Control'] }); await card('video').click({ modifiers: ['Control'] });
@@ -161,14 +161,14 @@ function playwright() {
     await card('video').click(); assert.equal(await dialog().getByRole('button', { name: 'Add to Sequence', exact: true }).count(), 0); await page.keyboard.press('Escape'); await card('video').click({ button: 'right' }); await mediaMenu().getByRole('menuitem', { name: 'Add to Sequence', exact: true }).click(); assert.equal(await countScenes(), 3);
     pass('Modifier multiselection, unchanged drag IDs, actual scene drop and deliberate sequence insertion');
 
+    await app.evaluate(({dialog})=>{const original=dialog.showMessageBox;dialog.showMessageBox=async(...args)=>args[1]?.title==='Media with this filename already exists'?{response:0,checkboxChecked:true}:original(...args);});
     await choose(imports); await button('Media filters').click(); await button('Import folder').click();
-    await page.waitForFunction(() => document.querySelectorAll('.lesson-pool-asset').length === 5);
-    const duplicateCards = page.getByRole('option', { name: 'PIC - Garden Walk', exact: true }); assert.equal(await duplicateCards.count(), 2);
-    assert.notEqual(await duplicateCards.nth(0).getAttribute('data-asset-id'), await duplicateCards.nth(1).getAttribute('data-asset-id'));
+    await page.waitForFunction(() => document.querySelectorAll('.lesson-pool-asset').length === 4);
+    const duplicateCards = page.getByRole('option', { name: 'PIC - Garden Walk', exact: true }); assert.equal(await duplicateCards.count(), 1);
     await page.getByLabel('Type', { exact: true }).selectOption('video'); assert.equal(await page.locator('.lesson-pool-asset').count(), 1);
     await page.getByLabel('Type', { exact: true }).selectOption('all'); await button('Media filters').click();
     await save();
-    pass('Folder import, duplicate filenames without numbering and type filter');
+    pass('Folder import, duplicate filename skipped without numbering and type filter');
 
     for (const [width, height, name] of [[700, 850, 'narrow'], [390, 844, 'mobile']]) {
       await resize(width, height); await card('portrait').scrollIntoViewIfNeeded();

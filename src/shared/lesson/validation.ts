@@ -1,3 +1,5 @@
+import { isImageAppearance } from './imageAppearance';
+import { validBubbleOptions } from './bubbleAppearance';
 import { assertCardsV2 } from '../cardsV2';
 import { clone, type LessonProject, type SceneLessonProject } from './model';
 import { LESSON_LIMITS } from './limits';
@@ -45,7 +47,11 @@ export function validateSceneDocumentBody(value: unknown, hasAsset?: (assetId: u
   check(record(p.scenes) && Object.keys(p.scenes).length <= LESSON_LIMITS.scenes && record(p.sequences), 'scenes/sequences');
   if (p.sections !== undefined) {
     check(list(p.sections, LESSON_LIMITS.sections) && unique(p.sections), 'sections');
-    for (const section of p.sections) check(text(section.name, 500) && section.name.trim().length && ['story', 'activation'].includes(section.sequence), 'section identity');
+    for (const section of p.sections) check((section.beforeEntryId === undefined || id(section.beforeEntryId)) && text(section.name, 500) && section.name.trim().length && ['story', 'activation'].includes(section.sequence), 'section identity');
+    for (const section of p.sections) if (section.audio !== undefined) {
+      check(list(section.audio, 50) && unique(section.audio), 'section audio tracks');
+      for (const track of section.audio) check(asset(track.assetId, 'audio') && number(track.volume, 0, 1) && typeof track.loop === 'boolean' && typeof track.autoplay === 'boolean' && (track.shortcut === undefined || /^[1-9]$/.test(track.shortcut)), 'section audio association');
+    }
   }
   for (const sequence of ['story', 'activation']) {
     const entries = p.sequences[sequence];
@@ -61,24 +67,27 @@ export function validateSceneDocumentBody(value: unknown, hasAsset?: (assetId: u
     check(record(scene) && id(key) && scene.id === key && text(scene.title, 500) && text(scene.notes), 'scene identity');
     check(record(scene.frame) && number(scene.frame.width, 240, 10000) && number(scene.frame.height, 240, 10000), 'logical frame');
     check(record(scene.background) && color(scene.background.color) && (!scene.background.assetId || asset(scene.background.assetId) && !asset(scene.background.assetId, 'audio')), 'background');
+    check(scene.background.imageAppearance === undefined || asset(scene.background.assetId, 'image') && isImageAppearance(scene.background.imageAppearance), 'background image appearance');
     check(scene.background.videoTrim === undefined || asset(scene.background.assetId, 'video') && isVideoTrimSettings(scene.background.videoTrim), 'video trim');
     check(record(scene.viewport) && number(scene.viewport.zoom, 1, 4) && record(scene.viewport.pan) && number(scene.viewport.pan.x, -40000, 40000) && number(scene.viewport.pan.y, -40000, 40000), 'viewport');
     check(record(scene.transition) && ['none','fade'].includes(scene.transition.kind) && number(scene.transition.durationMs, 0, 10000), 'transition');
     check(list(scene.objects, LESSON_LIMITS.objectsPerScene) && unique(scene.objects), 'scene objects');
     for (const object of scene.objects) {
+      check(object.appearance === undefined || object.kind === 'image' && isImageAppearance(object.appearance), 'image appearance');
       validateBox(object.box, scene.frame); check(typeof object.visible === 'boolean', 'visibility');
       if (object.kind === 'card') {
         const card = p.cards[object.cardId];
         check(owns(p.cards, object.cardId) && card.faces.some((f: any) => f.id === object.initialFaceId) && typeof object.initiallyConcealed === 'boolean' && ['cycle','reveal','manual'].includes(object.interaction), 'card placement');
       } else if (object.kind === 'text' || object.kind === 'bubble') {
+        check(validBubbleOptions(object), 'bubble tail or appearance delay');
         check(text(object.text) && number(object.fontSize, 8, 500) && color(object.color) && ['left','center','right'].includes(object.align) && (object.bubbleDefId === undefined || id(object.bubbleDefId)), 'text object');
-      } else check(object.kind === 'image' && asset(object.assetId, 'image'), 'image object');
+      } else check((object.kind === 'image' || object.kind === 'video') && asset(object.assetId, object.kind), 'image object');
     }
     check(list(scene.audio, 50) && unique(scene.audio), 'audio tracks');
-    for (const track of scene.audio) check(asset(track.assetId, 'audio') && number(track.volume, 0, 1) && typeof track.loop === 'boolean' && typeof track.autoplay === 'boolean', 'audio association');
+    for (const track of scene.audio) check(asset(track.assetId, 'audio') && number(track.volume, 0, 1) && typeof track.loop === 'boolean' && typeof track.autoplay === 'boolean' && (track.shortcut === undefined || /^[1-9]$/.test(track.shortcut)), 'audio association');
     check(list(scene.drawings, 1000) && unique(scene.drawings), 'drawings');
     for (const stroke of scene.drawings) {
-      check(color(stroke.color) && number(stroke.size, 1, 100) && number(stroke.opacity, 0, 1) && typeof stroke.rainbow === 'boolean' && list(stroke.points, 100000), 'drawing stroke');
+      check(color(stroke.color) && number(stroke.size, 1, 100) && number(stroke.opacity, 0, 1) && typeof stroke.rainbow === 'boolean' && (stroke.fadeMs === undefined || number(stroke.fadeMs, 0, 60000)) && list(stroke.points, 100000), 'drawing stroke');
       for (const point of stroke.points) check(record(point) && number(point.x, -40000, 40000) && number(point.y, -40000, 40000) && number(point.t, 0, Number.MAX_SAFE_INTEGER), 'drawing point');
     }
   }

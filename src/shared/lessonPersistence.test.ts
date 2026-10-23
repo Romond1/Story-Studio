@@ -7,6 +7,26 @@ import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import { webcrypto, randomUUID } from 'node:crypto';
 import ts from 'typescript';
+import { checkpoint, recoveryDirectory, recoveryList } from '../main/lessonRecovery';
+import { createLesson } from './lesson/commands';
+
+test('recovery skips unchanged snapshots and retains only 30 newest checkpoints per project', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'recovery-retention-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const project = createLesson('Initial'), folder = path.join(root, 'project');
+  await checkpoint(root, folder, project, 'Autosave');
+  await checkpoint(root, folder, project, 'Before autosave');
+  assert.equal((await recoveryList(root, folder, project.id)).length, 1);
+  const directory = recoveryDirectory(root, folder, project.id);
+  // Existing overgrown recovery folders are compacted on the next checkpoint.
+  for (let n = 0; n < 35; n++) await fs.writeFile(path.join(directory, `${1000000000000 + n}-00000000-0000-0000-0000-000000000000.json`), JSON.stringify({ data: { ...project, title: `Old ${n}` }, reason: 'Autosave', createdAt: new Date(n).toISOString() }));
+  await fs.writeFile(path.join(directory, 'unrelated.txt'), 'Keep');
+  await checkpoint(root, folder, { ...project, title: 'Newest' }, 'Autosave');
+  const versions = await recoveryList(root, folder, project.id);
+  assert.equal(versions.length, 30); assert.ok(versions.some(v => v.title === 'Newest'));
+  assert.equal((await fs.readdir(directory)).filter(n => n.endsWith('.json')).length, 30);
+  assert.equal(await fs.readFile(path.join(directory, 'unrelated.txt'), 'utf8'), 'Keep');
+});
 
 /** Real main-process IPC and files; only Electron's UI boundary is substituted. */
 function mainHarness() {
@@ -222,4 +242,37 @@ test('legacy save also refuses replacement by the new on-disk format', async t =
   await write(folder, fixture()); const before = await fs.readFile(path.join(folder, 'project.json'), 'utf8');
   await assert.rejects(api.call('project:save', active.data, 'save', folder), /format/i);
   assert.equal(await fs.readFile(path.join(folder, 'project.json'), 'utf8'), before);
+});
+
+
+test('autosave writes atomically and recovery preserves prior and incoming revisions without changing identity', async t => {
+  const folder=await sandbox(t);await write(folder,fixture());
+  const host=mainHarness(), opened=await host.open(folder);
+  const edited={...opened.data,title:'One hour of authored work'};
+  const saved=await host.call('lesson:autosave',edited,folder);
+  assert.equal(saved.folderPath,folder);
+  assert.equal(JSON.parse(await fs.readFile(path.join(folder,'project.json'),'utf8')).title,edited.title);
+  const versions=await host.call('lesson:recovery-list',folder);
+  assert.ok(versions.some((v:any)=>v.reason==='Before autosave'));
+  const current=versions.find((v:any)=>v.reason==='Autosave');assert.ok(current);
+  const restored=await host.call('lesson:recovery-read',folder,current.name,{...edited,title:'Unsaved work before restore'});
+  assert.equal(restored.title,edited.title);
+  assert.equal(JSON.parse(await fs.readFile(path.join(folder,'project.json'),'utf8')).title,edited.title);
+  const updated=await host.call('lesson:recovery-list',folder);
+  assert.ok(updated.some((v:any)=>v.title==='Unsaved work before restore'));
+  await assert.rejects(host.call('lesson:recovery-read',folder,'../project.json'),/recovery/i);
+  await assert.rejects(host.call('lesson:autosave',edited,path.join(folder,'other')),/changed/i);
+  await assert.rejects(host.call('lesson:autosave',{...edited,id:'another-project'},folder),/identity/i);
+  assert.equal(JSON.parse(await fs.readFile(path.join(folder,'project.json'),'utf8')).title,edited.title);
+});
+
+test('draft autosave creates a recovery checkpoint without opening Save As', async t => {
+  const host=mainHarness();host.select(null);
+  const draft=await host.call('lesson:draft','story');
+  t.after(()=>fs.rm(draft.folderPath,{recursive:true,force:true}));
+  await host.call('lesson:activate',draft.activationToken);
+  const saved=await host.call('lesson:autosave',{...draft.data,title:'Draft recovery'},draft.folderPath);
+  assert.equal(saved.isDraft,true);
+  const versions=await host.call('lesson:recovery-list',draft.folderPath);
+  assert.ok(versions.some((v:any)=>v.title==='Draft recovery'));
 });

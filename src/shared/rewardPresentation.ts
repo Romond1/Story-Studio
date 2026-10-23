@@ -4,12 +4,14 @@ import type {
   SparkConfig,
   SparkShape,
 } from "./types";
+import { parseRewardAppearance, type RewardAppearance } from './rewardAppearance';
 export interface RewardAnchor {
   id: string;
   startedAt: number;
   expiresAt?: number;
 }
 export interface SparkVisual extends RewardAnchor {
+  appearance?: RewardAppearance;
   expiresAt: number;
   variant: SparkAwardVariant;
   studentName: string;
@@ -269,6 +271,8 @@ export function parseRewardPresentation(
       const s = obj(r),
         a = anchor(s);
       if (a.expiresAt === undefined) throw Error("expiry");
+      const appearance = s.appearance === undefined ? undefined : parseRewardAppearance(s.appearance);
+      if (appearance === null) throw Error('reward appearance');
       return {
         ...a,
         expiresAt: a.expiresAt,
@@ -276,6 +280,7 @@ export function parseRewardPresentation(
         studentName: str(s.studentName),
         delta: num(s.delta),
         config: cleanSparkConfig(s.config),
+        ...(appearance ? { appearance } : {}),
         ...(url(s.image) ? { image: url(s.image) } : {}),
       };
     });

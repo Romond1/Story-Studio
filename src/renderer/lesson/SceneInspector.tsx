@@ -1,11 +1,19 @@
+import { ReviewMediaPicker, BreakAudioControls } from './BreakReviewTools';
+import { ImageAppearanceControls } from './ImageAppearanceControls';
+import type { SceneAudio } from '../../shared/lesson/model';
+import { addReviewMedia } from '../../shared/lesson/sections';
+import { mediaDisplayTitle } from '../../shared/mediaDisplayName';
 import type { MediaRegistryView } from '../../shared/content/mediaRegistry';
 import { Children, cloneElement, isValidElement, useEffect, useId, useState, type ReactElement, type ReactNode } from 'react';
 import type { CardDefinition, CardFace, CardSet, CardStyle } from '../../shared/cardsV2';
 import type { LessonProject, LessonScene, SceneObject } from '../../shared/lesson/model';
-import { BUBBLE_LIBRARY } from '../../shared/bubbleDefs';
+import { BUBBLE_TAILS, SCENE_BUBBLE_STYLES, bubbleLayout, type BubbleTail } from '../../shared/lesson/bubbleAppearance';
 import { CARD_V2_PRESETS } from '../../shared/cardV2Render';
 
 export interface SceneInspectorProps {
+  resolveAsset: (id: string) => string | undefined;
+  onPlayAudio: (tracks: SceneAudio[]) => void; onStopAudio: () => void;
+  entryKind?: 'scene' | 'break';
   registry: MediaRegistryView; project: LessonProject; scene?: LessonScene; object?: SceneObject;
   onSceneChange: (scene: LessonScene) => void;
   onObjectChange: (object: SceneObject) => void;
@@ -38,6 +46,9 @@ function Section({ title, children, open = false }: { title: string; children: R
 /** Scene and object properties have the same ownership in either sequence. */
 export function SceneInspector(p: SceneInspectorProps) {
   const { project, scene, object } = p;
+  const [reviewAssetId, setReviewAssetId] = useState('');
+  const [reviewCaption, setReviewCaption] = useState('');
+  const [reviewError, setReviewError] = useState('');
   const [faceId, setFaceId] = useState('');
   const [linkedInsert, setLinkedInsert] = useState(false);
   const [setName, setSetName] = useState('');
@@ -61,7 +72,7 @@ export function SceneInspector(p: SceneInspectorProps) {
   };
   const sceneUsage = scene ? Object.values(project.sequences).flat().filter(entry => entry.sceneId === scene.id).length : 0;
   const cardUsage = card ? Object.values(project.scenes).reduce((count, item) => count + item.objects.filter(placement => placement.kind === 'card' && placement.cardId === card.id).length, 0) : 0;
-  const title = object ? object.kind === 'card' ? 'Card' : object.kind === 'bubble' ? 'Speech bubble' : object.kind === 'text' ? 'Text' : 'Image' : 'Scene';
+  const title = object ? object.kind === 'card' ? 'Card' : object.kind === 'bubble' ? 'Speech bubble' : object.kind === 'text' ? 'Text' : object.kind === 'video' ? 'Video' : 'Image' : p.entryKind === 'break' ? 'Break' : 'Scene';
   const updateFace = (patch: Partial<CardFace>) => { if (card && face) p.onCardChange({ ...card, faces: card.faces.map(item => item.id === face.id ? { ...item, ...patch } : item) }); };
   const updateStyle = (patch: Partial<CardStyle>) => { if (card) p.onCardChange({ ...card, style: { ...card.style, ...patch } }); };
   const addFace = () => {
@@ -113,14 +124,22 @@ export function SceneInspector(p: SceneInspectorProps) {
     </Section>}
   </Section>;
 
-  return <section className="lesson-inspector" aria-label="Scene Inspector">
+  return <section className="lesson-inspector" aria-label={p.entryKind === 'break' ? 'Break Inspector' : 'Scene Inspector'}>
     <header className="lesson-panel-heading"><strong>{title} Inspector</strong>{scene && <span className="lesson-muted" title={scene.title}>{scene.title}</span>}</header>
     <div className="lesson-panel-content">
       {!scene ? <><p className="lesson-empty">Select a scene in the timeline, or add one to begin.</p>{library}</> : <>
+        {p.entryKind === 'break' && <Section title="Break review" open>
+
+          <ReviewMediaPicker assets={project.assets.filter(a => a.mediaType === 'image' || a.mediaType === 'video')} resolve={p.resolveAsset} value={reviewAssetId} onChange={setReviewAssetId} />
+          <Field label="Caption under media"><input value={reviewCaption} maxLength={20000} onChange={event => setReviewCaption(event.target.value)} /></Field>
+          <button disabled={!project.assets.some(a => a.id === reviewAssetId)} onClick={() => { const asset = project.assets.find(a => a.id === reviewAssetId); if (!asset) return; try { p.onSceneChange(addReviewMedia(scene, asset, reviewCaption)); setReviewError(''); setReviewCaption(''); } catch (cause) { setReviewError(String(cause)); } }}>Add review media</button>
+          <BreakAudioControls key={scene.id} scene={scene} assets={project.assets} onChange={p.onSceneChange} onPlay={p.onPlayAudio} onStop={p.onStopAudio} />
+          {reviewError && <p role="alert" className="lesson-error">{reviewError}</p>}
+        </Section>}
         {p.onSelectObject && <div className="lesson-object-list" aria-label="Scene objects">
           <button aria-pressed={!object} onClick={() => p.onSelectObject?.(null)}>Scene properties</button>
           {scene.objects.length > 0 && <div role="listbox" aria-label="Select a scene object">{[...scene.objects].reverse().map(item => <button key={item.id} role="option" aria-selected={item.id === object?.id} onClick={() => p.onSelectObject?.(item.id)}>
-            <span>{item.kind === 'card' ? project.cards[item.cardId]?.label || 'Card' : item.kind === 'image' ? project.assets.find(asset => asset.id === item.assetId)?.originalName || 'Image' : `${item.kind === 'bubble' ? 'Bubble' : 'Text'} · ${item.text || 'Empty'}`}</span><small>{item.visible ? '' : 'Hidden'}</small>
+            <span>{item.kind === 'card' ? project.cards[item.cardId]?.label || 'Card' : item.kind === 'image' || item.kind === 'video' ? project.assets.find(asset => asset.id === item.assetId)?.originalName || 'Image' : `${item.kind === 'bubble' ? 'Bubble' : 'Text'} · ${item.text || 'Empty'}`}</span><small>{item.visible ? '' : 'Hidden'}</small>
           </button>)}</div>}
         </div>}
         {sceneUsage > 1 && <p className="lesson-sharing">Shared scene · {sceneUsage} sequence entries. Changes here update each use. Use Duplicate scene for an independent copy.</p>}
@@ -154,11 +173,18 @@ export function SceneInspector(p: SceneInspectorProps) {
 
         {(object?.kind === 'text' || object?.kind === 'bubble') && <>
           <Field label={object.kind === 'bubble' ? 'Bubble text' : 'Text'}><textarea rows={6} maxLength={20000} value={object.text} onChange={event => p.onObjectChange({ ...object, text: event.target.value })} /></Field>
-          {object.kind === 'bubble' && <Field label="Bubble style"><select value={object.bubbleDefId ?? 'BD_CLASSIC'} onChange={event => p.onObjectChange({ ...object, bubbleDefId: event.target.value })}>{BUBBLE_LIBRARY.filter(definition => definition.type !== 'text').map(definition => <option key={definition.bubbleDefId} value={definition.bubbleDefId}>{definition.name}</option>)}</select></Field>}
+          {object.kind === 'bubble' && <>
+            <Field label="Bubble style"><select value={object.bubbleDefId ?? 'BD_CLASSIC'} onChange={event => p.onObjectChange({ ...object, bubbleDefId: event.target.value })}>{SCENE_BUBBLE_STYLES.map(style => <option key={style.id} value={style.id}>{style.name}</option>)}</select></Field>
+            {bubbleLayout(object.bubbleDefId).style.tail && <Field label="Tail direction"><select value={object.bubbleTail ?? 'bottom-left'} onChange={event => p.onObjectChange({ ...object, bubbleTail: event.target.value as BubbleTail })}>{BUBBLE_TAILS.map(tail => <option key={tail} value={tail}>{tail.split('-').map(word => word[0].toUpperCase()+word.slice(1)).join(' ')}</option>)}</select></Field>}
+            <div className="lesson-field-grid"><NumberField label="Show from (seconds)" value={(object.appearDelayMs ?? 0)/1000} min={0} max={3599.9} step={.1} onChange={value => p.onObjectChange({ ...object, appearDelayMs: value*1000, ...(object.disappearAtMs!==undefined?{disappearAtMs:Math.max(object.disappearAtMs,value*1000+100)}:{}) })}/>
+            <Field label="Show until (seconds)"><input type="number" min={(object.appearDelayMs??0)/1000+.01} max={3600} step={.1} placeholder="Stay visible" value={object.disappearAtMs===undefined?'':object.disappearAtMs/1000} onChange={event=>{const value=event.target.valueAsNumber;if(event.target.value==='')p.onObjectChange({...object,disappearAtMs:undefined});else if(Number.isFinite(value))p.onObjectChange({...object,disappearAtMs:Math.min(3600000,Math.max(value*1000,(object.appearDelayMs??0)+10))});}}/></Field></div>
+            <p className="lesson-hint">Use video playback seconds, or elapsed scene time for images. Leave the end blank to stay visible. Edit always shows all bubbles. Text fits automatically; Font size sets its maximum.</p>
+          </>}
           <div className="lesson-field-grid"><NumberField label="Font size" value={object.fontSize} min={8} max={160} onChange={value => p.onObjectChange({ ...object, fontSize: value })} /><Field label="Text color"><input type="color" value={object.color} onChange={event => p.onObjectChange({ ...object, color: event.target.value })} /></Field><Field label="Text alignment"><select value={object.align} onChange={event => p.onObjectChange({ ...object, align: event.target.value as typeof object.align })}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></Field></div>
         </>}
-        {object?.kind === 'image' && <Field label="Image"><select value={object.assetId} onChange={event => p.onObjectChange({ ...object, assetId: event.target.value })}>{images.map(asset => <option key={asset.id} value={asset.id}>{asset.label}</option>)}</select></Field>}
+        {(object?.kind === 'image' || object?.kind === 'video') && <Field label={object.kind === 'video' ? 'Video' : 'Image'}><select value={object.assetId} onChange={event => p.onObjectChange({ ...object, assetId: event.target.value })}>{object.kind === 'image' ? images.map(asset => <option key={asset.id} value={asset.id}>{asset.label}</option>) : p.registry.list().filter(asset => asset.mediaType === 'video').map(asset => <option key={asset.id} value={asset.id}>{mediaDisplayTitle(asset)}</option>)}</select></Field>}
 
+        {p.entryKind === 'break' && object?.kind === 'image' && <ImageAppearanceControls value={object.appearance} onChange={appearance => p.onObjectChange({ ...object, appearance })} />}
         {object && <Section title="Position and layer" open>
           <div className="lesson-field-grid">{(['x', 'y', 'width', 'height'] as const).map(key => <NumberField key={key} label={{ x: 'Left', y: 'Top', width: 'Width', height: 'Height' }[key]} value={object.box[key]} min={key === 'width' || key === 'height' ? 40 : 0} max={key === 'x' ? Math.max(0, scene.frame.width - object.box.width) : key === 'y' ? Math.max(0, scene.frame.height - object.box.height) : key === 'width' ? scene.frame.width - object.box.x : scene.frame.height - object.box.y} onChange={value => p.onObjectChange({ ...object, box: { ...object.box, [key]: value } })} />)}</div>
           <label className="lesson-check"><input type="checkbox" checked={object.visible} onChange={event => p.onObjectChange({ ...object, visible: event.target.checked })} /> Visible in lesson</label>
@@ -167,7 +193,8 @@ export function SceneInspector(p: SceneInspectorProps) {
 
         {!object && <>
           <Field label="Scene title" quiet><input maxLength={200} value={scene.title} onChange={event => p.onSceneChange({ ...scene, title: event.target.value })} /></Field>
-          <Field label="Background media" quiet><select value={scene.background.assetId ?? ''} onChange={event => { const { videoTrim: _trim, ...background } = scene.background; p.onSceneChange({ ...scene, background: { ...background, assetId: event.target.value || undefined } }); }}><option value="">Color only</option>{[...images, ...p.registry.list('video').map(asset => ({ id: asset.id, label: asset.originalName || asset.filename, mediaType: asset.mediaType }))].map(asset => <option key={asset.id} value={asset.id}>{asset.label} · {asset.mediaType}</option>)}</select></Field>
+          <Field label="Background media" quiet><select value={scene.background.assetId ?? ''} onChange={event => { const { videoTrim: _trim, imageAppearance: _appearance, ...background } = scene.background; p.onSceneChange({ ...scene, background: { ...background, assetId: event.target.value || undefined } }); }}><option value="">Color only</option>{[...images, ...p.registry.list('video').map(asset => ({ id: asset.id, label: asset.originalName || asset.filename, mediaType: asset.mediaType }))].map(asset => <option key={asset.id} value={asset.id}>{asset.label} · {asset.mediaType}</option>)}</select></Field>
+          {p.entryKind === 'break' && images.some(a => a.id === scene.background.assetId) && <ImageAppearanceControls value={scene.background.imageAppearance} onChange={imageAppearance => p.onSceneChange({ ...scene, background: { ...scene.background, imageAppearance } })} />}
           <Field label="Background color"><input type="color" value={scene.background.color} onChange={event => p.onSceneChange({ ...scene, background: { ...scene.background, color: event.target.value } })} /></Field>
           <Section title="Canvas size">
             <Field label="Canvas preset"><select value={`${scene.frame.width}x${scene.frame.height}`} onChange={event => { const [width, height] = event.target.value.split('x').map(Number); frame(width, height); }}><option value={`${scene.frame.width}x${scene.frame.height}`}>Current · {scene.frame.width} × {scene.frame.height}</option><option value="1280x720">Wide · 16:9</option><option value="1024x768">Standard · 4:3</option><option value="900x1200">Portrait · 3:4</option><option value="1080x1080">Square · 1:1</option></select></Field>
@@ -177,12 +204,12 @@ export function SceneInspector(p: SceneInspectorProps) {
             <Field label="Scene transition"><select value={scene.transition.kind} onChange={event => p.onSceneChange({ ...scene, transition: { ...scene.transition, kind: event.target.value as 'none' | 'fade' } })}><option value="none">None</option><option value="fade">Fade</option></select></Field>
             {scene.transition.kind === 'fade' && <NumberField label="Duration (milliseconds)" value={scene.transition.durationMs} min={0} max={5000} step={50} onChange={value => p.onSceneChange({ ...scene, transition: { ...scene.transition, durationMs: value } })} />}
           </Section>
-          <Section title={`Audio${scene.audio.length ? ` · ${scene.audio.length}` : ''}`} open={scene.audio.length > 0}>
+          {p.entryKind !== 'break' && <Section title={`Audio${scene.audio.length ? ` · ${scene.audio.length}` : ''}`} open={scene.audio.length > 0}>
             <Field label="Add scene audio"><select value="" onChange={event => { if (event.target.value) p.onSceneChange({ ...scene, audio: [...scene.audio, { id: crypto.randomUUID(), assetId: event.target.value, volume: 1, loop: false, autoplay: false }] }); }}><option value="">Choose from Media Pool…</option>{audioAssets.map(asset => <option key={asset.id} value={asset.id}>{asset.originalName || asset.filename}</option>)}</select></Field>
             {!audioAssets.length && <p className="lesson-hint">Import audio in the Media Pool, then attach it here.</p>}
             {scene.audio.map(audio => <fieldset key={audio.id} className="lesson-audio-item"><legend>{audioAssets.find(asset => asset.id === audio.assetId)?.originalName || 'Scene audio'}</legend><Field label="Volume"><input type="range" min="0" max="1" step=".05" value={audio.volume} onChange={event => p.onSceneChange({ ...scene, audio: scene.audio.map(item => item.id === audio.id ? { ...item, volume: Number(event.target.value) } : item) })} /></Field><label className="lesson-check"><input type="checkbox" checked={audio.loop} onChange={event => p.onSceneChange({ ...scene, audio: scene.audio.map(item => item.id === audio.id ? { ...item, loop: event.target.checked } : item) })} /> Loop</label><label className="lesson-check"><input type="checkbox" checked={audio.autoplay} onChange={event => p.onSceneChange({ ...scene, audio: scene.audio.map(item => item.id === audio.id ? { ...item, autoplay: event.target.checked } : item) })} /> Play when scene starts</label><button onClick={() => p.onSceneChange({ ...scene, audio: scene.audio.filter(item => item.id !== audio.id) })}>Remove audio</button></fieldset>)}
             <p className="lesson-hint">Audio stops when you move to another scene.</p>
-          </Section>
+          </Section>}
           <Section title="Teacher notes"><Field label="Private notes"><textarea rows={5} value={scene.notes} maxLength={20000} onChange={event => p.onSceneChange({ ...scene, notes: event.target.value })} /></Field><p className="lesson-hint">These notes stay in the teacher workspace.</p></Section>
         </>}
         {library}

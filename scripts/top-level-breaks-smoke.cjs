@@ -1,0 +1,48 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const os = require('node:os');
+const { execFileSync } = require('node:child_process');
+const { _electron } = require(path.join(os.homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+(async () => {
+ const root=path.resolve(__dirname,'..'), temp=await fs.mkdtemp(path.join(os.tmpdir(),'studio-breaks-')), folder=path.join(temp,'Lesson'), evidence=path.join(root,'output/playwright/top-level-breaks');
+ await fs.mkdir(path.join(folder,'assets'),{recursive:true});await fs.mkdir(evidence,{recursive:true});
+ execFileSync('ffmpeg',['-loglevel','error','-f','lavfi','-i','testsrc2=s=640x360:r=12','-t','2','-c:v','libvpx',path.join(folder,'assets/video.webm')]);
+ execFileSync('ffmpeg',['-loglevel','error','-f','lavfi','-i','color=c=blue:s=640x360','-frames:v','1',path.join(folder,'assets/image.png')]);
+ const c=require('../dist/main/shared/lesson/commands');let project=c.createLesson('Section reviews');
+ project.assets=['image','video'].map(id=>({id, filename:id==='image'?'image.png':'video.webm',originalName:id==='image'?'Four_characters_exploring_volcano_2K_20261008160704.png':'Forest_walk_1080p.webm',relativePath:`assets/${id==='image'?'image.png':'video.webm'}`,mediaType:id,sizeBytes:1,importedAt:''}));
+ const sectionTools=require('../dist/main/shared/lesson/sections');
+ const a=sectionTools.addSection(project,'story','Section 1');const b=sectionTools.addSection(a.project,'story','Section 2');
+ project=sectionTools.insertSectionMedia(b.project,'story',['image'],a.sectionId).project;
+ project=sectionTools.insertSectionMedia(project,'story',['video'],b.sectionId).project;
+ await fs.writeFile(path.join(folder,'project.json'),JSON.stringify(project));
+ const app=await _electron.launch({executablePath:require('electron'),cwd:root,args:[root,`--user-data-dir=${path.join(temp,'profile')}`]});
+ try {
+ const page=await app.firstWindow();page.setDefaultTimeout(15000);page.on('dialog',d=>d.accept());
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1920,1080));
+ const button=n=>page.getByRole('button',{name:n,exact:true});
+ await button('Adventure').click();await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]})},folder);await button('Open project').click();await page.getByText('Lesson opened.',{exact:true}).waitFor();await button('Edit').click();
+ const group=name=>page.locator('.lesson-section-container').filter({has:page.locator('.lesson-section-title').filter({hasText:name})});
+ await group('Section 1').locator('.lesson-timeline-item').click();await button('+ Break').click();
+ const kinds=await page.locator('.lesson-section-container').evaluateAll(nodes=>nodes.map(n=>n.dataset.groupKind));assert.deepEqual(kinds,['section','break','section','ungrouped']);
+ const pause=page.locator('.lesson-break-container');assert.equal(await pause.locator('.lesson-section-add').count(),0);
+ await page.getByRole('region',{name:'Break Inspector',exact:true}).waitFor();
+ await button('Review media').click();assert.equal(await page.getByRole('listbox',{name:'Review media choices'}).locator('img').count(),1);await page.getByRole('listbox',{name:'Review media choices'}).getByRole('option',{name:/Four Characters Exploring Volcano/}).click();await page.getByLabel('Caption under media',{exact:true}).fill('Remember the door');await button('Add review media').click();
+ await button('Review media').click();await page.getByRole('listbox',{name:'Review media choices'}).getByRole('option',{name:/Forest Walk/}).click();await page.getByLabel('Caption under media',{exact:true}).fill('Explain the dialogue');await button('Add review media').click();
+ assert.equal(await page.locator('.lesson-canvas [data-scene-kind="image"]').count(),1);assert.equal(await page.locator('.lesson-canvas [data-scene-kind="video"]').count(),1);
+ const video=page.locator('.lesson-canvas video[aria-label="Review video"]');await video.evaluate(v=>v.play());await page.waitForTimeout(200);assert.ok(await video.evaluate(v=>!v.paused&&v.currentTime>0));const handle=await video.elementHandle();await group('Section 1').locator('.lesson-timeline-item').click();assert.deepEqual(await handle.evaluate(v=>[v.paused,v.hasAttribute('src')]),[true,false]);await pause.locator('.lesson-timeline-item').click();
+ await button('Save').click();const saved=JSON.parse(await fs.readFile(path.join(folder,'project.json'),'utf8'));const breakEntry=saved.sequences.story.find(e=>e.kind==='break');assert.equal(breakEntry.sectionId,undefined);assert.ok(saved.scenes[breakEntry.sceneId].objects.some(o=>o.text==='Explain the dialogue'));
+ await group('Ungrouped').locator('.lesson-section-title').click();assert.equal(await group('Ungrouped').locator('.lesson-section-title').getAttribute('aria-expanded'),'false');assert.ok((await group('Ungrouped').boundingBox()).height<40);
+ await button('Actions for Ungrouped').click();await page.getByRole('menuitem',{name:'Hide Ungrouped',exact:true}).click();assert.equal(await group('Ungrouped').count(),0);
+ await button('Timeline actions').click();await page.getByRole('menuitem',{name:'Show Ungrouped',exact:true}).click();assert.equal(await group('Ungrouped').count(),1);
+ await button('Actions for Section 2').click();await page.getByRole('menuitem',{name:'Delete section and its scenes',exact:true}).click();assert.equal(await group('Section 2').count(),0);assert.equal(await pause.count(),1);await button('Undo').click();assert.equal(await group('Section 2').count(),1);
+ await button('Actions for Section 1').click();await page.getByRole('menuitem',{name:'Remove section · keep scenes',exact:true}).click();assert.equal(await group('Section 1').count(),0);await group('Ungrouped').locator('.lesson-section-title').click();assert.equal(await page.locator('.lesson-timeline-item').count(),3);await button('Undo').click();assert.equal(await group('Section 1').count(),1);
+ await pause.locator('.lesson-timeline-item').click();await page.screenshot({path:path.join(evidence,'desktop.png')});
+ if(await button('Save').isEnabled()) await button('Save').click();await button('Open project').click();await button('Edit').click();assert.deepEqual(await page.locator('.lesson-section-container').evaluateAll(nodes=>nodes.map(n=>n.dataset.groupKind)),['section','break','section','ungrouped']);
+ await page.locator('.lesson-break-container .lesson-timeline-item').click();assert.equal(await page.locator('.lesson-canvas [data-scene-kind="video"]').count(),1);
+ await button('Show in Present').click();await button('Open Present').click();const present=app.windows().find(w=>w!==page)||await app.waitForEvent('window');present.setDefaultTimeout(15000);await present.locator('[data-scene-kind="video"] video').waitFor();await present.waitForFunction(()=>document.querySelector('[data-scene-kind="video"] video')?.readyState>=2);assert.equal(await present.locator('[data-scene-kind="image"]').count(),1);assert.equal(await present.getByText('Explain the dialogue',{exact:true}).count(),1);
+ await app.evaluate(({BrowserWindow})=>{const w=BrowserWindow.getAllWindows()[0];w.setMinimumSize(320,400);w.setSize(700,900)});await page.screenshot({path:path.join(evidence,'narrow.png')});
+ assert.deepEqual(errors,[]);console.log('PASS sibling break insertion, review image/video/captions and playback, save/reload, Ungrouped collapse/hide/restore, group removal and undo');
+ }finally{await app.evaluate(({app})=>app.exit(0)).catch(()=>{});await app.close().catch(()=>{});}
+})().catch(e=>{console.error(e);process.exitCode=1});

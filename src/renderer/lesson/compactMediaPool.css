@@ -1,11 +1,12 @@
 /* Keep media primary; filters and bin management appear only when requested. */
 .lesson-app .lesson-main > .lesson-pool { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-.lesson-app .lesson-pool .lesson-panel-heading { flex: 0 0 auto; padding: 8px 10px; gap: 5px; min-height: 42px; }
-.lesson-app .lesson-pool .lesson-panel-heading button { white-space: nowrap; font-size: 12px; }
+.lesson-app .lesson-pool .lesson-panel-heading { flex: 0 0 auto; padding: 2px 7px; gap: 5px; min-height: 30px; }
+.lesson-app .lesson-pool .lesson-panel-heading button { white-space: nowrap; font-size: 12px; min-height: 26px; padding: 3px 6px; }
 .lesson-app .lesson-pool .lesson-panel-content { flex: 1; min-height: 0; padding: 8px; gap: 8px; overflow: hidden; }
 .lesson-pool-search { display: flex; flex: 0 0 auto; gap: 5px; }
 .lesson-pool-search input { flex: 1; width: 0; min-width: 0; padding: 6px 8px; }
 .lesson-app .lesson-pool-search button { flex-shrink: 0; padding: 5px 7px; font-size: 12px; }
+.lesson-app .lesson-pool-search button[aria-pressed="true"] { border-color: var(--lesson-accent); background: #243b55; }
 .lesson-pool-filters { flex: 0 1 auto; max-height: 60%; overflow: auto; display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--lesson-border); background: var(--lesson-bg); border-radius: 6px; }
 .lesson-pool-bin-form { display: flex; flex-wrap: wrap; gap: 5px; }
 .lesson-pool-bin-form input { width: 100%; padding: 5px; }

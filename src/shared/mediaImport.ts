@@ -1,6 +1,7 @@
 import type { BreakMedia, ImportResult, ProjectData } from "./types";
 import { decorateImportedAssetsForContext } from "./mediaReferences";
 import { validateMediaImport } from './mediaImportValidation';
+import { replaceLegacyMedia } from './mediaImportReplacement';
 
 export function applyMediaImportToProjectData(
   data: ProjectData,
@@ -8,6 +9,8 @@ export function applyMediaImportToProjectData(
   targetSectionId?: string | null,
 ): ProjectData {
   validateMediaImport(data, result);
+  if (!result.importedAssets.length && !result.replacedAssets?.length && !result.importedBins?.length) return data;
+  data = replaceLegacyMedia(data, result.replacedAssets);
   const resolvedSectionId = targetSectionId ?? data.sections[0]?.id ?? null;
   const targetSection = resolvedSectionId
     ? data.sections.find((section) => section.id === resolvedSectionId)

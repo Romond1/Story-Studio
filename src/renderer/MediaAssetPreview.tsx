@@ -49,7 +49,8 @@ export function MediaAssetPreview({ asset, src, onClose, onRename }: MediaAssetP
     // StrictMode replays setup after cleanup on the same element in development.
     // Reestablish the source released by that cleanup without creating a decoder.
     if (decoder.getAttribute('src') !== src) decoder.setAttribute('src', src);
-    decoder.muted = true;
+    decoder.muted = false;
+    decoder.volume = 1;
     void decoder.play().catch(() => { /* Native controls remain usable if autoplay is blocked. */ });
     return () => { decoder.pause(); decoder.removeAttribute('src'); decoder.load(); };
   }, [src, mediaError]);
@@ -60,7 +61,7 @@ export function MediaAssetPreview({ asset, src, onClose, onRename }: MediaAssetP
   const cancelRename = () => { restoreRenameFocus.current = true; setRenaming(false); setError(''); };
   return <dialog ref={dialog} className="media-asset-preview" aria-labelledby={headingId}
     onCancel={event => { event.preventDefault(); event.stopPropagation(); onClose(); }}
-    onKeyDown={event => { event.stopPropagation(); }}
+    onKeyDown={event => { event.stopPropagation(); if (event.key === ' ' && !event.repeat && !event.ctrlKey && !event.altKey && !event.metaKey && !['INPUT','TEXTAREA','SELECT'].includes((event.target as HTMLElement).tagName) && !(event.target as HTMLElement).isContentEditable && video.current) { event.preventDefault(); if (video.current.paused) void video.current.play().catch(() => {}); else video.current.pause(); } }}
     onPointerDown={event => { event.stopPropagation(); }}
     onPointerUp={event => { event.stopPropagation(); }}
     onClick={event => {
@@ -72,7 +73,7 @@ export function MediaAssetPreview({ asset, src, onClose, onRename }: MediaAssetP
     <div className="media-preview-stage">
       {!src || mediaError ? <p role="status">Preview unavailable. The source media may be missing or unsupported.</p>
         : asset.mediaType === 'image' ? <img src={src} alt={mediaDisplayTitle(asset)} onError={() => setMediaError(true)} />
-          : <video ref={video} src={src} autoPlay muted loop controls playsInline preload="metadata"
+          : <video ref={video} src={src} autoPlay loop controls playsInline preload="metadata"
             aria-label="Media video preview" controlsList="nodownload noremoteplayback" disablePictureInPicture onError={() => setMediaError(true)} />}
       <button autoFocus type="button" className="media-preview-close" aria-label="Close media preview" onClick={onClose}>×</button>
     </div>

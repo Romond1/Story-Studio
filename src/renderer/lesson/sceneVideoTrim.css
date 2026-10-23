@@ -14,5 +14,19 @@
 .scene-video-trim-range input:disabled::-webkit-slider-thumb { opacity: .4; cursor: default; }
 .scene-video-trim-controls output { flex-shrink: 0; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .scene-video-trim-controls output span { color: var(--studio-muted, #acbbcd); }
+.scene-video-times { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; text-align: right; line-height: 12px; }
+.scene-video-times output[aria-label="Video playback position"] { color: #fff; font-weight: 600; }
 @media (max-width: 900px) { .lesson-container-timeline .lesson-timeline-toolbar:has(.scene-video-trim-controls) { flex-wrap: wrap; overflow-x: visible; } .scene-video-trim-controls { order: 2; flex-basis: 100%; max-width: none; margin-left: 0; padding: 4px 8px; } .lesson-timeline-toolbar:has(.scene-video-trim-controls) .lesson-timeline-zoom { margin-left: auto; } }
 @media (max-width: 480px) { .scene-video-trim-controls { flex-wrap: wrap; gap: 4px 8px; } .scene-video-trim-controls output { width: 100%; text-align: right; } }
+
+.lesson-app .scene-video-trim-range input.scene-video-seek { pointer-events: auto; z-index: 0; cursor: pointer; }
+.scene-video-trim-range input:not(.scene-video-seek) { z-index: 1; }
+.scene-video-trim-range input.scene-video-seek::-webkit-slider-thumb { width: 6px; height: 14px; margin-top: -4px; border: 1px solid #fff; background: #fff; border-radius: 1px; }
+
+.lesson-app .scene-video-trim-range input.scene-video-seek:focus-visible { z-index: 0; }
+
+/* Keep playback seeking above the trim handles, including when both are at range start. */
+.lesson-app .scene-video-trim-range input.scene-video-seek { top: 0; height: 12px; }
+.scene-video-trim-range input:not(.scene-video-seek)::-webkit-slider-thumb { height: 14px; margin-top: 2px; }
+.scene-video-trim-range input.scene-video-seek::-webkit-slider-thumb { height: 12px; margin-top: -3px; }
+.scene-video-trim-playhead { top: 0; height: 12px; }

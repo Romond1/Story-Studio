@@ -18,6 +18,7 @@ import type {
   BoostPack,
   ImportResult,
   MediaType,
+  MediaImportContext,
   ProjectData,
   ProjectState,
   Section,
@@ -165,17 +166,27 @@ const imageExts = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp']);
 const videoExts = new Set(['.mp4', '.mov', '.webm', '.mkv', '.avi']);
 const audioExts = new Set(['.mp3', '.wav', '.ogg', '.aac', '.m4a']);
 
-async function importMediaFiles(filePaths: string[]): Promise<ImportResult | null> {
+async function importMediaFiles(filePaths: string[], context?: MediaImportContext): Promise<ImportResult | null> {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
   if (!filePaths.length) return null;
   const folder = currentProjectFolder;
+  if(context && context.folderPath!==folder)throw new Error('Project changed during import. Please retry.');
+  const saved=JSON.parse(await fs.readFile(projectPath(folder),'utf8'));
+  const assets=context?.assets??saved.assets??[];
+  if(!Array.isArray(assets)||assets.some(asset=>!asset||typeof asset.id!=='string'||typeof asset.filename!=='string'||typeof asset.originalName!=='string'))throw new Error('Invalid current media catalogue.');
+  let batchChoice: 'existing'|'incoming'|undefined;
+  const options={existingAssets:assets,resolveDuplicate:async(existing:AssetItem,source:string,sizeBytes:number):Promise<'existing'|'incoming'>=>{
+    if(batchChoice)return batchChoice;
+    const answer=await dialog.showMessageBox(getWindow(),{type:'question',title:'Media with this filename already exists',message:`Which copy of “${path.basename(source)}” should be kept?`,detail:`Existing Media Pool item: ${existing.originalName} (${existing.sizeBytes} bytes)\nIncoming: ${source} (${sizeBytes} bytes)\n\nUse incoming updates this Media Pool item wherever it is used. Undo can restore the previous version.`,buttons:['Keep existing','Use incoming'],defaultId:0,cancelId:0,checkboxLabel:'Use this choice for all matching filenames in this import',checkboxChecked:false});
+    const choice=answer.response===1?'incoming':'existing';if(answer.checkboxChecked)batchChoice=choice;return choice;
+  }};
   if (activeProjectFormat === 'lesson') {
     // Import assets once; scene creation belongs to the new authoring commands.
-    const result = await importProjectMedia(folder, filePaths, '');
+    const result = await importProjectMedia(folder, filePaths, '', options);
     return { ...result, createdSlides: [] };
   }
   const sectionId=(await loadProject(folder)).data.sections[0]?.id ?? randomUUID();
-  return importProjectMedia(folder,filePaths,sectionId);
+  return importProjectMedia(folder,filePaths,sectionId,options);
 }
 
 function getWindow(): BrowserWindow {
@@ -888,7 +899,7 @@ ipcMain.handle('project:open-path', async (_, folderPathRaw: unknown) => {
   return prepareProject(await loadProject(folderPath));
 });
 
-handleProjectImport('project:import-media', async (): Promise<ImportResult | null> => {
+handleProjectImport('project:import-media', async (_, context?: MediaImportContext): Promise<ImportResult | null> => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
 
   const { canceled, filePaths } = await dialog.showOpenDialog(getWindow(), {
@@ -900,18 +911,18 @@ handleProjectImport('project:import-media', async (): Promise<ImportResult | nul
   });
   if (canceled || filePaths.length === 0) return null;
 
-  return importMediaFiles(filePaths);
+  return importMediaFiles(filePaths,context);
 });
 
-handleProjectImport('project:import-folder', async ():Promise<ImportResult|null> => {
+handleProjectImport('project:import-folder', async (_,context?:MediaImportContext):Promise<ImportResult|null> => {
   const {canceled,filePaths}=await dialog.showOpenDialog(getWindow(),{title:'Import folder into Media Pool',properties:['openDirectory']});
-  return canceled?null:importMediaFiles(filePaths);
+  return canceled?null:importMediaFiles(filePaths,context);
 });
 
-handleProjectImport('project:import-dropped-media', async (_, filePaths: string[]): Promise<ImportResult | null> => {
+handleProjectImport('project:import-dropped-media', async (_, filePaths: string[],context?:MediaImportContext): Promise<ImportResult | null> => {
   if (!currentProjectFolder) throw new Error('Create or open a project first');
   if (!Array.isArray(filePaths)) return null;
-  return importMediaFiles(filePaths);
+  return importMediaFiles(filePaths,context);
 });
 
 async function saveProject(data: ProjectData, mode: SaveMode, expectedFolder: string) {

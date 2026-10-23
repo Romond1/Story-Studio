@@ -25,7 +25,7 @@ const cameraControl: CameraControlApi = {
   },
 };
 contextBridge.exposeInMainWorld('cameraControl', cameraControl);
-import type { AssetItem, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
+import type { AssetItem, MediaImportContext, ImportResult, ProjectData, ProjectState, StudentRosterSettings } from '../shared/types';
 import type { AudioSettingsV1 } from '../shared/audioSettings';
 import type { PresentSnapshot } from '../shared/presentationSnapshot';
 import type { PresentStatus } from '../shared/presentStatus';
@@ -95,9 +95,9 @@ const api = {
     const error = ipcRenderer.sendSync('project:activate', token);
     if (error) throw new Error(error);
   },
-  importMediaFolder: (): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-folder'),
-  importMedia: (): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-media'),
-  importDroppedMedia: (filePaths: string[]): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-dropped-media', filePaths),
+  importMediaFolder: (context?: MediaImportContext): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-folder', context),
+  importMedia: (context?: MediaImportContext): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-media', context),
+  importDroppedMedia: (filePaths: string[], context?: MediaImportContext): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-dropped-media', filePaths, context),
   getPendingDroppedFilePaths: (): string[] => latestDroppedFilePaths,
   getPathForFile: (file: any): string => webUtils.getPathForFile(file),
   importAudioResult: (): Promise<ImportResult | null> => ipcRenderer.invoke('project:import-audio-result'),
@@ -127,6 +127,9 @@ const api = {
 
 contextBridge.exposeInMainWorld('appApi', api);
 contextBridge.exposeInMainWorld('lessonApi', {
+  autosave: (data: LessonProject, folder: string) => ipcRenderer.invoke('lesson:autosave', data, folder),
+  recoveryList: (folder: string) => ipcRenderer.invoke('lesson:recovery-list', folder),
+  recoveryRead: (folder: string, name: string, current?: LessonProject) => ipcRenderer.invoke('lesson:recovery-read', folder, name, current),
   exportPackage: (data: LessonProject, expectedFolder: string) => ipcRenderer.invoke('lesson:export-package', data, expectedFolder),
   importPackage: () => ipcRenderer.invoke('lesson:import-package'),
   convertProject: (data: LessonProject, adventure: import('../shared/episodeProtocol').EpisodeAdventure, expectedFolder: string) => ipcRenderer.invoke('lesson:convert', data, adventure, expectedFolder),

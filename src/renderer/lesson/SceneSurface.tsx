@@ -1,3 +1,5 @@
+import { useBubbleTiming } from './useBubbleTiming';
+import { SceneImageVisual } from './SceneImageVisual';
 import { marqueeIds, translateBoxes, type DrawingPreview } from '../../shared/lesson/objectSelection';
 import { fitBox } from '../../shared/lesson/commands';
 import type { SceneViewport } from '../../shared/teachingScene';
@@ -11,7 +13,8 @@ import { bindEditVideoTrim } from './editVideoPlayback';
 import { CardV2Scene } from '../cardsV2/CardV2Scene';
 import { LogicalFrameScaleContext, LogicalSceneFrame, PassiveDrawings } from '../StaticScene';
 import { RewardScene } from '../RewardScene';
-import { BUBBLE_LIBRARY } from '../../shared/bubbleDefs';
+import { SceneBubble } from './SceneBubble';
+export { SceneBubble } from './SceneBubble';
 import './SceneSurface.css';
 
 export interface SceneSurfaceProps {
@@ -20,12 +23,13 @@ export interface SceneSurfaceProps {
   onDrawingPreview?: (preview: DrawingPreview | null) => void;
   onSelect?: (id: string | null) => void; onGeometryChange?: (id: string, box: Rect) => void;
   onInteract?: (id: string) => void; video?: React.ReactNode;
-  occurrenceKey?: string;
+  occurrenceKey?: string; interactiveMedia?: boolean;
+  playback?: {positionSec:number;playing:boolean};
   onViewportChange?: (viewport: SceneViewport) => void;
   onContextMenu?: (point: { x: number; y: number; objectId: string | null }) => void;
   onCardDrop?: (objectId: string, entryId: string) => void;
   erasableStrokeIds?: string[]; drawingTool?: 'pen' | 'highlighter' | 'eraser'; onErase?: (ids: string[]) => void;
-  drawing?: boolean; onDraw?: (stroke: MarkerStroke) => void; drawColor?: string; drawSize?: number;
+  drawing?: boolean; onDraw?: (stroke: MarkerStroke) => void; drawColor?: string; drawSize?: number; drawRainbow?: boolean; drawFadeMs?: number;
 }
 
 /** The new document stores scene units; the retained drawing leaf expects unit fractions. */
@@ -44,44 +48,35 @@ export function EditSceneVideo({ src, interactive = true, trim, onElement }: { s
     onPointerDown={event => { if (interactive) event.stopPropagation(); }} onPointerUp={event => { if (interactive) event.stopPropagation(); }} />;
 }
 
-/** Built-in bubbles are vectors, so the same complete shape renders without placeholder image files. */
-export function SceneBubble({ object }: { object: Extract<SceneObjectPlan, { kind: 'text' | 'bubble' }> }) {
-  const definition = BUBBLE_LIBRARY.find(item => item.bubbleDefId === object.bubbleDefId) ?? BUBBLE_LIBRARY[0];
-  const variant = definition.bubbleDefId === 'BD_THOUGHT' ? 'thought' : definition.bubbleDefId === 'BD_SHOUT' ? 'shout' : 'speech';
-  const rect = definition.textRect ?? { x: .1, y: .1, width: .8, height: .6 };
-  return <div className="lesson-vector-bubble" data-bubble-shape={variant}>
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
-      <g fill="#ffffff" stroke="#263448" strokeWidth="1.2" strokeLinejoin="round">
-        {variant === 'speech' ? <path d="M 13 4 H 87 Q 98 4 98 16 V 64 Q 98 77 85 77 H 42 L 22 96 L 26 77 H 13 Q 2 77 2 64 V 17 Q 2 4 13 4 Z" />
-          : variant === 'thought' ? <><path d="M 16 16 C 12 2 34 0 39 9 C 48 -1 65 1 69 10 C 83 0 96 12 91 24 C 104 31 99 49 91 51 C 103 65 90 79 77 74 C 65 88 53 81 48 76 C 34 87 20 78 20 71 C 3 76 -2 55 7 48 C -4 36 2 19 16 16 Z" /><ellipse cx="23" cy="87" rx="6" ry="5" /><ellipse cx="14" cy="96" rx="3" ry="2.5" /></>
-            : <path d="M 50 2 L 58 15 L 76 5 L 75 22 L 94 16 L 86 34 L 99 42 L 88 53 L 97 68 L 79 69 L 82 89 L 63 80 L 53 98 L 44 82 L 25 94 L 25 75 L 5 80 L 14 61 L 1 51 L 14 39 L 4 22 L 23 25 L 24 7 L 41 17 Z" />}
-      </g>
-    </svg>
-    <div style={{ position: 'absolute', left: `${rect.x * 100}%`, top: `${rect.y * 100}%`, width: `${rect.width * 100}%`, height: `${rect.height * 100}%`,
-      display: 'flex', alignItems: 'center', justifyContent: object.align === 'left' ? 'flex-start' : object.align === 'right' ? 'flex-end' : 'center',
-      fontSize: object.fontSize, lineHeight: 1.2, color: object.color, textAlign: object.align, whiteSpace: 'pre-wrap', overflow: 'hidden', overflowWrap: 'anywhere' }}>{object.text}</div>
-  </div>;
+function ReviewVideo({ src, interactive }: { src: string; interactive: boolean }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => { const node = ref.current; if (node && node.getAttribute('src') !== src) node.setAttribute('src', src); return () => { if (node) { node.pause(); node.removeAttribute('src'); node.load(); } }; }, [src]);
+  return <video ref={ref} src={src} controls={interactive} muted={!interactive} playsInline preload="metadata" aria-label="Review video"
+    style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: interactive ? 'auto' : 'none' }}
+    onPointerDown={event => event.stopPropagation()} onPointerUp={event => event.stopPropagation()} />;
 }
 
-function ObjectVisual({ object }: { object: SceneObjectPlan }) {
+function ObjectVisual({ object, interactiveMedia }: { object: SceneObjectPlan; interactiveMedia: boolean }) {
   if (object.kind === 'card') return <CardV2Scene plan={{ engine: 'card-v2', version: 1,
     frame: { width: object.box.width, height: object.box.height }, cards: [{ ...object.card, box: { ...object.box, x: 0, y: 0 } }] }} />;
-  if (object.kind === 'image') return <img src={object.src} draggable={false} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
+  if (object.kind === 'image') return <SceneImageVisual src={object.src} appearance={object.appearance} />;
+  if (object.kind === 'video') return <ReviewVideo key={object.src} src={object.src} interactive={interactiveMedia} />;
   if (object.kind === 'bubble') return <SceneBubble object={object} />;
   return <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: object.align === 'left' ? 'flex-start' : object.align === 'right' ? 'flex-end' : 'center',
     fontSize: object.fontSize, color: object.color, textAlign: object.align, whiteSpace: 'pre-wrap', overflow: 'hidden', overflowWrap: 'anywhere' }}>{object.text}</div>;
 }
 
-function ResizeHandle({ zoom, onPointerDown }: { zoom: number; onPointerDown: (event: React.PointerEvent) => void }) {
+function ResizeHandle({ zoom, offsetY = 0, onPointerDown }: { zoom: number; offsetY?: number; onPointerDown: (event: React.PointerEvent) => void }) {
   const scale = Math.max(.01, useContext(LogicalFrameScaleContext) * zoom), size = 16 / scale;
-  return <button className="lesson-object-resize" aria-label="Resize object" onPointerDown={onPointerDown} style={{ width: size, height: size, minWidth: size, minHeight: size, right: -size / 2, bottom: -size / 2, borderWidth: 2 / scale }} />;
+  return <button className="lesson-object-resize" aria-label="Resize object" onPointerDown={onPointerDown} style={{ width: size, height: size, minWidth: size, minHeight: size, right: -size / 2, bottom: -size / 2 - offsetY, borderWidth: 2 / scale }} />;
 }
 
 /** All surfaces use this composition. Interactions never choose a different renderer or coordinate frame. */
 export function SceneSurface({ plan, surface, selectedObjectId, selectedObjectIds, onSelectMany, onGeometryChanges, onDrawingPreview, onSelect, onGeometryChange, onInteract, video,
-  drawing = false, onDraw, drawColor = '#ffcc33', drawSize = 6, drawingTool = 'pen', onErase,
-  onViewportChange, onContextMenu, onCardDrop, occurrenceKey, erasableStrokeIds }: SceneSurfaceProps) {
+  drawing = false, onDraw, drawColor = '#ffcc33', drawSize = 6, drawRainbow = false, drawFadeMs = 0, drawingTool = 'pen', onErase,
+  onViewportChange, onContextMenu, onCardDrop, occurrenceKey, interactiveMedia = true, erasableStrokeIds, playback }: SceneSurfaceProps) {
   const host = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);
+  const bubbleHidden=useBubbleTiming(host,plan.objects,JSON.stringify([plan.sceneId,surface,occurrenceKey]),surface!=='edit'&&interactiveMedia,plan.background.mediaType==='video',playback);
   const gesture = useRef<{ id: string; point: { x: number; y: number }; screen: { x: number; y: number }; original: Rect; box: Rect; resize: boolean; moved: boolean }>();
   const selected = selectedObjectIds ?? (selectedObjectId ? [selectedObjectId] : []);
   const group = useRef<{ id: string; box: Rect }[]>([]);
@@ -149,7 +144,8 @@ export function SceneSurface({ plan, surface, selectedObjectId, selectedObjectId
     if (marquee.current) { const { start, base } = marquee.current; setMarqueeBox({ x: Math.min(start.x, position.x), y: Math.min(start.y, position.y), width: Math.abs(start.x - position.x), height: Math.abs(start.y - position.y) }); onSelectMany?.([...new Set([...base, ...marqueeIds(plan.objects, start, position)])]); suppressClick.current = true; return; }
     if (erased.current) { eraseAt(position); return; }
     if (stroke.current) {
-      stroke.current = { ...stroke.current, points: [...stroke.current.points, { ...position, t: Date.now() }] };
+      const now = Date.now();
+      stroke.current = { ...stroke.current, points: [...stroke.current.points, { ...position, t: now, ...(stroke.current.rainbow ? { h: (now / 8) % 360 } : {}) }] };
       setDrawDraft(stroke.current); onDrawingPreview?.({ stroke: stroke.current }); return;
     }
     const active = gesture.current; if (!active) return;
@@ -197,27 +193,32 @@ export function SceneSurface({ plan, surface, selectedObjectId, selectedObjectId
         onPointerDown={event => {
           if (surface === 'present' || event.button !== 0) return;
           if (drawing && onDraw) {
+            const target = event.target as HTMLElement;
+            if (target.closest('button, input, select, textarea, a, [role="button"], [contenteditable="true"]')) return;
+            const video = target.closest<HTMLVideoElement>('video');
+            if (video?.controls && event.clientY >= video.getBoundingClientRect().bottom - 42) return;
             const position = point(event); if (!position) return;
             event.preventDefault(); host.current?.focus({ preventScroll: true }); host.current?.setPointerCapture(event.pointerId);
             if (drawingTool === 'eraser') { erased.current = new Set(); eraseAt(position); }
-            else { stroke.current = { id: crypto.randomUUID(), size: drawSize, color: drawColor, opacity: drawingTool === 'highlighter' ? .3 : 1, rainbow: false, points: [{ ...position, t: Date.now() }] }; setDrawDraft(stroke.current); onDrawingPreview?.({ stroke: stroke.current }); }
+            else { const now = Date.now(); stroke.current = { id: crypto.randomUUID(), size: drawSize, color: drawColor, opacity: drawingTool === 'highlighter' ? .3 : 1, rainbow: drawRainbow, ...(drawFadeMs > 0 ? { fadeMs: drawFadeMs } : {}), points: [{ ...position, t: now, ...(drawRainbow ? { h: (now / 8) % 360 } : {}) }] }; setDrawDraft(stroke.current); onDrawingPreview?.({ stroke: stroke.current }); }
           } else if (surface === 'edit' && !(event.target as HTMLElement).closest('[data-scene-object], video, button')) { const start = point(event); if (!start) return; event.preventDefault(); host.current?.focus(); host.current?.setPointerCapture(event.pointerId); const base = event.ctrlKey || event.metaKey || event.shiftKey ? selected : []; marquee.current = { start, base, original: selected }; onSelectMany?.(base); if (!onSelectMany) onSelect?.(null); }
         }}>
         <div className="lesson-scene-background" data-scene-background={plan.background.mediaType ?? 'color'}>
-          {plan.background.mediaType === 'image' && plan.background.src && <img src={plan.background.src} alt="" draggable={false} />}
-          {plan.background.mediaType === 'video' && (video ?? (surface === 'edit' && plan.background.src ? <EditSceneVideo key={plan.background.src} src={plan.background.src} interactive={!drawing} trim={plan.background.videoTrim} /> : null))}
+          {plan.background.mediaType === 'image' && plan.background.src && <SceneImageVisual src={plan.background.src} appearance={plan.background.imageAppearance} />}
+          {plan.background.mediaType === 'video' && (video ?? (surface === 'edit' && plan.background.src ? <EditSceneVideo key={plan.background.src} src={plan.background.src} interactive trim={plan.background.videoTrim} /> : null))}
         </div>
         {plan.objects.map((object, index) => {
           const box = groupDraft.find(o => o.id === object.id)?.box ?? (draft?.id === object.id ? draft.box : object.box);
           const active = surface === 'edit' && selected.includes(object.id);
+          const delayed=bubbleHidden(object);
           return <div key={object.id} data-scene-object={object.id} data-scene-kind={object.kind} data-selected={active} className="lesson-scene-object"
-            style={{ left: box.x, top: box.y, width: box.width, height: box.height, zIndex: index + 1 }}>
-            <ObjectVisual object={{ ...object, box }} />
-            {surface !== 'present' && !drawing && <div className={`lesson-object-hit${active ? ' is-selected' : ''}`} role="button" tabIndex={0}
-              aria-label={`${surface === 'edit' ? 'Select' : 'Interact with'} ${object.kind}`} onPointerDown={event => begin(event, object)}
+            aria-hidden={delayed||undefined} data-delayed={delayed} style={{ left: box.x, top: box.y, width: box.width, height: box.height, zIndex: index + 1, visibility:delayed?'hidden':undefined }}>
+            <ObjectVisual key={object.kind === 'video' ? `${plan.sceneId}:${occurrenceKey ?? ''}:${surface}` : object.id} object={{ ...object, box }} interactiveMedia={interactiveMedia} />
+            {surface !== 'present' && (!drawing || object.kind === 'card') && (object.kind !== 'video' || surface === 'edit') && <div className={`lesson-object-hit${active ? ' is-selected' : ''}`} role="button" tabIndex={0}
+              style={object.kind === 'video' ? { bottom: 42 } : undefined} aria-label={`${surface === 'edit' ? 'Select' : 'Interact with'} ${object.kind}`} onPointerDown={event => { if (drawing) { event.stopPropagation(); return; } begin(event, object); }}
               onClick={() => { onSelect?.(object.id); if (surface === 'teach') onInteract?.(object.id); }}
               onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(object.id); if (surface === 'teach') onInteract?.(object.id); } }}>
-              {active && selected.length === 1 && onGeometryChange && <ResizeHandle zoom={plan.viewport.zoom} onPointerDown={event => begin(event, object, true)} />}
+              {!drawing && active && selected.length === 1 && onGeometryChange && <ResizeHandle zoom={plan.viewport.zoom} offsetY={object.kind === 'video' ? 42 : 0} onPointerDown={event => begin(event, object, true)} />}
             </div>}
           </div>;
         })}

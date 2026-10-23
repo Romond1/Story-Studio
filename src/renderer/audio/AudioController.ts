@@ -974,6 +974,11 @@ export class AudioController {
     this.emit();
   }
 
+  setClipVolume(url: string, volume: number): void {
+    const node = this.activeNodes.get(url);
+    if (node && Number.isFinite(volume)) node.gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), this.getContext().currentTime);
+  }
+
   isPlaying(url: string): boolean {
     return this.activeNodes.has(url);
   }

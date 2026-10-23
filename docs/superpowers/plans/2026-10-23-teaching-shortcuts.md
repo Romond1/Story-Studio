@@ -1,0 +1,5 @@
+# Teaching shortcuts and drawing effects
+
+Use one Play/Pause toggle, Space for active video in Edit/Teach and focused preview, preserving Stop/replay/seek. Never play thumbnails or broadcast to multiple decoders. Guard typing, modifiers, repeats and composition. A/D navigate in Teach; physical number row1–4 awards yellow/blue/pink/crown; F1 cycles reward student. Q plays current section music or break audio, using a separate section music owner that continues across scenes in one section. Add optional section.audio, inspector selection, validation/dependency/portable support. W holds prepared translation capture only while pressed, with safe release/cancel. E toggles drawing retaining previous settings; R clears through Undo/Redo. Add rainbow/fade options and brush sizes to100, preserving old data.
+
+Independent translation/drawing specialists own their components; root integrates playback/music/navigation/rewards. Test helper routing and metadata first, then full unit/helper tests, builds and native keyboard checks. No commits/pushes.

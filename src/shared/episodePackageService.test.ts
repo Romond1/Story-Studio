@@ -1,3 +1,5 @@
+import type { AssetItem } from './types';
+import { addReviewMedia } from './lesson/sections';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
@@ -7,6 +9,15 @@ import { createLesson, createScene } from './lesson/commands';
 import { createModuleTemplate } from './modules/templates';
 import { exportEpisodePackage, importEpisodePackage, rejectPackageFolder } from '../main/episodePackageService';
 const fixture=()=>({...createLesson('Portable'),format:'story-studio-episode',version:1,adventure:{id:'adventure',version:'1'},requiredCapabilities:['derived-images-v1','manual-catalog-v1','adventure-definitions-v1'],derivedImages:[],catalog:{entities:[]},adventureDefinition:{id:'adventure',version:'1',name:'Adventure',description:'',rewards:[],relics:[]}});
+
+test('portable scene bubbles retain vector style, tail, delay and font settings',async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'package-bubbles-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
+ const source=path.join(root,'source'),target=path.join(root,'package'),editable=path.join(root,'editable');for(const folder of [source,target,editable])await fs.mkdir(folder);
+ const scene=createScene('Dialogue');scene.objects=[{id:'bubble',kind:'bubble',visible:true,box:{x:20,y:20,width:200,height:70},text:'What happens next?',fontSize:32,color:'#182331',align:'center',bubbleDefId:'BD_OVAL',bubbleTail:'top-right',appearDelayMs:1200,disappearAtMs:3200}];
+ const data={...fixture(),scenes:{[scene.id]:scene},sequences:{story:[{id:'entry',sceneId:scene.id,section:''}],activation:[]}};
+ await fs.writeFile(path.join(source,'project.json'),JSON.stringify(data));await exportEpisodePackage({source,target,data,builtinRoot:root,assertCurrent:()=>{}});const imported=await importEpisodePackage({source:target,target:editable,assertCurrent:()=>{}});
+ const reloaded=JSON.parse(await fs.readFile(path.join(editable,'project.json'),'utf8'));assert.deepEqual(reloaded.scenes[scene.id].objects,scene.objects);
+});
 
 test('portable export/import preserves custom display titles, original filenames, IDs and exact media bytes', async t => {
  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'package-titles-'));
@@ -21,12 +32,18 @@ test('portable export/import preserves custom display titles, original filenames
  const data = { ...fixture(), assets: [asset, video] };
  const scene = createScene('Trimmed video', video.id); scene.background.videoTrim = { inSec: .5, outSec: 1.5 };
  data.scenes[scene.id] = scene; data.sequences.story.push({ id: 'trimmed-entry', sceneId: scene.id, section: '' });
+ const review = addReviewMedia(addReviewMedia(createScene('Review board'), asset as AssetItem, 'Door'), video as AssetItem, 'Dialogue');
+ review.background={color:'#112233',assetId:asset.id,imageAppearance:{blur:8,feather:15,scale:1.2}};
+ const picture=review.objects.find(o=>o.kind==='image');if(picture?.kind==='image')picture.appearance={blur:4,border:1,opacity:.8};
+ data.scenes[review.id] = review; data.sequences.story.push({ id: 'review-entry', sceneId: review.id, section: '', kind: 'break' } as typeof data.sequences.story[number]);
  const before = JSON.stringify(data);
  await fs.writeFile(path.join(source, asset.relativePath), bytes);
  await fs.writeFile(path.join(source, video.relativePath), videoBytes);
  await exportEpisodePackage({ source, target, data, builtinRoot: root, assertCurrent: () => {} });
  const imported = await importEpisodePackage({ source: target, target: destination, assertCurrent: () => {} });
  assert.deepEqual(imported.data.assets, [asset, video]);
+ assert.deepEqual(imported.data.scenes[review.id],review);
+ assert.equal(imported.data.sequences.story.find(e=>e.id==='review-entry')?.kind,'break');
  assert.deepEqual(imported.data.scenes[scene.id].background.videoTrim, { inSec: .5, outSec: 1.5 });
  assert.equal(JSON.stringify(data), before);
  assert.deepEqual(await fs.readFile(path.join(destination, asset.relativePath)), bytes);

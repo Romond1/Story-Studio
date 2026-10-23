@@ -1,7 +1,28 @@
-import type { AssetItem, ImportResult, ProjectData, Slide } from './types';
+import type { AssetItem, ImportResult, MediaBin, ProjectData, Slide } from './types';
 import { decorateImportedAssetsForContext } from './mediaReferences';
 import { validateMediaImport } from './mediaImportValidation';
 import { createMediaRegistry } from './content/mediaRegistry';
+import { replaceLegacyMedia } from './mediaImportReplacement';
+
+/** Stable presentation order; never mutates authored asset/bin order. */
+export function groupMediaByType<T extends { mediaType: string }>(assets: readonly T[]): T[] {
+  const rank = (type: string) => type === 'image' ? 0 : type === 'video' ? 1 : 2;
+  return [...assets].sort((a,b) => rank(a.mediaType)-rank(b.mediaType));
+}
+
+export function renameMediaBin<T extends { mediaBins?: MediaBin[] }>(project: T, id: string, name: string): T {
+  const title=name.trim().slice(0,200),bin=project.mediaBins?.find(item=>item.id===id);
+  if(!id||!bin||!title||bin.name===title)return project;
+  return {...project,mediaBins:project.mediaBins!.map(item=>item.id===id?{...item,name:title}:item)};
+}
+
+/** Remove only the container; its contents remain available in its parent. */
+export function removeMediaBin<T extends { assets: AssetItem[]; mediaBins?: MediaBin[] }>(project: T, id: string): T {
+  const bin=project.mediaBins?.find(item=>item.id===id);
+  if(!id||!bin)return project;
+  return {...project,assets:project.assets.map(asset=>asset.binId===id?{...asset,binId:bin.parentId}:asset),
+    mediaBins:project.mediaBins!.filter(item=>item.id!==id).map(item=>item.parentId===id?{...item,parentId:bin.parentId}:item)};
+}
 
 /** Pool membership is independent of registered media used by authored content. */
 export function removeFromMediaPool<T extends { assets: AssetItem[] }>(project: T, assetId: string): T {
@@ -15,10 +36,12 @@ export function createMediaSlide(asset:AssetItem,sectionId:string,id:()=>string)
 }
 export function registerPoolImport(data:ProjectData,result:ImportResult,binId?:string):ProjectData {
   validateMediaImport(data, result);
+  if (!result.importedAssets.length && !result.replacedAssets?.length && !result.importedBins?.length) return data;
   if (binId && !data.mediaBins?.some(bin => bin.id === binId)) throw new Error('The destination bin no longer exists. Copied files have been preserved.');
   const assets=decorateImportedAssetsForContext(data,result.importedAssets,null).map(a=>({...a,...(!a.binId&&binId?{binId}:{})}));
   const bins=(result.importedBins??[]).map(bin=>({...bin,...(!bin.parentId&&binId?{parentId:binId}:{})}));
-  return {...data,assets:[...data.assets,...assets],...(bins.length?{mediaBins:[...(data.mediaBins??[]),...bins]}:{})};
+  const replaced=replaceLegacyMedia(data,result.replacedAssets);
+  return {...replaced,assets:[...replaced.assets,...assets],...(bins.length?{mediaBins:[...(data.mediaBins??[]),...bins]}:{})};
 }
 /** A slot is before a stable slide ID, or the end of a section. */
 export function insertPoolAssets(data:ProjectData,assetIds:string[],sectionId:string,beforeId:string|null,id:()=>string):ProjectData {
