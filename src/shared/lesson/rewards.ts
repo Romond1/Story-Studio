@@ -9,7 +9,7 @@ export interface LessonRewardState {
   appearance?: RewardAppearance;
   students: SparkStudent[];
   activeStudentId: string;
-  sparks: SparkVisual[];
+  sparks: (SparkVisual & { studentId?:string })[];
   final?: FinalBadgeVisual;
   /** Acceptance survives animation expiry/reset; duplicate events never rescore. */
   appliedEventIds: string[];
@@ -28,6 +28,13 @@ export function initializeLessonRewards(session: LessonSession, roster: StudentR
   const students = roster.filter(value => !value.archived && validId(value.id) && value.name.trim() && !seen.has(value.id) && !!seen.add(value.id)).map(value => student(value.id, value.name));
   if (!students.length) students.push(student('lesson-class', 'Class'));
   return update(session, { students, activeStudentId: students[0].id, sparks: [], appliedEventIds: [] });
+}
+
+/** Balances retain the roster; only checked participants are eligible recipients. */
+export function lessonRewardSelection(session: LessonSession, participantIds?: readonly string[]) {
+  const students = session.rewards?.students.filter(value => participantIds === undefined || participantIds.includes(value.id)) ?? [];
+  const active = students.find(value => value.id === session.rewards?.activeStudentId) ?? students[0];
+  return { students, active };
 }
 
 export function selectLessonRewardStudent(session: LessonSession, id: string): LessonSession {
@@ -49,11 +56,12 @@ export function addLessonRewardStudent(session: LessonSession, name: string, id:
   return update(session, { ...state, students, activeStudentId: id, final: refreshFinal(state, students) });
 }
 
-export function awardLessonReward(session: LessonSession, variant: SparkAwardVariant, eventId: string, now: number): LessonSession {
+export function awardLessonReward(session: LessonSession, variant: SparkAwardVariant, eventId: string, now: number, amount = 1, showVisual = true): LessonSession {
   const state = session.rewards;
-  if (!accepts(state, eventId) || !REWARD_VARIANTS.includes(variant) || !Number.isFinite(now) || now < 0) return session;
+  if (!accepts(state, eventId) || !REWARD_VARIANTS.includes(variant) || !Number.isFinite(now) || now < 0 || !Number.isInteger(amount) || amount < 1 || amount > 10) return session;
   const active = state.students.find(value => value.id === state.activeStudentId); if (!active) return session;
-  const students = awardRewardToStudent(state.students, state.activeStudentId, variant);
+  let students = state.students;
+  for(let i=0;i<amount;i++) students = awardRewardToStudent(students,state.activeStudentId,variant);
   const config = cleanSparkConfig(DEFAULT_SPARK_CONFIG);
   const appearance = state.appearance;
   if (appearance) {
@@ -61,8 +69,8 @@ export function awardLessonReward(session: LessonSession, variant: SparkAwardVar
     config.glowIntensity *= appearance.intensity;
     config.scalePopIntensity = 1 + (config.scalePopIntensity - 1) * appearance.intensity;
   }
-  const visual: SparkVisual = { id: eventId, startedAt: now, expiresAt: sparkLifetime(now, config.burstDurationMs, config.counterVisibleMs, variant), variant, studentName: active.name, delta: 1, config, ...(appearance ? { appearance: { ...appearance } } : {}) };
-  return update(session, { ...state, students, sparks: [...state.sparks.filter(value => value.expiresAt > now).slice(-999), visual], final: refreshFinal(state, students), appliedEventIds: [...state.appliedEventIds, eventId] });
+  const visual: SparkVisual & {studentId:string} = { studentId:active.id, id: eventId, startedAt: now, expiresAt: sparkLifetime(now, config.burstDurationMs, config.counterVisibleMs, variant), variant, studentName: active.name, delta: amount, config, ...(appearance ? { appearance: { ...appearance } } : {}) };
+  return update(session, { ...state, students, sparks: showVisual ? [...state.sparks.filter(value => value.expiresAt > now).slice(-999), visual] : state.sparks, final: refreshFinal(state, students), appliedEventIds: [...state.appliedEventIds, eventId] });
 }
 
 export function resetLessonStudentRewards(session: LessonSession, eventId: string): LessonSession {
@@ -97,9 +105,26 @@ export function pruneLessonRewards(session: LessonSession, now: number): LessonS
   return sparks.length === state.sparks.length && final === state.final ? session : update(session, { ...state, sparks, final });
 }
 
+export interface RewardStudentVisibility {studentIds:readonly string[];roster:readonly StudentRosterEntry[]}
+/** Teacher selection affects only public visuals, never recipients, balances or event acceptance. */
+export function rewardStudentDisplayName(id:string,name:string,visibility?:RewardStudentVisibility):string|undefined {
+ if(!visibility)return name;
+ if(id==='lesson-class' && !visibility.roster.length)return 'Class';
+ if(!visibility.studentIds.includes(id))return undefined;
+ const index=visibility.roster.findIndex(profile=>profile.id===id && !profile.archived),profile=visibility.roster[index];
+ if(!profile)return undefined;
+ const nickname=(profile.nickname?.trim() || profile.name?.trim())?.slice(0,80);
+ return nickname && nickname.length<=80 && !/[\u0000-\u001f<>]|(?:https?:|data:|file:|media:|blob:)/i.test(nickname)?nickname:`Student ${index+1}`;
+}
 /** Only resolved visible events cross to Present, never the runtime roster or ledger. */
-export function projectLessonRewards(state: LessonRewardState, frame: { width: number; height: number }): RewardPresentation {
-  const result = parseRewardPresentation({ frame, sparks: state.sparks, ...(state.final ? { final: state.final } : {}) });
+export function projectLessonRewards(state: LessonRewardState, frame: { width: number; height: number },visibility?:RewardStudentVisibility): RewardPresentation {
+  const sparks=state.sparks.flatMap(spark=>{
+   const matches=spark.studentId?state.students.filter(s=>s.id===spark.studentId):state.students.filter(s=>s.name===spark.studentName);
+   const name=visibility && matches.length!==1?undefined:rewardStudentDisplayName(matches[0]?.id??'',spark.studentName,visibility);
+   return name===undefined?[]:[{...spark,studentName:name}];
+  });
+  const final=state.final?{...state.final,students:state.final.students.flatMap(student=>{const name=rewardStudentDisplayName(student.id,student.name,visibility);return name===undefined?[]:[{...student,name}];})}:undefined;
+  const result = parseRewardPresentation({ frame, sparks, ...(final ? { final } : {}) });
   if (!result) throw new Error('Lesson reward visuals could not be projected.');
   return result;
 }

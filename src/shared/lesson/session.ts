@@ -1,26 +1,39 @@
+import {prepareMiniGame} from './miniGameSetup';
+import { awardLessonReward, selectLessonRewardStudent } from './rewards';
 import { clone, makeId, sceneAt, type LessonProject, type LessonSession, type LessonLocation, type CardLiveState, type SceneLiveState, type LessonScene } from './model';
 import type { Rect } from './model';
 import type { MarkerStroke } from '../types';
 import { fitBox } from './commands';
 
+import { resolveBreakExperience } from './miniGameBreak';
+import { initializeMiniGame, restoreMiniGame, transitionMiniGame, type MiniGameAction } from './miniGameRuntime';
+
 const locationKey = (location: LessonLocation) => JSON.stringify([location.sequence, location.entryId]);
 function defaults(scene?: LessonScene): SceneLiveState {
-  return { sceneId: scene?.id ?? '', cards: {}, drawings: [], viewport: clone(scene?.viewport ?? { zoom: 1, pan: { x: 0, y: 0 } }), drawingUndo: [], drawingRedo: [] };
+  const experience = resolveBreakExperience(scene?.breakExperience);
+  return { miniGame: experience.status === 'planned' ? initializeMiniGame(experience.config) : undefined, sceneId: scene?.id ?? '', cards: {}, drawings: [], viewport: clone(scene?.viewport ?? { zoom: 1, pan: { x: 0, y: 0 } }), drawingUndo: [], drawingRedo: [] };
 }
 function cacheCurrent(project: LessonProject, session: LessonSession) {
   const scenes = { ...session.scenes }, scene = sceneAt(project, session.cursor);
-  if (scene && session.cursor) scenes[locationKey(session.cursor)] = clone({ sceneId: scene.id, cards: session.cards, drawings: session.drawings, viewport: session.viewport, drawingUndo: session.drawingUndo ?? [], drawingRedo: session.drawingRedo ?? [] });
+  if (scene && session.cursor) scenes[locationKey(session.cursor)] = clone({ miniGame: session.miniGame, sceneId: scene.id, cards: session.cards, drawings: session.drawings, viewport: session.viewport, drawingUndo: session.drawingUndo ?? [], drawingRedo: session.drawingRedo ?? [] });
   return scenes;
 }
 
 export function createSession(): LessonSession {
   return { id: makeId(), revision: 0, visit: 0, cursor: null, storyReturn: null, cards: {}, drawings: [], viewport: { zoom: 1, pan: { x: 0, y: 0 } } };
 }
+/** Explicit Teach on an authored mini-game starts that selected Break; ordinary editing still resumes Live. */
+export function enterTeach(project: LessonProject,session: LessonSession,selection:{sequence:import('./model').SequenceKind;entryId:string|null}):LessonSession {
+ const entry=project.sequences[selection.sequence].find(e=>e.id===selection.entryId);
+ const selectedGame=entry?.kind==='break' && project.scenes[entry.sceneId]?.breakExperience?.mode==='minigame';
+ if(!entry || session.cursor && !selectedGame || session.cursor?.sequence===selection.sequence && session.cursor.entryId===entry.id)return session;
+ return navigate(project,session,{sequence:selection.sequence,entryId:entry.id});
+}
 /** Reset just the current occurrence to the scene's authored defaults. */
 export function resetScene(project: LessonProject, session: LessonSession): LessonSession {
   const scene = sceneAt(project, session.cursor);
   if (!scene || !session.cursor) return session;
-  const next = { ...session, ...defaults(scene), revision: session.revision + 1, visit: session.visit + 1 };
+  const next = reconcileSession(project, { ...session, ...defaults(scene), revision: session.revision + 1, visit: session.visit + 1 });
   return { ...next, scenes: cacheCurrent(project, next) };
 }
 export function moveLiveCard(project: LessonProject, session: LessonSession, objectId: string, box: Rect): LessonSession {
@@ -80,7 +93,10 @@ export function reconcileSession(project: LessonProject, session: LessonSession)
     if (saved && scene && saved.sceneId === scene.id) scenes[key] = { ...saved, cards: reconcileCards(project, scene, saved.cards) };
   }
   const scene = sceneAt(project, session.cursor);
-  const next = { ...session, scenes, storyReturn: sceneAt(project, session.storyReturn) ? session.storyReturn : null,
+  const experience = resolveBreakExperience(scene?.breakExperience, id => !!project.cards[id]);
+  const isBreak = session.cursor && project.sequences[session.cursor.sequence].find(e => e.id === session.cursor!.entryId)?.kind === 'break';
+  const miniGame = isBreak && experience.status === 'planned' ? restoreMiniGame(prepareMiniGame(experience.config,project).config, session.miniGame) : undefined;
+  const next = { ...session, miniGame, scenes, storyReturn: sceneAt(project, session.storyReturn) ? session.storyReturn : null,
     ...(scene ? { cards: reconcileCards(project, scene, session.cards) } : session.cursor ? { ...defaults(), cursor: null } : {}) };
   return JSON.stringify(next) === JSON.stringify(session) ? session : { ...next, revision: session.revision + 1 };
 }
@@ -112,4 +128,37 @@ export function cardAction(project: LessonProject, session: LessonSession, objec
     state.faceId = card.faces[(index + (action === 'next' ? 1 : -1) + card.faces.length) % card.faces.length].id; state.concealed = false;
   }
   return { ...session, revision: session.revision + 1, cards: { ...session.cards, [object.id]: state } };
+}
+
+/** Teacher-authoritative entry point; session revision feeds the existing snapshot transport. */
+export function actOnMiniGame(project: LessonProject, session: LessonSession, action: MiniGameAction): LessonSession {
+  const scene = sceneAt(project, session.cursor);
+  const entry = session.cursor && project.sequences[session.cursor.sequence].find(e => e.id === session.cursor!.entryId);
+  const experience = resolveBreakExperience(scene?.breakExperience, id => !!project.cards[id]);
+  if (entry?.kind !== 'break' || experience.status !== 'planned') return session;
+  const config=prepareMiniGame(experience.config,project).config;
+  const state = restoreMiniGame(config, session.miniGame);
+  if (!state) return session;
+  if (state.version === 2 && (!('expectedRevision' in action) || action.sessionId !== session.id || action.occurrenceId !== session.cursor?.entryId || action.visit !== session.visit)) return session;
+  if (state.version === 2 && action.type === 'face') {
+    const activity = config.activities.find(a => a.id === state.currentActivityId);
+    if (!('faceId' in action) || !activity?.contentRef || !project.cards[activity.contentRef]?.faces.some(face => face.id === action.faceId)) return session;
+  }
+  if(state.version===2 && ['media-play','media-pause','media-restart'].includes(action.type)) {
+    const activity=config.activities.find(a=>a.id===state.currentActivityId),asset=project.assets.find(a=>a.id===activity?.config?.mediaAssetId);
+    if(activity?.kind!=='question' || !asset || !['video','audio'].includes(asset.mediaType))return session;
+  }
+  if(state.version===2 && action.type==='award' && (!session.rewards || !session.rewards.students.some(student=>student.id===action.studentId))) return session;
+  const next = transitionMiniGame(config, state, action).state;
+  if (next === state || JSON.stringify(next) === JSON.stringify(state) || JSON.stringify(next) === JSON.stringify(session.miniGame)) return session;
+  let result: LessonSession = { ...session, miniGame: next, revision: session.revision + 1 };
+  if(state.version===2 && next?.version===2 && action.type==='award' && next.outcome?.decision==='awarded') {
+    const target=selectLessonRewardStudent(result,action.studentId!);
+    result=awardLessonReward(target,action.rewardVariant!,`wheel:${next.turnId ?? next.spin?.id ?? next.currentActivityId}:award:${next.revision}`,action.atMs!,action.amount!,true);
+  }
+  if(state.version===2 && state.turnId && result.rewards && ['skip-effect','reset','next','finish','skip'].includes(action.type)) {
+    const awardId=`wheel:${state.turnId}:award`;
+    result={...result,rewards:{...result.rewards,sparks:result.rewards.sparks.filter(spark=>spark.id!==awardId && !spark.id.startsWith(`${awardId}:`))}};
+  }
+  return result;
 }

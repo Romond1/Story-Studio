@@ -1,0 +1,4 @@
+# Phase 4 animated wheel
+Extend the existing v2 runtime with optional serializable spin metadata and a retained rotation pose. Selection remains authoritative. Both windows sample the same epoch-based acceleration, cruise and slowdown curve; SVG transforms update imperatively without frame messages. Existing phases remain unchanged. Teach issues the guarded Show command after landing, never Complete. Reset, navigation and skips clean up local resources. Old snapshots without timing retain instant/manual reveal behavior.
+
+Reuse the shared wheel SVG, Card face renderer, media audio bus and public projection whitelist. Only an explicitly selected Card face crosses IPC. Reduced motion settles the wheel without rotation. Sounds are optional synthesized cues, with existing media/master volume and mute routing. No reward or additional game implementation.

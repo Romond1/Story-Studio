@@ -3,6 +3,7 @@
 Visual lesson authoring and live teaching through Adventure → Discovery → Challenge → Mastery, with a shared Adventure/Discovery scene editor.
 
 ## Features
+- Team Play reuses Spinning Wheel and Hero Dash in saved group lesson sequences, with independent media, manual individual/team points and a non-disruptive Presenter scoreboard. Earlier Shared Adventure folders remain compatible. See [Team Play usage and activity compatibility](docs/team-play.md).
 - Project format is always:
   - `<project>/project.json`
   - `<project>/assets/*`

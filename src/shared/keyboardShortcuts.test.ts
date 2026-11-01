@@ -39,3 +39,8 @@ test('a claimed shortcut prevents another listener from executing the same comma
   claimTeacherKey({ preventDefault: () => calls.push('prevent'), stopImmediatePropagation: () => calls.push('stop') });
   assert.deepEqual(calls, ['prevent', 'stop']);
 });
+
+test('magic shortcuts cycle with F2 and play with5 only in Teach outside inputs',()=>{
+ assert.equal(lessonShortcut({code:'F2'},'teach'),'magic-next');assert.equal(lessonShortcut({code:'Digit5'},'teach'),'magic-play');
+ for(const code of ['F2','Digit5']){assert.equal(lessonShortcut({code},'edit'),null);assert.equal(lessonShortcut({code,repeat:true},'teach'),null);assert.equal(lessonShortcut({code,target:{tagName:'INPUT'}},'teach'),null);}
+});

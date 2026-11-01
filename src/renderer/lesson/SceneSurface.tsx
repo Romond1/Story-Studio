@@ -1,3 +1,4 @@
+import { WheelScene } from './WheelScene';
 import { useBubbleTiming } from './useBubbleTiming';
 import { SceneImageVisual } from './SceneImageVisual';
 import { marqueeIds, translateBoxes, type DrawingPreview } from '../../shared/lesson/objectSelection';
@@ -18,6 +19,8 @@ export { SceneBubble } from './SceneBubble';
 import './SceneSurface.css';
 
 export interface SceneSurfaceProps {
+  onQuestionFlip?:()=>void;
+  onCardSelect?: (index: number) => void;
   plan: ScenePlan; surface: 'edit' | 'teach' | 'present'; selectedObjectId?: string | null;
   selectedObjectIds?: string[]; onSelectMany?: (ids: string[]) => void; onGeometryChanges?: (changes: { id: string; box: Rect }[]) => void;
   onDrawingPreview?: (preview: DrawingPreview | null) => void;
@@ -74,7 +77,7 @@ function ResizeHandle({ zoom, offsetY = 0, onPointerDown }: { zoom: number; offs
 /** All surfaces use this composition. Interactions never choose a different renderer or coordinate frame. */
 export function SceneSurface({ plan, surface, selectedObjectId, selectedObjectIds, onSelectMany, onGeometryChanges, onDrawingPreview, onSelect, onGeometryChange, onInteract, video,
   drawing = false, onDraw, drawColor = '#ffcc33', drawSize = 6, drawRainbow = false, drawFadeMs = 0, drawingTool = 'pen', onErase,
-  onViewportChange, onContextMenu, onCardDrop, occurrenceKey, interactiveMedia = true, erasableStrokeIds, playback }: SceneSurfaceProps) {
+  onViewportChange, onContextMenu, onCardDrop, onQuestionFlip, onCardSelect, occurrenceKey, interactiveMedia = true, erasableStrokeIds, playback }: SceneSurfaceProps) {
   const host = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null);
   const bubbleHidden=useBubbleTiming(host,plan.objects,JSON.stringify([plan.sceneId,surface,occurrenceKey]),surface!=='edit'&&interactiveMedia,plan.background.mediaType==='video',playback);
   const gesture = useRef<{ id: string; point: { x: number; y: number }; screen: { x: number; y: number }; original: Rect; box: Rect; resize: boolean; moved: boolean }>();
@@ -188,6 +191,7 @@ export function SceneSurface({ plan, surface, selectedObjectId, selectedObjectId
     onClickCapture={event => { if (suppressClick.current) { event.stopPropagation(); suppressClick.current = false; } }}
     onContextMenu={event => { if (surface === 'present' || !onContextMenu) return; event.preventDefault(); cancelGesture(); const id = (event.target as HTMLElement).closest<HTMLElement>('[data-scene-object]')?.dataset.sceneObject ?? null; if (!id || !selected.includes(id)) onSelect?.(id); onContextMenu({ x: event.clientX, y: event.clientY, objectId: id }); }}>
     <LogicalSceneFrame frame={plan.frame} transparent>
+      {plan.miniGame && <div role="status" data-mini-game-status={plan.miniGame.status} style={{ position: 'absolute', zIndex: 20, top: 12, left: 12, padding: '8px 12px', background: '#172332', color: '#ffffff', fontSize: 20, pointerEvents: 'none' }}>{plan.miniGame.status === 'unavailable' ? 'Mini-game unavailable · Ask your teacher to check this Break' : 'Mini-game · Gameplay coming in a future phase'}</div>}
       <div ref={content} className="lesson-scene-content" style={{ background: plan.background.color,
         transform: `translate(${plan.viewport.pan.x}px, ${plan.viewport.pan.y}px) scale(${plan.viewport.zoom})`, transformOrigin: '0 0' }}
         onPointerDown={event => {
@@ -207,6 +211,7 @@ export function SceneSurface({ plan, surface, selectedObjectId, selectedObjectId
           {plan.background.mediaType === 'image' && plan.background.src && <SceneImageVisual src={plan.background.src} appearance={plan.background.imageAppearance} />}
           {plan.background.mediaType === 'video' && (video ?? (surface === 'edit' && plan.background.src ? <EditSceneVideo key={plan.background.src} src={plan.background.src} interactive trim={plan.background.videoTrim} /> : null))}
         </div>
+        {plan.wheel && surface!=='edit' && <WheelScene inScene plan={plan.wheel} frame={plan.frame} audibleMedia={surface!=='present'} onQuestionFlip={drawing?undefined:onQuestionFlip} onCardSelect={drawing?undefined:onCardSelect}/>}
         {plan.objects.map((object, index) => {
           const box = groupDraft.find(o => o.id === object.id)?.box ?? (draft?.id === object.id ? draft.box : object.box);
           const active = surface === 'edit' && selected.includes(object.id);

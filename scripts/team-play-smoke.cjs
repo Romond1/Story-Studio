@@ -1,0 +1,53 @@
+const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os');
+const {execFileSync}=require('node:child_process');
+const {_electron}=require(process.env.STORY_STUDIO_PLAYWRIGHT||path.join(os.homedir(),'.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+(async()=>{
+ const root=path.resolve(__dirname,'..'),temp=await fs.mkdtemp(path.join(os.tmpdir(),'team-play-')),folder=path.join(temp,'Earlier Shared Adventure'),evidence=path.join(root,'output/playwright/team-play');
+ await fs.mkdir(path.join(folder,'assets'),{recursive:true});await fs.mkdir(evidence,{recursive:true});
+ const {createLesson}=require('../dist/main/shared/lesson/commands'),{createSharedAdventure,awardSharedPoints}=require('../dist/main/shared/sharedAdventure');
+ const project={...createLesson('Earlier Shared Adventure'),sharedAdventure:createSharedAdventure()};
+ const group=project.sharedAdventure;group.preparation.name='Shared Adventure';group.preparation.devices=[{id:'italy',name:'Italy'},{id:'japan',name:'Japan'}];group.preparation.students.forEach((student,index)=>student.deviceId=index<2?'italy':'japan');group.preparation.prompt='Season review';group.preparation.imageAssetId='red';
+ project.sharedAdventure=awardSharedPoints(group,['student-1'],5);
+ for(const color of ['red','blue']){const file=path.join(folder,`assets/${color}.png`);execFileSync('ffmpeg',['-loglevel','error','-f','lavfi','-i',`color=c=${color}:s=400x300`,'-frames:v','1',file]);project.assets.push({id:color,filename:`${color}.png`,originalName:`${color}.png`,relativePath:`assets/${color}.png`,mediaType:'image',sizeBytes:(await fs.stat(file)).size,importedAt:new Date().toISOString()});}
+ const original=JSON.stringify(project);await fs.writeFile(path.join(folder,'project.json'),original);
+ const app=await _electron.launch({executablePath:require('electron'),cwd:root,args:[root,`--user-data-dir=${path.join(temp,'profile')}`,'--use-fake-device-for-media-stream']});const errors=[];
+ try{
+  const page=await app.firstWindow();page.setDefaultTimeout(20000);page.on('pageerror',error=>errors.push(String(error)));page.on('dialog',dialog=>dialog.accept());
+  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1550,1000));
+  const button=(name,scope=page)=>scope.getByRole('button',{name,exact:true}),shot=async(name,surface=page)=>surface.screenshot({path:path.join(evidence,`${name}.png`)});
+  await button('Team Play').waitFor();assert.equal(await page.locator('.beginning-primary button').count(),5);await shot('beginning');
+  await button('Team Play').click();await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},folder);await button('Open group lesson').click();await page.getByText('Lesson opened.',{exact:true}).waitFor();
+  assert.equal(await page.getByLabel('Group name',{exact:true}).inputValue(),'Team Play');assert.equal(await fs.readFile(path.join(folder,'project.json'),'utf8'),original);
+  await page.getByText('◆ Team 5 / 30',{exact:true}).waitFor();assert.equal(await page.getByLabel('Device Student 2',{exact:true}).inputValue(),'italy');
+  const library=page.locator('.team-library'),draft=library.locator('.team-library-description');
+  await library.getByLabel('Source module',{exact:true}).selectOption('Challenge');await library.getByText('Unsupported · Not integrated',{exact:true}).waitFor();assert.equal(await library.locator('.team-library-items button').count(),1);assert.equal(await button('Add to lesson sequence',draft).count(),0);
+  await library.getByLabel('Source module',{exact:true}).selectOption('Discovery');await library.locator('.team-library-items').getByRole('button',{name:/Spinning Wheel/}).click();
+  await draft.getByLabel('Question 1 text',{exact:true}).fill('What is the red clue?');await draft.getByLabel('Question 1 image',{exact:true}).selectOption('red');await button('Add question',draft).click();await draft.getByLabel('Question 2 text',{exact:true}).fill('What is the blue clue?');await draft.getByLabel('Question 2 image',{exact:true}).selectOption('blue');await button('Add to lesson sequence',draft).click();
+  await library.getByLabel('Source module',{exact:true}).selectOption('Mastery');await library.locator('.team-library-items').getByRole('button',{name:/Hero Dash/}).click();await draft.getByLabel('Question 1 text',{exact:true}).fill('Describe this image.');await draft.getByLabel('Question 1 image',{exact:true}).selectOption('blue');await draft.getByLabel('Race length',{exact:true}).selectOption('10');await button('Add to lesson sequence',draft).click();
+  assert.equal(await library.locator('.team-sequence>li').count(),2);
+  await button('Launch next prepared activity',library).click();const running=page.getByRole('region',{name:'Running Team Play activity',exact:true});await running.waitFor();
+  let present;for(let index=0;index<100;index++){present=app.windows().find(window=>window!==page);if(present)break;await new Promise(resolve=>setTimeout(resolve,50));}assert.ok(present);present.on('pageerror',error=>errors.push(String(error)));
+  await button('Start Game',running).click();await button('Spin Wheel',running).click();await present.locator('[data-wheel-phase="active"]').waitFor();
+  await present.locator('.wheel-scene-host').evaluate(node=>node.dataset.teamMountMarker='wheel');
+  await button('Award team').click();await page.getByText('◆ Team 20 / 30',{exact:true}).waitFor();await button('Show scoreboard').click();
+  const overlay=present.getByRole('complementary',{name:'Team Play scoreboard',exact:true});await overlay.getByText('Team Play · ◆ Team 20 / 30',{exact:true}).waitFor();assert.equal(await present.locator('.wheel-scene-host').getAttribute('data-team-mount-marker'),'wheel');
+  await button('Undo points').click();await overlay.getByText('Team Play · ◆ Team 5 / 30',{exact:true}).waitFor();await button('Hide scoreboard').click();await overlay.waitFor({state:'detached'});assert.equal(await present.locator('.wheel-scene-host').getAttribute('data-team-mount-marker'),'wheel');
+  await button('Complete Activity',running).click();await button('Next Activity',running).click();await button('Spin Wheel',running).click();await present.locator('[data-wheel-phase="active"]').waitFor();await page.getByText('◆ Team 5 / 30',{exact:true}).waitFor();
+  await page.getByRole('heading',{name:'Team Play',exact:true}).scrollIntoViewIfNeeded();await shot('wheel-control');await shot('wheel-present',present);
+  await button('Complete and return to Team Play',running).click();await running.waitFor({state:'detached'});await page.getByText('◆ Team 5 / 30',{exact:true}).waitFor();await present.getByText('Listen to your teacher. Get ready to work together.',{exact:true}).waitFor();
+  await button('Launch next prepared activity',library).click();await running.waitFor();const race=present.getByRole('region',{name:'Hero Dash race',exact:true});await race.waitFor();
+  await button('Start race',running).click();await race.locator('canvas').waitFor();await button('Move selected racer +1',running).click();await present.waitForFunction(()=>document.querySelector('.dash-present')?.dataset.dashPosition==='1');
+  await race.evaluate(node=>node.dataset.teamMountMarker='race');
+  await page.getByText('◆ Team 5 / 30',{exact:true}).waitFor();
+  await button('Show race question',running).click();await present.getByText('Describe this image.',{exact:true}).waitFor();
+  await page.getByLabel('Award Student 1',{exact:true}).check();await page.getByLabel('Award Student 3',{exact:true}).check();await button('Award selected').click();await button('Show scoreboard').click();await overlay.getByText('Team Play · ◆ Team 15 / 30',{exact:true}).waitFor();
+  assert.equal(await race.getAttribute('data-team-mount-marker'),'race');assert.equal(await race.getAttribute('data-dash-position'),'1');
+  await page.getByRole('heading',{name:'Team Play',exact:true}).scrollIntoViewIfNeeded();await shot('dash-control');await shot('dash-present',present);
+  await button('Save group lesson').click();await page.getByText('Lesson saved.',{exact:true}).waitFor();const saved=JSON.parse(await fs.readFile(path.join(folder,'project.json'),'utf8'));assert.equal(saved.sharedAdventure.preparation.activities.length,2);assert.deepEqual(saved.sharedAdventure.live.scores,{'student-1':10,'student-3':5});assert.equal(saved.sharedAdventure.preparation.name,'Shared Adventure');assert.equal(saved.format,'story-studio-scene');
+  await app.evaluate(({dialog})=>{dialog.showOpenDialog=async()=>({canceled:true,filePaths:[]});});await button('Open group lesson').click();assert.equal(await running.count(),1);assert.equal(await race.getAttribute('data-team-mount-marker'),'race');
+  await button('Exit activity to mission',running).click();await race.waitFor({state:'detached'});await page.getByText('◆ Team 15 / 30',{exact:true}).waitFor();
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},folder);await button('Open group lesson').click();await page.getByText('Lesson opened.',{exact:true}).waitFor();assert.equal(await library.locator('.team-sequence>li').count(),2);await page.getByText('◆ Team 15 / 30',{exact:true}).waitFor();assert.equal(await running.count(),0);
+  await page.setViewportSize({width:560,height:900});await page.getByRole('heading',{name:'Team Play',exact:true}).scrollIntoViewIfNeeded();await shot('hub-narrow');assert.equal(await page.locator('.shared-adventure').evaluate(node=>node.scrollWidth>node.clientWidth),false);
+  assert.deepEqual(errors,[]);console.log('PASS: Team Play rename/navigation, old saved-session compatibility, module library, prepared questions/media, sequence, real Wheel and Hero Dash, manual scoring/undo during both, scoreboard mount preservation, cancellation, save/reopen and narrow UI.');console.log(`Evidence: ${evidence}\nDisposable lesson: ${folder}`);
+ }catch(error){for(const[index,window]of app.windows().entries()){await window.screenshot({path:path.join(evidence,`failure-${index}.png`)}).catch(()=>{});console.error((await window.locator('body').innerText()).slice(-6500));}throw error;}finally{await app.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});

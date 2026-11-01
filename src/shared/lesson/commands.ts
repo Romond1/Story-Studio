@@ -1,5 +1,6 @@
 import type { CardDefinition } from '../cardsV2';
 import { clone, makeId, type LessonProject, type SceneLessonProject, type LessonScene, type Rect, type SceneObject, type SequenceKind } from './model';
+import { copyBreakExperience } from './miniGameBreak';
 import { LESSON_LIMITS } from './limits';
 
 function assertObjectCapacity(scene: LessonScene, adding: number) {
@@ -177,16 +178,19 @@ export function copyScene<T extends LessonProject>(project: T, sceneId: string, 
   assertObjectCapacity(source, 0);
   assertCardCapacity(project, source.objects.filter(object => object.kind === 'card').length);
   const scene = { ...clone(source), id: makeId(), title: `${source.title.slice(0, 495)} copy`, objects: [] as SceneObject[] };
+  const cardRemap = new Map<string, string>();
   const added = insertScene(project, destination, scene); project = added.project;
   for (const original of source.objects) {
     let object = { ...clone(original), id: makeId() };
     if (object.kind === 'card' && original.kind === 'card') {
       const definition = project.cards[original.cardId], card = independentCard(definition);
+      cardRemap.set(original.cardId, card.id);
       object = { ...object, cardId: card.id, initialFaceId: card.faces[Math.max(0, definition.faces.findIndex(face => face.id === original.initialFaceId))].id };
       project = { ...project, cards: { ...project.cards, [card.id]: card } };
     }
     project = addObject(project, scene.id, object);
   }
+  if (source.breakExperience) project = putScene(project, { ...project.scenes[scene.id], breakExperience: copyBreakExperience(source.breakExperience, cardRemap) });
   return { project, entryId: added.entryId };
 }
 

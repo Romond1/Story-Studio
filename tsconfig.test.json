@@ -16,7 +16,14 @@
       "node"
     ]
   },
-  "include": [
+  "include": ["src/shared/teamPlay.test.ts", "src/shared/sharedAdventure.test.ts", "src/shared/miniGameVarietyRuntime.test.ts",
+    "src/shared/wheelUsability.test.ts",
+    "src/shared/gameEffects.test.ts",
+    "src/shared/wheelGameFeel.test.ts",
+    "src/shared/wheelAnimation.test.ts",
+    "src/shared/spinningWheelRuntime.test.ts",
+    "src/shared/spinningWheelEditor.test.ts",
+    "src/shared/miniGameBreak.test.ts",
     "src/shared/lessonVideoTrim.test.ts",
     "src/shared/mediaPoolActions.test.ts",
     "src/shared/mediaDisplayName.test.ts",
@@ -136,6 +143,7 @@
     "src/shared/heroDash.ts",
     "src/shared/heroDash.test.ts",
     "src/shared/heroDashRewards.test.ts",
-    "src/shared/heroDashLibrary.test.ts"
+    "src/shared/heroDashLibrary.test.ts",
+    "src/shared/miniGameSetup.test.ts"
   ]
 }

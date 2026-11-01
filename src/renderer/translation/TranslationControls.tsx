@@ -162,7 +162,7 @@ export function TranslationControls({ activeView = true }: { activeView?: boolea
   return <section className="translation-controls teach-live-card" aria-label="Translation">
     <h3>Translation</h3>
     <small role="status">{preferencesStatus}</small>
-    <button type="button" disabled={!api||stopping} aria-pressed={enabled} onClick={async() => {
+    <button className="teacher-primary-action" type="button" disabled={!api||stopping} aria-pressed={enabled} onClick={async() => {
       if(enabled){setStopping(true);invalidate(true,true);active.current=false;setEnabled(false);setStatus('Releasing local models…');try{await api.cancel(true);}finally{setStopping(false);}}
       else{active.current=true;setEnabled(true);prepareSelection();}
     }}>{enabled ? 'Turn translation off' : 'Turn translation on'}</button>

@@ -1,0 +1,9 @@
+# Mini-game Break editor — Phase 2
+
+Use the existing Break Inspector and scene canvas. A separate wizard would duplicate navigation; editing raw settings would expose implementation details. The Inspector will offer Classic/Mini-Game and all registry types, with only Spinning Wheel editable and other types Coming Soon. A static canvas preview uses the existing logical frame; selecting a Card returns to its existing scene/Card editor.
+
+Wheel configuration version 2 uses the Phase 1 settings/activity model: title, play count, question count, sequence mode, and stable segment IDs referencing pool activity IDs. Events store instructions; questions reference existing Card definitions. Optional labels belong to activities/segments. Pool size, segment count and session length are distinct. Draft shortages are explained without deleting data or preventing save. No random outcomes or runtime version-2 gameplay will execute.
+
+Retain inactive mini-game drafts in an optional `savedMiniGames` authoring field on the Break experience, including when Classic is selected. Game switching restores the matching draft. Independent duplication remaps activity/segment/sequence IDs and copied Card references in active and retained drafts; linked copies retain shared authorship. Unknown versions remain safely preserved and unavailable. Version-1 configurations continue to resolve and upgrade explicitly when their wheel editor is used. Preserve its authored legacy sequence as metadata during upgrade.
+
+Test schema validation, pool/segment operations, quotas and draft diagnostics, mode/game retention, v1 compatibility, duplication, JSON and real portable-package round trips. Verify native Edit/Card workflow, save/reload, Classic and unknown fallback, static preview and responsive screenshots. No gameplay, effects, unrelated systems, commits or pushes.

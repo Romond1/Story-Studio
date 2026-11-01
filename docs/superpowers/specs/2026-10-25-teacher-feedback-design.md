@@ -1,0 +1,7 @@
+# Teacher feedback and reward control polish
+
+User requests isolated Card flip of1.7seconds without gold bars; unified Rewards & magic controls with meaningful appearance settings; F2 cycles magic type and5 plays; legacy-style teacher-only top-right feedback for shortcuts and important UI actions; richer louder synthesized wheel/reward audio and more expressive visuals.
+
+Use existing scoped runtime and mixer. Rotate only a keyed inner Card wrapper, leave question panel/media/stage stationary. Reuse authoritative face state and reduced motion. Unify game reward and magic appearance controls, pass bounded scale/intensity/duration into serializable cues and preserve replay metadata. Reuse reward position/appearance for actual star rewards, increase visible effect size/sparkles and avoid scoring from animations. Give game controls keyboard ownership over F1/1-4 while active to prevent duplicate or unscoped legacy awards; F2/5 remain teacher-only guarded from text entry/repeats/dialogs. Notices derive from accepted commands and explicit state changes, not speculative generic button clicks, bounded and coalesced under app header. Original procedural sound/visuals avoid external licensing/dependencies.
+
+Validate actual Card-only transforms,1.7s/reduced motion, shortcut ownership and unchanged scores on effect replay, settings in public snapshots, mute/resume/longer cue envelopes, native UI and screenshots. No commits/pushes.

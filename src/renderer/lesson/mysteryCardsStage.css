@@ -1,0 +1,15 @@
+.mystery-cards-stage{--mystery-gold:#ddc18b;display:block;width:100%;height:100%;overflow:hidden;font-family:Georgia,'Times New Roman',serif;isolation:isolate}
+.mystery-observatory{opacity:.24;stroke-width:1}
+.mystery-inscription{font-size:13px;letter-spacing:5px;fill:var(--mystery-gold);opacity:.72}
+.mystery-card{outline:none;filter:drop-shadow(0 9px 7px #050b2055)}
+.mystery-card-halo{opacity:0;transition:opacity 180ms ease}
+.mystery-card.is-interactive{cursor:pointer}
+.mystery-card.is-interactive:hover .mystery-card-halo,.mystery-card.is-interactive:focus-visible .mystery-card-halo{opacity:1}
+.mystery-card.is-interactive:hover,.mystery-card.is-interactive:focus-visible{filter:drop-shadow(0 0 10px #9fede966)}
+.mystery-card-motion.is-selected .mystery-card-halo{opacity:.75;stroke:#ffe7a3}
+.mystery-card-motion.is-used [data-card-back]{opacity:.48}
+.mystery-card-motion.is-used .mystery-card{filter:drop-shadow(0 4px 5px #050b2033)}
+.mystery-card-number{fill:#ffebbf;font-size:19px;font-weight:600}
+.mystery-stars{animation:mystery-star-breathe 6s ease-in-out infinite;transform-origin:center}
+@keyframes mystery-star-breathe{0%,100%{opacity:.3}50%{opacity:.8}}
+@media(prefers-reduced-motion:reduce){.mystery-stars{animation:none}.mystery-card-halo{transition:none}}

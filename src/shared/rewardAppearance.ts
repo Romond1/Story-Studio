@@ -10,8 +10,8 @@ export function parseRewardAppearance(value: unknown): RewardAppearance | null {
   const v = value as Record<string, unknown>;
   if (Object.keys(v).some(key => !['position', 'size', 'intensity'].includes(key))
     || !REWARD_POSITIONS.includes(v.position as RewardAppearance['position'])
-    || typeof v.size !== 'number' || !Number.isFinite(v.size) || v.size < .5 || v.size > 1.75
-    || typeof v.intensity !== 'number' || !Number.isFinite(v.intensity) || v.intensity < 0 || v.intensity > 2) return null;
+    || typeof v.size !== 'number' || !Number.isFinite(v.size) || v.size < .5 || v.size > 3
+    || typeof v.intensity !== 'number' || !Number.isFinite(v.intensity) || v.intensity < 0 || v.intensity > 3) return null;
   return { position: v.position as RewardAppearance['position'], size: v.size, intensity: v.intensity };
 }
 /** Logical-scene coordinates and transforms are identical in Control and Present. */
@@ -20,7 +20,10 @@ export function rewardAnchorStyle(appearance: RewardAppearance | undefined, fall
   const { position, size } = appearance;
   if (position === 'center') return { top: '50%', left: '50%', right: 'auto', transform: `translate(-50%, -50%) scale(${size})`, transformOrigin: 'center center' };
   const left = position.endsWith('Left'), bottom = position.startsWith('bottom');
-  return { top: bottom ? 'auto' : fallback.positionTop, bottom: bottom ? 120 : 'auto',
-    left: left ? fallback.positionRight : 'auto', right: left ? 'auto' : fallback.positionRight,
+  // Bursts radiate around their anchor; reserve space for the enlarged emblem.
+  const horizontal = `min(40%, ${Math.max(fallback.positionRight, 140 * size)}px)`;
+  const vertical = `min(40%, ${Math.max(fallback.positionTop, 100 * size)}px)`;
+  return { top: bottom ? 'auto' : vertical, bottom: bottom ? vertical : 'auto',
+    left: left ? horizontal : 'auto', right: left ? 'auto' : horizontal,
     transform: `scale(${size})`, transformOrigin: `${left ? 'left' : 'right'} ${bottom ? 'bottom' : 'top'}` };
 }

@@ -1,5 +1,5 @@
 import {HeroDashPresent} from './games/heroDash/HeroDashPresent';
-import {PresentRoster} from './students/PresentRoster';
+import {TeamScoreboardOverlay} from './sharedAdventure/TeamScoreboardOverlay';
 import { PromptCardScene } from './PromptCardScene';
 import { CameraLayer } from './camera/CameraLayer';
 import { CaptionLayer } from './translation/CaptionLayer';
@@ -80,7 +80,7 @@ function Present() {
     } else if (rewardReady && cardsReady) api.reportApplied(envelope.generation, envelope.sequence);
   }, [envelope, baseStatus, rewardReady, rewardError, cardsReady, cardsError]);
   return <main ref={surface} className="present-surface" style={{ position: 'relative' }}>
-    <div className="present-story-layers" style={envelope?.snapshot?.roster?{[envelope.snapshot.roster.position]:'min(80px, 25vh)'}:undefined}>
+    <div className="present-story-layers">
     <StudentSceneBoundary recoveryKey={JSON.stringify([envelope?.generation, envelope?.snapshot?.sessionId, envelope?.snapshot?.rewards?.final?.id, rewardSources, cardOverlay, target?.occurrenceId, target?.kind === 'scene' ? target.plan : null, target && "src" in target ? target.src : null, target && "activity" in target ? [activityAssets(target.activity), target.activity?.boards.map(b => ({ ...b.card, bCardInstances: b.card.bCardInstances.map(i => ({ id: i.id, bCardId: i.bCardId })) })), target.activity?.cards, target.activity?.break] : null])} onError={message => envelope && reportBase(envelope.generation, envelope.sequence, true, message)}>
     {target?.kind === 'game' && target.gameId==='hero-dash' && target.dash ? <HeroDashPresent key={target.instanceId} view={target.dash} onZoom={zoom=>api.sendDashZoom?.(target.instanceId,zoom)} onReady={()=>reportBase(envelope!.generation,envelope!.sequence)} onError={message=>reportBase(envelope!.generation,envelope!.sequence,true,message)}/> : target?.kind === 'game' ? <PresentGame key={target.instanceId} target={target} envelope={envelope!} api={api} report={reportBase} /> : target?.kind === 'scene' ? <PresentLessonScene key={target.occurrenceId} target={target} envelope={envelope!} report={reportBase} /> : target?.kind === 'cards-v2' ? <PresentCardV2Scene key={target.occurrenceId} plan={target.plan} envelope={envelope!} report={reportBase} /> : target?.kind === 'image' ? <PresentImageScene key={JSON.stringify([envelope!.generation, target.occurrenceId, target.src, target.scene?.overlays.map(overlayGraphic), activityAssets(target.activity)])} envelope={envelope!} target={target} report={reportBase} />
       : target?.kind === 'video' ? <PresentVideoScene key={JSON.stringify([envelope!.generation, target.media.identity, target.src])} target={target} envelope={envelope!} api={{...api,reportApplied:reportBase}} />
@@ -91,9 +91,9 @@ function Present() {
     </StudentSceneBoundary>
     <MovementSurface presentation={envelope?.snapshot?.movement ?? null} />
     </div>
-    {envelope?.snapshot?.roster && <PresentRoster roster={envelope.snapshot.roster} />}
     <CameraLayer />
     <CaptionLayer />
+    {envelope?.snapshot?.teamScoreboard&&<TeamScoreboardOverlay scoreboard={envelope.snapshot.teamScoreboard}/>}
   </main>;
 }
 export function PresentLessonScene({ target, envelope, report }: { target: Extract<PresentTarget, { kind: 'scene' }>; envelope: PresentEnvelope; report: PresentApi['reportApplied'] }) {

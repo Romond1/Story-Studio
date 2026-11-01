@@ -8,7 +8,7 @@ import * as model from './presentationMedia';
 
 function fixture() {
   const sends: any[] = [], gates: any[] = [], attached: any[] = [], detached: string[] = [], pulls: any[] = [];
-  class Peer { ontrack: any; onicecandidate: any; onconnectionstatechange: any; connectionState = 'new'; close() { this.connectionState = 'closed'; } }
+  class Peer { ontrack: any; onicecandidate: any; onconnectionstatechange: any; connectionState = 'new'; signalingState = 'stable'; remoteDescription: any; answers = 0; async setRemoteDescription(description: any) { this.remoteDescription = description; this.signalingState = 'have-remote-offer'; } async createAnswer() { await Promise.resolve(); return { type: 'answer', sdp: 'v=0' }; } async setLocalDescription() { if (this.signalingState !== 'have-remote-offer') throw new Error('Called in wrong state: stable'); this.signalingState = 'stable'; this.answers++; } async addIceCandidate() {} close() { this.connectionState = 'closed'; } }
   class Stream { constructor(public tracks: any[]) {} getTracks() { return this.tracks; } }
   class Audio { muted = false; srcObject: any; resolve!: () => void; paused = false; constructor() { pulls.push(this); } play() { return new Promise<void>(r => { this.resolve = r; }); } pause() { this.paused = true; } }
   const context = { state: 'running', resume: async () => {} };
@@ -77,4 +77,16 @@ test('audio first still accepts one passive video preview and retires both on te
   const late = receiver.link.peer.ontrack; receiver.dispose();
   late({ track: { kind: 'video', stop() {} } });
   assert.equal(previews.length, 2); assert.equal(previews.at(-1), null);
+});
+
+ test('duplicate concurrent offers negotiate once per receiver bridge lifetime', async () => {
+  const f = fixture(); const failures: string[] = [];
+  const receiver = new f.Receiver(intent, f.mixer, (p: unknown) => f.sends.push(p), (message: string) => failures.push(message));
+  const offer = { type: 'offer', identity: intent.identity, bridgeEpoch: intent.bridgeEpoch, generation: intent.rendererGeneration, description: { type: 'offer', sdp: 'v=0' } };
+  await Promise.all([receiver.receive(offer), receiver.receive(offer)]);
+  await receiver.receive(offer);
+  assert.deepEqual(failures, []);
+  assert.equal(receiver.link.peer.answers, 1);
+  assert.equal(f.sends.filter(p => p.type === 'answer').length, 1);
+  receiver.dispose();
 });

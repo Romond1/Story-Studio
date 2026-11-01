@@ -1,6 +1,8 @@
 import { isImageAppearance } from './imageAppearance';
+import { validateSharedAdventure } from '../sharedAdventure';
 import { validBubbleOptions } from './bubbleAppearance';
 import { assertCardsV2 } from '../cardsV2';
+import { isSafeBreakExperience } from './miniGameBreak';
 import { clone, type LessonProject, type SceneLessonProject } from './model';
 import { LESSON_LIMITS } from './limits';
 import { migrateSections } from './sections';
@@ -65,6 +67,7 @@ export function validateSceneDocumentBody(value: unknown, hasAsset?: (assetId: u
   const allEntries = [...p.sequences.story, ...p.sequences.activation]; check(unique(allEntries), 'global entry identity');
   for (const [key, scene] of Object.entries(p.scenes) as [string, any][]) {
     check(record(scene) && id(key) && scene.id === key && text(scene.title, 500) && text(scene.notes), 'scene identity');
+    check(scene.breakExperience === undefined || isSafeBreakExperience(scene.breakExperience), 'break experience JSON');
     check(record(scene.frame) && number(scene.frame.width, 240, 10000) && number(scene.frame.height, 240, 10000), 'logical frame');
     check(record(scene.background) && color(scene.background.color) && (!scene.background.assetId || asset(scene.background.assetId) && !asset(scene.background.assetId, 'audio')), 'background');
     check(scene.background.imageAppearance === undefined || asset(scene.background.assetId, 'image') && isImageAppearance(scene.background.imageAppearance), 'background image appearance');
@@ -95,6 +98,12 @@ export function validateSceneDocumentBody(value: unknown, hasAsset?: (assetId: u
 export function parseLessonProject(value: unknown): SceneLessonProject {
   check(record(value) && value.format === 'story-studio-scene' && value.version === 1, 'unsupported format. Open older lessons in Legacy mode.');
   validateSceneDocumentBody(value);
+  const group = (value as SceneLessonProject).sharedAdventure;
+  if (group !== undefined) {
+    validateSharedAdventure(group);
+    for (const entry of group.preparation.activities ?? []) for (const question of entry.content.questions) check(question.imageAssetId === undefined || (value as SceneLessonProject).assets.some(asset => asset.id === question.imageAssetId && asset.mediaType === 'image'), 'Team Play activity image');
+    check(group.preparation.imageAssetId === undefined || (value as SceneLessonProject).assets.some(asset => asset.id === group.preparation.imageAssetId && asset.mediaType === 'image'), 'Shared Adventure image');
+  }
   return migrateSections(clone(value as SceneLessonProject));
 }
 export function parseSceneDocument(value: unknown): LessonProject {

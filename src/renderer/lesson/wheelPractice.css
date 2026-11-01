@@ -1,0 +1,9 @@
+.wheel-practice {width:94vw;max-width:1700px;height:88vh;max-height:950px;padding:0;border:1px solid var(--lesson-border);border-radius:10px;background:var(--lesson-bg);color:var(--lesson-text);}
+.wheel-practice[open] {display:flex;flex-direction:column;}
+.wheel-practice::backdrop {background:#030611bb;}
+.wheel-practice > header {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--lesson-border);}
+.wheel-practice header p {margin:4px 0 0;font-size:12px;color:var(--lesson-muted);}
+.wheel-practice-body {display:grid;grid-template-columns:minmax(0,1fr) 310px;flex:1;min-height:0;}
+.wheel-practice-stage {position:relative;min-width:0;min-height:0;}
+.wheel-practice aside {overflow:auto;border-left:1px solid var(--lesson-border);padding:10px;}
+@media(max-width:800px){.wheel-practice-body {grid-template-columns:1fr;grid-template-rows:minmax(240px,1fr) minmax(0,1fr);}.wheel-practice aside {border-left:0;border-top:1px solid var(--lesson-border);}}

@@ -1,0 +1,42 @@
+.mini-game-editor .wheel-editor { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.wheel-fields { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 10px; min-width: 0; border: 1px solid var(--lesson-border); border-radius: 6px; }
+.wheel-fields legend { padding: 0 5px; color: var(--lesson-muted); font-size: 13px; }
+.wheel-count { padding: 8px 10px; border: 1px solid var(--lesson-border); border-radius: 5px; background: var(--lesson-input); }
+.wheel-pool { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.wheel-pool h4 { margin: 0; font-size: 14px; display: flex; justify-content: space-between; }
+.wheel-pool h4 span { color: var(--lesson-muted); }
+.wheel-activity, .wheel-segments { border: 1px solid var(--lesson-border); border-radius: 6px; min-width: 0; }
+.wheel-activity > summary, .wheel-segments > summary { cursor: pointer; padding: 9px; overflow-wrap: anywhere; }
+.wheel-activity > summary { display: list-item; }
+.wheel-activity > summary small { display: block; margin-top: 4px; color: var(--lesson-muted); font-size: 12px; }
+.wheel-activity > div, .wheel-segments > div { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+.wheel-draft-notes { border-left: 3px solid #b9a76e; padding: 9px 10px; background: var(--lesson-input); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.wheel-draft-notes ul { padding-left: 18px; margin: 6px 0; }
+.wheel-preview { width: 100%; height: 100%; min-width: 0; min-height: 0; position: relative; }
+.mini-game-editor input, .mini-game-editor select, .mini-game-editor textarea { max-width: 100%; min-width: 0; }
+.mini-game-editor button { white-space: normal; }
+@media (max-width: 800px) { .mini-game-editor .lesson-field-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Break forms used to accumulate panel gaps, details margins, label margins and fieldset padding. */
+.lesson-inspector[aria-label="Break Inspector"] .lesson-panel-content {gap:6px;padding:8px;}
+.lesson-inspector[aria-label="Break Inspector"] .lesson-inspector-section {margin:2px 0;padding:6px;}
+.lesson-inspector[aria-label="Break Inspector"] .lesson-inspector-section > div {gap:7px;padding:5px 0 2px;}
+.lesson-side .mini-game-editor .wheel-editor {gap:7px;}
+.lesson-side .mini-game-editor label {margin:0;gap:3px;}
+.lesson-side .mini-game-editor details {margin:0;padding:5px;}
+.lesson-side .mini-game-editor summary {padding:5px;}
+.lesson-side .mini-game-editor details[open] > summary {margin-bottom:5px;padding-bottom:5px;}
+.lesson-side .mini-game-editor .wheel-fields {gap:6px;padding:7px;}
+.lesson-side .mini-game-editor .wheel-activity > div,.lesson-side .mini-game-editor .wheel-segments > div {gap:6px;padding:6px;}
+.lesson-side .mini-game-editor .wheel-activity > summary small {display:inline;margin-left:7px;font-size:11px;}
+.lesson-side .mini-game-editor .wheel-count {padding:5px 8px;}
+.wheel-teach-controls label:has(input[type="checkbox"]) {flex-direction:row;align-items:center;gap:7px;margin:3px 0;}
+.wheel-teach-controls .wheel-feedback-controls label {margin:3px 0;}
+
+.wheel-auto-session { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.wheel-auto-session input { width: auto; }
+.wheel-quick-question { display: flex; flex-direction: column; align-items: stretch; gap: 7px; padding: 10px; border: 1px solid var(--lesson-border); border-radius: 7px; background: var(--lesson-input); }
+.wheel-quick-question .lesson-field { margin: 0; }
+.wheel-round-options > summary { cursor: pointer; padding: 5px 0; color: var(--lesson-muted); font-size: 13px; }
+.wheel-round-options fieldset { margin-top: 8px; }
+.wheel-round-options fieldset:disabled { opacity: .6; }

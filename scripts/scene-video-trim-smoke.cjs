@@ -53,7 +53,7 @@ function playwright() {
       const y = r.y + ((await input.getAttribute('aria-label')).startsWith('Video trim') ? 21 : r.height / 2);
       await page.mouse.move(x(current), y); await page.mouse.down(); await page.mouse.move(x(value), y, { steps: 10 }); await page.mouse.up();
     };
-    await resize(1440, 1000); await button('Adventure').click(); await choose(); await button('Open project').click(); await page.getByText('Lesson opened.', { exact: true }).waitFor(); await button('Edit').click(); await select('First video'); await ready();
+    await resize(1440, 1000); await button('Adventure').click(); await choose(); await button('Open project').click(); await page.getByRole('contentinfo').getByText('Lesson opened.', { exact: true }).waitFor(); await button('Edit').click(); await select('First video'); await ready();
     assert.equal(await page.getByText('The presentation rejected this scene. Your authored changes are still available.', { exact: true }).count(), 0);
     const placement = await control().evaluate(el => {
       const r = el.getBoundingClientRect(), header = el.closest('.lesson-timeline-toolbar');
@@ -87,7 +87,7 @@ function playwright() {
     pass('Play/Pause/Stop, end-marker stop, replay and seek clamping use the existing canvas decoder');
     await button('Save').click(); await page.waitForFunction(() => !document.querySelector('.lesson-project-title').textContent.includes('Unsaved'));
     let saved = JSON.parse(await fs.readFile(path.join(folder, 'project.json'), 'utf8')); assert.deepEqual(saved.scenes[first.id].background.videoTrim, trimmed); assert.equal(saved.scenes[second.id].background.videoTrim, undefined);
-    await choose(); await button('Open project').click(); await page.getByText('Lesson opened.', { exact: true }).waitFor(); await select('First video'); await ready(); assert.deepEqual(await values(), trimmed);
+    await choose(); await button('Open project').click(); await page.getByRole('contentinfo').getByText('Lesson opened.', { exact: true }).waitFor(); await select('First video'); await ready(); assert.deepEqual(await values(), trimmed);
     await button('Play edit video').click(); const old = await decoder().elementHandle(); await select('Second video'); await ready(); assert.equal(await old.evaluate(v => v.paused), true); await old.dispose(); near((await values()).inSec, 0);
     await select('Blank scene'); assert.equal(await control().count(), 0); assert.equal(await decoder().count(), 0);
     await select('First video'); await ready(); assert.deepEqual(await values(), trimmed);

@@ -7,12 +7,13 @@ import settings from '../../assets/Splash Screen/Settings.png';
 import users from '../../assets/Splash Screen/Users.png';
 import legacy from '../../assets/Splash Screen/Legacy.png';
 
-type Destination = 'story' | 'activation' | 'game' | 'mastery' | 'settings' | 'users' | 'legacy';
+type Destination = 'story' | 'activation' | 'game' | 'mastery' | 'settings' | 'users' | 'legacy' | 'shared';
 const primary = [
   { id: 'story', label: 'Adventure', detail: 'Experience the story and enter its world.', icon: story },
   { id: 'activation', label: 'Discovery', detail: 'Explore and understand new language and concepts.', icon: activation },
   { id: 'game', label: 'Challenge', detail: "Apply what you've learned through interactive games.", icon: game },
   { id: 'mastery', label: 'Mastery', detail: 'Demonstrate your skills and complete the learning journey.', icon: mastery },
+  { id: 'shared', label: 'Team Play', detail: 'Cooperate, communicate and complete a team mission.', icon: users },
 ] as const;
 const secondary = [
   { id: 'settings', label: 'Settings', detail: 'Audio & devices', icon: settings },
@@ -20,7 +21,7 @@ const secondary = [
   { id: 'legacy', label: 'Legacy', detail: 'Earlier projects', icon: legacy },
 ] as const;
 
-export function Beginning({ onChoose, onUsers }: { onChoose: (destination: 'story' | 'activation' | 'game' | 'mastery' | 'settings' | 'legacy') => void; onUsers?: () => void }) {
+export function Beginning({ onChoose, onUsers }: { onChoose: (destination: 'story' | 'activation' | 'game' | 'mastery' | 'settings' | 'legacy' | 'shared') => void; onUsers?: () => void }) {
   const [placeholder, setPlaceholder] = useState<'users' | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const lastChoice = useRef<Destination | null>(null);

@@ -151,6 +151,7 @@ function AnchoredBurst({
       sparkConfig={s.config}
       eventId={s.id}
       age={age}
+      intensity={s.appearance?.intensity ?? 1}
     />
   );
 }

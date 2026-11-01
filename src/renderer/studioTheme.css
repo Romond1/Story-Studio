@@ -99,7 +99,7 @@
 .beginning .beginning-eyebrow { text-transform: uppercase; letter-spacing: .19em; color: var(--studio-cyan); font-size: 11px; font-weight: 600; margin-bottom: 12px; }
 .beginning h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.2; letter-spacing: -.025em; font-weight: 600; margin-bottom: 14px; }
 .beginning-intro > p:last-child { color: var(--studio-muted); font-size: 14px; }
-.beginning-primary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.beginning-primary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; }
 .lesson-app .beginning-card { display: flex; align-items: center; flex-direction: column; width: 100%; padding: 18px 10px 22px; border: 1px solid var(--studio-border); border-radius: 20px; background: var(--studio-panel-fill); text-align: center; }
 .lesson-app .beginning-card:hover { background: var(--studio-hover-fill); border-color: var(--studio-cyan); box-shadow: var(--studio-glow); }
 .beginning-card img { width: min(100%, 180px); aspect-ratio: 1; object-fit: contain; }
@@ -280,3 +280,17 @@
 .app .studio-return { border: 1px solid var(--studio-primary-border); border-radius: var(--studio-radius-small); background: var(--studio-action-fill); color: var(--studio-text); }
 .app .studio-return:hover { border-color: var(--studio-cyan); }
 .app .studio-return:focus-visible { outline: 2px solid var(--studio-cyan); outline-offset: 2px; }
+
+/* Main teaching actions stay easy to find against the dark control panels. */
+button.teacher-primary-action, .lesson-app button.teacher-primary-action {
+  background: #2563eb; border-color: #79a8ff; color: #fff; font-weight: 600;
+}
+button.teacher-primary-action:hover:not(:disabled), .lesson-app button.teacher-primary-action:hover:not(:disabled) {
+  background: #1d4ed8; border-color: #a8c8ff; color: #fff;
+}
+button.teacher-primary-action:focus-visible, .lesson-app button.teacher-primary-action:focus-visible {
+  outline: 2px solid #c5ddff; outline-offset: 3px;
+}
+button.teacher-primary-action:disabled, .lesson-app button.teacher-primary-action:disabled {
+  background: #334d73; border-color: #61799e; color: #d1ddef; box-shadow: none;
+}

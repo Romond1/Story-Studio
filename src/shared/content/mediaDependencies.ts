@@ -1,3 +1,5 @@
+import { isMiniGameConfig } from '../lesson/miniGameBreak';
+import { readWheelSettings } from '../lesson/spinningWheel';
 import {collectDefinitionAssets} from '../definitions/validation';
 import {parseEpisodeActivity} from '../modules/validation';
 import {collectModuleAssets} from '../modules/media';
@@ -60,7 +62,10 @@ export function collectMediaDependencies(document:ProjectDocument, lookup:Lookup
     });
     Object.entries(data.scenes).forEach(([key,scene])=>{
       const p = `/scenes/${pointer(key)}`;
-      unknown(scene,['id','title','frame','background','objects','drawings','audio','transition','viewport','notes'],scene.id,p);
+      unknown(scene,['id','title','frame','background','objects','drawings','audio','transition','viewport','notes','breakExperience'],scene.id,p);
+      const gameMedia=(config:unknown,base:string)=>{if(!isMiniGameConfig(config)||!readWheelSettings(config))return;config.activities.forEach((activity,j)=>{const media=activity.config?.mediaAssetId;if(typeof media==='string')id('scene',scene.id,`${base}/activities/${j}/config/mediaAssetId`,media);});};
+      gameMedia(scene.breakExperience,`${p}/breakExperience`);
+      if(Array.isArray(scene.breakExperience?.savedMiniGames))scene.breakExperience.savedMiniGames.forEach((config,j)=>gameMedia(config,`${p}/breakExperience/savedMiniGames/${j}`));
       id('scene',scene.id,`${p}/background/assetId`,scene.background.assetId);
       unknown(scene.background,['color','assetId','videoTrim','imageAppearance'],scene.id,`${p}/background`);
       if (scene.background.videoTrim) unknown(scene.background.videoTrim,['inSec','outSec'],scene.id,`${p}/background/videoTrim`);

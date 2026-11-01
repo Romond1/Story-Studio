@@ -1,0 +1,10 @@
+.teacher-feedback-dock { position: fixed; right: 20px; z-index: 30010; display: flex; align-items: flex-start; gap: 12px; max-width: calc(100vw - 32px); pointer-events: none; }
+.teacher-active-student { box-sizing: border-box; width: 180px; max-width: 35vw; flex-shrink: 0; height: 32px; display: flex; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid #607aab; border-radius: 6px; background: rgba(25, 40, 65, .97); color: #fff; white-space: nowrap; overflow: hidden; }
+.teacher-active-student span { color: #c4d2ec; font-size: 12px; }
+.teacher-active-student strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+.teacher-notifications { display: grid; gap: 8px; width: 380px; max-width: calc(100vw - 32px); min-width: 0; pointer-events: none; }
+.teacher-notification { display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border: 1px solid rgba(126, 194, 143, .45); border-radius: 6px; background: rgba(35, 79, 44, .96); box-shadow: 0 4px 12px rgba(0, 0, 0, .3); color: #fff; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; animation: teacher-notice-in .15s ease-out; }
+.teacher-notification button { pointer-events: auto; background: transparent; color: inherit; border: 0; font-size: 20px; line-height: 1; padding: 4px; cursor: pointer; }
+.teacher-notification button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+@keyframes teacher-notice-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .teacher-notification { animation: none; } }

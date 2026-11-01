@@ -15,6 +15,7 @@ interface SparkBurstProps {
   sparkConfig: SparkConfig;
   eventId: string;
   age: number;
+  intensity?: number;
 }
 
 export const SparkBurst: React.FC<SparkBurstProps> = ({
@@ -23,6 +24,7 @@ export const SparkBurst: React.FC<SparkBurstProps> = ({
   sparkConfig,
   eventId,
   age,
+  intensity = 1,
 }) => {
   const definition = REWARD_DEFINITIONS[variant];
   const mainColor = `rgba(${definition.colorRgb}, ${sparkConfig.colorIntensity / 100})`;
@@ -36,14 +38,14 @@ export const SparkBurst: React.FC<SparkBurstProps> = ({
     const random = rewardRandom(eventId);
     return Array.from({ length: count }).map((_, i) => {
       const angle = (i / count) * Math.PI * 2 + random() * 0.5;
-      const dist = 60 + random() * 60;
+      const dist = (90 + random() * 100) * (0.6 + intensity * 0.5);
       return {
         id: i,
         dx: `${Math.cos(angle) * dist}px`,
         dy: `${Math.sin(angle) * dist}px`,
       };
     });
-  }, [eventId, variant, sparkConfig.particleCount]);
+  }, [eventId, variant, sparkConfig.particleCount, intensity]);
 
   return (
     <div
@@ -55,10 +57,13 @@ export const SparkBurst: React.FC<SparkBurstProps> = ({
           "--spark-glow": glowColor,
           "--spark-burst-duration": `${sparkConfig.burstDurationMs}ms`,
           "--spark-pop-intensity": sparkConfig.scalePopIntensity,
-          "--spark-size": `${sparkConfig.sparkSize}px`,
+          "--spark-size": `${sparkConfig.sparkSize * 1.65}px`,
+          "--spark-energy": intensity,
         } as any
       }
     >
+      <div className="spark-halo" aria-hidden="true" />
+      <div className="spark-shockwave" aria-hidden="true" />
       {customImageUrl ? (
         <img
           className={`spark-main-visual ${variant === "crown" ? "spark-main-visual--crown" : ""}`}
@@ -69,12 +74,16 @@ export const SparkBurst: React.FC<SparkBurstProps> = ({
         <svg
           className={`spark-main-visual ${variant === "crown" ? "spark-main-visual--crown" : ""}`}
           viewBox="0 0 24 24"
-          fill={mainColor}
+          fill={`url(#reward-gem-${eventId.replace(/[^a-zA-Z0-9]/g, "")})`}
           data-shape={selectedShape}
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path d={getRewardShapePath(selectedShape)} />
+          <defs><linearGradient id={`reward-gem-${eventId.replace(/[^a-zA-Z0-9]/g, "")}`} x1="0" y1="0" x2=".8" y2="1">
+            <stop offset="0" stopColor="#fffde5" /><stop offset=".32" stopColor={mainColor} /><stop offset=".72" stopColor={mainColor} /><stop offset="1" stopColor="#fff4b4" />
+          </linearGradient></defs>
+          <path d={getRewardShapePath(selectedShape)} stroke="#fff9df" strokeWidth=".7" strokeLinejoin="round" />
+          <path d={getRewardShapePath(selectedShape)} fill="none" stroke="white" strokeOpacity=".45" strokeWidth=".35" transform="translate(3 3) scale(.75)" />
         </svg>
       )}
 

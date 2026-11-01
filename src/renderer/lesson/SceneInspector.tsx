@@ -1,3 +1,4 @@
+import { MiniGameBreakEditor } from './MiniGameBreakEditor';
 import { ReviewMediaPicker, BreakAudioControls } from './BreakReviewTools';
 import { ImageAppearanceControls } from './ImageAppearanceControls';
 import type { SceneAudio } from '../../shared/lesson/model';
@@ -16,6 +17,7 @@ export interface SceneInspectorProps {
   entryKind?: 'scene' | 'break';
   registry: MediaRegistryView; project: LessonProject; scene?: LessonScene; object?: SceneObject;
   onSceneChange: (scene: LessonScene) => void;
+  onEditQuestion: (activityId: string, createNew: boolean) => void; onImportQuestionMedia?:()=>void;
   onObjectChange: (object: SceneObject) => void;
   onCardChange: (card: CardDefinition) => void;
   onDelete: () => void; onDuplicate: () => void;
@@ -56,6 +58,7 @@ export function SceneInspector(p: SceneInspectorProps) {
   const [selectedSetId, setSelectedSetId] = useState('');
   const [setNotice, setSetNotice] = useState('');
   useEffect(() => { setSetName(''); setSetCards(new Set()); setSelectedSetId(''); setSetNotice(''); }, [project.id]);
+  useEffect(() => { if (p.entryKind === 'break' && scene?.breakExperience?.mode === 'minigame' && object?.kind === 'card') document.querySelector('.lesson-inspector .wheel-card-heading')?.scrollIntoView({ block: 'nearest' }); }, [object?.id, p.entryKind]);
   const card = object?.kind === 'card' ? project.cards[object.cardId] : undefined;
   const face = card?.faces.find(item => item.id === faceId) ?? card?.faces[0];
   useEffect(() => { setFaceId(''); }, [object?.id, card?.id]);
@@ -128,7 +131,8 @@ export function SceneInspector(p: SceneInspectorProps) {
     <header className="lesson-panel-heading"><strong>{title} Inspector</strong>{scene && <span className="lesson-muted" title={scene.title}>{scene.title}</span>}</header>
     <div className="lesson-panel-content">
       {!scene ? <><p className="lesson-empty">Select a scene in the timeline, or add one to begin.</p>{library}</> : <>
-        {p.entryKind === 'break' && <Section title="Break review" open>
+        {p.entryKind === 'break' && <MiniGameBreakEditor scene={scene} project={project} onChange={p.onSceneChange} onEditQuestion={p.onEditQuestion} onImportMedia={p.onImportQuestionMedia} resolveAsset={p.resolveAsset} />}
+        {p.entryKind === 'break' && <Section title="Break review" open={scene.breakExperience?.mode!=='minigame'}>
 
           <ReviewMediaPicker assets={project.assets.filter(a => a.mediaType === 'image' || a.mediaType === 'video')} resolve={p.resolveAsset} value={reviewAssetId} onChange={setReviewAssetId} />
           <Field label="Caption under media"><input value={reviewCaption} maxLength={20000} onChange={event => setReviewCaption(event.target.value)} /></Field>
@@ -147,6 +151,7 @@ export function SceneInspector(p: SceneInspectorProps) {
 
         {object?.kind === 'card' && card && face && <>
           {cardUsage > 1 && <p className="lesson-sharing">Linked Card · {cardUsage} placements share its faces and appearance. Position and visibility belong to this scene. Duplicate creates independent content.</p>}
+          {p.entryKind === 'break' && scene.breakExperience?.mode === 'minigame' && <><h4 className="wheel-card-heading">Question Card</h4><button onClick={() => p.onSelectObject?.(null)}>Back to wheel preview</button></>}
           <Field label="Card name"><input value={card.label} maxLength={200} onChange={event => p.onCardChange({ ...card, label: event.target.value })} /></Field>
           <div className="lesson-subheading"><strong>Faces</strong><button disabled={card.faces.length >= 32} onClick={addFace}>+ Add face</button></div>
           <div className="lesson-face-tabs" role="tablist" aria-label="Card faces">{card.faces.map(item => <button key={item.id} role="tab" aria-selected={item.id === face.id} onClick={() => setFaceId(item.id)}>{item.label || 'Untitled face'}</button>)}</div>

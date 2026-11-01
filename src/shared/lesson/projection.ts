@@ -1,3 +1,7 @@
+import { isMiniGameConfig } from './miniGameBreak';
+import { readWheelSettings } from './spinningWheel';
+import { projectWheel, parseWheelPresentation, type WheelPresentation } from './wheelPresentation';
+import { resolveBreakExperience, parseMiniGamePlaceholder, type MiniGamePlaceholder } from './miniGameBreak';
 import { isImageAppearance, type ImageAppearance } from './imageAppearance';
 import { validBubbleOptions } from './bubbleAppearance';
 import { buildCardV2FacePlan, parseCardV2RenderPlan, type CardV2CardPlan } from '../cardV2Render';
@@ -6,7 +10,7 @@ import { isVideoTrimSettings } from '../videoTrim';
 import type { SceneViewport } from '../teachingScene';
 import { sceneAt, type LessonProject, type LessonSession, type Rect, type SceneText } from './model';
 import { parseRewardPresentation, type RewardPresentation } from '../rewardPresentation';
-import { projectLessonRewards } from './rewards';
+import { projectLessonRewards,rewardStudentDisplayName,type RewardStudentVisibility } from './rewards';
 import { createMediaRegistry } from '../content/mediaRegistry';
 import { compatibilityMediaUrl } from '../content/mediaResolution';
 
@@ -18,6 +22,8 @@ export type SceneObjectPlan =
   | (VisualObject & Pick<SceneText, 'kind' | 'text' | 'fontSize' | 'color' | 'align' | 'bubbleDefId' | 'bubbleTail' | 'appearDelayMs' | 'disappearAtMs'>);
 /** The only visual contract used by the new editor, teacher preview and Present. */
 export interface ScenePlan {
+  miniGame?: MiniGamePlaceholder;
+  wheel?: WheelPresentation;
   version: 1; sceneId: string; frame: { width: number; height: number };
   background: { color: string; src?: string; mediaType?: 'image' | 'video'; videoTrim?: VideoTrimSettings; imageAppearance?: ImageAppearance };
   viewport: SceneViewport; objects: SceneObjectPlan[]; drawings: MarkerStroke[];
@@ -25,7 +31,7 @@ export interface ScenePlan {
   rewards?: RewardPresentation;
 }
 
-export function projectScene(project: LessonProject, sceneId: string, session?: LessonSession, resolveAsset?: (assetId: string) => string | undefined): ScenePlan {
+export function projectScene(project: LessonProject, sceneId: string, session?: LessonSession, resolveAsset?: (assetId: string) => string | undefined, entryKind?: 'scene' | 'break', authoring = false,rewardVisibility?:RewardStudentVisibility): ScenePlan {
   const scene = project.scenes[sceneId];
   if (!scene) throw new Error('Scene does not exist.');
   const live = session && sceneAt(project, session.cursor)?.id === sceneId ? session : undefined;
@@ -54,12 +60,24 @@ export function projectScene(project: LessonProject, sceneId: string, session?: 
     } else objects.push({ id: object.id, kind: object.kind, box: { ...object.box }, text: object.text,
       fontSize: object.fontSize, color: object.color, align: object.align, ...(object.bubbleDefId ? { bubbleDefId: object.bubbleDefId } : {}), ...(object.bubbleTail!==undefined?{bubbleTail:object.bubbleTail}:{}), ...(object.appearDelayMs!==undefined?{appearDelayMs:object.appearDelayMs}:{}), ...(object.disappearAtMs!==undefined?{disappearAtMs:object.disappearAtMs}:{}) });
   }
-  return { version: 1, sceneId, frame: { ...scene.frame }, background: { color: scene.background.color,
+  const experience = resolveBreakExperience(scene.breakExperience, id => !!project.cards[id]);
+  const occurrences = Object.values(project.sequences).flat().filter(entry => entry.sceneId === sceneId);
+  const activeEntry = live?.cursor && project.sequences[live.cursor.sequence].find(entry => entry.id === live.cursor!.entryId);
+  const isBreak = entryKind !== undefined ? entryKind === 'break' : activeEntry ? activeEntry.kind === 'break' : occurrences.length > 0 && occurrences.every(entry => entry.kind === 'break');
+  const miniGame: MiniGamePlaceholder | undefined = !isBreak || experience.status === 'classic' ? undefined : experience.status === 'unavailable' ? { status: 'unavailable' } : { status: 'planned', gameType: experience.game.id,
+    phase: live?.miniGame?.version === 1 ? live.miniGame.phase : 'ready', currentActivityId: live?.miniGame?.currentActivityId ?? null, usedActivityIds: [...(live?.miniGame?.usedActivityIds ?? [])] };
+  const wheel = isBreak && isMiniGameConfig(scene.breakExperience) && readWheelSettings(scene.breakExperience) ? projectWheel(scene.breakExperience, live?.miniGame, project, source) : undefined;
+  const rewardStudent=session?.rewards?.students.find(student=>student.id===session.rewards?.activeStudentId);
+  const rewardName=rewardStudent && rewardStudentDisplayName(rewardStudent.id,rewardStudent.name,rewardVisibility);
+  if(wheel && rewardStudent && rewardName!==undefined) wheel.rewardIndicator={name:rewardName!,total:rewardStudent.stars};
+  if (wheel && live && !authoring) return { version: 1, sceneId, frame: { ...scene.frame }, background: { color: scene.background.color }, viewport: JSON.parse(JSON.stringify(live.viewport)), objects: [], drawings: JSON.parse(JSON.stringify(live.drawings)), transition: { ...scene.transition }, wheel, ...(live.rewards ? { rewards: projectLessonRewards(live.rewards, scene.frame,rewardVisibility) } : {}) };
+  if (live && !authoring && isBreak && scene.breakExperience?.mode === 'minigame') return { version: 1, sceneId, frame: { ...scene.frame }, background: { color: scene.background.color }, viewport: { zoom: 1, pan: { x: 0, y: 0 } }, objects: [], drawings: [], transition: { ...scene.transition }, miniGame: miniGame ?? { status: 'unavailable' }, ...(live.rewards ? { rewards: projectLessonRewards(live.rewards, scene.frame,rewardVisibility) } : {}) };
+  return { ...(miniGame ? { miniGame } : {}), version: 1, sceneId, frame: { ...scene.frame }, background: { color: scene.background.color,
     ...(backgroundSrc && background && (background.mediaType === 'image' || background.mediaType === 'video') ? { src: backgroundSrc, mediaType: background.mediaType,
       ...(background.mediaType === 'video' && scene.background.videoTrim ? { videoTrim: { ...scene.background.videoTrim } } : {}), ...(background.mediaType === 'image' && scene.background.imageAppearance ? { imageAppearance: { ...scene.background.imageAppearance } } : {}) } : {}) },
     viewport: JSON.parse(JSON.stringify(live?.viewport ?? scene.viewport)), objects,
     drawings: JSON.parse(JSON.stringify([...scene.drawings, ...(live?.drawings ?? [])])),
-    ...(live?.rewards ? { rewards: projectLessonRewards(live.rewards, scene.frame) } : {}),
+    ...(live?.rewards ? { rewards: projectLessonRewards(live.rewards, scene.frame,rewardVisibility) } : {}),
     transition: { ...scene.transition } };
 }
 
@@ -81,6 +99,10 @@ export function parseScenePlan(value: unknown): ScenePlan | null {
     || !Array.isArray(value.objects) || value.objects.length > 2000 || !Array.isArray(value.drawings) || value.drawings.length > 10000
     || !record(value.transition) || !['none', 'fade'].includes(value.transition.kind)
     || !finite(value.transition.durationMs) || value.transition.durationMs < 0 || value.transition.durationMs > 60000) return null;
+  const wheel = value.wheel === undefined ? undefined : parseWheelPresentation(value.wheel);
+  if (wheel === null || wheel && (value.objects.length || value.miniGame !== undefined)) return null;
+  const miniGame = value.miniGame === undefined ? undefined : parseMiniGamePlaceholder(value.miniGame);
+  if (miniGame === null) return null;
   const rewards = value.rewards === undefined ? undefined : parseRewardPresentation(value.rewards);
   if (rewards === null || (rewards && (rewards.frame.width !== value.frame.width || rewards.frame.height !== value.frame.height))) return null;
   const background: ScenePlan['background'] = { color: value.background.color };
@@ -127,13 +149,15 @@ export function parseScenePlan(value: unknown): ScenePlan | null {
     }
     drawings.push({ id: stroke.id, color: stroke.color, size: stroke.size, opacity: stroke.opacity, rainbow: stroke.rainbow === true, ...(stroke.fadeMs !== undefined ? { fadeMs: stroke.fadeMs } : {}), points });
   }
-  return { version: 1, sceneId: value.sceneId, frame: { width: value.frame.width, height: value.frame.height }, background,
+  return { ...(wheel ? { wheel } : {}), ...(miniGame ? { miniGame } : {}), version: 1, sceneId: value.sceneId, frame: { width: value.frame.width, height: value.frame.height }, background,
     viewport: { zoom: value.viewport.zoom, pan: { x: value.viewport.pan.x, y: value.viewport.pan.y } }, objects, drawings,
     transition: { kind: value.transition.kind, durationMs: value.transition.durationMs }, ...(rewards ? { rewards } : {}) };
 }
 
 export function sceneImageSources(plan: ScenePlan): string[] {
   return [...new Set([...(plan.background.mediaType === 'image' && plan.background.src ? [plan.background.src] : []),
+    ...(plan.wheel?.activity?.card?.image ? [plan.wheel.activity.card.image.src] : []),
+    ...(plan.wheel?.activity?.media?.kind==='image'?[plan.wheel.activity.media.src]:[]),
     ...plan.objects.flatMap(object => object.kind === 'image' ? [object.src] : object.kind === 'card' && object.card.image ? [object.card.image.src] : []),
     ...(plan.rewards?.sparks.flatMap(spark => spark.image ? [spark.image] : []) ?? []), ...(plan.rewards?.final?.image ? [plan.rewards.final.image] : [])])];
 }

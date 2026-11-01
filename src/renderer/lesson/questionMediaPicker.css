@@ -1,0 +1,18 @@
+.question-media-picker { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.question-media-label { font-size:12px; color:var(--lesson-muted); }
+.question-media-picker > details { border:1px solid var(--lesson-border); border-radius:6px; padding:0; background:var(--lesson-input); }
+.question-media-picker > details > summary { display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; list-style:none; }
+.question-media-picker > details > summary::-webkit-details-marker { display:none; }
+.question-media-picker > details > summary::after { content:'⌄'; margin-left:auto; }
+.question-media-thumb { display:flex; flex:0 0 48px; width:48px; height:36px; overflow:hidden; align-items:center; justify-content:center; border-radius:4px; background:var(--lesson-border); font-size:21px; }
+.question-media-thumb img,.question-media-thumb video { width:100%; height:100%; object-fit:contain; }
+.question-media-copy { display:flex; flex:1; flex-direction:column; min-width:0; gap:2px; text-align:left; }
+.question-media-copy strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; font-size:12px; }
+.question-media-copy small { color:var(--lesson-muted); font-size:11px; }
+.question-media-options { display:flex; flex-direction:column; gap:5px; padding:6px; border-top:1px solid var(--lesson-border); }
+.question-media-options input { width:100%; box-sizing:border-box; }
+.question-media-list { max-height:240px; overflow:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:3px; }
+.question-media-picker .question-media-option { display:flex; align-items:center; gap:7px; width:100%; padding:5px; min-height:46px; }
+.question-media-picker .question-media-option[aria-pressed="true"] { outline:2px solid var(--lesson-accent,#76a9ff); outline-offset:-2px; }
+.question-media-picker summary:focus-visible,.question-media-picker button:focus-visible { outline:2px solid var(--lesson-accent,#76a9ff); outline-offset:1px; }
+.question-media-clear { text-align:left; }

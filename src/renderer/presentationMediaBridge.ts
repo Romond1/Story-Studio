@@ -42,6 +42,7 @@ export class ControlMediaReceiver {
   private stream: MediaStream | null = null;
   private preview: MediaStream | null = null;
   private ready = false;
+  private offerReceived = false;
   private intent: MediaIntent;
   private readonly id: string;
   constructor(intent: MediaIntent, private mixer: MediaMixer, send: (packet: MediaPacket) => void, private fail: (message: string) => void, private showPreview: (stream: MediaStream | null) => void = () => {}) {
@@ -84,6 +85,12 @@ export class ControlMediaReceiver {
   }
   async receive(packet: MediaPacket) {
     if (!this.link.matches(packet)) return;
+    // Each bridge epoch owns one negotiation. Claim the offer before the first
+    // await: repeated publication must not race two answers on the same peer.
+    if (packet.type === 'offer') {
+      if (this.offerReceived) return;
+      this.offerReceived = true;
+    }
     try {
       await this.link.remote(packet);
       if (packet.type === 'offer' && !this.link.disposed) {

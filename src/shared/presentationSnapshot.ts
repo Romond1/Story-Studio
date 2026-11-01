@@ -1,4 +1,5 @@
 import {parseRosterPresentation,type RosterPresentation} from './students/rosterPresentation';
+import {parseTeamScoreboard,type TeamScoreboard} from './teamPlay/scoreboard';
 import { parseRewardPresentation, type RewardPresentation } from './rewardPresentation';
 import { parseMovementPresentation, type MovementPresentation } from './movementPresentation';
 import type { SceneTransitionEvent } from './sceneTransition';
@@ -22,7 +23,7 @@ export type PresentTarget =
   | { kind: 'image'; occurrenceId: string; src: string; scene?: StaticScene; activity?: ActivityScene }
   | { kind: 'break' | 'board'; occurrenceId: string; scene: StaticScene; activity: ActivityScene }
   | { kind: 'empty' | 'unsupported' | 'badge'; occurrenceId: string };
-export interface PresentSnapshot { roster?:RosterPresentation; sessionId: string; revision: number; target: PresentTarget; cardsV2?: CardV2RenderPlan; transition?: SceneTransitionEvent; movement?: MovementPresentation; rewards?: RewardPresentation }
+export interface PresentSnapshot { teamScoreboard?:TeamScoreboard; roster?:RosterPresentation; sessionId: string; revision: number; target: PresentTarget; cardsV2?: CardV2RenderPlan; transition?: SceneTransitionEvent; movement?: MovementPresentation; rewards?: RewardPresentation }
 export interface PresentEnvelope { generation: number; sequence: number; snapshot: PresentSnapshot | null; rendererGeneration?: number }
 export interface PresentApi {
   sendDashZoom?:(instanceId:string,zoom:number)=>void;
@@ -46,7 +47,8 @@ const revision = (v: unknown): v is number => typeof v === 'number' && Number.is
 export function parsePresentSnapshot(value: unknown): PresentSnapshot | null {
  const base=parsePresentSnapshotBody(value);if(!base||!object(value))return null;
  const roster=value.roster===undefined?undefined:parseRosterPresentation(value.roster);
- return roster===null?null:{...base,...(roster?{roster}:{})};
+ const teamScoreboard=value.teamScoreboard===undefined?undefined:parseTeamScoreboard(value.teamScoreboard);
+ return roster===null||teamScoreboard===null?null:{...base,...(roster?{roster}:{}),...(teamScoreboard?{teamScoreboard}:{})};
 }
 function parsePresentSnapshotBody(value: unknown): PresentSnapshot | null {
   if (!object(value) || !id(value.sessionId) || !revision(value.revision) || !object(value.target)) return null;

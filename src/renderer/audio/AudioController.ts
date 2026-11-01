@@ -1,3 +1,4 @@
+import type { GameEffectKind } from '../../shared/gameEffects';
 import {
   DEFAULT_AUDIO_SETTINGS,
   muteAllAudioSettings,
@@ -172,10 +173,13 @@ export class AudioController {
   };
   private pendingOutputChanges = 0;
   private testNodes = new Set<AudioScheduledSourceNode>();
+  private gameCueStops = new Map<string, () => void>();
 
   private buffers = new Map<string, AudioBuffer>();
   private activeNodes = new Map<string, ActiveBufferNode>();
   private mediaElementNodes = new Map<HTMLMediaElement, AttachedMediaNode>();
+  /** Transient question elements may unmount every turn; cache weakly for safe StrictMode reattachment. */
+  private transientMediaElements = new WeakMap<HTMLMediaElement, AttachedMediaNode>();
   private externalMediaNodes = new Map<string, ExternalMediaNode>();
   private pauseTimes = new Map<string, number>();
   private startTimes = new Map<string, number>();
@@ -761,27 +765,38 @@ export class AudioController {
     durationSeconds: number,
     volume: number,
     startOffset = 0,
-  ): void {
+    waveform: OscillatorType = "sine",
+    endFrequency = frequency,
+    attackSeconds = 0.02,
+  ): () => void {
     const context = this.getContext();
+    // Cues can be the first playback after startup or an interrupted audio device.
+    if (context.state === "suspended") void context.resume().catch(error => this.recordError("Could not resume game audio", error));
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     const start = context.currentTime + startOffset;
-    oscillator.type = "sine";
+    oscillator.type = waveform;
     oscillator.frequency.setValueAtTime(frequency, start);
+    if (endFrequency !== frequency) oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + durationSeconds);
     gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), start + attackSeconds);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + durationSeconds);
     oscillator.connect(gain);
     gain.connect(target);
-    oscillator.onended = () => {
+    let ended = false;
+    const cleanup = () => {
+      if (ended) return;
+      ended = true;
       oscillator.disconnect();
       gain.disconnect();
       this.testNodes.delete(oscillator);
       this.refreshDiagnostics();
     };
+    oscillator.onended = cleanup;
     this.testNodes.add(oscillator);
     oscillator.start(start);
     oscillator.stop(start + durationSeconds + 0.02);
+    return () => { try { oscillator.stop(); } catch { /* Already ended. */ } cleanup(); };
   }
 
   sendTestTone(route: AudioOutputRoute): void {
@@ -797,6 +812,76 @@ export class AudioController {
           : this.snapshot.settings.devices.microphone.deviceId,
       );
     }
+  }
+
+  /** Optional synthesized game cues share the normal media/monitor/master mute and volume buses. */
+  async activateGameSounds(): Promise<void> {
+    // Called directly from the checkbox/test button so browser activation is retained.
+    const context = this.getContext();
+    if (context.state === "suspended") await context.resume();
+    if (context.state !== "running") throw new Error("Audio is not running. Try Test game sound again.");
+  }
+
+  /** Replace a cue family rather than accumulating scheduled voices on rapid input. */
+  private playSynthCue(
+    family: string,
+    notes: Array<[frequency: number, offset: number, duration: number, gain: number, waveform?: OscillatorType, endFrequency?: number]>,
+    volume: number,
+  ): () => void {
+    this.gameCueStops.get(family)?.();
+    const graph = this.ensureGraph();
+    const level = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0;
+    const stops = notes.map(([frequency, offset, duration, gain, waveform = 'sine', endFrequency = frequency]) =>
+      this.startOscillator(graph.mediaBus, frequency, duration, level * gain, offset, waveform, endFrequency, .004));
+    const stop = () => {
+      stops.forEach(cancel => cancel());
+      if (this.gameCueStops.get(family) === stop) this.gameCueStops.delete(family);
+    };
+    this.gameCueStops.set(family, stop);
+    return stop;
+  }
+
+  playWheelCue(cue: 'start' | 'tick' | 'deceleration' | 'landing' | 'reveal', volume = .35): void {
+    if (cue === 'tick') {
+      // A short wooden body plus bright click stays audible over music without a long tail.
+      this.playSynthCue('wheel-tick', [[1050, 0, .055, .30, 'triangle', 430], [2100, 0, .028, .12, 'square', 1250]], volume);
+      return;
+    }
+    if (cue === 'deceleration') {
+      this.playSynthCue('wheel-motion', [[220, 0, .24, .22, 'triangle', 110], [440, .07, .27, .12]], volume);
+      return;
+    }
+    const melody = cue === 'start' ? [262, 330, 392, 523] : cue === 'landing' ? [392, 523, 659, 784] : [523, 659, 784, 1047];
+    const notes: Parameters<AudioController['playSynthCue']>[1] = melody.map((frequency, index) =>
+      [frequency, index * .12, .42, .20, 'triangle']);
+    notes.push([melody[0] / 2, 0, .65, .24, 'sine']);
+    if (cue !== 'start') {
+      [523, 659, 784].forEach(frequency => notes.push([frequency, .42, .85, .11, 'sine']));
+    }
+    this.playSynthCue('wheel-motion', notes, volume);
+  }
+
+  /** Original two-part fanfares: a rhythmic motif, warm chord, then sparkling echoes. */
+  playGameEffectCue(kind: GameEffectKind, volume = .45): () => void {
+    const motifs = {
+      coins: [784, 988, 1175, 1568, 1175, 1568],
+      stars: [523, 659, 784, 1047, 1319, 1568],
+      portal: [196, 294, 392, 587, 784, 1175],
+      chest: [196, 247, 294, 392, 494, 784],
+      sprite: [659, 784, 659, 988, 1175, 1319],
+      crown: [392, 523, 659, 784, 1047, 1319],
+    };
+    const motif = motifs[kind];
+    const notes: Parameters<AudioController['playSynthCue']>[1] = [];
+    motif.forEach((frequency, index) => {
+      notes.push([frequency, index * .14, .40, .20, 'triangle']);
+      notes.push([frequency * 2, index * .14 + .07, .52, .055, 'sine']);
+    });
+    // Bass impact and a resolved chord give the reward weight and a sustained finish.
+    notes.push([motif[0] / 2, 0, .75, .24, 'sine']);
+    [523.25, 659.25, 783.99].forEach(frequency => notes.push([frequency, .70, 1.35, .105, 'sine']));
+    [1046.5, 1318.5, 1568].forEach((frequency, index) => notes.push([frequency, 1.0 + index * .16, .8, .07, 'sine']));
+    return this.playSynthCue('reward', notes, volume);
   }
 
   playGeneratedChime(volume = 0.35): void {
@@ -1086,8 +1171,9 @@ export class AudioController {
     element: HTMLMediaElement,
     volume = 1,
     routeCategory: AudioRouteCategory = "unclassified",
+    transient = false,
   ): void {
-    let node = this.mediaElementNodes.get(element);
+    let node = this.mediaElementNodes.get(element) ?? this.transientMediaElements.get(element);
     if (!node) {
       const source = this.getContext().createMediaElementSource(element);
       const gainNode = this.getContext().createGain();
@@ -1095,6 +1181,8 @@ export class AudioController {
       node = { source, gainNode, routeCategory, attached: true };
       this.mediaElementNodes.set(element, node);
     }
+    if(transient)this.transientMediaElements.set(element,node);
+    this.mediaElementNodes.set(element,node);
     node.routeCategory = routeCategory;
     node.attached = true;
     try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
@@ -1113,6 +1201,7 @@ export class AudioController {
     const node = this.mediaElementNodes.get(element);
     if (!node) return;
     node.attached = false;
+    if(this.transientMediaElements.has(element))this.mediaElementNodes.delete(element);
     try { node.gainNode.disconnect(); } catch { /* already disconnected */ }
     node.gainNode.gain.setValueAtTime(0, this.getContext().currentTime);
   }

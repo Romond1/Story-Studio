@@ -24,6 +24,7 @@ function harness() {
   const state = { project, file: { folderPath: 'source', data: project }, error: '', notice: '', busy: false };
   const latest = { current: project }, operationRef = { current: false };
   const context: any = {
+    teamActivity: { exit: () => {} },
     autosave: { pending: { current: null } }, project, file: state.file, latest, history: { current: history }, busy: false, operationRef, operation: operationRef, activeBinId: '',
     parseLessonProject, parseSceneDocument, mergeLessonMediaImport, hosted: { isActive: false }, window: { lessonApi: {}, appApi: {} },
     setBusy: (value: boolean) => { state.busy = value; },
@@ -123,22 +124,26 @@ test('unacknowledged hosted settings prevent a misleading successful lesson Save
 
 test('lesson save completion marks the written revision and retains newer edits and dirty status', async () => {
   const h = harness(), pending = deferred<{ folderPath: string; lastSavedAt: string }>();
+  let activityExits=0; h.context.teamActivity.exit=()=>activityExits++;
   const written = h.state.project;
   h.context.window.lessonApi.saveProject = () => pending.promise;
   const saving = h.callbacks.save('saveAs');
   const newer = { ...written, title: 'Newer changes' }; h.latest.current = newer; h.history.record(newer); h.state.project = newer;
   pending.resolve({ folderPath: 'copy', lastSavedAt: '2026-10-08' }); await saving;
   assert.equal(h.state.project, newer); assert.equal(h.state.file.folderPath, 'copy'); assert.equal(h.history.isDirty, true);
+  assert.equal(activityExits,1,'successful Save As retires transient Team Play media ownership');
   assert.equal(h.history.undo(), written); assert.equal(h.history.isDirty, false);
 });
 
 test('lesson Save As cancellation and failed save keep the current file and dirty revision', async () => {
   const h = harness(), changed = { ...h.state.project, title: 'Changed' };
+  let activityExits=0; h.context.teamActivity.exit=()=>activityExits++;
   h.history.record(changed);
   h.context.window.lessonApi.saveProject = async () => null;
   await h.callbacks.save('saveAs'); assert.equal(h.state.file.folderPath, 'source'); assert.equal(h.history.isDirty, true);
   h.context.window.lessonApi.saveProject = async () => { throw Error('disk unavailable'); };
   await h.callbacks.save('save'); assert.match(h.state.error, /disk unavailable/); assert.equal(h.history.isDirty, true); assert.equal(h.state.busy, false);
+  assert.equal(activityExits,0,'cancelled and failed saves preserve the running Team Play activity');
 });
 
 test('lesson folder import preserves actual imported bin identities and edits made during file copy', async () => {

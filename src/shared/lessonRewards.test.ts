@@ -41,10 +41,10 @@ test('reward defaults retain legacy placement, and each position shares bounded 
     const style = rewardAnchorStyle(appearance, DEFAULT_SPARK_CONFIG);
     assert.ok(style.transform?.includes('scale(1.5)'));
     if (position === 'center') assert.equal(style.left, '50%');
-    else if (position.endsWith('Left')) assert.equal(style.left, 40);
-    else assert.equal(style.right, 40);
+    else if (position.endsWith('Left')) assert.equal(style.left, 'min(40%, 210px)');
+    else assert.equal(style.right, 'min(40%, 210px)');
   }
-  for (const value of [null, {}, { ...DEFAULT_REWARD_APPEARANCE, position: 'elsewhere' }, { ...DEFAULT_REWARD_APPEARANCE, size: NaN }, { ...DEFAULT_REWARD_APPEARANCE, intensity: 3 }]) assert.equal(parseRewardAppearance(value), null);
+  for (const value of [null, {}, { ...DEFAULT_REWARD_APPEARANCE, position: 'elsewhere' }, { ...DEFAULT_REWARD_APPEARANCE, size: NaN }, { ...DEFAULT_REWARD_APPEARANCE, intensity: 3.01 }]) assert.equal(parseRewardAppearance(value), null);
 });
 
 test('reward appearance changes do not rescore events and intensity adjusts celebration effects', () => {
@@ -127,4 +127,36 @@ test('adding students and expiring visuals preserve scores and deduplication acr
   assert.equal(pruned.rewards.students.find((s: any) => s.id === 'lin').stars, 1);
   assert.equal(r.awardLessonReward(pruned, 'crown', 'crown', 100001), pruned);
   assert.equal(r.addLessonRewardStudent(pruned, 'Duplicate', 'lin'), pruned);
+});
+
+test('Present student selection filters celebration and spark visuals without changing scores',()=>{
+ const r=api(),profiles=roster.slice(0,2).map((p,i)=>({...p,name:'Private full name '+i,nickname:'Hero '+i}));let session=r.initializeLessonRewards(createSession(),profiles);
+ session=r.selectLessonRewardStudent(session,'ada');session=r.awardLessonReward(session,'gold','first',1000);
+ session=r.selectLessonRewardStudent(session,'grace');session=r.awardLessonReward(session,'blue','second',1000);session=r.showLessonCelebration(session,'all',1000);
+ const saved=JSON.stringify(session),policy={studentIds:['ada'],roster:profiles};
+ const plan=r.projectLessonRewards(session.rewards,{width:1280,height:720},policy);
+ assert.deepEqual(plan.final.students.map((s:any)=>s.name),['Hero 0']);assert.deepEqual(plan.sparks.map((s:any)=>s.studentName),['Hero 0']);assert.ok(!JSON.stringify(plan).includes('Private full name'));assert.ok(!JSON.stringify(plan).includes('studentId'));assert.equal(JSON.stringify(session),saved);
+ const empty=r.projectLessonRewards(session.rewards,{width:1280,height:720},{...policy,studentIds:[]});assert.equal(empty.sparks.length,0);assert.equal(empty.final.students.length,0);
+ const removed=r.projectLessonRewards(session.rewards,{width:1280,height:720},{roster:[],studentIds:[]});assert.equal(removed.sparks.length,0);assert.equal(removed.final.students.length,0);
+});
+
+test('reward appearance supports large celebrations with bounded intensity', () => {
+ assert.deepEqual(parseRewardAppearance({position:'center',size:3,intensity:3}),{position:'center',size:3,intensity:3});
+ assert.equal(parseRewardAppearance({position:'center',size:3.01,intensity:1}),null);
+});
+
+test('reward recipients follow checked participants without losing other students balances', () => {
+  const r = api(); let session = r.initializeLessonRewards(createSession(), roster);
+  session = r.selectLessonRewardStudent(session, 'grace');
+  session = r.awardLessonReward(session, 'gold', 'before-class-change', 1000);
+  const original = session.rewards;
+  const selected = r.lessonRewardSelection(session, ['ada']);
+  assert.deepEqual(selected.students.map((s: any) => s.id), ['ada']);
+  assert.equal(selected.active.id, 'ada');
+  assert.equal(r.lessonRewardSelection(session, []).active, undefined);
+  assert.deepEqual(r.lessonRewardSelection(session, []).students, []);
+  assert.equal(r.lessonRewardSelection(session, ['missing']).active, undefined);
+  assert.equal(r.lessonRewardSelection(session, ['ada', 'grace']).active.id, 'grace');
+  assert.equal(session.rewards, original);
+  assert.equal(session.rewards.students.find((s: any) => s.id === 'grace').stars, 1);
 });

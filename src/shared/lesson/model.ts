@@ -23,6 +23,7 @@ export interface SceneVideo extends ObjectBase { kind: 'video'; assetId: string 
 export type SceneObject = SceneCard | SceneText | SceneImage | SceneVideo;
 export interface SceneAudio { id: string; assetId: string; volume: number; loop: boolean; autoplay: boolean; shortcut?: string }
 export interface LessonScene {
+  breakExperience?: import('./miniGameBreak').BreakExperience;
   id: string; title: string; frame: { width: number; height: number };
   background: SceneBackground; objects: SceneObject[]; drawings: MarkerStroke[];
   audio: SceneAudio[]; transition: { kind: 'none' | 'fade'; durationMs: number };
@@ -35,7 +36,7 @@ export interface SceneDocumentFields {
   sections?: LessonSection[];
   cards: Record<string, CardDefinition>; library: string[]; cardSets: CardSet[];
 }
-export interface SceneLessonProject extends SceneDocumentFields { format: 'story-studio-scene'; version: 1 }
+export interface SceneLessonProject extends SceneDocumentFields { format: 'story-studio-scene'; version: 1; sharedAdventure?: import('../sharedAdventure').SharedAdventure }
 export type LessonProject = SceneLessonProject | import('../episode/model').EpisodeProject;
 export type SceneDocument = LessonProject;
 export interface LessonProjectState { data: LessonProject; folderPath: string; lastSavedAt: string; activationToken: string; isDraft?: boolean }
@@ -43,10 +44,12 @@ export interface LessonLocation { sequence: SequenceKind; entryId: string }
 export interface EditorSelection { sequence: SequenceKind; entryId: string | null; objectId: string | null }
 export interface CardLiveState { faceId: string; concealed: boolean; box?: Rect }
 export interface SceneLiveState {
+  miniGame?: import('./miniGameRuntime').MiniGameRuntimeState;
   sceneId: string; cards: Record<string, CardLiveState>; drawings: MarkerStroke[]; viewport: SceneViewport;
   drawingUndo?: MarkerStroke[][]; drawingRedo?: MarkerStroke[][];
 }
 export interface LessonSession {
+  miniGame?: import('./miniGameRuntime').MiniGameRuntimeState;
   id: string; revision: number; visit: number; cursor: LessonLocation | null;
   storyReturn: LessonLocation | null; cards: Record<string, CardLiveState>;
   drawings: MarkerStroke[]; viewport: SceneViewport;

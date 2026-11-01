@@ -28,7 +28,7 @@ export function claimTeacherKey(event: { preventDefault(): void; stopImmediatePr
   event.stopImmediatePropagation();
 }
 
-export type LessonShortcut = 'playback'|'previous'|'next'|'music'|'draw'|'clear-drawings'|'student'|'reward-1'|'reward-2'|'reward-3'|'reward-4';
+export type LessonShortcut = 'playback'|'previous'|'next'|'music'|'draw'|'clear-drawings'|'student'|'reward-1'|'reward-2'|'reward-3'|'reward-4'|'magic-next'|'magic-play';
 export function lessonShortcut(event:TeacherKeyEvent & {code?:string;key?:string},mode:'edit'|'teach'):LessonShortcut|null {
   if(!isPlainTeacherKey(event))return null;
   if((event.target as {closest?:(value:string)=>unknown}|null)?.closest?.('[role="menu"], [role="dialog"]'))return null;
@@ -40,6 +40,8 @@ export function lessonShortcut(event:TeacherKeyEvent & {code?:string;key?:string
   if(code==='KeyA'||key==='a')return 'previous';
   if(code==='KeyD'||key==='d')return 'next';
   if(code==='KeyQ'||key==='q')return 'music';
+  if(code==='F2'||key==='f2')return 'magic-next';
+  if(code==='Digit5')return 'magic-play';
   if(code==='F1'||key==='f1')return 'student';
   if(/^Digit[1-4]$/.test(code))return `reward-${code.slice(-1)}` as LessonShortcut;
   return null;
